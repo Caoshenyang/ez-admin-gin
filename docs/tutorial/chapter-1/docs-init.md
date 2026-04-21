@@ -1,15 +1,54 @@
 ---
 title: VitePress 文档项目初始化
-description: "初始化 docs 子项目，并建立从零搭建教程的文档站基础。"
+description: "说明 docs 文档站是可选模块，愿意维护文档时可按 VitePress 官方流程初始化。"
 ---
 
 # VitePress 文档项目初始化
 
-这一节后续会记录 `docs` 文档站如何初始化，以及如何验证 VitePress 能正常构建。
+`docs/` 不是后台底座运行所必需的模块。它适合用来放使用说明、接口说明、部署记录或项目教程；如果你暂时不想维护文档，可以跳过这一节，后面再补也不影响后端和管理台继续开发。
 
-## 后续要补齐
+::: tip 🎯 本节怎么读
+想写文档，就按 VitePress 官方流程初始化；不想写文档，保留 `docs/` 目录或先删掉都可以。
+:::
 
-- `vitepress@next` 安装
-- VitePress 初始化模板
-- 配置项说明
-- 首页、导航和侧边栏验证
+## 是否需要 docs
+
+可以按下面的方式判断：
+
+| 情况 | 建议 |
+| --- | --- |
+| 项目会交给别人使用 | 建议保留 `docs/`，至少写安装、启动和部署说明 |
+| 项目需要长期复用 | 建议保留 `docs/`，记录目录约定、模块接入方式和常见问题 |
+| 只是自己快速验证功能 | 可以先跳过，等功能稳定后再补 |
+
+::: info 官方文档
+VitePress 官网：[https://vitepress.dev](https://vitepress.dev)
+
+初始化说明：[https://vitepress.dev/guide/getting-started](https://vitepress.dev/guide/getting-started)
+:::
+
+## 如果你要初始化
+
+如果决定维护文档，可以进入 `docs/` 目录，按官网流程创建 VitePress 项目：
+
+::: code-group
+
+```powershell [Windows PowerShell]
+Set-Location .\docs
+Remove-Item .gitkeep -ErrorAction SilentlyContinue
+pnpm add -D vitepress@next
+pnpm vitepress init
+```
+
+```bash [macOS / Linux]
+cd docs
+rm -f .gitkeep
+pnpm add -D vitepress@next
+pnpm vitepress init
+```
+
+:::
+
+初始化完成后，按向导提示运行本地预览和构建命令即可。
+
+下一节开始准备本地基础环境：[Docker Compose 基础环境](./docker-compose-env)。
