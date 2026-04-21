@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 96" role="img" aria-label="EZ Admin logo">
+  <title>EZ Admin</title>
+  <g fill="none" stroke="#079aa2" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 20H32C20.95 20 16 26.2 16 36v24c0 9.8 4.95 16 16 16h39"/>
+    <path d="M18 48h46"/>
+    <path d="M92 20h42c7.4 0 10.7 8.9 5.5 14.1L92 76h48"/>
+  </g>
+</svg>

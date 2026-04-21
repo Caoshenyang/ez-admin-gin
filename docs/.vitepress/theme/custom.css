@@ -1,0 +1,84 @@
+:root {
+  --vp-c-brand-1: #079aa2;
+  --vp-c-brand-2: #0ea5ad;
+  --vp-c-brand-3: #22c3c9;
+  --vp-c-brand-soft: rgba(7, 154, 162, 0.14);
+  --vp-home-hero-name-background: linear-gradient(120deg, #079aa2 0%, #10b3b5 52%, #39b98f 100%);
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-image-background-image:
+    radial-gradient(circle at top left, rgba(7, 154, 162, 0.22), transparent 42%),
+    radial-gradient(circle at bottom right, rgba(57, 185, 143, 0.16), transparent 38%);
+  --vp-home-hero-image-filter: blur(68px);
+}
+
+.dark {
+  --vp-c-brand-1: #22c3c9;
+  --vp-c-brand-2: #5eead4;
+  --vp-c-brand-3: #99f6e4;
+  --vp-c-brand-soft: rgba(34, 195, 201, 0.18);
+}
+
+.VPHome .container {
+  max-width: 1180px;
+}
+
+.VPHome .VPHero .image-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: min(100%, 680px) !important;
+  height: 390px !important;
+  transform: none !important;
+}
+
+.VPHome .VPHero .image-src {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  display: block !important;
+  width: min(100%, 680px) !important;
+  height: auto !important;
+  max-width: 680px !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  transform: none !important;
+  z-index: 1;
+}
+
+.VPHome .VPHero .image-bg {
+  width: 420px !important;
+  height: 280px !important;
+}
+
+@media (max-width: 959px) {
+  .VPHome .VPHero .image {
+    margin-top: 28px !important;
+  }
+
+  .VPHome .VPHero .image-container {
+    height: auto !important;
+  }
+}
+
+.VPHome .VPFeature {
+  border: 1px solid var(--vp-c-divider);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.VPHome .VPFeature:hover {
+  transform: translateY(-3px);
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 14px 30px rgba(7, 154, 162, 0.12);
+}
+
+.VPDoc h2 {
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 28px;
+}
+
+.custom-block {
+  border-radius: 10px;
+}

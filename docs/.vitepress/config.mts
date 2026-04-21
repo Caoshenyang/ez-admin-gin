@@ -1,0 +1,222 @@
+import { defineConfig } from 'vitepress'
+
+export default defineConfig({
+  base: '/',
+  lang: 'zh-CN',
+  title: 'EZ Admin',
+  description: '面向个人项目快速上线的通用后台管理系统底座。',
+  cleanUrls: true,
+  lastUpdated: true,
+  ignoreDeadLinks: true,
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'alternate icon', href: '/favicon.ico', sizes: 'any' }],
+    ['meta', { name: 'theme-color', content: '#079aa2' }]
+  ],
+
+  // #region markdown-config
+  markdown: {
+    lineNumbers: true,
+    math: true,
+    image: {
+      lazyLoading: true
+    },
+    toc: {
+      level: [2, 3]
+    },
+    container: {
+      tipLabel: '提示',
+      warningLabel: '注意',
+      dangerLabel: '警告',
+      infoLabel: '说明',
+      detailsLabel: '展开详情'
+    },
+    languages: [
+      'go',
+      'yaml',
+      'bash',
+      'sh',
+      'json',
+      'javascript',
+      'typescript',
+      'vue',
+      'sql',
+      'docker',
+      'nginx'
+    ]
+  },
+  // #endregion markdown-config
+
+  vite: {
+    server: {
+      port: 15174,
+      host: true
+    },
+    build: {
+      chunkSizeWarningLimit: 1200
+    }
+  },
+
+  themeConfig: {
+    logo: '/images/logo.svg',
+    siteTitle: 'EZ Admin',
+    outline: {
+      level: [2, 3],
+      label: '页面导航'
+    },
+    lastUpdated: {
+      text: '最后更新',
+      formatOptions: {
+        dateStyle: 'short',
+        timeStyle: 'short'
+      }
+    },
+    docFooter: {
+      prev: '上一页',
+      next: '下一页'
+    },
+    footer: {
+      message: '面向个人项目快速上线的通用后台管理系统底座',
+      copyright: '2026 EZ Admin'
+    },
+    search: {
+      provider: 'local'
+    },
+    nav: [
+      { text: '开始这里', link: '/guide/', activeMatch: '^/guide/' },
+      { text: '从零搭建', link: '/tutorial/', activeMatch: '^/tutorial/' },
+      { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' },
+      { text: '路线图', link: '/roadmap', activeMatch: '^/roadmap$' }
+    ],
+    sidebar: {
+      '/': [
+        {
+          text: '项目入口',
+          items: [
+            { text: '使用指南', link: '/guide/' },
+            { text: '从零搭建教程', link: '/tutorial/' },
+            { text: '参考手册', link: '/reference/' },
+            { text: '路线图', link: '/roadmap' }
+          ]
+        }
+      ],
+      '/guide/': [
+        {
+          text: '使用指南',
+          items: [
+            { text: '指南首页', link: '/guide/' }
+          ]
+        }
+      ],
+      '/tutorial/': [
+        {
+          text: '从零搭建教程',
+          items: [
+            { text: '教程首页', link: '/tutorial/' },
+            { text: '教程大纲', link: '/tutorial/curriculum' }
+          ]
+        },
+        {
+          text: '第 1 章：项目初始化',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-1/' },
+            { text: '仓库创建与 Git 初始化', link: '/tutorial/chapter-1/repository-and-sequence' },
+            { text: '单仓库目录结构', link: '/tutorial/chapter-1/directory-structure' },
+            { text: 'Go 后端项目初始化', link: '/tutorial/chapter-1/backend-init' },
+            { text: 'Vue 前端项目初始化', link: '/tutorial/chapter-1/frontend-init' },
+            { text: 'VitePress 文档项目初始化', link: '/tutorial/chapter-1/docs-init' },
+            { text: 'Docker Compose 基础环境', link: '/tutorial/chapter-1/docker-compose-env' }
+          ]
+        },
+        {
+          text: '第 2 章：后端基础设施',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-2/' },
+            { text: '配置管理', link: '/tutorial/chapter-2/config-management' },
+            { text: '日志系统', link: '/tutorial/chapter-2/logging-system' },
+            { text: '数据库连接', link: '/tutorial/chapter-2/database-connection' },
+            { text: 'Redis 连接', link: '/tutorial/chapter-2/redis-connection' },
+            { text: '统一响应与错误处理', link: '/tutorial/chapter-2/response-and-errors' },
+            { text: '路由分组与健康检查', link: '/tutorial/chapter-2/routing-and-health' }
+          ]
+        },
+        {
+          text: '第 3 章：认证与权限',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-3/' },
+            { text: '用户模型与登录接口', link: '/tutorial/chapter-3/user-model-and-login' },
+            { text: 'JWT 认证', link: '/tutorial/chapter-3/jwt-auth' },
+            { text: '认证中间件', link: '/tutorial/chapter-3/auth-middleware' },
+            { text: '角色与权限模型', link: '/tutorial/chapter-3/rbac-model' },
+            { text: 'Casbin 权限控制', link: '/tutorial/chapter-3/casbin-permission' },
+            { text: '菜单权限设计', link: '/tutorial/chapter-3/menu-permission' }
+          ]
+        },
+        {
+          text: '第 4 章：通用系统模块',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-4/' },
+            { text: '用户管理', link: '/tutorial/chapter-4/user-management' },
+            { text: '角色管理', link: '/tutorial/chapter-4/role-management' },
+            { text: '菜单管理', link: '/tutorial/chapter-4/menu-management' },
+            { text: '系统配置', link: '/tutorial/chapter-4/system-config' },
+            { text: '文件上传', link: '/tutorial/chapter-4/file-upload' },
+            { text: '操作日志', link: '/tutorial/chapter-4/operation-logs' },
+            { text: '登录日志', link: '/tutorial/chapter-4/login-logs' }
+          ]
+        },
+        {
+          text: '第 5 章：前端管理台',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-5/' },
+            { text: 'Vue 3 管理台初始化', link: '/tutorial/chapter-5/vue-project-init' },
+            { text: '登录页', link: '/tutorial/chapter-5/login-page' },
+            { text: '后台布局', link: '/tutorial/chapter-5/admin-layout' },
+            { text: '动态菜单', link: '/tutorial/chapter-5/dynamic-menu' },
+            { text: '用户管理页面', link: '/tutorial/chapter-5/user-pages' },
+            { text: '角色与菜单页面', link: '/tutorial/chapter-5/role-menu-pages' },
+            { text: '配置与文件页面', link: '/tutorial/chapter-5/config-file-pages' }
+          ]
+        },
+        {
+          text: '第 6 章：业务模块接入规范',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-6/' },
+            { text: '模块固定结构', link: '/tutorial/chapter-6/module-structure' },
+            { text: '后端模块接入流程', link: '/tutorial/chapter-6/backend-module-flow' },
+            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' },
+            { text: '前端页面接入流程', link: '/tutorial/chapter-6/frontend-page-flow' },
+            { text: '示例业务模块', link: '/tutorial/chapter-6/sample-module' }
+          ]
+        },
+        {
+          text: '第 7 章：部署与复用',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-7/' },
+            { text: '后端与前端 Dockerfile', link: '/tutorial/chapter-7/dockerfile' },
+            { text: 'Docker Compose 编排', link: '/tutorial/chapter-7/docker-compose' },
+            { text: 'Nginx 配置', link: '/tutorial/chapter-7/nginx-config' },
+            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' },
+            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' }
+          ]
+        }
+      ],
+      '/reference/': [
+        {
+          text: '参考手册',
+          items: [
+            { text: '参考首页', link: '/reference/' }
+          ]
+        }
+      ]
+    },
+    socialLinks: []
+  }
+})
