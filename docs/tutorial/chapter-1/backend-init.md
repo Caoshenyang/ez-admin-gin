@@ -27,6 +27,7 @@ server/
 先确认本机版本：
 
 ```bash
+# 确认当前 Go 版本
 go version
 ```
 
@@ -44,10 +45,12 @@ go version
 ::: code-group
 
 ```powershell [Windows PowerShell]
+# 进入后端项目目录
 Set-Location .\server
 ```
 
 ```bash [macOS / Linux]
+# 进入后端项目目录
 cd server
 ```
 
@@ -56,12 +59,14 @@ cd server
 初始化 module：
 
 ```bash
+# 初始化后端 module，module 路径和仓库目录保持一致
 go mod init ez-admin-gin/server
 ```
 
 然后把 `go.mod` 明确更新到本教程使用的 Go 版本：
 
 ```bash
+# 明确使用本教程对应的 Go 版本
 go get go@1.26.2
 ```
 
@@ -81,14 +86,17 @@ package main
 import "github.com/gin-gonic/gin"
 
 func main() {
+	// gin.Default() 会附带默认日志和 panic 恢复中间件。
 	r := gin.Default()
 
+	// 健康检查接口，用来确认服务已经正常启动。
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status": "ok",
 		})
 	})
 
+	// 启动 HTTP 服务，默认监听本机 8080 端口。
 	r.Run(":8080")
 }
 ```
@@ -96,19 +104,28 @@ func main() {
 安装依赖并整理 module：
 
 ```bash
+# 安装 Gin，并整理 go.mod / go.sum
 go get github.com/gin-gonic/gin@latest
 go mod tidy
 ```
+
+依赖资料入口：
+
+| 依赖 | 用途 | 资料 |
+| --- | --- | --- |
+| `github.com/gin-gonic/gin` | 创建 HTTP 服务和路由 | [Go 包文档](https://pkg.go.dev/github.com/gin-gonic/gin) / [项目仓库](https://github.com/gin-gonic/gin) |
 
 如果上一节留下了 `.gitkeep`，现在可以删掉：
 
 ::: code-group
 
 ```powershell [Windows PowerShell]
+# server/ 已经有真实文件，可以删除占位文件
 Remove-Item .gitkeep -ErrorAction SilentlyContinue
 ```
 
 ```bash [macOS / Linux]
+# server/ 已经有真实文件，可以删除占位文件
 rm -f .gitkeep
 ```
 
@@ -119,6 +136,7 @@ rm -f .gitkeep
 在 `server/` 目录下启动服务：
 
 ```bash
+# 在 server/ 目录启动当前 module
 go run .
 ```
 
@@ -137,10 +155,12 @@ Listening and serving HTTP on :8080
 ::: code-group
 
 ```powershell [Windows PowerShell]
+# 访问健康检查接口
 Invoke-RestMethod http://localhost:8080/health
 ```
 
 ```bash [macOS / Linux]
+# 访问健康检查接口
 curl http://localhost:8080/health
 ```
 
@@ -163,11 +183,13 @@ curl http://localhost:8080/health
 ::: code-group
 
 ```powershell [Windows PowerShell]
+# 回到项目根目录，查看本节新增文件
 Set-Location ..
 git status
 ```
 
 ```bash [macOS / Linux]
+# 回到项目根目录，查看本节新增文件
 cd ..
 git status
 ```

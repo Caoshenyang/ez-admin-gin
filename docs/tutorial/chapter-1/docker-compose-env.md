@@ -30,6 +30,7 @@ Windows 和 macOS 推荐安装 Docker Desktop：
 安装完成后，确认 Docker 和 Compose 都可用：
 
 ```bash
+# 确认 Docker Engine 和 Compose 插件可用
 docker version
 docker compose version
 ```
@@ -43,6 +44,7 @@ docker compose version
 第一次启动时，Docker 需要下载 `postgres:18-alpine` 和 `redis:8-alpine`。如果下载很慢，可以先单独拉取镜像：
 
 ```bash
+# 单独拉取镜像，便于观察下载进度和失败原因
 docker pull postgres:18-alpine
 docker pull redis:8-alpine
 ```
@@ -85,10 +87,12 @@ Docker 官方说明：[Docker Hub mirror](https://docs.docker.com/docker-hub/ima
 ::: code-group
 
 ```powershell [Windows PowerShell]
+# 创建 PostgreSQL 和 Redis 的本地数据目录
 New-Item -ItemType Directory -Path D:\ez-admin-gin-data\postgres, D:\ez-admin-gin-data\redis -Force
 ```
 
 ```bash [macOS / Linux]
+# 创建 PostgreSQL 和 Redis 的本地数据目录
 mkdir -p ~/ez-admin-gin-data/postgres ~/ez-admin-gin-data/redis
 ```
 
@@ -103,18 +107,23 @@ name: ez-admin-gin
 
 services:
   postgres:
+    # 使用 PostgreSQL 官方 Alpine 镜像，体积更小。
     image: postgres:18-alpine
     container_name: ez-admin-postgres
     restart: unless-stopped
     environment:
+      # 这三项会创建本地开发使用的默认用户和数据库。
       POSTGRES_USER: ez_admin
       POSTGRES_PASSWORD: ez_admin_123456
       POSTGRES_DB: ez_admin
+      # 把数据库真实数据放到 pgdata 子目录，避免挂载目录权限问题。
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Asia/Shanghai
     ports:
+      # 左侧是本机端口，右侧是容器端口。
       - "5432:5432"
     volumes:
+      # 绑定挂载到本机目录，删除容器后数据仍然保留。
       - D:/ez-admin-gin-data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
@@ -123,13 +132,16 @@ services:
       retries: 5
 
   redis:
+    # 使用 Redis 官方 Alpine 镜像。
     image: redis:8-alpine
     container_name: ez-admin-redis
     restart: unless-stopped
+    # 开启 AOF，让本地 Redis 数据可以持久化。
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
     volumes:
+      # Redis 数据保存到本机目录。
       - D:/ez-admin-gin-data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -143,18 +155,23 @@ name: ez-admin-gin
 
 services:
   postgres:
+    # 使用 PostgreSQL 官方 Alpine 镜像，体积更小。
     image: postgres:18-alpine
     container_name: ez-admin-postgres
     restart: unless-stopped
     environment:
+      # 这三项会创建本地开发使用的默认用户和数据库。
       POSTGRES_USER: ez_admin
       POSTGRES_PASSWORD: ez_admin_123456
       POSTGRES_DB: ez_admin
+      # 把数据库真实数据放到 pgdata 子目录，避免挂载目录权限问题。
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Asia/Shanghai
     ports:
+      # 左侧是本机端口，右侧是容器端口。
       - "5432:5432"
     volumes:
+      # 绑定挂载到本机目录，删除容器后数据仍然保留。
       - ${HOME}/ez-admin-gin-data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
@@ -163,13 +180,16 @@ services:
       retries: 5
 
   redis:
+    # 使用 Redis 官方 Alpine 镜像。
     image: redis:8-alpine
     container_name: ez-admin-redis
     restart: unless-stopped
+    # 开启 AOF，让本地 Redis 数据可以持久化。
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
     volumes:
+      # Redis 数据保存到本机目录。
       - ${HOME}/ez-admin-gin-data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -184,17 +204,26 @@ services:
 截止 2026-04-21，Docker Hub 官方镜像已提供 PostgreSQL 18 和 Redis 8。本教程使用 `postgres:18-alpine`、`redis:8-alpine`，让补丁版本跟随官方镜像更新。
 :::
 
+官方镜像资料：
+
+| 镜像 | 资料 |
+| --- | --- |
+| `postgres` | [Docker Hub](https://hub.docker.com/_/postgres) |
+| `redis` | [Docker Hub](https://hub.docker.com/_/redis) |
+
 ## 🛠️ 启动基础服务
 
 在项目根目录执行：
 
 ```bash
+# 使用指定 Compose 文件在后台启动服务
 docker compose -f deploy/compose.local.yml up -d
 ```
 
 查看运行状态：
 
 ```bash
+# 查看容器运行状态和健康检查状态
 docker compose -f deploy/compose.local.yml ps
 ```
 
@@ -214,6 +243,7 @@ docker compose -f deploy/compose.local.yml ps
 执行：
 
 ```bash
+# 在 postgres 容器中执行一条简单 SQL
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select 1;"
 ```
 
@@ -224,6 +254,7 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 执行：
 
 ```bash
+# 在 redis 容器中执行 ping
 docker compose -f deploy/compose.local.yml exec redis redis-cli ping
 ```
 
@@ -272,6 +303,7 @@ docker compose -f deploy/compose.local.yml restart
 停止并删除容器不会删除这些本地数据：
 
 ```bash
+# 停止并删除容器，但保留绑定挂载到本机的数据目录
 docker compose -f deploy/compose.local.yml down
 ```
 

@@ -2,18 +2,23 @@ name: ez-admin-gin
 
 services:
   postgres:
+    # 使用 PostgreSQL 官方 Alpine 镜像，体积更小。
     image: postgres:18-alpine
     container_name: ez-admin-postgres
     restart: unless-stopped
     environment:
+      # 这三项会创建本地开发使用的默认用户和数据库。
       POSTGRES_USER: ez_admin
       POSTGRES_PASSWORD: ez_admin_123456
       POSTGRES_DB: ez_admin
+      # 把数据库真实数据放到 pgdata 子目录，避免挂载目录权限问题。
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Asia/Shanghai
     ports:
+      # 左侧是本机端口，右侧是容器端口。
       - "5432:5432"
     volumes:
+      # 绑定挂载到本机目录，删除容器后数据仍然保留。
       - D:/ez-admin-gin-data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
@@ -22,13 +27,16 @@ services:
       retries: 5
 
   redis:
+    # 使用 Redis 官方 Alpine 镜像。
     image: redis:8-alpine
     container_name: ez-admin-redis
     restart: unless-stopped
+    # 开启 AOF，让本地 Redis 数据可以持久化。
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
     volumes:
+      # Redis 数据保存到本机目录。
       - D:/ez-admin-gin-data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]

@@ -34,15 +34,19 @@ VitePress 官网：[https://vitepress.dev](https://vitepress.dev)
 ::: code-group
 
 ```powershell [Windows PowerShell]
+# 进入文档目录并移除占位文件
 Set-Location .\docs
 Remove-Item .gitkeep -ErrorAction SilentlyContinue
+# 安装 VitePress，并按向导初始化文档站
 pnpm add -D vitepress@next
 pnpm vitepress init
 ```
 
 ```bash [macOS / Linux]
+# 进入文档目录并移除占位文件
 cd docs
 rm -f .gitkeep
+# 安装 VitePress，并按向导初始化文档站
 pnpm add -D vitepress@next
 pnpm vitepress init
 ```
