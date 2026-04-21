@@ -1,0 +1,37 @@
+name: ez-admin-gin
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: ez-admin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ez_admin
+      POSTGRES_PASSWORD: ez_admin_123456
+      POSTGRES_DB: ez_admin
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - D:/ez-admin-gin-data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    container_name: ez-admin-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - D:/ez-admin-gin-data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
