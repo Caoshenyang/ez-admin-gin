@@ -1,0 +1,19 @@
+app:
+  name: ez-admin
+  env: dev
+
+server:
+  addr: ":8080"
+
+database:
+  host: localhost
+  port: 5432
+  user: ez_admin
+  password: ez_admin_123456
+  name: ez_admin
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
