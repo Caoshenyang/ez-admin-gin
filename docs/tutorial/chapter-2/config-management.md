@@ -237,16 +237,16 @@ package main
 import (
 	"log"
 
-	"ez-admin-gin/server/internal/config"
+	"ez-admin-gin/server/internal/config" // [!code ++]
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// 启动服务前先加载配置。
-	cfg, err := config.Load()
+	cfg, err := config.Load() // [!code ++]
 	if err != nil {
-		log.Fatalf("load config: %v", err)
+		log.Fatalf("load config: %v", err) // [!code ++]
 	}
 
 	r := gin.Default()
@@ -255,13 +255,13 @@ func main() {
 		c.JSON(200, gin.H{
 			"status": "ok",
 			// 返回 env，方便验证配置文件已经被读取。
-			"env":    cfg.App.Env,
+			"env":    cfg.App.Env, // [!code ++]
 		})
 	})
 
 	// 服务端口不再写死，改为读取配置文件。
-	if err := r.Run(cfg.Server.Addr); err != nil {
-		log.Fatalf("run server: %v", err)
+	if err := r.Run(cfg.Server.Addr); err != nil { // [!code ++]
+		log.Fatalf("run server: %v", err) // [!code ++]
 	}
 }
 ```

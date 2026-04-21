@@ -34,6 +34,12 @@ type DatabaseConfig struct {
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	Name     string `mapstructure:"name"`
+	// MaxIdleConns 控制空闲连接数量。
+	MaxIdleConns int `mapstructure:"max_idle_conns"`
+	// MaxOpenConns 控制最大打开连接数量。
+	MaxOpenConns int `mapstructure:"max_open_conns"`
+	// ConnMaxLifetime 控制连接最长复用时间，单位秒。
+	ConnMaxLifetime int `mapstructure:"conn_max_lifetime"`
 }
 
 // RedisConfig 保存 Redis 连接配置。
@@ -113,6 +119,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("log.max_backups", 7)
 	v.SetDefault("log.max_age", 30)
 	v.SetDefault("log.compress", false)
+	// 数据库连接池默认值适合本地开发和小型后台起步。
+	v.SetDefault("database.max_idle_conns", 10)
+	v.SetDefault("database.max_open_conns", 50)
+	v.SetDefault("database.conn_max_lifetime", 3600)
 }
 
 // bindEnvs 让环境变量能稳定参与结构体解析。
@@ -137,6 +147,10 @@ func bindEnvs(v *viper.Viper) {
 		"log.max_backups",
 		"log.max_age",
 		"log.compress",
+		// 允许用 EZ_DATABASE_MAX_OPEN_CONNS 这类环境变量覆盖连接池配置。
+		"database.max_idle_conns",
+		"database.max_open_conns",
+		"database.conn_max_lifetime",
 	}
 
 	for _, key := range keys {

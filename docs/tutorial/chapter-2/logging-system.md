@@ -79,21 +79,21 @@ go get go.uber.org/zap@latest gopkg.in/natefinch/lumberjack.v2@latest
 修改 `server/configs/config.yaml`，在文件末尾增加：
 
 ```yaml
-log:
+log: # [!code ++]
   # 当前日志级别，开发阶段通常使用 info，需要更详细日志时可以临时改成 debug
-  level: info
+  level: info # [!code ++]
   # console 更适合本地阅读；生产环境如果要给日志平台采集，可以改成 json
-  format: console
+  format: console # [!code ++]
   # 日志文件位置，相对于 server/ 目录
-  filename: logs/app.log
+  filename: logs/app.log # [!code ++]
   # 单个日志文件最大大小，单位 MB
-  max_size: 100
+  max_size: 100 # [!code ++]
   # 最多保留多少个旧日志文件
-  max_backups: 7
+  max_backups: 7 # [!code ++]
   # 日志文件最多保留多少天
-  max_age: 30
+  max_age: 30 # [!code ++]
   # 是否压缩旧日志文件
-  compress: false
+  compress: false # [!code ++]
 ```
 
 字段含义：
@@ -130,7 +130,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	// Log 对应 config.yaml 中的 log 配置段。
-	Log      LogConfig      `mapstructure:"log"`
+	Log      LogConfig      `mapstructure:"log"` // [!code ++]
 }
 ```
 
@@ -139,19 +139,19 @@ type Config struct {
 ```go
 type LogConfig struct {
 	// Level 控制输出哪些级别的日志。
-	Level string `mapstructure:"level"`
+	Level string `mapstructure:"level"` // [!code ++]
 	// Format 控制日志格式，支持 console 和 json。
-	Format string `mapstructure:"format"`
+	Format string `mapstructure:"format"` // [!code ++]
 	// Filename 是日志文件路径。为空时只输出到控制台。
-	Filename string `mapstructure:"filename"`
+	Filename string `mapstructure:"filename"` // [!code ++]
 	// MaxSize 是单个日志文件最大大小，单位 MB。
-	MaxSize int `mapstructure:"max_size"`
+	MaxSize int `mapstructure:"max_size"` // [!code ++]
 	// MaxBackups 是最多保留的旧日志文件数量。
-	MaxBackups int `mapstructure:"max_backups"`
+	MaxBackups int `mapstructure:"max_backups"` // [!code ++]
 	// MaxAge 是日志文件最多保留天数。
-	MaxAge int `mapstructure:"max_age"`
+	MaxAge int `mapstructure:"max_age"` // [!code ++]
 	// Compress 控制是否压缩旧日志文件。
-	Compress bool `mapstructure:"compress"`
+	Compress bool `mapstructure:"compress"` // [!code ++]
 }
 ```
 
@@ -159,26 +159,26 @@ type LogConfig struct {
 
 ```go
 // 日志默认值和 config.yaml 保持一致，保证配置文件缺少字段时也能启动。
-v.SetDefault("log.level", "info")
-v.SetDefault("log.format", "console")
-v.SetDefault("log.filename", "logs/app.log")
-v.SetDefault("log.max_size", 100)
-v.SetDefault("log.max_backups", 7)
-v.SetDefault("log.max_age", 30)
-v.SetDefault("log.compress", false)
+v.SetDefault("log.level", "info") // [!code ++]
+v.SetDefault("log.format", "console") // [!code ++]
+v.SetDefault("log.filename", "logs/app.log") // [!code ++]
+v.SetDefault("log.max_size", 100) // [!code ++]
+v.SetDefault("log.max_backups", 7) // [!code ++]
+v.SetDefault("log.max_age", 30) // [!code ++]
+v.SetDefault("log.compress", false) // [!code ++]
 ```
 
 最后给 `bindEnvs` 增加环境变量绑定：
 
 ```go
 // 绑定环境变量后，可以用 EZ_LOG_LEVEL 这类变量覆盖配置文件。
-"log.level",
-"log.format",
-"log.filename",
-"log.max_size",
-"log.max_backups",
-"log.max_age",
-"log.compress",
+"log.level", // [!code ++]
+"log.format", // [!code ++]
+"log.filename", // [!code ++]
+"log.max_size", // [!code ++]
+"log.max_backups", // [!code ++]
+"log.max_age", // [!code ++]
+"log.compress", // [!code ++]
 ```
 
 这样后续可以用 `EZ_LOG_LEVEL=debug` 临时调整日志级别。
@@ -356,13 +356,13 @@ package main
 
 import (
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
-	stdlog "log"
+	stdlog "log" // [!code ++]
 
 	"ez-admin-gin/server/internal/config"
-	appLogger "ez-admin-gin/server/internal/logger"
+	appLogger "ez-admin-gin/server/internal/logger" // [!code ++]
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	"go.uber.org/zap" // [!code ++]
 )
 
 func main() {
@@ -373,18 +373,18 @@ func main() {
 	}
 
 	// 根据配置创建结构化日志对象。
-	log, err := appLogger.New(cfg.Log)
+	log, err := appLogger.New(cfg.Log) // [!code ++]
 	if err != nil {
-		stdlog.Fatalf("create logger: %v", err)
+		stdlog.Fatalf("create logger: %v", err) // [!code ++]
 	}
 	defer func() {
 		// 退出前刷新缓冲区，避免最后几条日志丢失。
-		_ = log.Sync()
+		_ = log.Sync() // [!code ++]
 	}()
 
 	// 使用 gin.New()，再手动挂载自定义中间件。
-	r := gin.New()
-	r.Use(appLogger.GinLogger(log), appLogger.GinRecovery(log))
+	r := gin.New() // [!code ++]
+	r.Use(appLogger.GinLogger(log), appLogger.GinRecovery(log)) // [!code ++]
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -394,7 +394,7 @@ func main() {
 	})
 
 	// 服务启动日志记录关键运行参数。
-	log.Info(
+	log.Info( // [!code ++]
 		"server started",
 		zap.String("addr", cfg.Server.Addr),
 		zap.String("env", cfg.App.Env),
@@ -402,7 +402,7 @@ func main() {
 
 	if err := r.Run(cfg.Server.Addr); err != nil {
 		// Fatal 会记录日志并退出进程。
-		log.Fatal("run server", zap.Error(err))
+		log.Fatal("run server", zap.Error(err)) // [!code ++]
 	}
 }
 ```

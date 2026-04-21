@@ -3,8 +3,10 @@ package main
 import (
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
 	stdlog "log"
+	"net/http"
 
 	"ez-admin-gin/server/internal/config"
+	"ez-admin-gin/server/internal/database"
 	appLogger "ez-admin-gin/server/internal/logger"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +14,7 @@ import (
 )
 
 func main() {
-	// 先读取配置，日志初始化也需要用到 cfg.Log。
+	// 先读取配置，日志和数据库初始化都依赖配置。
 	cfg, err := config.Load()
 	if err != nil {
 		stdlog.Fatalf("load config: %v", err)
@@ -24,8 +26,18 @@ func main() {
 		stdlog.Fatalf("create logger: %v", err)
 	}
 	defer func() {
-		// 退出前刷新缓冲区，避免最后几条日志丢失。
 		_ = log.Sync()
+	}()
+
+	// 启动时连接数据库；连接失败就直接终止服务。
+	db, err := database.New(cfg.Database, log)
+	if err != nil {
+		log.Fatal("connect database", zap.Error(err))
+	}
+	defer func() {
+		if err := database.Close(db); err != nil {
+			log.Error("close database", zap.Error(err))
+		}
 	}()
 
 	// 使用 gin.New()，再手动挂载自定义中间件。
@@ -33,9 +45,20 @@ func main() {
 	r.Use(appLogger.GinLogger(log), appLogger.GinRecovery(log))
 
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-			"env":    cfg.App.Env,
+		if err := database.Ping(db); err != nil {
+			log.Error("database health check failed", zap.Error(err))
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":   "error",
+				"env":      cfg.App.Env,
+				"database": "unavailable",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":   "ok",
+			"env":      cfg.App.Env,
+			"database": "ok",
 		})
 	})
 
@@ -47,7 +70,6 @@ func main() {
 	)
 
 	if err := r.Run(cfg.Server.Addr); err != nil {
-		// Fatal 会记录日志并退出进程。
 		log.Fatal("run server", zap.Error(err))
 	}
 }

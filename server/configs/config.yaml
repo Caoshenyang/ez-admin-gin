@@ -15,6 +15,12 @@ database:
   user: ez_admin
   password: ez_admin_123456
   name: ez_admin
+  # 空闲连接数，适合本地开发和小型后台的默认值。
+  max_idle_conns: 10
+  # 最大打开连接数，避免请求高峰时无限制创建连接。
+  max_open_conns: 50
+  # 连接最长复用时间，单位秒。
+  conn_max_lifetime: 3600
 
 redis:
   # Redis 配置和 deploy/compose.local.yml 保持一致。
