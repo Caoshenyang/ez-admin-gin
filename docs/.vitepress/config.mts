@@ -121,10 +121,9 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-1/' },
-            { text: '仓库创建与 Git 初始化', link: '/tutorial/chapter-1/repository-and-sequence' },
-            { text: '单仓库目录结构', link: '/tutorial/chapter-1/directory-structure' },
+            { text: '项目仓库初始化', link: '/tutorial/chapter-1/project-repository-init' },
             { text: 'Go 后端项目初始化', link: '/tutorial/chapter-1/backend-init' },
-            { text: 'Vue 前端项目初始化', link: '/tutorial/chapter-1/frontend-init' },
+            { text: 'Vue 管理台项目初始化', link: '/tutorial/chapter-1/admin-init' },
             { text: 'VitePress 文档项目初始化', link: '/tutorial/chapter-1/docs-init' },
             { text: 'Docker Compose 基础环境', link: '/tutorial/chapter-1/docker-compose-env' }
           ]

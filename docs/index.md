@@ -24,5 +24,5 @@ features:
   - title: 手动验证优先
     details: 文档会尽量写清前置条件、操作步骤、期望结果和失败排查，方便你逐步执行和校验。
   - title: 面向真实项目
-    details: 按 server、web、docs、deploy、scripts 的单仓库结构推进，服务后续本地开发、测试和 Docker 部署。
+    details: 按 server、admin、docs、deploy、scripts 的单仓库结构推进，服务后续本地开发、测试和 Docker 部署。
 ---
