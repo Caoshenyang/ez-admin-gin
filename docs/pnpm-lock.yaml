@@ -14,6 +14,9 @@ importers:
       vitepress:
         specifier: 2.0.0-alpha.17
         version: 2.0.0-alpha.17(markdown-it-mathjax3@4.3.2)(postcss@8.5.10)
+      vue:
+        specifier: 3.5.32
+        version: 3.5.32
 
 packages:
 

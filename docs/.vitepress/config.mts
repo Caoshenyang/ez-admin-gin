@@ -212,6 +212,8 @@ export default defineConfig({
           text: '参考手册',
           items: [
             { text: '参考首页', link: '/reference/' },
+            { text: 'GORM 快速入门', link: '/reference/gorm-quick-start' },
+            { text: 'Casbin 快速入门', link: '/reference/casbin-quick-start' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' }
           ]

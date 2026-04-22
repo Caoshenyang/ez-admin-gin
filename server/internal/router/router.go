@@ -40,6 +40,7 @@ func New(opts Options) *gin.Engine {
 func registerAuthRoutes(r *gin.Engine, opts Options) {
 	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token)
 	me := authHandler.NewMeHandler(opts.Log)
+	menus := authHandler.NewMenuHandler(opts.DB, opts.Log)
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
@@ -48,6 +49,8 @@ func registerAuthRoutes(r *gin.Engine, opts Options) {
 	protectedAuth := auth.Group("")
 	protectedAuth.Use(middleware.Auth(opts.Token, opts.Log))
 	protectedAuth.GET("/me", me.Me)
+	protectedAuth.GET("/menus", menus.Menus)
+
 }
 
 // registerSystemRoutes 注册系统级路由。
