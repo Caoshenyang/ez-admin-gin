@@ -12,16 +12,60 @@ import (
 )
 
 const (
-	defaultAdminUsername    = "admin"
-	defaultAdminPassword    = "EzAdmin@123456"
-	defaultAdminRoleCode    = "super_admin"
-	defaultAdminRoleName    = "超级管理员"
-	defaultPermissionPath   = "/api/v1/system/health"
-	defaultPermissionMethod = "GET"
-	defaultSystemMenuCode   = "system"
-	defaultHealthMenuCode   = "system:health"
-	defaultHealthViewCode   = "system:health:view"
+	defaultAdminUsername      = "admin"
+	defaultAdminPassword      = "EzAdmin@123456"
+	defaultAdminRoleCode      = "super_admin"
+	defaultAdminRoleName      = "超级管理员"
+	defaultPermissionPath     = "/api/v1/system/health"
+	defaultPermissionMethod   = "GET"
+	defaultSystemMenuCode     = "system"
+	defaultHealthMenuCode     = "system:health"
+	defaultHealthViewCode     = "system:health:view"
+	defaultUserMenuCode       = "system:user"
+	defaultUserListCode       = "system:user:list"
+	defaultUserCreateCode     = "system:user:create"
+	defaultUserUpdateCode     = "system:user:update"
+	defaultUserStatusCode     = "system:user:status"
+	defaultUserAssignRoleCode = "system:user:assign-role"
+	defaultRoleMenuCode       = "system:role"
+	defaultRoleListCode       = "system:role:list"
+	defaultRoleCreateCode     = "system:role:create"
+	defaultRoleUpdateCode     = "system:role:update"
+	defaultRoleStatusCode     = "system:role:status"
+	defaultRolePermissionCode = "system:role:permission"
+	defaultRoleMenuAssignCode = "system:role:menu"
+	defaultMenuManageCode     = "system:menu"
+	defaultMenuListCode       = "system:menu:list"
+	defaultMenuCreateCode     = "system:menu:create"
+	defaultMenuUpdateCode     = "system:menu:update"
+	defaultMenuStatusCode     = "system:menu:status"
+	defaultMenuDeleteCode     = "system:menu:delete"
 )
+
+type defaultPermissionSeed struct {
+	Path   string
+	Method string
+}
+
+var defaultPermissionSeeds = []defaultPermissionSeed{
+	{Path: "/api/v1/system/health", Method: "GET"},
+	{Path: "/api/v1/system/users", Method: "GET"},
+	{Path: "/api/v1/system/users", Method: "POST"},
+	{Path: "/api/v1/system/users/:id", Method: "PUT"},
+	{Path: "/api/v1/system/users/:id/status", Method: "PATCH"},
+	{Path: "/api/v1/system/users/:id/roles", Method: "PUT"},
+	{Path: "/api/v1/system/roles", Method: "GET"},
+	{Path: "/api/v1/system/roles", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id", Method: "PUT"},
+	{Path: "/api/v1/system/roles/:id/status", Method: "PATCH"},
+	{Path: "/api/v1/system/roles/:id/permissions", Method: "PUT"},
+	{Path: "/api/v1/system/roles/:id/menus", Method: "PUT"},
+	{Path: "/api/v1/system/menus", Method: "GET"},
+	{Path: "/api/v1/system/menus", Method: "POST"},
+	{Path: "/api/v1/system/menus/:id", Method: "PUT"},
+	{Path: "/api/v1/system/menus/:id/status", Method: "PATCH"},
+	{Path: "/api/v1/system/menus/:id", Method: "DELETE"},
+}
 
 // Run 执行服务启动时必须完成的初始化动作。
 func Run(db *gorm.DB, log *zap.Logger) error {
@@ -40,8 +84,8 @@ func Run(db *gorm.DB, log *zap.Logger) error {
 		return fmt.Errorf("seed default menus: %w", err)
 	}
 
-	if err := seedDefaultPermission(db, log); err != nil {
-		return fmt.Errorf("seed default permission: %w", err)
+	if err := seedDefaultPermissions(db, log); err != nil {
+		return fmt.Errorf("seed default permissions: %w", err)
 	}
 
 	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
@@ -101,7 +145,108 @@ func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
 		return nil, err
 	}
 
-	return []model.Menu{*systemMenu, *healthMenu, *healthViewButton}, nil
+	userMenu, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultUserMenuCode,
+		Title:     "用户管理",
+		Path:      "/system/users",
+		Component: "system/UserView",
+		Icon:      "user",
+		Sort:      20,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	userButtons := []model.Menu{
+		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserListCode, Title: "查看用户", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserCreateCode, Title: "创建用户", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserUpdateCode, Title: "编辑用户", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserStatusCode, Title: "修改用户状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserAssignRoleCode, Title: "分配用户角色", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus := []model.Menu{*systemMenu, *healthMenu, *healthViewButton, *userMenu}
+	for _, button := range userButtons {
+		createdButton, err := seedMenu(db, button, log)
+		if err != nil {
+			return nil, err
+		}
+		menus = append(menus, *createdButton)
+	}
+
+	roleMenu, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultRoleMenuCode,
+		Title:     "角色管理",
+		Path:      "/system/roles",
+		Component: "system/RoleView",
+		Icon:      "team",
+		Sort:      30,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	roleButtons := []model.Menu{
+		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleListCode, Title: "查看角色", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleCreateCode, Title: "创建角色", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleUpdateCode, Title: "编辑角色", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleStatusCode, Title: "修改角色状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRolePermissionCode, Title: "分配接口权限", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleMenuAssignCode, Title: "分配菜单权限", Sort: 60, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus = append(menus, *roleMenu)
+	for _, button := range roleButtons {
+		createdButton, err := seedMenu(db, button, log)
+		if err != nil {
+			return nil, err
+		}
+		menus = append(menus, *createdButton)
+	}
+
+	menuManage, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultMenuManageCode,
+		Title:     "菜单管理",
+		Path:      "/system/menus",
+		Component: "system/MenuView",
+		Icon:      "menu",
+		Sort:      40,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	menuButtons := []model.Menu{
+		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuListCode, Title: "查看菜单", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuCreateCode, Title: "创建菜单", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuUpdateCode, Title: "编辑菜单", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuStatusCode, Title: "修改菜单状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuDeleteCode, Title: "删除菜单", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus = append(menus, *menuManage)
+	for _, button := range menuButtons {
+		createdButton, err := seedMenu(db, button, log)
+		if err != nil {
+			return nil, err
+		}
+		menus = append(menus, *createdButton)
+	}
+
+	return menus, nil
+
 }
 
 // seedMenu 按菜单编码创建默认菜单。
@@ -155,40 +300,42 @@ func seedRoleMenus(db *gorm.DB, roleID uint, menus []model.Menu, log *zap.Logger
 	return nil
 }
 
-// seedDefaultPermission 初始化超级管理员的默认接口权限。
-func seedDefaultPermission(db *gorm.DB, log *zap.Logger) error {
-	var rule model.CasbinRule
-	err := db.Where(
-		"ptype = ? AND v0 = ? AND v1 = ? AND v2 = ?",
-		"p",
-		defaultAdminRoleCode,
-		defaultPermissionPath,
-		defaultPermissionMethod,
-	).First(&rule).Error
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
+// seedDefaultPermissions 初始化超级管理员的默认接口权限。
+func seedDefaultPermissions(db *gorm.DB, log *zap.Logger) error {
+	for _, permission := range defaultPermissionSeeds {
+		var rule model.CasbinRule
+		err := db.Where(
+			"ptype = ? AND v0 = ? AND v1 = ? AND v2 = ?",
+			"p",
+			defaultAdminRoleCode,
+			permission.Path,
+			permission.Method,
+		).First(&rule).Error
+		if err == nil {
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
 
-	rule = model.CasbinRule{
-		Ptype: "p",
-		V0:    defaultAdminRoleCode,
-		V1:    defaultPermissionPath,
-		V2:    defaultPermissionMethod,
-	}
+		rule = model.CasbinRule{
+			Ptype: "p",
+			V0:    defaultAdminRoleCode,
+			V1:    permission.Path,
+			V2:    permission.Method,
+		}
 
-	if err := db.Create(&rule).Error; err != nil {
-		return err
-	}
+		if err := db.Create(&rule).Error; err != nil {
+			return err
+		}
 
-	log.Info(
-		"default permission created",
-		zap.String("role_code", defaultAdminRoleCode),
-		zap.String("path", defaultPermissionPath),
-		zap.String("method", defaultPermissionMethod),
-	)
+		log.Info(
+			"default permission created",
+			zap.String("role_code", defaultAdminRoleCode),
+			zap.String("path", permission.Path),
+			zap.String("method", permission.Method),
+		)
+	}
 
 	return nil
 }

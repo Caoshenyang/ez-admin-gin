@@ -56,6 +56,9 @@ func registerAuthRoutes(r *gin.Engine, opts Options) {
 // registerSystemRoutes 注册系统级路由。
 func registerSystemRoutes(r *gin.Engine, opts Options) {
 	health := systemHandler.NewHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
+	users := systemHandler.NewUserHandler(opts.DB, opts.Log)
+	roles := systemHandler.NewRoleHandler(opts.DB, opts.Log)
+	menus := systemHandler.NewMenuAdminHandler(opts.DB, opts.Log)
 
 	// /health 通常给部署探针和本地快速验证使用。
 	r.GET("/health", health.Check)
@@ -66,4 +69,20 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.Use(middleware.Auth(opts.Token, opts.Log))
 	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
 	system.GET("/health", health.Check)
+	system.GET("/users", users.List)
+	system.POST("/users", users.Create)
+	system.PUT("/users/:id", users.Update)
+	system.PATCH("/users/:id/status", users.UpdateStatus)
+	system.PUT("/users/:id/roles", users.UpdateRoles)
+	system.GET("/roles", roles.List)
+	system.POST("/roles", roles.Create)
+	system.PUT("/roles/:id", roles.Update)
+	system.PATCH("/roles/:id/status", roles.UpdateStatus)
+	system.PUT("/roles/:id/permissions", roles.UpdatePermissions)
+	system.PUT("/roles/:id/menus", roles.UpdateMenus)
+	system.GET("/menus", menus.Tree)
+	system.POST("/menus", menus.Create)
+	system.PUT("/menus/:id", menus.Update)
+	system.PATCH("/menus/:id/status", menus.UpdateStatus)
+	system.DELETE("/menus/:id", menus.Delete)
 }
