@@ -59,6 +59,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	users := systemHandler.NewUserHandler(opts.DB, opts.Log)
 	roles := systemHandler.NewRoleHandler(opts.DB, opts.Log)
 	menus := systemHandler.NewMenuAdminHandler(opts.DB, opts.Log)
+	configs := systemHandler.NewSystemConfigHandler(opts.DB, opts.Redis, opts.Log)
 
 	// /health 通常给部署探针和本地快速验证使用。
 	r.GET("/health", health.Check)
@@ -85,4 +86,9 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.PUT("/menus/:id", menus.Update)
 	system.PATCH("/menus/:id/status", menus.UpdateStatus)
 	system.DELETE("/menus/:id", menus.Delete)
+	system.GET("/configs", configs.List)
+	system.POST("/configs", configs.Create)
+	system.PUT("/configs/:id", configs.Update)
+	system.PATCH("/configs/:id/status", configs.UpdateStatus)
+	system.GET("/configs/value/:key", configs.Value)
 }
