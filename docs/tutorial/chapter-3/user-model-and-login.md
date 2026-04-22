@@ -120,7 +120,7 @@ func (User) TableName() string {
 
 | 字段 | 说明 |
 | --- | --- |
-| `ID` | 用户记录主键 |
+| `ID` | 用户记录主键，由数据库自增生成 |
 | `Username` | 登录用户名，设置唯一索引 |
 | `PasswordHash` | 密码哈希，不通过 JSON 返回 |
 | `Nickname` | 管理台展示名称 |
@@ -130,6 +130,12 @@ func (User) TableName() string {
 | `DeletedAt` | 逻辑删除时间，删除后默认不会被普通查询查出 |
 
 完整建表语句可以看参考手册：[数据库建表语句：`sys_user`](../../reference/database-ddl#sys-user)。
+
+::: details 主键是怎么生成的
+本项目默认使用数据库自增 BIGINT 主键。创建用户时不需要在代码里给 `ID` 赋值，数据库会自动生成，GORM 会在 `Create` 成功后把生成的主键回填到结构体中。
+
+`username` 这类业务标识单独做唯一字段，不和主键混用。
+:::
 
 ::: details 为什么表名叫 `sys_user`
 后台底座里通常会有用户、角色、菜单、日志等系统表。这里先用 `sys_` 前缀把系统表区分出来，后续业务表可以使用自己的模块前缀。

@@ -102,7 +102,7 @@ func (Role) TableName() string {
 
 | 字段 | 说明 |
 | --- | --- |
-| `ID` | 角色记录主键 |
+| `ID` | 角色记录主键，由数据库自增生成 |
 | `Code` | 角色编码，例如 `super_admin` |
 | `Name` | 角色名称，例如 `超级管理员` |
 | `Sort` | 排序值，数字越小越靠前 |
@@ -116,6 +116,12 @@ func (Role) TableName() string {
 `name` 是展示给人看的，后续可能改名；`code` 是给程序和权限策略识别用的，应该更稳定。
 
 例如 `超级管理员` 这个名称可以改成 `系统管理员`，但 `super_admin` 这个编码不建议随意变化。
+:::
+
+::: details 主键和角色编码分别解决什么问题
+`ID` 是数据库内部记录身份，由数据库自增生成；`code` 是业务语义标识，用来表达 `super_admin` 这类稳定角色编码。
+
+不要把 `code` 当主键，也不要把自增 `id` 当成业务含义。
 :::
 
 ## 🛠️ 创建用户角色关系模型
@@ -146,7 +152,7 @@ func (UserRole) TableName() string {
 
 | 字段 | 说明 |
 | --- | --- |
-| `ID` | 关系记录主键 |
+| `ID` | 关系记录主键，由数据库自增生成 |
 | `UserID` | 用户 ID，对应 `sys_user.id` |
 | `RoleID` | 角色 ID，对应 `sys_role.id` |
 | `CreatedAt` | 绑定时间 |
