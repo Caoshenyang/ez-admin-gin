@@ -3,12 +3,13 @@ package main
 import (
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
 	stdlog "log"
-	"net/http"
 
+	"ez-admin-gin/server/internal/apperror"
 	"ez-admin-gin/server/internal/config"
 	"ez-admin-gin/server/internal/database"
 	appLogger "ez-admin-gin/server/internal/logger"
 	appRedis "ez-admin-gin/server/internal/redis"
+	"ez-admin-gin/server/internal/response"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -59,28 +60,17 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		if err := database.Ping(db); err != nil {
 			log.Error("database health check failed", zap.Error(err))
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status":   "error",
-				"env":      cfg.App.Env,
-				"database": "unavailable",
-				"redis":    "unknown",
-			})
+			response.Error(c, apperror.ServiceUnavailable("数据库不可用", err), log)
 			return
 		}
 
 		if err := appRedis.Ping(redisClient); err != nil {
 			log.Error("redis health check failed", zap.Error(err))
-			c.JSON(http.StatusServiceUnavailable, gin.H{
-				"status":   "error",
-				"env":      cfg.App.Env,
-				"database": "ok",
-				"redis":    "unavailable",
-			})
+			response.Error(c, apperror.ServiceUnavailable("Redis 不可用", err), log)
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"status":   "ok",
+		response.Success(c, gin.H{
 			"env":      cfg.App.Env,
 			"database": "ok",
 			"redis":    "ok",
