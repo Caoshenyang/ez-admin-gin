@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ez-admin-gin/server/internal/bootstrap"
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
 	stdlog "log"
 
@@ -39,6 +40,11 @@ func main() {
 			log.Error("close database", zap.Error(err))
 		}
 	}()
+
+	// 数据库连接成功后，创建基础表并准备默认管理员。
+	if err := bootstrap.Run(db, log); err != nil {
+		log.Fatal("bootstrap application", zap.Error(err))
+	}
 
 	// 启动时连接 Redis；连接失败就直接终止服务。
 	redisClient, err := appRedis.New(cfg.Redis, log)
