@@ -5,6 +5,7 @@ import (
 	authHandler "ez-admin-gin/server/internal/handler/auth"
 	systemHandler "ez-admin-gin/server/internal/handler/system"
 	appLogger "ez-admin-gin/server/internal/logger"
+	"ez-admin-gin/server/internal/middleware"
 	"ez-admin-gin/server/internal/token"
 
 	"github.com/gin-gonic/gin"
@@ -36,10 +37,15 @@ func New(opts Options) *gin.Engine {
 // registerAuthRoutes 注册认证相关路由。
 func registerAuthRoutes(r *gin.Engine, opts Options) {
 	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token)
+	me := authHandler.NewMeHandler(opts.Log)
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
 	auth.POST("/login", login.Login)
+
+	protectedAuth := auth.Group("")
+	protectedAuth.Use(middleware.Auth(opts.Token, opts.Log))
+	protectedAuth.GET("/me", me.Me)
 }
 
 // registerSystemRoutes 注册系统级路由。
