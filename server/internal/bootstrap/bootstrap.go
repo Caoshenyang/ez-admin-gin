@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	defaultAdminUsername = "admin"
-	defaultAdminPassword = "EzAdmin@123456"
-	defaultAdminRoleCode = "super_admin"
-	defaultAdminRoleName = "超级管理员"
+	defaultAdminUsername    = "admin"
+	defaultAdminPassword    = "EzAdmin@123456"
+	defaultAdminRoleCode    = "super_admin"
+	defaultAdminRoleName    = "超级管理员"
+	defaultPermissionPath   = "/api/v1/system/health"
+	defaultPermissionMethod = "GET"
 )
 
 // Run 执行服务启动时必须完成的初始化动作。
@@ -30,9 +32,51 @@ func Run(db *gorm.DB, log *zap.Logger) error {
 		return fmt.Errorf("seed super admin role: %w", err)
 	}
 
+	if err := seedDefaultPermission(db, log); err != nil {
+		return fmt.Errorf("seed default permission: %w", err)
+	}
+
 	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
 		return fmt.Errorf("seed admin role: %w", err)
 	}
+
+	return nil
+}
+
+// seedDefaultPermission 初始化超级管理员的默认接口权限。
+func seedDefaultPermission(db *gorm.DB, log *zap.Logger) error {
+	var rule model.CasbinRule
+	err := db.Where(
+		"ptype = ? AND v0 = ? AND v1 = ? AND v2 = ?",
+		"p",
+		defaultAdminRoleCode,
+		defaultPermissionPath,
+		defaultPermissionMethod,
+	).First(&rule).Error
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	rule = model.CasbinRule{
+		Ptype: "p",
+		V0:    defaultAdminRoleCode,
+		V1:    defaultPermissionPath,
+		V2:    defaultPermissionMethod,
+	}
+
+	if err := db.Create(&rule).Error; err != nil {
+		return err
+	}
+
+	log.Info(
+		"default permission created",
+		zap.String("role_code", defaultAdminRoleCode),
+		zap.String("path", defaultPermissionPath),
+		zap.String("method", defaultPermissionMethod),
+	)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"ez-admin-gin/server/internal/bootstrap"
+	"ez-admin-gin/server/internal/permission"
 
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
 	stdlog "log"
@@ -65,13 +66,20 @@ func main() {
 		log.Fatal("create token manager", zap.Error(err))
 	}
 
+	// 权限判断器负责根据角色策略判断接口访问权限。
+	permissionEnforcer, err := permission.NewEnforcer(db, "configs/rbac_model.conf")
+	if err != nil {
+		log.Fatal("create permission enforcer", zap.Error(err))
+	}
+
 	// 路由注册交给 internal/router，main.go 只保留启动流程。
 	r := router.New(router.Options{
-		Config: cfg,
-		Log:    log,
-		DB:     db,
-		Redis:  redisClient,
-		Token:  tokenManager,
+		Config:     cfg,
+		Log:        log,
+		DB:         db,
+		Redis:      redisClient,
+		Token:      tokenManager,
+		Permission: permissionEnforcer,
 	})
 
 	// 服务启动日志记录关键运行参数。

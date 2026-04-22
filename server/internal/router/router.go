@@ -6,6 +6,7 @@ import (
 	systemHandler "ez-admin-gin/server/internal/handler/system"
 	appLogger "ez-admin-gin/server/internal/logger"
 	"ez-admin-gin/server/internal/middleware"
+	"ez-admin-gin/server/internal/permission"
 	"ez-admin-gin/server/internal/token"
 
 	"github.com/gin-gonic/gin"
@@ -16,11 +17,12 @@ import (
 
 // Options 汇总路由层需要依赖的对象。
 type Options struct {
-	Config *config.Config
-	Log    *zap.Logger
-	DB     *gorm.DB
-	Redis  *goredis.Client
-	Token  *token.Manager
+	Config     *config.Config
+	Log        *zap.Logger
+	DB         *gorm.DB
+	Redis      *goredis.Client
+	Token      *token.Manager
+	Permission *permission.Enforcer
 }
 
 // New 创建路由引擎，并统一注册中间件和路由分组。
@@ -58,5 +60,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	// /api/v1/system/health 放在接口版本分组下，方便统一管理后台接口。
 	api := r.Group("/api/v1")
 	system := api.Group("/system")
+	system.Use(middleware.Auth(opts.Token, opts.Log))
+	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
 	system.GET("/health", health.Check)
 }
