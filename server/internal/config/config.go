@@ -48,6 +48,12 @@ type RedisConfig struct {
 	Port     int    `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 	DB       int    `mapstructure:"db"`
+	// MaxRetries 控制 Redis 命令失败时的最大重试次数。
+	MaxRetries int `mapstructure:"max_retries"`
+	// MinIdleConns 控制最少保留多少个空闲连接。
+	MinIdleConns int `mapstructure:"min_idle_conns"`
+	// PoolSize 控制连接池大小。
+	PoolSize int `mapstructure:"pool_size"`
 }
 
 // LogConfig 保存日志级别、格式和文件切割配置。
@@ -123,6 +129,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("database.max_idle_conns", 10)
 	v.SetDefault("database.max_open_conns", 50)
 	v.SetDefault("database.conn_max_lifetime", 3600)
+	// Redis 连接池默认值适合本地开发和小型后台起步。
+	v.SetDefault("redis.max_retries", 3)
+	v.SetDefault("redis.min_idle_conns", 5)
+	v.SetDefault("redis.pool_size", 10)
 }
 
 // bindEnvs 让环境变量能稳定参与结构体解析。
@@ -151,6 +161,10 @@ func bindEnvs(v *viper.Viper) {
 		"database.max_idle_conns",
 		"database.max_open_conns",
 		"database.conn_max_lifetime",
+		// 允许用 EZ_REDIS_POOL_SIZE 这类环境变量覆盖 Redis 连接池配置。
+		"redis.max_retries",
+		"redis.min_idle_conns",
+		"redis.pool_size",
 	}
 
 	for _, key := range keys {

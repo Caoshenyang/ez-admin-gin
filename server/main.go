@@ -8,13 +8,14 @@ import (
 	"ez-admin-gin/server/internal/config"
 	"ez-admin-gin/server/internal/database"
 	appLogger "ez-admin-gin/server/internal/logger"
+	appRedis "ez-admin-gin/server/internal/redis"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 func main() {
-	// 先读取配置，日志和数据库初始化都依赖配置。
+	// 先读取配置，日志、数据库、Redis 初始化都依赖配置。
 	cfg, err := config.Load()
 	if err != nil {
 		stdlog.Fatalf("load config: %v", err)
@@ -40,6 +41,17 @@ func main() {
 		}
 	}()
 
+	// 启动时连接 Redis；连接失败就直接终止服务。
+	redisClient, err := appRedis.New(cfg.Redis, log)
+	if err != nil {
+		log.Fatal("connect redis", zap.Error(err))
+	}
+	defer func() {
+		if err := appRedis.Close(redisClient); err != nil {
+			log.Error("close redis", zap.Error(err))
+		}
+	}()
+
 	// 使用 gin.New()，再手动挂载自定义中间件。
 	r := gin.New()
 	r.Use(appLogger.GinLogger(log), appLogger.GinRecovery(log))
@@ -51,6 +63,18 @@ func main() {
 				"status":   "error",
 				"env":      cfg.App.Env,
 				"database": "unavailable",
+				"redis":    "unknown",
+			})
+			return
+		}
+
+		if err := appRedis.Ping(redisClient); err != nil {
+			log.Error("redis health check failed", zap.Error(err))
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"status":   "error",
+				"env":      cfg.App.Env,
+				"database": "ok",
+				"redis":    "unavailable",
 			})
 			return
 		}
@@ -59,6 +83,7 @@ func main() {
 			"status":   "ok",
 			"env":      cfg.App.Env,
 			"database": "ok",
+			"redis":    "ok",
 		})
 	})
 

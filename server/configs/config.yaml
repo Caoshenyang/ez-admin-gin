@@ -28,6 +28,12 @@ redis:
   port: 6379
   password: ""
   db: 0
+  # 最大重试次数，临时网络抖动时会自动重试。
+  max_retries: 3
+  # 最小空闲连接数，避免每次请求都重新建连。
+  min_idle_conns: 5
+  # 连接池大小，限制最多保留多少个 Redis 连接。
+  pool_size: 10
 
 log:
   # 当前日志级别，开发阶段通常使用 info。
