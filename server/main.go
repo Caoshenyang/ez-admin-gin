@@ -4,14 +4,12 @@ import (
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
 	stdlog "log"
 
-	"ez-admin-gin/server/internal/apperror"
 	"ez-admin-gin/server/internal/config"
 	"ez-admin-gin/server/internal/database"
 	appLogger "ez-admin-gin/server/internal/logger"
 	appRedis "ez-admin-gin/server/internal/redis"
-	"ez-admin-gin/server/internal/response"
+	"ez-admin-gin/server/internal/router"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -53,28 +51,12 @@ func main() {
 		}
 	}()
 
-	// 使用 gin.New()，再手动挂载自定义中间件。
-	r := gin.New()
-	r.Use(appLogger.GinLogger(log), appLogger.GinRecovery(log))
-
-	r.GET("/health", func(c *gin.Context) {
-		if err := database.Ping(db); err != nil {
-			log.Error("database health check failed", zap.Error(err))
-			response.Error(c, apperror.ServiceUnavailable("数据库不可用", err), log)
-			return
-		}
-
-		if err := appRedis.Ping(redisClient); err != nil {
-			log.Error("redis health check failed", zap.Error(err))
-			response.Error(c, apperror.ServiceUnavailable("Redis 不可用", err), log)
-			return
-		}
-
-		response.Success(c, gin.H{
-			"env":      cfg.App.Env,
-			"database": "ok",
-			"redis":    "ok",
-		})
+	// 路由注册交给 internal/router，main.go 只保留启动流程。
+	r := router.New(router.Options{
+		Config: cfg,
+		Log:    log,
+		DB:     db,
+		Redis:  redisClient,
 	})
 
 	// 服务启动日志记录关键运行参数。
