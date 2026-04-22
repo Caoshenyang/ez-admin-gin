@@ -2,6 +2,7 @@ package main
 
 import (
 	"ez-admin-gin/server/internal/bootstrap"
+
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
 	stdlog "log"
 
@@ -10,6 +11,7 @@ import (
 	appLogger "ez-admin-gin/server/internal/logger"
 	appRedis "ez-admin-gin/server/internal/redis"
 	"ez-admin-gin/server/internal/router"
+	"ez-admin-gin/server/internal/token"
 
 	"go.uber.org/zap"
 )
@@ -57,12 +59,19 @@ func main() {
 		}
 	}()
 
+	// Token 管理器负责签发和解析登录令牌。
+	tokenManager, err := token.NewManager(cfg.Auth)
+	if err != nil {
+		log.Fatal("create token manager", zap.Error(err))
+	}
+
 	// 路由注册交给 internal/router，main.go 只保留启动流程。
 	r := router.New(router.Options{
 		Config: cfg,
 		Log:    log,
 		DB:     db,
 		Redis:  redisClient,
+		Token:  tokenManager,
 	})
 
 	// 服务启动日志记录关键运行参数。

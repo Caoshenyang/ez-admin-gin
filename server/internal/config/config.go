@@ -13,6 +13,7 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
+	Auth     AuthConfig     `mapstructure:"auth"`
 	Log      LogConfig      `mapstructure:"log"`
 }
 
@@ -54,6 +55,16 @@ type RedisConfig struct {
 	MinIdleConns int `mapstructure:"min_idle_conns"`
 	// PoolSize 控制连接池大小。
 	PoolSize int `mapstructure:"pool_size"`
+}
+
+// AuthConfig 保存认证相关配置。
+type AuthConfig struct {
+	// JWTSecret 是 access_token 的签名密钥。
+	JWTSecret string `mapstructure:"jwt_secret"`
+	// AccessTokenTTL 是 access_token 有效期，单位秒。
+	AccessTokenTTL int `mapstructure:"access_token_ttl"`
+	// Issuer 是 Token 签发方。
+	Issuer string `mapstructure:"issuer"`
 }
 
 // LogConfig 保存日志级别、格式和文件切割配置。
@@ -133,6 +144,9 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("redis.max_retries", 3)
 	v.SetDefault("redis.min_idle_conns", 5)
 	v.SetDefault("redis.pool_size", 10)
+	v.SetDefault("auth.jwt_secret", "ez-admin-dev-secret-change-me-please-32")
+	v.SetDefault("auth.access_token_ttl", 7200)
+	v.SetDefault("auth.issuer", "ez-admin")
 }
 
 // bindEnvs 让环境变量能稳定参与结构体解析。
@@ -165,6 +179,10 @@ func bindEnvs(v *viper.Viper) {
 		"redis.max_retries",
 		"redis.min_idle_conns",
 		"redis.pool_size",
+		// 允许用 EZ_AUTH_JWT_SECRET 覆盖本地开发密钥。
+		"auth.jwt_secret",
+		"auth.access_token_ttl",
+		"auth.issuer",
 	}
 
 	for _, key := range keys {

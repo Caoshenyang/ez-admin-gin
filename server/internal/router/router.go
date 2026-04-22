@@ -5,6 +5,7 @@ import (
 	authHandler "ez-admin-gin/server/internal/handler/auth"
 	systemHandler "ez-admin-gin/server/internal/handler/system"
 	appLogger "ez-admin-gin/server/internal/logger"
+	"ez-admin-gin/server/internal/token"
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"
@@ -18,6 +19,7 @@ type Options struct {
 	Log    *zap.Logger
 	DB     *gorm.DB
 	Redis  *goredis.Client
+	Token  *token.Manager
 }
 
 // New 创建路由引擎，并统一注册中间件和路由分组。
@@ -33,7 +35,7 @@ func New(opts Options) *gin.Engine {
 
 // registerAuthRoutes 注册认证相关路由。
 func registerAuthRoutes(r *gin.Engine, opts Options) {
-	login := authHandler.NewLoginHandler(opts.DB, opts.Log)
+	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token)
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")

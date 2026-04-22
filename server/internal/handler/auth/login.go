@@ -2,7 +2,9 @@ package auth
 
 import (
 	"errors"
+	"ez-admin-gin/server/internal/token"
 	"strings"
+	"time"
 
 	"ez-admin-gin/server/internal/apperror"
 	"ez-admin-gin/server/internal/model"
@@ -16,15 +18,17 @@ import (
 
 // LoginHandler 负责登录相关接口。
 type LoginHandler struct {
-	db  *gorm.DB
-	log *zap.Logger
+	db           *gorm.DB
+	log          *zap.Logger
+	tokenManager *token.Manager
 }
 
 // NewLoginHandler 创建登录 Handler。
-func NewLoginHandler(db *gorm.DB, log *zap.Logger) *LoginHandler {
+func NewLoginHandler(db *gorm.DB, log *zap.Logger, tokenManager *token.Manager) *LoginHandler {
 	return &LoginHandler{
-		db:  db,
-		log: log,
+		db:           db,
+		log:          log,
+		tokenManager: tokenManager,
 	}
 }
 
@@ -34,9 +38,12 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	UserID   uint   `json:"user_id"`
-	Username string `json:"username"`
-	Nickname string `json:"nickname"`
+	UserID      uint   `json:"user_id"`
+	Username    string `json:"username"`
+	Nickname    string `json:"nickname"`
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	ExpiresAt   string `json:"expires_at"`
 }
 
 // Login 校验用户名和密码。
@@ -77,9 +84,18 @@ func (h *LoginHandler) Login(c *gin.Context) {
 		return
 	}
 
+	accessToken, expiresAt, err := h.tokenManager.GenerateAccessToken(user.ID, user.Username)
+	if err != nil {
+		response.Error(c, apperror.Internal("登录失败", err), h.log)
+		return
+	}
+
 	response.Success(c, loginResponse{
-		UserID:   user.ID,
-		Username: user.Username,
-		Nickname: user.Nickname,
+		UserID:      user.ID,
+		Username:    user.Username,
+		Nickname:    user.Nickname,
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+		ExpiresAt:   expiresAt.UTC().Format(time.RFC3339),
 	})
 }

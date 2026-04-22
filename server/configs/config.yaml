@@ -50,3 +50,12 @@ log:
   max_age: 30
   # 是否压缩旧日志文件。
   compress: false
+
+
+auth:
+  # JWT 签名密钥；本地开发可以先写在配置文件中，生产环境应改用环境变量覆盖。
+  jwt_secret: "ez-admin-dev-secret-change-me-please-32"
+  # access_token 有效期，单位秒。这里先设置为 2 小时。
+  access_token_ttl: 7200
+  # Token 签发方，后续解析时会校验。
+  issuer: "ez-admin"
