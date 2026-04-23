@@ -69,6 +69,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	configs := systemHandler.NewSystemConfigHandler(opts.DB, opts.Redis, opts.Log)
 	files := systemHandler.NewFileHandler(opts.DB, opts.Config.Upload, opts.Log)
 	operationLogs := systemHandler.NewOperationLogHandler(opts.DB, opts.Log)
+	loginLogs := systemHandler.NewLoginLogHandler(opts.DB, opts.Log)
 
 	// /health 通常给部署探针和本地快速验证使用。
 	r.GET("/health", health.Check)
@@ -105,5 +106,6 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/files", files.List)
 	system.POST("/files", files.Upload)
 	system.GET("/operation-logs", operationLogs.List)
+	system.GET("/login-logs", loginLogs.List)
 
 }

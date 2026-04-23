@@ -51,6 +51,8 @@ const (
 	defaultFileUploadCode       = "system:file:upload"
 	defaultOperationLogMenuCode = "system:operation-log"
 	defaultOperationLogListCode = "system:operation-log:list"
+	defaultLoginLogMenuCode     = "system:login-log"
+	defaultLoginLogListCode     = "system:login-log:list"
 )
 
 type defaultPermissionSeed struct {
@@ -84,6 +86,7 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/files", Method: "GET"},
 	{Path: "/api/v1/system/files", Method: "POST"},
 	{Path: "/api/v1/system/operation-logs", Method: "GET"},
+	{Path: "/api/v1/system/login-logs", Method: "GET"},
 }
 
 // Run 执行服务启动时必须完成的初始化动作。
@@ -349,6 +352,35 @@ func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
 
 	menus = append(menus, *operationLogMenu)
 	for _, button := range operationLogButtons {
+		createdButton, err := seedMenu(db, button, log)
+		if err != nil {
+			return nil, err
+		}
+		menus = append(menus, *createdButton)
+	}
+
+	loginLogMenu, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultLoginLogMenuCode,
+		Title:     "登录日志",
+		Path:      "/system/login-logs",
+		Component: "system/LoginLogView",
+		Icon:      "login",
+		Sort:      80,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	loginLogButtons := []model.Menu{
+		{ParentID: loginLogMenu.ID, Type: model.MenuTypeButton, Code: defaultLoginLogListCode, Title: "查看登录日志", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus = append(menus, *loginLogMenu)
+	for _, button := range loginLogButtons {
 		createdButton, err := seedMenu(db, button, log)
 		if err != nil {
 			return nil, err
