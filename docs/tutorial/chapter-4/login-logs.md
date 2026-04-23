@@ -59,16 +59,10 @@ server/
 
 ## 先创建数据表
 
-本项目不使用 `AutoMigrate` 建表，所以先执行 SQL。
+本节新增 `sys_login_log`，用于保存后台登录成功和失败记录。
 
-请打开参考手册中的这一节：
-
-- [数据库建表语句 - `sys_login_log`](../../reference/database-ddl#sys-login-log)
-
-根据你当前使用的数据库，执行 PostgreSQL 或 MySQL 对应的建表语句。执行完成后，再继续下面的代码步骤。
-
-::: details 为什么登录日志不做逻辑删除
-登录日志是安全审计记录，重点是保留登录行为痕迹。后续如果数据量变大，可以按时间归档或清理历史数据，而不是做普通业务意义上的逻辑删除。
+::: tip 建表 SQL
+字段说明、审计表不做逻辑删除的原因、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_login_log`](../../reference/database-ddl#sys-login-log)。
 :::
 
 ## 🛠️ 创建登录日志模型
@@ -427,24 +421,24 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List)
 	system.POST("/users", users.Create)
-	system.PUT("/users/:id", users.Update)
-	system.PATCH("/users/:id/status", users.UpdateStatus)
-	system.PUT("/users/:id/roles", users.UpdateRoles)
+	system.POST("/users/:id/update", users.Update)
+	system.POST("/users/:id/status", users.UpdateStatus)
+	system.POST("/users/:id/roles", users.UpdateRoles)
 	system.GET("/roles", roles.List)
 	system.POST("/roles", roles.Create)
-	system.PUT("/roles/:id", roles.Update)
-	system.PATCH("/roles/:id/status", roles.UpdateStatus)
-	system.PUT("/roles/:id/permissions", roles.UpdatePermissions)
-	system.PUT("/roles/:id/menus", roles.UpdateMenus)
+	system.POST("/roles/:id/update", roles.Update)
+	system.POST("/roles/:id/status", roles.UpdateStatus)
+	system.POST("/roles/:id/permissions", roles.UpdatePermissions)
+	system.POST("/roles/:id/menus", roles.UpdateMenus)
 	system.GET("/menus", menus.Tree)
 	system.POST("/menus", menus.Create)
-	system.PUT("/menus/:id", menus.Update)
-	system.PATCH("/menus/:id/status", menus.UpdateStatus)
-	system.DELETE("/menus/:id", menus.Delete)
+	system.POST("/menus/:id/update", menus.Update)
+	system.POST("/menus/:id/status", menus.UpdateStatus)
+	system.POST("/menus/:id/delete", menus.Delete)
 	system.GET("/configs", configs.List)
 	system.POST("/configs", configs.Create)
-	system.PUT("/configs/:id", configs.Update)
-	system.PATCH("/configs/:id/status", configs.UpdateStatus)
+	system.POST("/configs/:id/update", configs.Update)
+	system.POST("/configs/:id/status", configs.UpdateStatus)
 	system.GET("/configs/value/:key", configs.Value)
 	system.GET("/files", files.List)
 	system.POST("/files", files.Upload)
@@ -668,34 +662,5 @@ curl "http://localhost:8080/api/v1/system/login-logs?status=2&page=1&page_size=1
 ::: details 登录日志会不会被操作日志重复记录
 不会。操作日志中间件挂在 `/api/v1/system` 受保护分组上，登录接口是 `/api/v1/auth/login`，两者不在同一个路由分组。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录后执行：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-docs/reference/database-ddl.md
-server/internal/model/login_log.go
-server/internal/handler/auth/login.go
-server/internal/handler/system/login_logs.go
-server/internal/bootstrap/bootstrap.go
-server/internal/router/router.go
-```
 
 到这里，第四章的通用系统模块主线就补齐了。下一章开始进入前端管理台：[第 5 章：前端管理台](../chapter-5/)。

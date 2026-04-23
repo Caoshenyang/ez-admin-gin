@@ -149,6 +149,12 @@ CREATE TABLE `sys_user` (
 | `updated_at` | 更新时间 |
 | `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
 
+::: details 为什么角色要有 `code`
+`name` 是展示给人看的，后续可能会改名；`code` 是给程序和权限策略识别用的稳定标识。
+
+例如 `超级管理员` 这个名称可以改成 `系统管理员`，但 `super_admin` 这个编码不建议随意变化。`id` 负责数据库内部记录身份，`code` 负责业务语义，不要互相替代。
+:::
+
 ### 建表语句
 
 ::: code-group
@@ -226,6 +232,16 @@ CREATE TABLE `sys_role` (
 | `created_at` | 绑定时间 |
 | `updated_at` | 更新时间 |
 
+::: details 为什么关系表也保留 `id`
+虽然 `user_id + role_id` 已经能唯一表示一条绑定关系，但统一保留 `id` 会让后续管理接口、日志记录、排查数据更方便。真正防止重复绑定的是 `user_id + role_id` 联合唯一索引。
+:::
+
+::: details 为什么没有数据库外键和 `deleted_at`
+本项目不使用数据库外键约束，关系是否存在、是否允许绑定、是否允许删除，由业务逻辑维护。这样更适合软删除、批量导入、跨模块初始化和数据修复。
+
+用户和角色的绑定关系通常可以直接删除，不一定需要逻辑删除记录。后续如果要做授权历史审计，更适合单独设计授权日志。
+:::
+
 ### 建表语句
 
 ::: code-group
@@ -275,12 +291,6 @@ CREATE TABLE `sys_user_role` (
 
 :::
 
-::: details 为什么关系表没有数据库外键
-本项目不使用数据库级外键约束。`user_id`、`role_id` 只表达关系，是否允许绑定、解绑、删除，由 service 层逻辑判断。
-
-这种方式更适合逻辑删除、初始化脚本、批量导入和后续模块复用。
-:::
-
 <a id="sys-menu"></a>
 
 ## `sys_menu` 后台菜单和按钮表
@@ -305,6 +315,16 @@ CREATE TABLE `sys_user_role` (
 | `created_at` | 创建时间 |
 | `updated_at` | 更新时间 |
 | `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+::: details 为什么一张表同时存目录、菜单和按钮
+目录、菜单、按钮都属于“前端权限点”，都有父子层级、排序、状态和角色绑定关系。放在同一张表里，查询和授权会更直接，真正的区别由 `type` 字段表达。
+:::
+
+::: details 为什么 `code` 要唯一
+`code` 是稳定权限标识，例如 `system:health:view`。前端可以用它判断按钮是否可见，后端也能用它做权限配置和排查。
+
+和 `username`、`role.code` 一样，菜单编码默认不允许逻辑删除后复用，避免历史权限和审计记录产生歧义。
+:::
 
 ### 建表语句
 
@@ -410,6 +430,10 @@ CREATE TABLE `sys_menu` (
 | `created_at` | 绑定时间 |
 | `updated_at` | 更新时间 |
 
+::: details 为什么关系表没有 `deleted_at`
+角色和菜单绑定关系通常可以直接删除。后续如果要审计授权变化，更适合使用操作日志或单独的授权日志，而不是让关系表承担审计职责。
+:::
+
 ### 建表语句
 
 ::: code-group
@@ -489,6 +513,10 @@ CREATE TABLE `sys_role_menu` (
 | `created_at` | 创建时间 |
 | `updated_at` | 更新时间 |
 | `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+::: details 为什么保存 `sha256`
+`sha256` 可以用来判断文件内容是否相同。当前只记录，不做去重；后续如果要做秒传、重复文件检测或审计排查，就有基础数据可用。
+:::
 
 ### 建表语句
 
@@ -609,6 +637,14 @@ CREATE TABLE `sys_file` (
 | `error_message` | 错误摘要 |
 | `created_at` | 创建时间 |
 
+::: details 为什么操作日志不做逻辑删除
+操作日志属于审计事实记录，重点是“发生过什么”。这类数据通常不参与普通业务编辑，也不建议通过逻辑删除隐藏。后续如果日志量变大，可以按时间归档或清理历史数据。
+:::
+
+::: details 为什么同时保存 `path` 和 `route_path`
+`path` 是真实请求路径，例如 `/api/v1/system/users/2/status`；`route_path` 是 Gin 路由模板，例如 `/api/v1/system/users/:id/status`。前者适合排查具体数据，后者适合统计某类接口。
+:::
+
 ### 建表语句
 
 ::: code-group
@@ -728,6 +764,10 @@ CREATE TABLE `sys_operation_log` (
 | `user_agent` | 浏览器或客户端标识 |
 | `created_at` | 创建时间 |
 
+::: details 为什么登录日志不做逻辑删除
+登录日志是安全审计记录，重点是保留登录行为痕迹。后续如果数据量变大，可以按时间归档或清理历史数据，而不是做普通业务意义上的逻辑删除。
+:::
+
 ### 建表语句
 
 ::: code-group
@@ -819,6 +859,14 @@ CREATE TABLE `sys_login_log` (
 | `created_at` | 创建时间 |
 | `updated_at` | 更新时间 |
 | `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+::: details 为什么配置值统一按字符串保存
+后台底座第一版更关注“能稳定维护、能稳定读取”。把配置值统一存成字符串，后续业务模块在读取后自行转换成布尔值、整数或 JSON，会更容易落地，也更方便和 MySQL / PostgreSQL 保持一致。
+:::
+
+::: details 为什么字段叫 `config_key`
+`key` 在很多上下文里都太泛，放到 SQL 和代码里都不够直观。`config_key` 更明确，也更方便后续排查 SQL。
+:::
 
 ### 建表语句
 
@@ -921,6 +969,18 @@ p, super_admin, /api/v1/system/health, GET
 | `v3` | 预留字段 |
 | `v4` | 预留字段 |
 | `v5` | 预留字段 |
+
+::: details 为什么表名不是 `sys_casbin_rule`
+`casbin_rule` 是 Casbin GORM 适配器默认使用的表名。这里遵循适配器约定，减少额外配置。
+
+它属于权限策略存储表，不是普通后台业务实体，所以不强行加 `sys_` 前缀。
+:::
+
+::: details 为什么不用数据库外键关联 `sys_role`
+`casbin_rule.v0` 保存的是角色编码，不是角色表主键。它是权限策略文本，不是普通业务关系。
+
+角色编码是否存在、是否允许删除，由权限管理接口和业务逻辑校验。
+:::
 
 ### 建表语句
 

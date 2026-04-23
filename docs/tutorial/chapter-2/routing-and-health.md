@@ -416,32 +416,4 @@ system.GET("/health", health.Check)
 不是。`system` 只放系统级接口。后续用户、角色、菜单会按模块继续拆目录，避免所有 Handler 挤在一起。
 :::
 
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/handler/system/health.go
-server/internal/router/router.go
-server/main.go
-```
-
 至此，第二章的后端基础设施已经有了清晰入口。下一章开始进入认证与权限。

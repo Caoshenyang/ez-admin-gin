@@ -104,6 +104,14 @@ go get github.com/casbin/gorm-adapter/v3@latest
 `gorm-adapter` 默认会尝试自动建表。本节会在代码中关闭它的自动迁移能力，表结构仍然以参考手册中的 SQL 为准。
 :::
 
+## 先创建数据表
+
+本节新增 `casbin_rule`，用于保存 Casbin 接口权限策略。
+
+::: tip 建表 SQL
+字段说明、表名约定、唯一索引和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `casbin_rule`](../../reference/database-ddl#casbin-rule)。
+:::
+
 ## 🛠️ 创建 Casbin 模型文件
 
 创建 `server/configs/rbac_model.conf`。这是新增文件，直接完整写入即可。
@@ -160,30 +168,6 @@ type CasbinRule struct {
 func (CasbinRule) TableName() string {
 	return "casbin_rule"
 }
-```
-
-::: details 为什么表名不是 `sys_casbin_rule`
-`casbin_rule` 是 Casbin GORM 适配器默认使用的表名。这里遵循适配器约定，减少额外配置。
-
-它属于权限策略存储表，不是普通后台业务实体，所以不强行加 `sys_` 前缀。
-:::
-
-## 🛠️ 执行 Casbin 策略表 SQL
-
-本节的表结构通过 SQL 建表脚本准备。先打开参考手册中的 [`casbin_rule` 建表语句](../../reference/database-ddl#casbin-rule)，按当前数据库类型执行。
-
-当前本地环境使用 PostgreSQL，可以进入数据库客户端后粘贴 PostgreSQL 标签页中的 SQL：
-
-```bash
-# 在项目根目录执行，进入本地 PostgreSQL
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin
-```
-
-执行完成后，可以在 `psql` 中确认表已经创建：
-
-```sql
--- 查看 Casbin 策略表结构
-\d+ casbin_rule
 ```
 
 ## 🛠️ 创建 Enforcer
@@ -671,45 +655,5 @@ curl -X GET http://localhost:8080/api/v1/system/health \
 
 现在先重启服务让策略重新加载。后续做权限管理接口时，再补重新加载策略的代码路径。
 :::
-
-::: details 为什么不用数据库外键关联 `sys_role`
-`casbin_rule.v0` 保存的是角色编码，不是角色表主键。它是权限策略文本，不是普通业务关系。
-
-角色编码是否存在、是否允许删除，后续在权限管理接口里校验。
-:::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/configs/rbac_model.conf
-server/internal/bootstrap/bootstrap.go
-server/internal/middleware/permission.go
-server/internal/model/casbin_rule.go
-server/internal/permission/enforcer.go
-server/internal/router/router.go
-server/main.go
-server/go.mod
-server/go.sum
-```
 
 下一节会继续设计菜单和按钮权限：[菜单权限设计](./menu-permission)。

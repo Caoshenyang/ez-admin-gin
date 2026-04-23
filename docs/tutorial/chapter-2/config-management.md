@@ -369,34 +369,4 @@ Remove-Item Env:EZ_SERVER_ADDR
 ```
 :::
 
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录，查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录，查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到：
-
-```text
-server/configs/config.yaml
-server/internal/config/config.go
-server/main.go
-server/go.mod
-server/go.sum
-```
-
 下一节开始接入日志系统：[日志系统](./logging-system)。

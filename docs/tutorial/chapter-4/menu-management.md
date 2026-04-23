@@ -58,9 +58,9 @@ server/
 | --- | --- | --- |
 | `GET` | `/api/v1/system/menus` | 菜单树 |
 | `POST` | `/api/v1/system/menus` | 创建菜单 |
-| `PUT` | `/api/v1/system/menus/:id` | 编辑菜单 |
-| `PATCH` | `/api/v1/system/menus/:id/status` | 修改菜单状态 |
-| `DELETE` | `/api/v1/system/menus/:id` | 删除菜单 |
+| `POST` | `/api/v1/system/menus/:id/update` | 编辑菜单 |
+| `POST` | `/api/v1/system/menus/:id/status` | 修改菜单状态 |
+| `POST` | `/api/v1/system/menus/:id/delete` | 删除菜单 |
 
 `sys_menu.type` 继续沿用前面的约定：
 
@@ -631,20 +631,20 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List)
 	system.POST("/users", users.Create)
-	system.PUT("/users/:id", users.Update)
-	system.PATCH("/users/:id/status", users.UpdateStatus)
-	system.PUT("/users/:id/roles", users.UpdateRoles)
+	system.POST("/users/:id/update", users.Update)
+	system.POST("/users/:id/status", users.UpdateStatus)
+	system.POST("/users/:id/roles", users.UpdateRoles)
 	system.GET("/roles", roles.List)
 	system.POST("/roles", roles.Create)
-	system.PUT("/roles/:id", roles.Update)
-	system.PATCH("/roles/:id/status", roles.UpdateStatus)
-	system.PUT("/roles/:id/permissions", roles.UpdatePermissions)
-	system.PUT("/roles/:id/menus", roles.UpdateMenus)
+	system.POST("/roles/:id/update", roles.Update)
+	system.POST("/roles/:id/status", roles.UpdateStatus)
+	system.POST("/roles/:id/permissions", roles.UpdatePermissions)
+	system.POST("/roles/:id/menus", roles.UpdateMenus)
 	system.GET("/menus", menus.Tree) // [!code ++]
 	system.POST("/menus", menus.Create) // [!code ++]
-	system.PUT("/menus/:id", menus.Update) // [!code ++]
-	system.PATCH("/menus/:id/status", menus.UpdateStatus) // [!code ++]
-	system.DELETE("/menus/:id", menus.Delete) // [!code ++]
+	system.POST("/menus/:id/update", menus.Update) // [!code ++]
+	system.POST("/menus/:id/status", menus.UpdateStatus) // [!code ++]
+	system.POST("/menus/:id/delete", menus.Delete) // [!code ++]
 }
 ```
 
@@ -657,20 +657,20 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/health", Method: "GET"},
 	{Path: "/api/v1/system/users", Method: "GET"},
 	{Path: "/api/v1/system/users", Method: "POST"},
-	{Path: "/api/v1/system/users/:id", Method: "PUT"},
-	{Path: "/api/v1/system/users/:id/status", Method: "PATCH"},
-	{Path: "/api/v1/system/users/:id/roles", Method: "PUT"},
+	{Path: "/api/v1/system/users/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/users/:id/status", Method: "POST"},
+	{Path: "/api/v1/system/users/:id/roles", Method: "POST"},
 	{Path: "/api/v1/system/roles", Method: "GET"},
 	{Path: "/api/v1/system/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id", Method: "PUT"},
-	{Path: "/api/v1/system/roles/:id/status", Method: "PATCH"},
-	{Path: "/api/v1/system/roles/:id/permissions", Method: "PUT"},
-	{Path: "/api/v1/system/roles/:id/menus", Method: "PUT"},
+	{Path: "/api/v1/system/roles/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id/status", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id/permissions", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id/menus", Method: "POST"},
 	{Path: "/api/v1/system/menus", Method: "GET"}, // [!code ++]
 	{Path: "/api/v1/system/menus", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/menus/:id", Method: "PUT"}, // [!code ++]
-	{Path: "/api/v1/system/menus/:id/status", Method: "PATCH"}, // [!code ++]
-	{Path: "/api/v1/system/menus/:id", Method: "DELETE"}, // [!code ++]
+	{Path: "/api/v1/system/menus/:id/update", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/menus/:id/status", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/menus/:id/delete", Method: "POST"}, // [!code ++]
 }
 ```
 
@@ -900,7 +900,7 @@ $menuId = 20
 $body = @{ status = 2 } | ConvertTo-Json
 
 Invoke-RestMethod `
-  -Method Patch `
+  -Method Post `
   -Uri "http://localhost:8080/api/v1/system/menus/$menuId/status" `
   -ContentType "application/json" `
   -Headers @{ Authorization = "Bearer $token" } `
@@ -910,7 +910,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 MENU_ID=20
 
-curl -X PATCH "http://localhost:8080/api/v1/system/menus/${MENU_ID}/status" \
+curl -X POST "http://localhost:8080/api/v1/system/menus/${MENU_ID}/status" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"status":2}'
@@ -928,15 +928,15 @@ curl -X PATCH "http://localhost:8080/api/v1/system/menus/${MENU_ID}/status" \
 $menuId = 20
 
 Invoke-RestMethod `
-  -Method Delete `
-  -Uri "http://localhost:8080/api/v1/system/menus/$menuId" `
+  -Method Post `
+  -Uri "http://localhost:8080/api/v1/system/menus/$menuId/delete" `
   -Headers @{ Authorization = "Bearer $token" }
 ```
 
 ```bash [macOS / Linux]
 MENU_ID=20
 
-curl -X DELETE "http://localhost:8080/api/v1/system/menus/${MENU_ID}" \
+curl -X POST "http://localhost:8080/api/v1/system/menus/${MENU_ID}/delete" \
   -H "Authorization: Bearer ${TOKEN}"
 ```
 
@@ -963,33 +963,5 @@ curl -X DELETE "http://localhost:8080/api/v1/system/menus/${MENU_ID}" \
 ::: details 删除菜单时提示“菜单已分配给角色，不能删除”
 先在角色管理中取消这个菜单的角色绑定，再删除菜单。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/handler/system/menus.go
-server/internal/bootstrap/bootstrap.go
-server/internal/router/router.go
-```
 
 下一节会继续补齐系统配置能力：[系统配置](./system-config)。

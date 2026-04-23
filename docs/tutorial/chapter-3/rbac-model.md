@@ -56,6 +56,17 @@ server/
 用户是否存在、角色是否存在、删除前能不能删除，都由后续 service 层逻辑维护。
 :::
 
+## 先创建数据表
+
+本节新增 `sys_role` 和 `sys_user_role`，分别用于保存后台角色和用户角色绑定关系。
+
+::: tip 建表 SQL
+字段说明、索引设计、关系表约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：
+
+- [数据库建表语句 - `sys_role`](../../reference/database-ddl#sys-role)
+- [数据库建表语句 - `sys_user_role`](../../reference/database-ddl#sys-user-role)
+:::
+
 ## 🛠️ 创建角色模型
 
 创建 `server/internal/model/role.go`。这是新增文件，直接完整写入即可。
@@ -98,32 +109,6 @@ func (Role) TableName() string {
 }
 ```
 
-字段说明：
-
-| 字段 | 说明 |
-| --- | --- |
-| `ID` | 角色记录主键，由数据库自增生成 |
-| `Code` | 角色编码，例如 `super_admin` |
-| `Name` | 角色名称，例如 `超级管理员` |
-| `Sort` | 排序值，数字越小越靠前 |
-| `Status` | 角色状态，`1` 表示启用，`2` 表示禁用 |
-| `Remark` | 备注 |
-| `CreatedAt` | 创建时间 |
-| `UpdatedAt` | 更新时间 |
-| `DeletedAt` | 逻辑删除时间 |
-
-::: details 为什么角色要有 `code`
-`name` 是展示给人看的，后续可能改名；`code` 是给程序和权限策略识别用的，应该更稳定。
-
-例如 `超级管理员` 这个名称可以改成 `系统管理员`，但 `super_admin` 这个编码不建议随意变化。
-:::
-
-::: details 主键和角色编码分别解决什么问题
-`ID` 是数据库内部记录身份，由数据库自增生成；`code` 是业务语义标识，用来表达 `super_admin` 这类稳定角色编码。
-
-不要把 `code` 当主键，也不要把自增 `id` 当成业务含义。
-:::
-
 ## 🛠️ 创建用户角色关系模型
 
 创建 `server/internal/model/user_role.go`。这是新增文件，直接完整写入即可。
@@ -147,54 +132,6 @@ func (UserRole) TableName() string {
 	return "sys_user_role"
 }
 ```
-
-字段说明：
-
-| 字段 | 说明 |
-| --- | --- |
-| `ID` | 关系记录主键，由数据库自增生成 |
-| `UserID` | 用户 ID，对应 `sys_user.id` |
-| `RoleID` | 角色 ID，对应 `sys_role.id` |
-| `CreatedAt` | 绑定时间 |
-| `UpdatedAt` | 更新时间 |
-
-::: details 为什么关系表也保留 `id`
-虽然 `user_id + role_id` 已经能唯一表示一条绑定关系，但统一保留 `id` 会让后续管理接口、日志记录、排查数据更方便。
-
-真正防止重复绑定的是联合唯一索引：`user_id + role_id`。
-:::
-
-::: details 为什么关系表没有 `deleted_at`
-用户和角色的绑定关系通常可以直接删除，不一定需要保留逻辑删除记录。后续如果要做“授权历史审计”，更适合单独设计授权日志，而不是把简单关系表变复杂。
-:::
-
-## 🛠️ 执行角色相关建表 SQL
-
-本节的表结构通过 SQL 建表脚本准备。先打开参考手册中的建表语句，并按当前数据库类型执行：
-
-- [`sys_role` 建表语句](../../reference/database-ddl#sys-role)
-- [`sys_user_role` 建表语句](../../reference/database-ddl#sys-user-role)
-
-当前本地环境使用 PostgreSQL，可以进入数据库客户端后粘贴 PostgreSQL 标签页中的 SQL：
-
-```bash
-# 在项目根目录执行，进入本地 PostgreSQL
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin
-```
-
-执行完成后，可以在 `psql` 中确认表已经创建：
-
-```sql
--- 查看角色表结构
-\d+ sys_role
-
--- 查看用户角色关系表结构
-\d+ sys_user_role
-```
-
-::: warning ⚠️ 先建表，再启动后端
-后面的启动初始化会查询并写入 `sys_role`、`sys_user_role`。如果跳过建表 SQL，服务启动时会报表不存在。
-:::
 
 ## 🛠️ 修改启动初始化
 
@@ -421,42 +358,8 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 单独使用 `sys_user_role` 关系表，可以自然支持多角色。
 :::
 
-::: details `sys_user_role` 没有数据库外键，会不会不安全
-不建数据库外键，不代表不校验关系。这里把约束放到业务逻辑层：绑定角色前检查用户和角色是否存在；删除用户或角色前检查是否还有绑定关系。
-
-这样更适合后续做软删除、批量导入、跨模块初始化和数据修复。
-:::
-
 ::: details 角色和权限现在是什么关系
 本节先让用户拥有角色。下一节会用 Casbin 表达“角色可以访问哪些接口”；再下一节会用菜单模型表达“角色能看到哪些菜单和按钮”。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/model/role.go
-server/internal/model/user_role.go
-server/internal/bootstrap/bootstrap.go
-```
 
 下一节会把角色和接口权限连接起来：[Casbin 权限控制](./casbin-permission)。

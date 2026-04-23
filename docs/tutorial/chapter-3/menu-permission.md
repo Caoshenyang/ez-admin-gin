@@ -66,6 +66,17 @@ server/
 菜单权限控制“前端展示什么”；Casbin 控制“接口能不能访问”。即使前端隐藏了某个按钮，后端接口仍然必须做权限判断。
 :::
 
+## 先创建数据表
+
+本节新增 `sys_menu` 和 `sys_role_menu`，分别用于保存目录、菜单、按钮权限点，以及角色和菜单的绑定关系。
+
+::: tip 建表 SQL
+字段说明、菜单类型、唯一编码、关系表约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：
+
+- [数据库建表语句 - `sys_menu`](../../reference/database-ddl#sys-menu)
+- [数据库建表语句 - `sys_role_menu`](../../reference/database-ddl#sys-role-menu)
+:::
+
 ## 🛠️ 创建菜单模型
 
 创建 `server/internal/model/menu.go`。这是新增文件，直接完整写入即可。
@@ -125,35 +136,6 @@ func (Menu) TableName() string {
 }
 ```
 
-字段说明：
-
-| 字段 | 说明 |
-| --- | --- |
-| `ID` | 菜单记录主键，由数据库自增生成 |
-| `ParentID` | 父级菜单 ID，根节点为 `0` |
-| `Type` | 节点类型：`1` 目录，`2` 菜单，`3` 按钮 |
-| `Code` | 菜单或按钮编码，系统内唯一 |
-| `Title` | 展示名称 |
-| `Path` | 前端路由路径 |
-| `Component` | 前端组件路径 |
-| `Icon` | 图标标识 |
-| `Sort` | 排序值，数字越小越靠前 |
-| `Status` | 状态：`1` 启用，`2` 禁用 |
-| `Remark` | 备注 |
-| `DeletedAt` | 逻辑删除时间 |
-
-::: details 为什么用一张 `sys_menu` 同时存目录、菜单和按钮
-目录、菜单、按钮都属于“前端权限点”，都有父子层级、排序、状态和角色绑定关系。放在一张表里，查询和授权会更直接。
-
-真正的区别由 `type` 字段表达。
-:::
-
-::: details 为什么 `code` 要唯一
-`code` 是稳定权限标识，例如 `system:health:view`。前端可以用它判断按钮是否可见，后端也能用它做权限配置和排查。
-
-和 `username`、`role.code` 一样，菜单编码默认不允许逻辑删除后复用。
-:::
-
 ## 🛠️ 创建角色菜单关系模型
 
 创建 `server/internal/model/role_menu.go`。这是新增文件，直接完整写入即可。
@@ -176,34 +158,6 @@ type RoleMenu struct {
 func (RoleMenu) TableName() string {
 	return "sys_role_menu"
 }
-```
-
-::: details 为什么关系表没有 `deleted_at`
-角色和菜单绑定关系通常可以直接删除。后续如果要审计授权变化，更适合单独做操作日志，而不是让关系表承担审计职责。
-:::
-
-## 🛠️ 执行菜单相关建表 SQL
-
-本节的表结构通过 SQL 建表脚本准备。先打开参考手册中的建表语句，并按当前数据库类型执行：
-
-- [`sys_menu` 建表语句](../../reference/database-ddl#sys-menu)
-- [`sys_role_menu` 建表语句](../../reference/database-ddl#sys-role-menu)
-
-当前本地环境使用 PostgreSQL，可以进入数据库客户端后粘贴 PostgreSQL 标签页中的 SQL：
-
-```bash
-# 在项目根目录执行，进入本地 PostgreSQL
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin
-```
-
-执行完成后，可以在 `psql` 中确认表已经创建：
-
-```sql
--- 查看菜单表结构
-\d+ sys_menu
-
--- 查看角色菜单关系表结构
-\d+ sys_role_menu
 ```
 
 ## 🛠️ 初始化默认菜单
@@ -695,35 +649,5 @@ Authorization: Bearer <access_token>
 
 两者可以有关联，但不要互相替代。隐藏菜单不等于接口安全，接口安全必须由后端权限校验保证。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/model/menu.go
-server/internal/model/role_menu.go
-server/internal/bootstrap/bootstrap.go
-server/internal/handler/auth/menus.go
-server/internal/router/router.go
-```
 
 到这里，第 3 章的认证与权限主链路就完整了。

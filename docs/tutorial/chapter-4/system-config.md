@@ -63,28 +63,10 @@ server/
 
 ## 先创建数据表
 
-本项目不使用 `AutoMigrate` 建表，所以先执行 SQL。
+本节新增 `sys_config`，用于保存后台可维护的普通业务配置。
 
-请打开参考手册中的这一节：
-
-- [数据库建表语句 - `sys_config`](../../reference/database-ddl#sys-config)
-
-根据你当前使用的数据库，执行 PostgreSQL 或 MySQL 对应的建表语句。执行完成后，再继续下面的代码步骤。
-
-## 表结构设计
-
-系统配置这一版先保持简单，所有配置值统一按字符串存储。
-
-| 字段 | 用途 |
-| --- | --- |
-| `group_code` | 配置分组，例如 `site`、`upload` |
-| `config_key` | 配置键，系统内唯一，例如 `site:title` |
-| `name` | 配置名称，便于后台展示 |
-| `value` | 配置值，统一按字符串保存 |
-| `status` | 配置状态：`1` 启用，`2` 禁用 |
-
-::: details 为什么这里不做复杂类型系统
-后台底座第一版更关注“能稳定维护、能稳定读取”。把配置值统一存成字符串，后续业务模块在读取后自行转换成布尔值、整数或 JSON，会更容易落地，也更方便和 MySQL / PostgreSQL 保持一致。
+::: tip 建表 SQL
+字段说明、配置值存储方式、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_config`](../../reference/database-ddl#sys-config)。
 :::
 
 ## 接口规划
@@ -95,8 +77,8 @@ server/
 | --- | --- | --- |
 | `GET` | `/api/v1/system/configs` | 配置分页列表 |
 | `POST` | `/api/v1/system/configs` | 创建配置 |
-| `PUT` | `/api/v1/system/configs/:id` | 编辑配置 |
-| `PATCH` | `/api/v1/system/configs/:id/status` | 修改配置状态 |
+| `POST` | `/api/v1/system/configs/:id/update` | 编辑配置 |
+| `POST` | `/api/v1/system/configs/:id/status` | 修改配置状态 |
 | `GET` | `/api/v1/system/configs/value/:key` | 按配置键读取启用中的配置值 |
 
 其中 `/api/v1/system/configs/value/:key` 有两个作用：
@@ -147,10 +129,6 @@ func (SystemConfig) TableName() string {
 	return "sys_config"
 }
 ```
-
-::: details 为什么字段叫 `config_key`，而不是直接叫 `key`
-`key` 在很多上下文里都太泛，放到 SQL 和代码里都不够直观。`config_key` 更明确，也更方便后续排查 SQL。
-:::
 
 ## 🛠️ 创建系统配置 Handler
 
@@ -720,24 +698,24 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List)
 	system.POST("/users", users.Create)
-	system.PUT("/users/:id", users.Update)
-	system.PATCH("/users/:id/status", users.UpdateStatus)
-	system.PUT("/users/:id/roles", users.UpdateRoles)
+	system.POST("/users/:id/update", users.Update)
+	system.POST("/users/:id/status", users.UpdateStatus)
+	system.POST("/users/:id/roles", users.UpdateRoles)
 	system.GET("/roles", roles.List)
 	system.POST("/roles", roles.Create)
-	system.PUT("/roles/:id", roles.Update)
-	system.PATCH("/roles/:id/status", roles.UpdateStatus)
-	system.PUT("/roles/:id/permissions", roles.UpdatePermissions)
-	system.PUT("/roles/:id/menus", roles.UpdateMenus)
+	system.POST("/roles/:id/update", roles.Update)
+	system.POST("/roles/:id/status", roles.UpdateStatus)
+	system.POST("/roles/:id/permissions", roles.UpdatePermissions)
+	system.POST("/roles/:id/menus", roles.UpdateMenus)
 	system.GET("/menus", menus.Tree)
 	system.POST("/menus", menus.Create)
-	system.PUT("/menus/:id", menus.Update)
-	system.PATCH("/menus/:id/status", menus.UpdateStatus)
-	system.DELETE("/menus/:id", menus.Delete)
+	system.POST("/menus/:id/update", menus.Update)
+	system.POST("/menus/:id/status", menus.UpdateStatus)
+	system.POST("/menus/:id/delete", menus.Delete)
 	system.GET("/configs", configs.List) // [!code ++]
 	system.POST("/configs", configs.Create) // [!code ++]
-	system.PUT("/configs/:id", configs.Update) // [!code ++]
-	system.PATCH("/configs/:id/status", configs.UpdateStatus) // [!code ++]
+	system.POST("/configs/:id/update", configs.Update) // [!code ++]
+	system.POST("/configs/:id/status", configs.UpdateStatus) // [!code ++]
 	system.GET("/configs/value/:key", configs.Value) // [!code ++]
 }
 ```
@@ -770,24 +748,24 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/health", Method: "GET"},
 	{Path: "/api/v1/system/users", Method: "GET"},
 	{Path: "/api/v1/system/users", Method: "POST"},
-	{Path: "/api/v1/system/users/:id", Method: "PUT"},
-	{Path: "/api/v1/system/users/:id/status", Method: "PATCH"},
-	{Path: "/api/v1/system/users/:id/roles", Method: "PUT"},
+	{Path: "/api/v1/system/users/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/users/:id/status", Method: "POST"},
+	{Path: "/api/v1/system/users/:id/roles", Method: "POST"},
 	{Path: "/api/v1/system/roles", Method: "GET"},
 	{Path: "/api/v1/system/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id", Method: "PUT"},
-	{Path: "/api/v1/system/roles/:id/status", Method: "PATCH"},
-	{Path: "/api/v1/system/roles/:id/permissions", Method: "PUT"},
-	{Path: "/api/v1/system/roles/:id/menus", Method: "PUT"},
+	{Path: "/api/v1/system/roles/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id/status", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id/permissions", Method: "POST"},
+	{Path: "/api/v1/system/roles/:id/menus", Method: "POST"},
 	{Path: "/api/v1/system/menus", Method: "GET"},
 	{Path: "/api/v1/system/menus", Method: "POST"},
-	{Path: "/api/v1/system/menus/:id", Method: "PUT"},
-	{Path: "/api/v1/system/menus/:id/status", Method: "PATCH"},
-	{Path: "/api/v1/system/menus/:id", Method: "DELETE"},
+	{Path: "/api/v1/system/menus/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/menus/:id/status", Method: "POST"},
+	{Path: "/api/v1/system/menus/:id/delete", Method: "POST"},
 	{Path: "/api/v1/system/configs", Method: "GET"}, // [!code ++]
 	{Path: "/api/v1/system/configs", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/configs/:id", Method: "PUT"}, // [!code ++]
-	{Path: "/api/v1/system/configs/:id/status", Method: "PATCH"}, // [!code ++]
+	{Path: "/api/v1/system/configs/:id/update", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/configs/:id/status", Method: "POST"}, // [!code ++]
 	{Path: "/api/v1/system/configs/value/:key", Method: "GET"}, // [!code ++]
 }
 ```
@@ -875,7 +853,7 @@ INFO	default role menu bound	{"role_id": 1, "menu_id": 15}
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule where v1 like '/api/v1/system/configs%' order by v1, v2;"
 ```
 
-应该能看到 `GET`、`POST`、`PUT`、`PATCH` 对应的策略。
+应该能看到 `GET` 和 `POST` 对应的策略。
 
 再确认系统配置菜单和按钮已经写入：
 
@@ -1029,7 +1007,7 @@ $configId = 1
 $body = @{ status = 2 } | ConvertTo-Json
 
 Invoke-RestMethod `
-  -Method Patch `
+  -Method Post `
   -Uri "http://localhost:8080/api/v1/system/configs/$configId/status" `
   -ContentType "application/json" `
   -Headers @{ Authorization = "Bearer $token" } `
@@ -1039,7 +1017,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 CONFIG_ID=1
 
-curl -X PATCH "http://localhost:8080/api/v1/system/configs/${CONFIG_ID}/status" \
+curl -X POST "http://localhost:8080/api/v1/system/configs/${CONFIG_ID}/status" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"status":2}'
@@ -1065,7 +1043,7 @@ docker compose -f deploy/compose.local.yml exec redis redis-cli GET sys_config:s
 ## 常见问题
 
 ::: details 创建配置时提示“配置键已存在”
-`config_key` 使用普通唯一索引，默认不复用旧键。换一个新的配置键即可，例如从 `site:title` 改成 `site:subtitle`。
+换一个新的配置键即可，例如从 `site:title` 改成 `site:subtitle`。配置键唯一规则见：[数据库建表语句 - `sys_config`](../../reference/database-ddl#sys-config)。
 :::
 
 ::: details 为什么配置值接口没有直接返回完整配置对象
@@ -1075,33 +1053,5 @@ docker compose -f deploy/compose.local.yml exec redis redis-cli GET sys_config:s
 ::: details 为什么禁用配置时要顺便删缓存
 如果只改数据库状态，不清缓存，短时间内业务代码还能继续读到旧值。状态和缓存同步，才能避免“后台显示已禁用，但系统还在继续使用”的错觉。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录后执行：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-docs/reference/database-ddl.md
-server/internal/model/system_config.go
-server/internal/handler/system/configs.go
-server/internal/bootstrap/bootstrap.go
-server/internal/router/router.go
-```
 
 下一节继续补齐文件能力：[文件上传](./file-upload)。

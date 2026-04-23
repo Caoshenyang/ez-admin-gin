@@ -20,7 +20,7 @@ server/
 └─ main.go
 ```
 
-## 🛠️ 确认 Go 版本
+## 🛠️ 环境要求
 
 本教程使用当前最新稳定版 Go。截止 2026-04-21，Go 官方下载页的最新稳定版是 `go1.26.2`。
 
@@ -175,27 +175,5 @@ curl http://localhost:8080/health
 ```
 
 验证完成后，回到运行 `go run .` 的终端，按 `Ctrl + C` 停止服务。
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录，查看本节新增文件
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录，查看本节新增文件
-cd ..
-git status
-```
-
-:::
-
-应该能看到 `server/go.mod`、`server/go.sum`、`server/main.go` 三个文件变更。
 
 下一节开始初始化管理台项目：[Vue 管理台项目初始化](./admin-init)。

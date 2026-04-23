@@ -45,9 +45,9 @@ server/
 | --- | --- | --- |
 | `GET` | `/api/v1/system/users` | 用户列表 |
 | `POST` | `/api/v1/system/users` | 创建用户 |
-| `PUT` | `/api/v1/system/users/:id` | 编辑用户基础信息 |
-| `PATCH` | `/api/v1/system/users/:id/status` | 修改用户状态 |
-| `PUT` | `/api/v1/system/users/:id/roles` | 分配用户角色 |
+| `POST` | `/api/v1/system/users/:id/update` | 编辑用户基础信息 |
+| `POST` | `/api/v1/system/users/:id/status` | 修改用户状态 |
+| `POST` | `/api/v1/system/users/:id/roles` | 分配用户角色 |
 
 ::: warning ⚠️ 用户管理接口必须走权限校验
 这些接口都会挂在 `/api/v1/system` 分组下，需要先登录，再通过 Casbin 权限判断。只创建路由但不补 `casbin_rule`，请求会返回 `403`。
@@ -636,9 +636,9 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List) // [!code ++]
 	system.POST("/users", users.Create) // [!code ++]
-	system.PUT("/users/:id", users.Update) // [!code ++]
-	system.PATCH("/users/:id/status", users.UpdateStatus) // [!code ++]
-	system.PUT("/users/:id/roles", users.UpdateRoles) // [!code ++]
+	system.POST("/users/:id/update", users.Update) // [!code ++]
+	system.POST("/users/:id/status", users.UpdateStatus) // [!code ++]
+	system.POST("/users/:id/roles", users.UpdateRoles) // [!code ++]
 }
 ```
 
@@ -668,9 +668,9 @@ var defaultPermissionSeeds = []defaultPermissionSeed{ // [!code ++]
 	{Path: "/api/v1/system/health", Method: "GET"}, // [!code ++]
 	{Path: "/api/v1/system/users", Method: "GET"}, // [!code ++]
 	{Path: "/api/v1/system/users", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/users/:id", Method: "PUT"}, // [!code ++]
-	{Path: "/api/v1/system/users/:id/status", Method: "PATCH"}, // [!code ++]
-	{Path: "/api/v1/system/users/:id/roles", Method: "PUT"}, // [!code ++]
+	{Path: "/api/v1/system/users/:id/update", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/users/:id/status", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/users/:id/roles", Method: "POST"}, // [!code ++]
 } // [!code ++]
 ```
 
@@ -841,7 +841,7 @@ INFO	default role menu bound	{"role_id": 1, "menu_id": 4}
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule where v1 like '/api/v1/system/users%' order by v1, v2;"
 ```
 
-应该能看到 `GET`、`POST`、`PUT`、`PATCH` 等用户管理权限。
+应该能看到 `GET` 和 `POST` 用户管理权限。
 
 再确认用户管理菜单已经写入：
 
@@ -953,7 +953,7 @@ $userId = 2
 $body = @{ status = 2 } | ConvertTo-Json
 
 Invoke-RestMethod `
-  -Method Patch `
+  -Method Post `
   -Uri "http://localhost:8080/api/v1/system/users/$userId/status" `
   -ContentType "application/json" `
   -Headers @{ Authorization = "Bearer $token" } `
@@ -963,7 +963,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 USER_ID=2
 
-curl -X PATCH "http://localhost:8080/api/v1/system/users/${USER_ID}/status" \
+curl -X POST "http://localhost:8080/api/v1/system/users/${USER_ID}/status" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"status":2}'
@@ -980,7 +980,7 @@ curl -X PATCH "http://localhost:8080/api/v1/system/users/${USER_ID}/status" \
 ## 常见问题
 
 ::: details 创建用户时提示“用户名已存在”
-`username` 使用普通唯一索引，逻辑删除后也默认不复用。换一个用户名即可。
+换一个用户名即可。账号唯一规则见：[数据库建表语句 - `sys_user`](../../reference/database-ddl#sys-user)。
 :::
 
 ::: details 创建用户时提示“角色不存在或已禁用”
@@ -1001,33 +1001,5 @@ select id, code, name, status from sys_role order by id;
 ::: details 为什么角色分配用“整体替换”
 用户角色通常来自多选框提交。后端收到完整的 `role_ids` 后，先删除旧关系，再写入新关系，逻辑更简单，也更容易验证最终结果。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/handler/system/users.go
-server/internal/bootstrap/bootstrap.go
-server/internal/router/router.go
-```
 
 下一节会继续补齐角色自身的管理能力：[角色管理](./role-management)。

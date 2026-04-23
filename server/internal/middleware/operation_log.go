@@ -52,7 +52,7 @@ func OperationLog(db *gorm.DB, log *zap.Logger) gin.HandlerFunc {
 
 func shouldSkipOperationLog(c *gin.Context) bool {
 	method := c.Request.Method
-	if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+	if method != http.MethodPost {
 		return true
 	}
 

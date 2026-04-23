@@ -286,11 +286,11 @@ p, super_admin, /api/v1/users/:id, GET
 | `p, super_admin, /api/v1/system/health, GET` | 允许超级管理员访问系统健康检查接口 |
 | `p, admin, /api/v1/users, GET` | 允许管理员查看用户列表 |
 | `p, admin, /api/v1/users/:id, GET` | 允许管理员查看某个用户详情 |
-| `p, admin, /api/v1/users/:id, PUT` | 允许管理员更新某个用户 |
-| `p, auditor, /api/v1/logs, *` | 允许审计角色用任意方法访问日志资源 |
+| `p, admin, /api/v1/users/:id/update, POST` | 允许管理员更新某个用户 |
+| `p, auditor, /api/v1/logs, GET` | 允许审计角色查看日志资源 |
 
 ::: warning 慎用 `*`
-`*` 会放开同一个资源下的所有 HTTP 方法。后台接口里 `GET`、`POST`、`PUT`、`DELETE` 的风险不同，除非非常确定，否则优先精确到具体方法。
+`*` 会放开同一个资源下的所有 HTTP 方法。本项目后台接口主要使用 `GET` 和 `POST`，除非非常确定，否则优先精确到具体方法。
 :::
 
 ## Casbin 和菜单权限的边界
@@ -333,7 +333,7 @@ p, super_admin, /api/v1/users/:id, GET
 | --- | --- |
 | 主体 `sub` | 使用角色编码，例如 `super_admin` |
 | 资源 `obj` | 使用 Gin 路由模式路径，例如 `/api/v1/users/:id` |
-| 动作 `act` | 使用 HTTP 方法，例如 `GET`、`POST`、`PUT`、`DELETE` |
+| 动作 `act` | 使用 HTTP 方法，本项目默认只使用 `GET` 和 `POST` |
 | 策略表 | 使用 `casbin_rule` |
 | 建表方式 | 参考手册 SQL 手动建表 |
 | 策略加载 | 服务启动时 `LoadPolicy()` |

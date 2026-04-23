@@ -577,37 +577,4 @@ go mod tidy
 ```
 :::
 
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/configs/config.yaml
-server/internal/config/config.go
-server/internal/token/jwt.go
-server/internal/handler/auth/login.go
-server/internal/router/router.go
-server/main.go
-server/go.mod
-server/go.sum
-```
-
 下一节会用这个 Token 保护接口：[认证中间件](./auth-middleware)。

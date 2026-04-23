@@ -8,7 +8,7 @@ description: "记录后台用户的关键写操作，为审计追踪和问题排
 前面已经有用户、角色、菜单、配置和文件上传能力。现在补齐操作日志：记录后台用户什么时候调用了哪个管理接口、请求是否成功、耗时多久。
 
 ::: tip 🎯 本节目标
-完成后，后台的 `POST`、`PUT`、`PATCH`、`DELETE` 管理接口会自动写入操作日志；`super_admin` 可以查询操作日志列表。
+完成后，后台的 `POST` 写操作会自动写入操作日志；`super_admin` 可以查询操作日志列表。
 :::
 
 ## 先确定记录范围
@@ -18,10 +18,7 @@ description: "记录后台用户的关键写操作，为审计追踪和问题排
 | 方法 | 是否记录 | 说明 |
 | --- | --- | --- |
 | `GET` | 否 | 查询请求太频繁，容易把日志刷满 |
-| `POST` | 是 | 创建数据、上传文件 |
-| `PUT` | 是 | 更新数据 |
-| `PATCH` | 是 | 修改状态 |
-| `DELETE` | 是 | 删除数据 |
+| `POST` | 是 | 创建、编辑、状态变更、删除、上传文件等写操作 |
 
 ::: warning ⚠️ 操作日志不要全量保存请求体
 请求体里可能包含密码、Token、文件内容或其他敏感信息。本节只记录方法、路径、查询参数、用户、IP、状态码和耗时，不把请求体原样写入数据库。
@@ -62,39 +59,10 @@ server/
 
 ## 先创建数据表
 
-本项目不使用 `AutoMigrate` 建表，所以先执行 SQL。
+本节新增 `sys_operation_log`，用于保存后台用户的关键写操作审计记录。
 
-请打开参考手册中的这一节：
-
-- [数据库建表语句 - `sys_operation_log`](../../reference/database-ddl#sys-operation-log)
-
-根据你当前使用的数据库，执行 PostgreSQL 或 MySQL 对应的建表语句。执行完成后，再继续下面的代码步骤。
-
-::: details 为什么操作日志不做逻辑删除
-操作日志属于审计事实记录，重点是“发生过什么”。这类数据通常不参与普通业务编辑，也不建议通过逻辑删除隐藏。后续如果日志量变大，可以按时间归档或清理历史数据。
-:::
-
-## 日志字段设计
-
-本节先记录这些字段：
-
-| 字段 | 说明 |
-| --- | --- |
-| `user_id` | 操作人 ID |
-| `username` | 操作人用户名 |
-| `method` | 请求方法 |
-| `path` | 实际请求路径 |
-| `route_path` | Gin 匹配到的路由模板 |
-| `query` | 查询参数 |
-| `ip` | 客户端 IP |
-| `user_agent` | 浏览器或客户端标识 |
-| `status_code` | HTTP 状态码 |
-| `latency_ms` | 请求耗时，单位毫秒 |
-| `success` | 是否成功 |
-| `error_message` | 错误摘要 |
-
-::: details 为什么同时保存 `path` 和 `route_path`
-`path` 是真实请求路径，例如 `/api/v1/system/users/2/status`；`route_path` 是路由模板，例如 `/api/v1/system/users/:id/status`。前者适合排查具体数据，后者适合统计某类接口。
+::: tip 建表 SQL
+字段说明、审计表不做逻辑删除的原因、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_operation_log`](../../reference/database-ddl#sys-operation-log)。
 :::
 
 ## 🛠️ 创建操作日志模型
@@ -189,7 +157,7 @@ func OperationLog(db *gorm.DB, log *zap.Logger) gin.HandlerFunc {
 
 func shouldSkipOperationLog(c *gin.Context) bool {
 	method := c.Request.Method
-	if method == http.MethodGet || method == http.MethodHead || method == http.MethodOptions {
+	if method != http.MethodPost {
 		return true
 	}
 
@@ -437,24 +405,24 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List)
 	system.POST("/users", users.Create)
-	system.PUT("/users/:id", users.Update)
-	system.PATCH("/users/:id/status", users.UpdateStatus)
-	system.PUT("/users/:id/roles", users.UpdateRoles)
+	system.POST("/users/:id/update", users.Update)
+	system.POST("/users/:id/status", users.UpdateStatus)
+	system.POST("/users/:id/roles", users.UpdateRoles)
 	system.GET("/roles", roles.List)
 	system.POST("/roles", roles.Create)
-	system.PUT("/roles/:id", roles.Update)
-	system.PATCH("/roles/:id/status", roles.UpdateStatus)
-	system.PUT("/roles/:id/permissions", roles.UpdatePermissions)
-	system.PUT("/roles/:id/menus", roles.UpdateMenus)
+	system.POST("/roles/:id/update", roles.Update)
+	system.POST("/roles/:id/status", roles.UpdateStatus)
+	system.POST("/roles/:id/permissions", roles.UpdatePermissions)
+	system.POST("/roles/:id/menus", roles.UpdateMenus)
 	system.GET("/menus", menus.Tree)
 	system.POST("/menus", menus.Create)
-	system.PUT("/menus/:id", menus.Update)
-	system.PATCH("/menus/:id/status", menus.UpdateStatus)
-	system.DELETE("/menus/:id", menus.Delete)
+	system.POST("/menus/:id/update", menus.Update)
+	system.POST("/menus/:id/status", menus.UpdateStatus)
+	system.POST("/menus/:id/delete", menus.Delete)
 	system.GET("/configs", configs.List)
 	system.POST("/configs", configs.Create)
-	system.PUT("/configs/:id", configs.Update)
-	system.PATCH("/configs/:id/status", configs.UpdateStatus)
+	system.POST("/configs/:id/update", configs.Update)
+	system.POST("/configs/:id/status", configs.UpdateStatus)
 	system.GET("/configs/value/:key", configs.Value)
 	system.GET("/files", files.List)
 	system.POST("/files", files.Upload)
@@ -693,36 +661,7 @@ curl "http://localhost:8080/api/v1/system/operation-logs?method=POST&page=1&page
 :::
 
 ::: details 操作失败时也会记录吗
-会。操作日志中间件放在权限校验之前、认证之后。只要用户已经登录，并且请求方法是 `POST`、`PUT`、`PATCH` 或 `DELETE`，即使后续权限失败或接口返回错误，也会记录一条失败日志。
+会。操作日志中间件放在权限校验之前、认证之后。只要用户已经登录，并且请求方法是 `POST`，即使后续权限失败或接口返回错误，也会记录一条失败日志。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录后执行：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-docs/reference/database-ddl.md
-server/internal/model/operation_log.go
-server/internal/middleware/operation_log.go
-server/internal/handler/system/operation_logs.go
-server/internal/bootstrap/bootstrap.go
-server/internal/router/router.go
-```
 
 下一节继续补齐登录行为审计：[登录日志](./login-logs)。

@@ -39,16 +39,16 @@ server/
 
 ## 接口规划
 
-本节先实现 5 个接口：
+本节先实现 6 个接口：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | `GET` | `/api/v1/system/roles` | 角色列表 |
 | `POST` | `/api/v1/system/roles` | 创建角色 |
-| `PUT` | `/api/v1/system/roles/:id` | 编辑角色基础信息 |
-| `PATCH` | `/api/v1/system/roles/:id/status` | 修改角色状态 |
-| `PUT` | `/api/v1/system/roles/:id/permissions` | 分配接口权限 |
-| `PUT` | `/api/v1/system/roles/:id/menus` | 分配菜单权限 |
+| `POST` | `/api/v1/system/roles/:id/update` | 编辑角色基础信息 |
+| `POST` | `/api/v1/system/roles/:id/status` | 修改角色状态 |
+| `POST` | `/api/v1/system/roles/:id/permissions` | 分配接口权限 |
+| `POST` | `/api/v1/system/roles/:id/menus` | 分配菜单权限 |
 
 ::: warning ⚠️ 不要随意禁用 `super_admin`
 `super_admin` 是本教程本地起步的超级管理员角色。为了避免把自己锁在系统外，本节会阻止禁用这个角色。
@@ -768,15 +768,15 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List)
 	system.POST("/users", users.Create)
-	system.PUT("/users/:id", users.Update)
-	system.PATCH("/users/:id/status", users.UpdateStatus)
-	system.PUT("/users/:id/roles", users.UpdateRoles)
+	system.POST("/users/:id/update", users.Update)
+	system.POST("/users/:id/status", users.UpdateStatus)
+	system.POST("/users/:id/roles", users.UpdateRoles)
 	system.GET("/roles", roles.List) // [!code ++]
 	system.POST("/roles", roles.Create) // [!code ++]
-	system.PUT("/roles/:id", roles.Update) // [!code ++]
-	system.PATCH("/roles/:id/status", roles.UpdateStatus) // [!code ++]
-	system.PUT("/roles/:id/permissions", roles.UpdatePermissions) // [!code ++]
-	system.PUT("/roles/:id/menus", roles.UpdateMenus) // [!code ++]
+	system.POST("/roles/:id/update", roles.Update) // [!code ++]
+	system.POST("/roles/:id/status", roles.UpdateStatus) // [!code ++]
+	system.POST("/roles/:id/permissions", roles.UpdatePermissions) // [!code ++]
+	system.POST("/roles/:id/menus", roles.UpdateMenus) // [!code ++]
 }
 ```
 
@@ -789,15 +789,15 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/health", Method: "GET"},
 	{Path: "/api/v1/system/users", Method: "GET"},
 	{Path: "/api/v1/system/users", Method: "POST"},
-	{Path: "/api/v1/system/users/:id", Method: "PUT"},
-	{Path: "/api/v1/system/users/:id/status", Method: "PATCH"},
-	{Path: "/api/v1/system/users/:id/roles", Method: "PUT"},
+	{Path: "/api/v1/system/users/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/users/:id/status", Method: "POST"},
+	{Path: "/api/v1/system/users/:id/roles", Method: "POST"},
 	{Path: "/api/v1/system/roles", Method: "GET"}, // [!code ++]
 	{Path: "/api/v1/system/roles", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id", Method: "PUT"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/status", Method: "PATCH"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/permissions", Method: "PUT"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/menus", Method: "PUT"}, // [!code ++]
+	{Path: "/api/v1/system/roles/:id/update", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/roles/:id/status", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/roles/:id/permissions", Method: "POST"}, // [!code ++]
+	{Path: "/api/v1/system/roles/:id/menus", Method: "POST"}, // [!code ++]
 }
 ```
 
@@ -1022,7 +1022,7 @@ $body = @{
 } | ConvertTo-Json -Depth 4
 
 Invoke-RestMethod `
-  -Method Put `
+  -Method Post `
   -Uri "http://localhost:8080/api/v1/system/roles/$roleId/permissions" `
   -ContentType "application/json" `
   -Headers @{ Authorization = "Bearer $token" } `
@@ -1032,7 +1032,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 ROLE_ID=2
 
-curl -X PUT "http://localhost:8080/api/v1/system/roles/${ROLE_ID}/permissions" \
+curl -X POST "http://localhost:8080/api/v1/system/roles/${ROLE_ID}/permissions" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"permissions":[{"path":"/api/v1/system/users","method":"GET"},{"path":"/api/v1/system/roles","method":"GET"}]}'
@@ -1051,7 +1051,7 @@ $body = @{
 } | ConvertTo-Json
 
 Invoke-RestMethod `
-  -Method Put `
+  -Method Post `
   -Uri "http://localhost:8080/api/v1/system/roles/$roleId/menus" `
   -ContentType "application/json" `
   -Headers @{ Authorization = "Bearer $token" } `
@@ -1061,7 +1061,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 ROLE_ID=2
 
-curl -X PUT "http://localhost:8080/api/v1/system/roles/${ROLE_ID}/menus" \
+curl -X POST "http://localhost:8080/api/v1/system/roles/${ROLE_ID}/menus" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"menu_ids":[1,4,5]}'
@@ -1084,7 +1084,7 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 ## 常见问题
 
 ::: details 创建角色时提示“角色编码已存在”
-`code` 使用普通唯一索引，逻辑删除后也默认不复用。换一个新的角色编码即可。
+换一个新的角色编码即可。角色编码唯一规则见：[数据库建表语句 - `sys_role`](../../reference/database-ddl#sys-role)。
 :::
 
 ::: details 分配菜单时提示“菜单不存在或已禁用”
@@ -1104,33 +1104,5 @@ select id, parent_id, type, code, title, status from sys_menu order by sort, id;
 ::: details 为什么权限分配用“整体替换”
 前端通常会提交当前勾选后的完整权限集合。后端整体替换可以保证数据库最终状态和页面勾选状态一致，验证也更直接。
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/handler/system/roles.go
-server/internal/bootstrap/bootstrap.go
-server/internal/router/router.go
-```
 
 下一节会继续补齐菜单自身的管理能力：[菜单管理](./menu-management)。

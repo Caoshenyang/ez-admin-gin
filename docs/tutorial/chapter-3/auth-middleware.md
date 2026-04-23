@@ -426,32 +426,4 @@ Authorization: Bearer <access_token>
 上下文里不一定存在当前用户信息。例如没有挂载认证中间件，或者中间件提前失败。返回 `bool` 可以让 Handler 明确判断“有没有取到当前用户”，避免直接类型断言导致 panic。
 :::
 
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/middleware/auth.go
-server/internal/handler/auth/me.go
-server/internal/router/router.go
-```
-
 下一节会继续设计角色、权限和关联表：[角色与权限模型](./rbac-model)。

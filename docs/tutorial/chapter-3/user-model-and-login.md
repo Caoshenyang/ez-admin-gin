@@ -75,6 +75,14 @@ go get golang.org/x/crypto@latest
 数据库里只能保存密码哈希，不能保存用户输入的原始密码。登录时也不是把明文密码查出来比较，而是用 `bcrypt.CompareHashAndPassword` 校验。
 :::
 
+## 先创建数据表
+
+本节新增 `sys_user`，用于保存后台账号、密码哈希、用户状态和逻辑删除信息。
+
+::: tip 建表 SQL
+字段说明、索引设计、逻辑删除约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_user`](../../reference/database-ddl#sys-user)。
+:::
+
 ## 🛠️ 创建用户模型
 
 创建 `server/internal/model/user.go`。这是新增文件，直接完整写入即可。
@@ -115,69 +123,6 @@ func (User) TableName() string {
 	return "sys_user"
 }
 ```
-
-字段说明：
-
-| 字段 | 说明 |
-| --- | --- |
-| `ID` | 用户记录主键，由数据库自增生成 |
-| `Username` | 登录用户名，设置唯一索引 |
-| `PasswordHash` | 密码哈希，不通过 JSON 返回 |
-| `Nickname` | 管理台展示名称 |
-| `Status` | 用户状态，`1` 表示启用，`2` 表示禁用 |
-| `CreatedAt` | 创建时间 |
-| `UpdatedAt` | 更新时间 |
-| `DeletedAt` | 逻辑删除时间，删除后默认不会被普通查询查出 |
-
-完整建表语句可以看参考手册：[数据库建表语句：`sys_user`](../../reference/database-ddl#sys-user)。
-
-::: details 主键是怎么生成的
-本项目默认使用数据库自增 BIGINT 主键。创建用户时不需要在代码里给 `ID` 赋值，数据库会自动生成，GORM 会在 `Create` 成功后把生成的主键回填到结构体中。
-
-`username` 这类业务标识单独做唯一字段，不和主键混用。
-:::
-
-::: details 为什么表名叫 `sys_user`
-后台底座里通常会有用户、角色、菜单、日志等系统表。这里先用 `sys_` 前缀把系统表区分出来，后续业务表可以使用自己的模块前缀。
-
-表名使用单数形式，是因为表对应的是一种实体模型，表里的多行数据才是集合。后续 `role`、`menu` 这类系统表也会沿用这个约定。
-:::
-
-::: details 为什么 `CreatedAt` 和 `UpdatedAt` 没有写 `gorm` 标签
-这是 GORM 的内置约定。字段名叫 `CreatedAt`、`UpdatedAt`，类型是 `time.Time` 时，GORM 会自动映射成 `created_at`、`updated_at`，并在创建和更新数据时维护时间。
-
-本项目约定时间字段由应用代码维护，不依赖数据库默认函数或触发器。如果后续直接写初始化 SQL，也要显式写入 `created_at` 和 `updated_at`。
-
-只有需要改默认行为时，才需要额外写 `gorm` 标签。例如修改字段类型、改列名、设置索引、设置非空约束，或者像 `DeletedAt` 这样需要告诉 GORM “这是逻辑删除字段”。
-:::
-
-::: details 为什么 `username` 使用普通唯一索引
-`username` 是账号身份标识，本节默认使用普通唯一索引。也就是说，即使账号被逻辑删除，相同用户名也不允许再次创建。
-
-这样做更适合后台账号：历史记录、审计日志和操作者身份不会因为用户名复用而产生歧义。关于逻辑删除与唯一索引的更多背景，可以看：[逻辑删除与唯一索引冲突](../../reference/logical-delete-and-unique-index)。
-:::
-
-## 🛠️ 执行用户表建表 SQL
-
-本节的表结构通过 SQL 建表脚本准备。先打开参考手册中的 [`sys_user` 建表语句](../../reference/database-ddl#sys-user)，按当前数据库类型选择对应版本执行。
-
-当前本地环境使用 PostgreSQL，可以进入数据库客户端后粘贴 PostgreSQL 标签页中的 SQL：
-
-```bash
-# 在项目根目录执行，进入本地 PostgreSQL
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin
-```
-
-执行完成后，可以在 `psql` 中确认表已经创建：
-
-```sql
--- 查看 sys_user 表结构
-\d+ sys_user
-```
-
-::: warning ⚠️ 先建表，再启动后端
-后面的启动初始化只负责创建默认管理员，不负责创建 `sys_user` 表。如果跳过建表 SQL，服务启动时查询 `sys_user` 会失败。
-:::
 
 ## 🛠️ 创建启动初始化
 
@@ -253,12 +198,6 @@ func seedDefaultAdmin(db *gorm.DB, log *zap.Logger) error {
 本节的用户名使用普通唯一索引，默认不允许逻辑删除后复用。如果 `admin` 曾经被逻辑删除，普通查询会查不到它，但数据库中的唯一索引仍然会拦截同名账号。
 
 所以初始化默认管理员时使用 `Unscoped` 把历史记录也查出来，避免启动时重复创建同名账号。
-:::
-
-::: details 为什么建表 SQL 放在参考手册
-表结构属于数据库迁移内容，放在 SQL 脚本里更清晰：字段注释、表注释、索引和跨数据库差异都能明确看到。
-
-启动初始化只处理“运行时需要准备的数据”，比如默认管理员。这样表结构变更和业务初始化不会混在一起。
 :::
 
 ## 🛠️ 创建登录 Handler
@@ -632,37 +571,5 @@ go get golang.org/x/crypto@latest
 go mod tidy
 ```
 :::
-
-## ✅ 确认 Git 状态
-
-回到项目根目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 回到项目根目录后查看本节改动
-Set-Location ..
-git status
-```
-
-```bash [macOS / Linux]
-# 回到项目根目录后查看本节改动
-cd ..
-git status
-```
-
-:::
-
-应该能看到本节新增或修改的文件：
-
-```text
-server/internal/bootstrap/bootstrap.go
-server/internal/handler/auth/login.go
-server/internal/model/user.go
-server/internal/router/router.go
-server/main.go
-server/go.mod
-server/go.sum
-```
 
 下一节会在登录成功后签发 Token：[JWT 认证](./jwt-auth)。
