@@ -12,43 +12,45 @@ import (
 )
 
 const (
-	defaultAdminUsername      = "admin"
-	defaultAdminPassword      = "EzAdmin@123456"
-	defaultAdminRoleCode      = "super_admin"
-	defaultAdminRoleName      = "超级管理员"
-	defaultPermissionPath     = "/api/v1/system/health"
-	defaultPermissionMethod   = "GET"
-	defaultSystemMenuCode     = "system"
-	defaultHealthMenuCode     = "system:health"
-	defaultHealthViewCode     = "system:health:view"
-	defaultUserMenuCode       = "system:user"
-	defaultUserListCode       = "system:user:list"
-	defaultUserCreateCode     = "system:user:create"
-	defaultUserUpdateCode     = "system:user:update"
-	defaultUserStatusCode     = "system:user:status"
-	defaultUserAssignRoleCode = "system:user:assign-role"
-	defaultRoleMenuCode       = "system:role"
-	defaultRoleListCode       = "system:role:list"
-	defaultRoleCreateCode     = "system:role:create"
-	defaultRoleUpdateCode     = "system:role:update"
-	defaultRoleStatusCode     = "system:role:status"
-	defaultRolePermissionCode = "system:role:permission"
-	defaultRoleMenuAssignCode = "system:role:menu"
-	defaultMenuManageCode     = "system:menu"
-	defaultMenuListCode       = "system:menu:list"
-	defaultMenuCreateCode     = "system:menu:create"
-	defaultMenuUpdateCode     = "system:menu:update"
-	defaultMenuStatusCode     = "system:menu:status"
-	defaultMenuDeleteCode     = "system:menu:delete"
-	defaultConfigMenuCode     = "system:config"
-	defaultConfigListCode     = "system:config:list"
-	defaultConfigCreateCode   = "system:config:create"
-	defaultConfigUpdateCode   = "system:config:update"
-	defaultConfigStatusCode   = "system:config:status"
-	defaultConfigValueCode    = "system:config:value"
-	defaultFileMenuCode       = "system:file"
-	defaultFileListCode       = "system:file:list"
-	defaultFileUploadCode     = "system:file:upload"
+	defaultAdminUsername        = "admin"
+	defaultAdminPassword        = "EzAdmin@123456"
+	defaultAdminRoleCode        = "super_admin"
+	defaultAdminRoleName        = "超级管理员"
+	defaultPermissionPath       = "/api/v1/system/health"
+	defaultPermissionMethod     = "GET"
+	defaultSystemMenuCode       = "system"
+	defaultHealthMenuCode       = "system:health"
+	defaultHealthViewCode       = "system:health:view"
+	defaultUserMenuCode         = "system:user"
+	defaultUserListCode         = "system:user:list"
+	defaultUserCreateCode       = "system:user:create"
+	defaultUserUpdateCode       = "system:user:update"
+	defaultUserStatusCode       = "system:user:status"
+	defaultUserAssignRoleCode   = "system:user:assign-role"
+	defaultRoleMenuCode         = "system:role"
+	defaultRoleListCode         = "system:role:list"
+	defaultRoleCreateCode       = "system:role:create"
+	defaultRoleUpdateCode       = "system:role:update"
+	defaultRoleStatusCode       = "system:role:status"
+	defaultRolePermissionCode   = "system:role:permission"
+	defaultRoleMenuAssignCode   = "system:role:menu"
+	defaultMenuManageCode       = "system:menu"
+	defaultMenuListCode         = "system:menu:list"
+	defaultMenuCreateCode       = "system:menu:create"
+	defaultMenuUpdateCode       = "system:menu:update"
+	defaultMenuStatusCode       = "system:menu:status"
+	defaultMenuDeleteCode       = "system:menu:delete"
+	defaultConfigMenuCode       = "system:config"
+	defaultConfigListCode       = "system:config:list"
+	defaultConfigCreateCode     = "system:config:create"
+	defaultConfigUpdateCode     = "system:config:update"
+	defaultConfigStatusCode     = "system:config:status"
+	defaultConfigValueCode      = "system:config:value"
+	defaultFileMenuCode         = "system:file"
+	defaultFileListCode         = "system:file:list"
+	defaultFileUploadCode       = "system:file:upload"
+	defaultOperationLogMenuCode = "system:operation-log"
+	defaultOperationLogListCode = "system:operation-log:list"
 )
 
 type defaultPermissionSeed struct {
@@ -81,6 +83,7 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/configs/value/:key", Method: "GET"},
 	{Path: "/api/v1/system/files", Method: "GET"},
 	{Path: "/api/v1/system/files", Method: "POST"},
+	{Path: "/api/v1/system/operation-logs", Method: "GET"},
 }
 
 // Run 执行服务启动时必须完成的初始化动作。
@@ -317,6 +320,35 @@ func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
 
 	menus = append(menus, *fileMenu)
 	for _, button := range fileButtons {
+		createdButton, err := seedMenu(db, button, log)
+		if err != nil {
+			return nil, err
+		}
+		menus = append(menus, *createdButton)
+	}
+
+	operationLogMenu, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultOperationLogMenuCode,
+		Title:     "操作日志",
+		Path:      "/system/operation-logs",
+		Component: "system/OperationLogView",
+		Icon:      "history",
+		Sort:      70,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	operationLogButtons := []model.Menu{
+		{ParentID: operationLogMenu.ID, Type: model.MenuTypeButton, Code: defaultOperationLogListCode, Title: "查看操作日志", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus = append(menus, *operationLogMenu)
+	for _, button := range operationLogButtons {
 		createdButton, err := seedMenu(db, button, log)
 		if err != nil {
 			return nil, err

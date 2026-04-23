@@ -68,6 +68,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	menus := systemHandler.NewMenuAdminHandler(opts.DB, opts.Log)
 	configs := systemHandler.NewSystemConfigHandler(opts.DB, opts.Redis, opts.Log)
 	files := systemHandler.NewFileHandler(opts.DB, opts.Config.Upload, opts.Log)
+	operationLogs := systemHandler.NewOperationLogHandler(opts.DB, opts.Log)
 
 	// /health 通常给部署探针和本地快速验证使用。
 	r.GET("/health", health.Check)
@@ -76,7 +77,9 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	api := r.Group("/api/v1")
 	system := api.Group("/system")
 	system.Use(middleware.Auth(opts.Token, opts.Log))
+	system.Use(middleware.OperationLog(opts.DB, opts.Log))
 	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
+
 	system.GET("/health", health.Check)
 	system.GET("/users", users.List)
 	system.POST("/users", users.Create)
@@ -101,4 +104,6 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/configs/value/:key", configs.Value)
 	system.GET("/files", files.List)
 	system.POST("/files", files.Upload)
+	system.GET("/operation-logs", operationLogs.List)
+
 }
