@@ -30,6 +30,13 @@ func New(opts Options) *gin.Engine {
 	r := gin.New()
 	r.Use(appLogger.GinLogger(opts.Log), appLogger.GinRecovery(opts.Log))
 
+	// 配置上传最大内存
+	if opts.Config.Upload.MaxSizeMB > 0 {
+		r.MaxMultipartMemory = opts.Config.Upload.MaxSizeMB << 20
+	}
+	// 配置静态文件服务
+	r.Static(opts.Config.Upload.PublicPath, opts.Config.Upload.Dir)
+
 	registerSystemRoutes(r, opts)
 	registerAuthRoutes(r, opts)
 
@@ -60,6 +67,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	roles := systemHandler.NewRoleHandler(opts.DB, opts.Log)
 	menus := systemHandler.NewMenuAdminHandler(opts.DB, opts.Log)
 	configs := systemHandler.NewSystemConfigHandler(opts.DB, opts.Redis, opts.Log)
+	files := systemHandler.NewFileHandler(opts.DB, opts.Config.Upload, opts.Log)
 
 	// /health 通常给部署探针和本地快速验证使用。
 	r.GET("/health", health.Check)
@@ -91,4 +99,6 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.PUT("/configs/:id", configs.Update)
 	system.PATCH("/configs/:id/status", configs.UpdateStatus)
 	system.GET("/configs/value/:key", configs.Value)
+	system.GET("/files", files.List)
+	system.POST("/files", files.Upload)
 }

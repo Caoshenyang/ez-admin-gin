@@ -46,6 +46,9 @@ const (
 	defaultConfigUpdateCode   = "system:config:update"
 	defaultConfigStatusCode   = "system:config:status"
 	defaultConfigValueCode    = "system:config:value"
+	defaultFileMenuCode       = "system:file"
+	defaultFileListCode       = "system:file:list"
+	defaultFileUploadCode     = "system:file:upload"
 )
 
 type defaultPermissionSeed struct {
@@ -76,6 +79,8 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/configs/:id", Method: "PUT"},
 	{Path: "/api/v1/system/configs/:id/status", Method: "PATCH"},
 	{Path: "/api/v1/system/configs/value/:key", Method: "GET"},
+	{Path: "/api/v1/system/files", Method: "GET"},
+	{Path: "/api/v1/system/files", Method: "POST"},
 }
 
 // Run 执行服务启动时必须完成的初始化动作。
@@ -282,6 +287,36 @@ func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
 
 	menus = append(menus, *configMenu)
 	for _, button := range configButtons {
+		createdButton, err := seedMenu(db, button, log)
+		if err != nil {
+			return nil, err
+		}
+		menus = append(menus, *createdButton)
+	}
+
+	fileMenu, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultFileMenuCode,
+		Title:     "文件管理",
+		Path:      "/system/files",
+		Component: "system/FileView",
+		Icon:      "folder",
+		Sort:      60,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	fileButtons := []model.Menu{
+		{ParentID: fileMenu.ID, Type: model.MenuTypeButton, Code: defaultFileListCode, Title: "查看文件", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: fileMenu.ID, Type: model.MenuTypeButton, Code: defaultFileUploadCode, Title: "上传文件", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus = append(menus, *fileMenu)
+	for _, button := range fileButtons {
 		createdButton, err := seedMenu(db, button, log)
 		if err != nil {
 			return nil, err

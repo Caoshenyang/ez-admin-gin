@@ -14,3 +14,5 @@ favicon-preview.png
 
 .DS_Store
 Thumbs.db
+
+server/uploads/

@@ -59,3 +59,22 @@ auth:
   access_token_ttl: 7200
   # Token 签发方，后续解析时会校验。
   issuer: "ez-admin"
+
+upload:
+  # 文件保存目录，相对于 server/ 目录。
+  dir: uploads
+  # 文件公开访问前缀，后续会注册为静态资源路径。
+  public_path: /uploads
+  # 单个文件最大大小，单位 MB。
+  max_size_mb: 10
+  # 允许上传的文件后缀。先用白名单，避免任意文件都能上传。
+  allowed_exts:
+    - .jpg
+    - .jpeg
+    - .png
+    - .gif
+    - .webp
+    - .pdf
+    - .txt
+    - .docx
+    - .xlsx

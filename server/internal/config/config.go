@@ -14,6 +14,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Auth     AuthConfig     `mapstructure:"auth"`
+	Upload   UploadConfig   `mapstructure:"upload"`
 	Log      LogConfig      `mapstructure:"log"`
 }
 
@@ -85,6 +86,18 @@ type LogConfig struct {
 	Compress bool `mapstructure:"compress"`
 }
 
+// UploadConfig 保存本地文件上传配置。
+type UploadConfig struct {
+	// Dir 是文件保存目录，相对于 server/ 目录。
+	Dir string `mapstructure:"dir"`
+	// PublicPath 是文件公开访问前缀。
+	PublicPath string `mapstructure:"public_path"`
+	// MaxSizeMB 是单个文件最大大小，单位 MB。
+	MaxSizeMB int64 `mapstructure:"max_size_mb"`
+	// AllowedExts 是允许上传的文件后缀白名单。
+	AllowedExts []string `mapstructure:"allowed_exts"`
+}
+
 // Load 读取配置文件，并把结果解析到 Config 结构体中。
 func Load() (*Config, error) {
 	v := viper.New()
@@ -147,6 +160,11 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("auth.jwt_secret", "ez-admin-dev-secret-change-me-please-32")
 	v.SetDefault("auth.access_token_ttl", 7200)
 	v.SetDefault("auth.issuer", "ez-admin")
+	// 上传配置默认值适合本地开发和小型后台起步。
+	v.SetDefault("upload.dir", "uploads")
+	v.SetDefault("upload.public_path", "/uploads")
+	v.SetDefault("upload.max_size_mb", 10)
+	v.SetDefault("upload.allowed_exts", []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".docx", ".xlsx"})
 }
 
 // bindEnvs 让环境变量能稳定参与结构体解析。
@@ -183,6 +201,11 @@ func bindEnvs(v *viper.Viper) {
 		"auth.jwt_secret",
 		"auth.access_token_ttl",
 		"auth.issuer",
+		// 允许用 EZ_UPLOAD_DIR 这类环境变量覆盖上传目录。
+		"upload.dir",
+		"upload.public_path",
+		"upload.max_size_mb",
+		"upload.allowed_exts",
 	}
 
 	for _, key := range keys {
