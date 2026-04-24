@@ -8,7 +8,7 @@ import {
   NotificationsOutline,
   SearchOutline,
 } from '@vicons/ionicons5'
-import type { DropdownOption, MenuOption } from 'naive-ui'
+import type { DropdownOption } from 'naive-ui'
 import {
   NButton,
   NDropdown,
@@ -24,12 +24,9 @@ import {
 import { computed, h, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
+import { resetDynamicRoutes } from '../router'
+import { findMenuTitleByPath, sideMenuOptions } from '../router/dynamic-menu'
 import { clearAuthSession, getAuthUserInfo } from '../utils/auth'
-
-interface MenuItem {
-  title: string
-  to: string
-}
 
 interface WorkTab {
   title: string
@@ -41,20 +38,6 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const menuItems: MenuItem[] = [
-  { title: '工作台', to: '/dashboard' },
-  { title: '用户管理', to: '/users' },
-  { title: '角色权限', to: '/roles' },
-  { title: '菜单管理', to: '/menus' },
-  { title: '操作日志', to: '/logs' },
-  { title: '系统设置', to: '/settings' },
-]
-
-const menuOptions: MenuOption[] = menuItems.map((item) => ({
-  label: item.title,
-  key: item.to,
-}))
-
 const openTabs = ref<WorkTab[]>([{ title: '工作台', to: '/dashboard', closable: false }])
 
 const currentUser = computed(() => getAuthUserInfo())
@@ -62,13 +45,16 @@ const displayName = computed(() => {
   return currentUser.value?.nickname || currentUser.value?.username || '管理员'
 })
 
+const routeTitle = computed(() => {
+  return String(route.meta.title ?? findMenuTitleByPath(route.path) ?? '工作台')
+})
+
 const breadcrumbText = computed(() => {
-  const title = String(route.meta.title ?? '工作台')
-  return `首页 / ${title}`
+  return `首页 / ${routeTitle.value}`
 })
 
 const activeMenuKey = computed(() => {
-  return menuItems.some((item) => item.to === route.path) ? route.path : null
+  return route.path
 })
 
 const dropdownOptions: DropdownOption[] = [
@@ -83,7 +69,7 @@ const dropdownOptions: DropdownOption[] = [
 ]
 
 function ensureCurrentTab() {
-  const title = String(route.meta.title ?? '')
+  const title = routeTitle.value
   if (!title || route.path === '/login') {
     return
   }
@@ -144,6 +130,7 @@ function handleUserAction(key: string | number) {
   }
 
   clearAuthSession()
+  resetDynamicRoutes()
   message.success('已退出登录')
   void router.replace('/login')
 }
@@ -156,7 +143,6 @@ watch(
   { immediate: true },
 )
 </script>
-
 <template>
   <NLayout class="h-screen overflow-hidden bg-[#F5F7FA]" has-sider :native-scrollbar="false">
     <NLayoutSider
@@ -180,7 +166,7 @@ watch(
       <NMenu
         class="mt-3"
         :value="activeMenuKey"
-        :options="menuOptions"
+        :options="sideMenuOptions"
         :indent="18"
         inverted
         @update:value="handleMenuUpdate"

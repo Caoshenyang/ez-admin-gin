@@ -1,6 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { hasAccessToken } from '../utils/auth'
+import { getCurrentUserMenus } from '../api/menu'
+import { clearAuthSession, hasAccessToken } from '../utils/auth'
+import {
+  buildDynamicRoutes,
+  clearAuthMenus,
+  setAuthMenus,
+} from './dynamic-menu'
+
+const removeDynamicRouteCallbacks: Array<() => void> = []
+let dynamicRoutesReady = false
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,24 +22,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../pages/auth/LoginPage.vue'),
-      beforeEnter: () => {
-        if (hasAccessToken()) {
-          return '/dashboard'
-        }
-
-        return true
-      },
     },
     {
       path: '/',
+      name: 'admin',
       component: () => import('../layouts/AdminLayout.vue'),
-      beforeEnter: () => {
-        if (!hasAccessToken()) {
-          return '/login'
-        }
-
-        return true
-      },
       children: [
         {
           path: 'dashboard',
@@ -38,59 +34,57 @@ const router = createRouter({
           component: () => import('../pages/dashboard/DashboardHome.vue'),
           meta: { title: '工作台' },
         },
-        {
-          path: 'users',
-          name: 'users',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '用户管理',
-            description: '这一页下一节会开始接入真实用户列表和操作表单。',
-          },
-          meta: { title: '用户管理' },
-        },
-        {
-          path: 'roles',
-          name: 'roles',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '角色权限',
-            description: '当前先验证后台布局和标签栏，角色页面后续章节继续补齐。',
-          },
-          meta: { title: '角色权限' },
-        },
-        {
-          path: 'menus',
-          name: 'menus',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '菜单管理',
-            description: '这一页下一节会开始与动态菜单能力衔接。',
-          },
-          meta: { title: '菜单管理' },
-        },
-        {
-          path: 'logs',
-          name: 'logs',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '操作日志',
-            description: '当前先保留路由出口，后续章节再接真实日志页面。',
-          },
-          meta: { title: '操作日志' },
-        },
-        {
-          path: 'settings',
-          name: 'settings',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '系统设置',
-            description: '当前先验证后台布局结构，配置页后续章节继续补齐。',
-          },
-          meta: { title: '系统设置' },
-        },
       ],
     },
   ],
 })
+
+router.beforeEach(async (to) => {
+  if (to.path === '/login') {
+    return hasAccessToken() ? '/dashboard' : true
+  }
+
+  if (!hasAccessToken()) {
+    resetDynamicRoutes()
+    return {
+      path: '/login',
+      query: {
+        redirect: to.fullPath,
+      },
+    }
+  }
+
+  if (!dynamicRoutesReady) {
+    try {
+      const menus = await getCurrentUserMenus()
+      setAuthMenus(menus)
+
+      for (const route of buildDynamicRoutes(menus)) {
+        removeDynamicRouteCallbacks.push(router.addRoute('admin', route))
+      }
+
+      // 动态路由刚注册完成，需要重新匹配一次当前目标地址。
+      dynamicRoutesReady = true
+      return to.fullPath
+    } catch {
+      clearAuthSession()
+      resetDynamicRoutes()
+      return '/login'
+    }
+  }
+
+  return true
+})
+
+// resetDynamicRoutes 用于退出登录或 Token 失效时清理旧账号菜单。
+export function resetDynamicRoutes() {
+  for (const removeRoute of removeDynamicRouteCallbacks) {
+    removeRoute()
+  }
+
+  removeDynamicRouteCallbacks.length = 0
+  dynamicRoutesReady = false
+  clearAuthMenus()
+}
 
 export default router
