@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(code --list-extensions)",
+      "Read(//c/Users/Administrator/**)",
+      "Read(//d/A/ez-admin-gin/docs/$APPDATA/claude/**)",
+      "Read(//d/A/ez-admin-gin/docs/$HOME/.claude/**)",
+      "Bash(ls -d \"c:/Users/Administrator/.vscode/extensions/highagency.pencildev\"*)"
+    ]
+  }
+}
