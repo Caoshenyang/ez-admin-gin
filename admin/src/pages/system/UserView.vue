@@ -198,14 +198,14 @@ const columns: DataTableColumns<UserItem> = [
     render(row) {
       const nextStatus =
         row.status === UserStatus.Enabled ? UserStatus.Disabled : UserStatus.Enabled
-      const dropdownOptions = [
-        canUse('system:user:assign-role')
-          ? {
+      const dropdownOptions = canUse('system:user:assign-role')
+        ? [
+            {
               label: '分配角色',
               key: `role:${row.id}`,
-            }
-          : null,
-      ].filter(Boolean)
+            },
+          ]
+        : []
 
       return h(
         NSpace,

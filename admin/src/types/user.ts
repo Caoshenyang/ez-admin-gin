@@ -20,7 +20,7 @@ export interface UserListQuery {
   page_size: number
   keyword?: string
   role_id?: number
-  status?: UserStatus
+  status?: UserStatus | 0
 }
 
 export interface UserListResponse {

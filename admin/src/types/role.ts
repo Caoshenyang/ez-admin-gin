@@ -25,7 +25,7 @@ export interface RoleListQuery {
   page: number
   page_size: number
   keyword?: string
-  status?: RoleStatus
+  status?: RoleStatus | 0
 }
 
 export interface RoleListResponse {
@@ -33,4 +33,36 @@ export interface RoleListResponse {
   total: number
   page: number
   page_size: number
+}
+
+export interface CreateRolePayload {
+  code: string
+  name: string
+  sort: number
+  status: RoleStatus
+  remark: string
+}
+
+export interface UpdateRolePayload {
+  name: string
+  sort: number
+  status: RoleStatus
+  remark: string
+}
+
+export interface UpdateRoleStatusPayload {
+  status: RoleStatus
+}
+
+export interface RolePermissionItem {
+  path: string
+  method: string
+}
+
+export interface UpdateRolePermissionsPayload {
+  permissions: RolePermissionItem[]
+}
+
+export interface UpdateRoleMenusPayload {
+  menu_ids: number[]
 }
