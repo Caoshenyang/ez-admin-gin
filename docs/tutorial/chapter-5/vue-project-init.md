@@ -197,6 +197,8 @@ app.mount('#app')
 
 创建 `src/styles/main.css`。这里除了保留全局基础样式，还顺手放一组章节内可复用的主题变量。
 
+::: details `admin/src/styles/main.css` — 全局样式
+
 ```css
 @import "tailwindcss";
 
@@ -248,6 +250,8 @@ select {
   font: inherit;
 }
 ```
+
+:::
 
 ::: details 为什么这里没有 `tailwind.config.js`
 Tailwind CSS 4 默认更偏向 CSS-first 配置方式，很多主题变量和样式基线都可以直接放在样式入口里维护。

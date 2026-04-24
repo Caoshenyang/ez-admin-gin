@@ -126,6 +126,8 @@ export async function getCurrentUserMenus() {
 - 把菜单树转换成 Naive UI 的 `MenuOption[]`。
 - 把 `type = 2` 的菜单转换成 Vue Router 动态路由。
 
+::: details `admin/src/router/dynamic-menu.ts` — 菜单转换工具
+
 ```ts
 import type { MenuOption } from 'naive-ui'
 import type { RouteRecordRaw } from 'vue-router'
@@ -254,6 +256,8 @@ function toChildRoutePath(path: string) {
 }
 ```
 
+:::
+
 ::: details 为什么这里先把系统页面都映射到占位页
 后端初始化的菜单已经包含 `system/UserView`、`system/RoleView`、`system/MenuView` 等组件编码，但第五章后面的页面还没正式实现。
 
@@ -283,6 +287,8 @@ function toChildRoutePath(path: string) {
 - `/login`：登录页。
 - `/dashboard`：固定内置的工作台。
 - 后端菜单接口返回的页面：运行时挂到 `name: 'admin'` 的后台布局下面。
+
+::: details `admin/src/router/index.ts` — 路由守卫加载菜单
 
 ```ts
 import { createRouter, createWebHistory } from 'vue-router'
@@ -377,6 +383,8 @@ export function resetDynamicRoutes() {
 export default router
 ```
 
+:::
+
 替换后重点看两处：
 
 - `name: 'admin'` 必须保留。后面 `router.addRoute('admin', route)` 会把动态页面挂到这个布局下面。
@@ -398,6 +406,8 @@ export default router
 - `'routeTitle' is declared but its value is never read`：新增了 `routeTitle`，但没有让工作标签复用它。
 
 把 `AdminLayout.vue` 顶部的整个 `<script setup lang="ts">...</script>` 替换为下面这段：
+
+::: details `admin/src/layouts/AdminLayout.vue` — 使用动态菜单
 
 ```vue
 <script setup lang="ts">
@@ -546,6 +556,8 @@ watch(
 )
 </script>
 ```
+
+:::
 
 替换完脚本后，再改模板里的 `NMenu`。只需要确认 `:options` 使用的是 `sideMenuOptions`：
 

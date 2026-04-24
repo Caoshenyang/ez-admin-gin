@@ -174,6 +174,8 @@ export interface LoginResponse {
 - 统一管理 Token、Token 类型和用户信息。
 - 根据“记住登录”决定把数据写进 `localStorage` 还是 `sessionStorage`。
 
+::: details `admin/src/utils/auth.ts` — 本地登录态存储
+
 ```ts
 import type { LoginResponse } from '../types/auth'
 
@@ -249,6 +251,8 @@ export function getAuthorizationHeader() {
   return `${getTokenType()} ${accessToken}`
 }
 ```
+
+:::
 
 ::: details 为什么要同时支持 `localStorage` 和 `sessionStorage`
 原型里有“记住登录”复选框，如果无论是否勾选都固定写入 `localStorage`，这个交互就只是一个摆设。
@@ -335,6 +339,8 @@ export async function login(payload: LoginRequest) {
 - “记住登录”决定 `setAuthSession` 写入哪种存储，“忘记密码”先保留入口。
 
 这里直接整体替换成下面内容：
+
+::: details `admin/src/pages/auth/LoginPage.vue` — 登录页
 
 ```vue
 <script setup lang="ts">
@@ -634,6 +640,8 @@ async function handleSubmit() {
 }
 </style>
 ```
+
+:::
 
 ::: warning ⚠️ 这一节先不接复杂登录能力
 这一节已经把原型图里的关键界面都放出来了，但真正接入的后端能力仍然只有登录接口本身。

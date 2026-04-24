@@ -85,6 +85,8 @@ admin/
 
 修改 `admin/src/styles/main.css`。本次主要补一件事：把浏览器级滚动收掉，后面的后台布局才能稳定限制在一屏内。
 
+::: details `admin/src/styles/main.css` — 关闭浏览器级滚动
+
 ```css
 @import "tailwindcss";
 
@@ -145,6 +147,8 @@ button:not(:disabled), /* [!code ++] */
 } /* [!code ++] */
 ```
 
+:::
+
 ::: details 为什么这里直接关掉浏览器级滚动
 后台管理台和内容站不一样，它更像一个应用壳子。只要布局层开始依赖“顶部栏固定、侧边栏固定、工作标签固定”，浏览器默认滚动就会把整套结构拉散。
 
@@ -164,6 +168,8 @@ button:not(:disabled), /* [!code ++] */
 
 - 增加 `getAuthUserInfo`。
 - 解析失败时顺手清理异常登录态，避免顶部栏读到坏数据。
+
+::: details `admin/src/utils/auth.ts` — 补齐登录用户读取能力
 
 ```ts
 import type { LoginResponse } from '../types/auth'
@@ -255,6 +261,8 @@ export function getAuthorizationHeader() {
 }
 ```
 
+:::
+
 ## 🛠️ 创建后台布局组件
 
 创建 `admin/src/layouts/AdminLayout.vue`。这一步是本节的核心，它负责把原型里的四层结构一次性搭起来。
@@ -273,6 +281,8 @@ export function getAuthorizationHeader() {
 - 路由内容区
 
 这里直接完整写入即可。
+
+::: details `admin/src/layouts/AdminLayout.vue` — 后台布局组件
 
 ```vue
 <script setup lang="ts">
@@ -562,6 +572,8 @@ watch(
 </template>
 ```
 
+:::
+
 ::: details 为什么这里把滚动控制放在布局内部
 后台壳子一旦采用“左侧固定 + 顶部固定 + 标签固定”的结构，就必须保证中间内容区能独立控制高度。
 
@@ -582,6 +594,8 @@ watch(
 - 左侧访问趋势卡片
 - 右侧最近操作卡片
 - 底部快捷入口
+
+::: details `admin/src/pages/dashboard/DashboardHome.vue` — 升级工作台页面
 
 ```vue
 <script setup lang="ts">
@@ -691,9 +705,13 @@ const recentOperations = [
 </template>
 ```
 
+:::
+
 ## 🛠️ 创建可复用占位页
 
 创建 `admin/src/pages/system/PlaceholderPage.vue`。这一页用于先把后台布局的路由出口接上，后续做到具体系统页时再逐步替换成真实内容。
+
+::: details `admin/src/pages/system/PlaceholderPage.vue` — 可复用占位页
 
 ```vue
 <script setup lang="ts">
@@ -737,6 +755,8 @@ defineProps<{
 </template>
 ```
 
+:::
+
 ## 🛠️ 把后台布局接进路由
 
 修改 `admin/src/router/index.ts`。这一处要做的核心变化有三件：
@@ -744,6 +764,8 @@ defineProps<{
 - 登录后不再直接进入单独页面，而是进入统一后台布局。
 - 后台布局下挂工作台和静态系统页。
 - `meta.title` 先补上，方便顶部栏和工作标签读取页面标题。
+
+::: details `admin/src/router/index.ts` — 后台布局接进路由
 
 ```ts
 import { createRouter, createWebHistory } from 'vue-router'
@@ -843,6 +865,8 @@ const router = createRouter({
 
 export default router
 ```
+
+:::
 
 ## ✅ 启动验证
 

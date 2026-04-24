@@ -107,6 +107,8 @@ import { RouterView } from 'vue-router'
 
 新增 `admin/src/types/user.ts`。
 
+::: details `admin/src/types/user.ts` — 用户类型
+
 ```ts
 export const UserStatus = {
   Enabled: 1,
@@ -162,6 +164,8 @@ export interface UpdateUserRolesPayload {
 }
 ```
 
+:::
+
 这里保留了后端返回的下划线字段，比如 `role_ids`、`created_at`。这样可以减少前端转换成本，也方便跟接口响应直接对照。
 
 ## 🛠️ 定义角色类型
@@ -213,6 +217,8 @@ export interface RoleListResponse {
 
 新增 `admin/src/api/user.ts`。
 
+::: details `admin/src/api/user.ts` — 用户接口
+
 ```ts
 import http from './http'
 
@@ -259,6 +265,8 @@ export async function updateUserRoles(id: number, payload: UpdateUserRolesPayloa
 }
 ```
 
+:::
+
 ## 🛠️ 封装角色列表接口
 
 新增 `admin/src/api/role.ts`。
@@ -288,6 +296,8 @@ export async function getRoles(params: RoleListQuery) {
 - 表格区：选择列、工具栏、主操作按钮加更多下拉和底部中文分页。
 - 用户弹窗：把之前更有气质的“轻提示头部”融合进 `NModal` 的自定义 header，保留氛围，同时让正文从第一行开始就服务表单本身。
 - 角色弹窗：比新增弹窗再小一档，减少空白感。
+
+::: details `admin/src/pages/system/UserView.vue` — 用户管理页面
 
 ```vue
 <script setup lang="ts">
@@ -1310,6 +1320,8 @@ onMounted(async () => {
 }
 </style>
 ```
+
+:::
 
 ::: details 为什么新增用户时可以选角色，编辑用户时不放在同一个弹窗里
 后端把“编辑用户基础信息”和“分配用户角色”拆成了两个接口：
