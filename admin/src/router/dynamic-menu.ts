@@ -13,10 +13,10 @@ const routeComponentMap: Record<string, RouteComponent> = {
   'system/UserView': () => import('../pages/system/UserView.vue'),
   'system/RoleView': () => import('../pages/system/RoleView.vue'),
   'system/MenuView': () => import('../pages/system/MenuView.vue'),
-  'system/ConfigView': placeholderPage,
-  'system/FileView': placeholderPage,
-  'system/OperationLogView': placeholderPage,
-  'system/LoginLogView': placeholderPage,
+  'system/ConfigView': () => import('../pages/system/ConfigView.vue'),
+  'system/FileView': () => import('../pages/system/FileView.vue'),
+  'system/OperationLogView': () => import('../pages/system/OperationLogView.vue'),
+  'system/LoginLogView': () => import('../pages/system/LoginLogView.vue'),
 }
 
 const builtinMenuOptions: MenuOption[] = [
