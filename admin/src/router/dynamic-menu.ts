@@ -10,7 +10,7 @@ const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
 
 const routeComponentMap: Record<string, RouteComponent> = {
   'system/HealthView': placeholderPage,
-  'system/UserView': placeholderPage,
+  'system/UserView': () => import('../pages/system/UserView.vue'),
   'system/RoleView': placeholderPage,
   'system/MenuView': placeholderPage,
   'system/ConfigView': placeholderPage,
