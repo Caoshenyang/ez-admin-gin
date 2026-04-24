@@ -62,6 +62,20 @@ export function hasAccessToken() {
   return getAccessToken() !== ''
 }
 
+export function getAuthUserInfo() {
+  const raw = readStorageValue(USER_INFO_KEY)
+  if (!raw) {
+    return null
+  }
+
+  try {
+    return JSON.parse(raw) as AuthUserInfo
+  } catch {
+    clearAuthSession()
+    return null
+  }
+}
+
 // getAuthorizationHeader 统一拼接 Authorization 请求头。
 export function getAuthorizationHeader() {
   const accessToken = getAccessToken()

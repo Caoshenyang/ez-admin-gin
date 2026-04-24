@@ -301,14 +301,14 @@ import { RouterView } from 'vue-router'
 
 ```vue
 <script setup lang="ts">
-import { NButton, NCard, NSpace, NText } from 'naive-ui'
+import { NButton, NCard, NSpace } from 'naive-ui'
 </script>
 
 <template>
   <main class="grid min-h-screen place-items-center bg-slate-100 px-6 py-10">
     <NCard title="EZ Admin" class="w-full max-w-sm rounded-xl shadow-sm" :bordered="false">
       <NSpace vertical :size="16">
-        <NText depth="2">登录页会在下一节接入真实接口。</NText>
+        <p class="text-sm text-[#6B7280]">登录页会在下一节接入真实接口。</p>
         <NButton type="primary" block>进入登录页开发</NButton>
       </NSpace>
     </NCard>
@@ -320,14 +320,14 @@ import { NButton, NCard, NSpace, NText } from 'naive-ui'
 
 ```vue
 <script setup lang="ts">
-import { NCard, NText } from 'naive-ui'
+import { NCard } from 'naive-ui'
 </script>
 
 <template>
   <main class="bg-slate-100 px-6 py-8">
     <div class="mx-auto max-w-5xl">
       <NCard title="工作台" class="rounded-xl" :bordered="false">
-        <NText depth="2">后台布局会在后续小节补齐。</NText>
+        <p class="text-sm text-[#6B7280]">后台布局会在后续小节补齐。</p>
       </NCard>
     </div>
   </main>
@@ -337,7 +337,7 @@ import { NCard, NText } from 'naive-ui'
 ::: tip 先从页面骨架开始使用 Tailwind
 这一节先用 Tailwind 处理页面壳子、宽度、留白和背景，让你先熟悉章节里的样式分工。
 
-像 `NCard`、`NButton`、`NText` 这些稳定组件，仍然继续交给 Naive UI。
+像 `NCard`、`NButton` 这些稳定组件，仍然继续交给 Naive UI。
 :::
 
 ## 🛠️ 更新路由

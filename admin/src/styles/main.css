@@ -30,6 +30,8 @@ body,
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  /* 关闭浏览器默认滚动条 */
+  overflow: hidden;
 }
 
 body {
@@ -47,3 +49,9 @@ textarea,
 select {
   font: inherit;
 }
+
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+.n-button:not(.n-button--disabled) {
+  cursor: pointer;
+} 

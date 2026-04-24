@@ -9,7 +9,6 @@ import {
   NForm,
   NFormItem,
   NInput,
-  NText,
   useMessage,
 } from 'naive-ui'
 import { computed, reactive, ref } from 'vue'
@@ -41,10 +40,10 @@ function createCaptcha() {
 
 const captchaText = ref(createCaptcha())
 
-// 登录表单模型。验证码和记住登录只参与前端页面交互。
+// 登录表单模型。用户名和密码先默认填充，方便当前阶段联调。
 const formModel = reactive({
   username: 'admin',
-  password: '',
+  password: 'EzAdmin@123456',
   captcha: '',
   rememberLogin: true,
 })
@@ -61,20 +60,6 @@ const rules: FormRules = {
     {
       required: true,
       message: '请输入密码',
-      trigger: ['blur', 'input'],
-    },
-  ],
-  captcha: [
-    {
-      required: true,
-      message: '请输入验证码',
-      trigger: ['blur', 'input'],
-    },
-    {
-      validator: (_rule, value: string) =>
-        value.trim().toUpperCase() === captchaText.value
-          ? true
-          : new Error('验证码不正确'),
       trigger: ['blur', 'input'],
     },
   ],
@@ -122,7 +107,6 @@ async function handleSubmit() {
       : '登录失败，请稍后重试'
 
     message.error(errorMessage)
-    refreshCaptcha()
   } finally {
     submitting.value = false
   }
@@ -130,23 +114,29 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="min-h-screen bg-[#F5F7FA] px-4 py-4 md:px-8 md:py-8">
+  <main class="h-screen overflow-hidden bg-[#F5F7FA] px-4 py-4 md:px-5 md:py-5">
     <section
-      class="mx-auto grid max-w-[1256px] gap-7 pt-6 xl:grid-cols-[610px_430px] xl:justify-between xl:gap-14 xl:pt-[52px]"
+      class="mx-auto grid h-full max-w-[1180px] items-center gap-6 xl:grid-cols-[minmax(0,560px)_400px] xl:justify-between xl:gap-8"
     >
-      <section class="rounded-lg bg-[#111827] px-6 py-7 md:px-11 md:py-11 xl:min-h-[732px]">
-        <div class="h-16 w-16 rounded-lg bg-[#18A058]" />
-        <h1 class="mt-9 text-[42px] leading-[1.12] font-bold tracking-tight text-white md:text-[56px]">
-          EZ Admin Gin
-        </h1>
-        <p class="mt-7 text-lg text-[#D1D5DB] md:text-xl">面向工程团队的 Naive UI 后台框架</p>
+      <section
+        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[#111827] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
+      >
+        <div>
+          <div class="h-14 w-14 rounded-[14px] bg-[#18A058]" />
+          <h1 class="mt-6 text-[38px] leading-[1.06] font-bold tracking-tight text-white md:text-[48px]">
+            EZ Admin Gin
+          </h1>
+          <p class="mt-4 text-[15px] leading-7 text-[#D1D5DB] md:text-[17px]">
+            面向工程团队的 Naive UI 后台框架
+          </p>
+        </div>
 
-        <div class="mt-8 rounded-lg bg-[#1F2937] p-6">
-          <ul class="grid list-none gap-[18px] p-0">
+        <div class="mt-6 rounded-2xl bg-[#1F2937] p-5 md:p-6">
+          <ul class="grid list-none gap-4 p-0">
             <li
               v-for="feature in productFeatures"
               :key="feature"
-              class="text-[17px] leading-[1.7] text-[#F9FAFB]"
+              class="text-[14px] leading-7 text-[#F9FAFB] md:text-[15px]"
             >
               {{ feature }}
             </li>
@@ -154,36 +144,39 @@ async function handleSubmit() {
         </div>
       </section>
 
-      <section class="flex flex-col gap-6 xl:pt-[66px]">
+      <section class="flex min-h-0 flex-col justify-center gap-2">
         <NCard
-          class="rounded-lg shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+          class="rounded-2xl shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
           :bordered="false"
-          content-style="padding: 36px;"
+          content-style="padding: 20px;"
         >
-          <div class="mb-5">
-            <h2 class="mb-[10px] text-[28px] font-bold text-[#111827]">登录控制台</h2>
-            <NText depth="3">请使用管理员账号继续</NText>
+          <div class="mb-2.5">
+            <h2 class="mb-1 text-[23px] font-bold text-[#111827]">登录控制台</h2>
+            <p class="text-sm text-[#6B7280]">请使用管理员账号继续</p>
           </div>
 
           <NForm
             ref="formRef"
             :model="formModel"
             :rules="rules"
+            class="login-form"
             label-placement="top"
-            size="large"
+            size="medium"
             @submit.prevent="handleSubmit"
           >
             <NFormItem label="用户名" path="username">
               <NInput
                 v-model:value="formModel.username"
+                class="compact-input"
                 placeholder="请输入用户名"
                 autocomplete="username"
               />
             </NFormItem>
 
-            <NFormItem label="密码" path="password">
+            <NFormItem label="密码" path="password" class="password-item">
               <NInput
                 v-model:value="formModel.password"
+                class="compact-input"
                 type="password"
                 show-password-on="click"
                 placeholder="请输入密码"
@@ -191,17 +184,18 @@ async function handleSubmit() {
               />
             </NFormItem>
 
-            <NFormItem path="captcha" class="mb-0">
+            <NFormItem class="captcha-item mb-0">
               <div class="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
                 <NInput
                   v-model:value="formModel.captcha"
+                  class="compact-input"
                   placeholder="验证码"
                   maxlength="4"
                 />
 
                 <button
                   type="button"
-                  class="cursor-pointer rounded border border-[#A7F3D0] bg-[#ECFDF5] text-[22px] font-bold text-[#18A058]"
+                  class="h-8.5 cursor-pointer rounded-lg border border-[#A7F3D0] bg-[#ECFDF5] text-lg font-bold tracking-[0.08em] text-[#18A058]"
                   @click="refreshCaptcha"
                 >
                   {{ captchaText }}
@@ -209,7 +203,7 @@ async function handleSubmit() {
               </div>
             </NFormItem>
 
-            <div class="my-5 flex flex-col gap-3 sm:my-[20px] sm:flex-row sm:items-center sm:justify-between">
+            <div class="my-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <NCheckbox v-model:checked="formModel.rememberLogin">
                 记住登录
               </NCheckbox>
@@ -226,10 +220,11 @@ async function handleSubmit() {
             <NButton
               attr-type="submit"
               type="primary"
-              size="large"
+              size="medium"
               block
               color="#18A058"
               :loading="submitting"
+              class="login-submit"
             >
               登录
             </NButton>
@@ -238,15 +233,64 @@ async function handleSubmit() {
           <NAlert
             type="info"
             :show-icon="false"
-            class="mt-5"
+            class="mt-2.5 compact-alert"
             title="默认账号：admin / EzAdmin@123456"
           >
-            验证码用于表现 NForm 校验与登录流程。
+            验证码当前仅做占位，后续补齐真实校验。
           </NAlert>
         </NCard>
 
-        <p class="text-[13px] text-[#9CA3AF]">{{ footerText }}</p>
+        <p class="px-1 text-[12px] text-[#9CA3AF]">{{ footerText }}</p>
       </section>
     </section>
   </main>
 </template>
+
+<style scoped>
+.login-form {
+  --n-feedback-height: 8px;
+  --n-feedback-padding: 1px 0 0;
+  --n-label-height: 18px;
+  --n-label-padding: 0 0 3px;
+}
+
+.login-form :deep(.n-form-item) {
+  margin-bottom: 4px;
+}
+
+.login-form :deep(.password-item) {
+  margin-bottom: 0;
+}
+
+.login-form :deep(.password-item .n-form-item-feedback-wrapper) {
+  min-height: 2px;
+}
+
+.login-form :deep(.captcha-item) {
+  margin-top: -6px;
+}
+
+.login-form :deep(.n-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.compact-input {
+  --n-border-radius: 8px;
+  --n-font-size: 14px;
+  --n-height: 34px;
+  --n-padding-left: 11px;
+  --n-padding-right: 11px;
+}
+
+.login-submit {
+  --n-border-radius: 8px;
+  --n-font-size: 14px;
+  --n-height: 36px;
+}
+
+.compact-alert {
+  --n-border-radius: 8px;
+  --n-font-size: 13px;
+  --n-padding: 8px 10px;
+}
+</style>
