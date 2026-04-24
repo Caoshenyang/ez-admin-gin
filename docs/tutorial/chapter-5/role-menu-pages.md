@@ -10,7 +10,7 @@ description: "实现角色管理和菜单管理前端页面。"
 完成这一节后，侧边栏里的“角色管理”和“菜单管理”不再停留在占位页，而是可以进入真实管理页面。角色页面负责维护角色、接口权限和菜单权限；菜单页面负责维护目录、页面菜单和按钮权限。
 
 ::: tip 🎯 本节目标
-这一节会把 `system/RoleView` 和 `system/MenuView` 从占位页换成真实页面，并补齐角色、菜单相关的类型和 API 封装。页面会参考原型里的“左侧列表 / 树表格 + 右侧权限或编辑面板”结构，保持后台页面紧凑、可扫描。
+这一节会把 `system/RoleView` 和 `system/MenuView` 从占位页换成真实页面，并补齐角色、菜单相关的类型和 API 封装。角色页面采用左侧列表 + 右侧权限面板布局；菜单页面使用 NDataTable 树形展示全宽菜单树，新增和编辑通过弹框表单完成。
 :::
 
 ## 先看接口边界
@@ -72,49 +72,51 @@ admin/
 
 ## 🛠️ 完整代码
 
-下面直接引入本节对应的完整项目文件。这样阅读时看到的代码和实际项目文件保持一致，也方便后续继续维护。
+下面直接引入本节对应的完整项目文件，默认折叠。需要复制或对照时点击展开即可。
 
-### 角色类型
-
-`admin/src/types/role.ts`
+::: details `admin/src/types/role.ts` — 角色类型
 
 <<< ../../../admin/src/types/role.ts
 
-### 菜单类型
+:::
 
-`admin/src/types/menu.ts`
+::: details `admin/src/types/menu.ts` — 菜单类型
 
 <<< ../../../admin/src/types/menu.ts
 
-### 角色接口
+:::
 
-`admin/src/api/role.ts`
+::: details `admin/src/api/role.ts` — 角色接口
 
 <<< ../../../admin/src/api/role.ts
 
-### 菜单接口
+:::
 
-`admin/src/api/menu.ts`
+::: details `admin/src/api/menu.ts` — 菜单接口
 
 <<< ../../../admin/src/api/menu.ts
 
-### 角色权限页面
+:::
 
-`admin/src/pages/system/RoleView.vue`
+::: details `admin/src/pages/system/RoleView.vue` — 角色权限页面
 
 <<< ../../../admin/src/pages/system/RoleView.vue
 
-### 菜单管理页面
+:::
 
-`admin/src/pages/system/MenuView.vue`
+::: details `admin/src/pages/system/MenuView.vue` — 菜单管理页面
 
 <<< ../../../admin/src/pages/system/MenuView.vue
 
-### 动态路由映射
+:::
 
-修改 `admin/src/router/dynamic-menu.ts` 后，`system/RoleView` 和 `system/MenuView` 会从占位页切换为真实页面。
+::: details `admin/src/router/dynamic-menu.ts` — 动态路由映射
+
+修改后，`system/RoleView` 和 `system/MenuView` 会从占位页切换为真实页面。
 
 <<< ../../../admin/src/router/dynamic-menu.ts
+
+:::
 
 ::: warning ⚠️ 按钮权限的 `code` 要和页面判断一致
 例如用户页里判断的是 `system:user:create`、`system:user:update` 这类编码。菜单管理页新增按钮节点时，`code` 必须和页面代码里的 `canUse(code)` 保持一致，否则按钮权限不会生效。
@@ -151,7 +153,7 @@ pnpm dev
 3. 新建一个测试角色，例如 `demo_operator`，保存后左侧角色列表中能看到它。
 4. 给测试角色分配菜单权限和按钮权限，点击“保存权限”。
 5. 切换到“接口权限”，给测试角色分配必要接口权限。
-6. 进入“系统管理 / 菜单管理”，新增一个测试菜单或按钮，确认树表格会刷新。
+6. 进入”系统管理 / 菜单管理”，点击”+ 新增根目录”打开弹框表单，填写后保存，确认树形表格刷新并展示新节点。
 7. 回到“用户管理”，把测试用户绑定到这个角色。
 8. 退出登录，再用测试用户登录。
 9. 确认侧边栏只显示被授权的菜单，页面按钮也按按钮权限显示。

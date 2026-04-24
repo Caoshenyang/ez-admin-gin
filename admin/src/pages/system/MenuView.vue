@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CloseOutline } from '@vicons/ionicons5'
 import type { DataTableColumns, FormInst, FormRules, SelectOption } from 'naive-ui'
 import {
   NAlert,
@@ -7,13 +8,16 @@ import {
   NDataTable,
   NForm,
   NFormItem,
+  NIcon,
   NInput,
   NInputNumber,
+  NModal,
   NPopconfirm,
   NSelect,
   NSpace,
   NSwitch,
   NTag,
+  NTooltip,
   useMessage,
 } from 'naive-ui'
 import { computed, h, onMounted, reactive, ref } from 'vue'
@@ -53,8 +57,10 @@ const loading = ref(false)
 const saving = ref(false)
 const menus = ref<AdminMenu[]>([])
 const successText = ref('')
-const panelMode = ref<'create' | 'edit'>('create')
+const formVisible = ref(false)
+const formMode = ref<'create' | 'edit'>('create')
 const formRef = ref<FormInst | null>(null)
+const expandedRowKeys = ref<Array<string | number>>([])
 
 const query = reactive<MenuQuery>({
   keyword: '',
@@ -102,6 +108,8 @@ const rules: FormRules = {
 
 const flatMenus = computed(() => flattenMenus(menus.value))
 
+const allRowKeys = computed(() => flatMenus.value.map((m) => m.id))
+
 const parentOptions = computed<SelectOption[]>(() => {
   const options: SelectOption[] = [{ label: '根节点', value: 0 }]
 
@@ -139,50 +147,59 @@ const columns: DataTableColumns<AdminMenu> = [
   {
     title: '菜单名称',
     key: 'title',
-    minWidth: 180,
+    minWidth: 240,
     render(row) {
-      return h('div', { class: 'flex items-center gap-2 font-semibold text-[#111827]' }, [
-        h('span', typeIcon(row.type)),
-        h('span', row.title),
+      const typeConfig = {
+        [MenuType.Directory]: { label: '目录', type: 'info' as const },
+        [MenuType.Menu]: { label: '菜单', type: 'success' as const },
+        [MenuType.Button]: { label: '按钮', type: 'warning' as const },
+      }
+      const cfg = typeConfig[row.type]
+
+      return h('span', { class: 'inline-flex items-center gap-2' }, [
+        h('span', { class: 'font-medium text-[#111827]' }, row.title),
+        h(
+          NTag,
+          { size: 'small', bordered: false, round: false, type: cfg.type },
+          { default: () => cfg.label },
+        ),
       ])
     },
   },
   {
     title: '路由',
     key: 'path',
-    minWidth: 150,
+    minWidth: 130,
+    ellipsis: { tooltip: true },
     render(row) {
       return row.path || '-'
     },
   },
   {
-    title: '组件',
-    key: 'component',
-    minWidth: 150,
-    render(row) {
-      return row.component || '-'
-    },
-  },
-  {
     title: '权限标识',
     key: 'code',
-    minWidth: 170,
+    minWidth: 150,
+    ellipsis: { tooltip: true },
   },
   {
-    title: '序',
+    title: '排序',
     key: 'sort',
-    width: 70,
+    width: 64,
+    align: 'center',
   },
   {
     title: '状态',
     key: 'status',
-    width: 96,
+    width: 80,
+    align: 'center',
     render(row) {
       return h(
         NTag,
         {
+          size: 'small',
           type: row.status === MenuStatus.Enabled ? 'success' : 'error',
           bordered: false,
+          round: true,
         },
         { default: () => (row.status === MenuStatus.Enabled ? '启用' : '禁用') },
       )
@@ -191,7 +208,7 @@ const columns: DataTableColumns<AdminMenu> = [
   {
     title: '操作',
     key: 'actions',
-    width: 248,
+    width: 220,
     fixed: 'right',
     render(row) {
       const canCreateChild = row.type !== MenuType.Button && canUse('system:menu:create')
@@ -200,7 +217,7 @@ const columns: DataTableColumns<AdminMenu> = [
 
       return h(
         NSpace,
-        { size: 8 },
+        { size: 6, align: 'center' },
         {
           default: () =>
             [
@@ -208,21 +225,20 @@ const columns: DataTableColumns<AdminMenu> = [
                 ? h(
                     NButton,
                     {
-                      size: 'small',
-                      ghost: true,
-                      type: 'success',
+                      size: 'tiny',
+                      type: 'primary',
+                      secondary: true,
                       onClick: () => openCreateChild(row),
                     },
-                    { default: () => (row.type === MenuType.Menu ? '按钮' : '新增') },
+                    { default: () => (row.type === MenuType.Menu ? '+ 按钮' : '+ 子级') },
                   )
                 : null,
               canUse('system:menu:update')
                 ? h(
                     NButton,
                     {
-                      size: 'small',
-                      ghost: true,
-                      type: 'info',
+                      size: 'tiny',
+                      secondary: true,
                       onClick: () => openEdit(row),
                     },
                     { default: () => '编辑' },
@@ -230,22 +246,33 @@ const columns: DataTableColumns<AdminMenu> = [
                 : null,
               canUse('system:menu:status')
                 ? h(
-                    NPopconfirm,
-                    { onPositiveClick: () => handleToggleStatus(row, nextStatus) },
+                    NTooltip,
+                    {},
                     {
                       trigger: () =>
                         h(
-                          NButton,
+                          NPopconfirm,
+                          { onPositiveClick: () => handleToggleStatus(row, nextStatus) },
                           {
-                            size: 'small',
-                            ghost: true,
-                            type:
-                              nextStatus === MenuStatus.Disabled ? 'error' : 'success',
+                            trigger: () =>
+                              h(
+                                NButton,
+                                {
+                                  size: 'tiny',
+                                  type:
+                                    nextStatus === MenuStatus.Disabled ? 'error' : 'success',
+                                  secondary: true,
+                                },
+                                {
+                                  default: () =>
+                                    nextStatus === MenuStatus.Disabled ? '禁用' : '启用',
+                                },
+                              ),
+                            default: () =>
+                              `确认${nextStatus === MenuStatus.Disabled ? '禁用' : '启用'}该菜单？`,
                           },
-                          { default: () => (nextStatus === MenuStatus.Disabled ? '禁用' : '启用') },
                         ),
-                      default: () =>
-                        `确认${nextStatus === MenuStatus.Disabled ? '禁用' : '启用'}该菜单？`,
+                      default: () => '切换菜单可见状态',
                     },
                   )
                 : null,
@@ -257,7 +284,7 @@ const columns: DataTableColumns<AdminMenu> = [
                       trigger: () =>
                         h(
                           NButton,
-                          { size: 'small', ghost: true, type: 'error' },
+                          { size: 'tiny', type: 'error', secondary: true },
                           { default: () => '删除' },
                         ),
                       default: () => '删除前请确认它没有子菜单，也没有分配给任何角色。',
@@ -279,24 +306,16 @@ function rowKey(row: AdminMenu) {
   return row.id
 }
 
-function typeIcon(type: MenuType) {
-  if (type === MenuType.Directory) {
-    return '▾'
-  }
-  if (type === MenuType.Menu) {
-    return '◻'
-  }
-  return '•'
+function expandAll() {
+  expandedRowKeys.value = allRowKeys.value
 }
 
-function typeName(type: MenuType) {
-  if (type === MenuType.Directory) {
-    return '目录'
-  }
-  if (type === MenuType.Menu) {
-    return '菜单'
-  }
-  return '按钮'
+function collapseAll() {
+  expandedRowKeys.value = []
+}
+
+function handleExpandedChange(keys: Array<string | number>) {
+  expandedRowKeys.value = keys
 }
 
 function flattenMenus(items: AdminMenu[]): AdminMenu[] {
@@ -367,26 +386,29 @@ async function loadMenus() {
   loading.value = true
   try {
     menus.value = await getAdminMenus()
+    expandedRowKeys.value = allRowKeys.value
   } finally {
     loading.value = false
   }
 }
 
 function openCreateRoot() {
-  panelMode.value = 'create'
+  formMode.value = 'create'
   resetForm()
+  formVisible.value = true
 }
 
 function openCreateChild(row: AdminMenu) {
-  panelMode.value = 'create'
+  formMode.value = 'create'
   resetForm()
   formModel.parent_id = row.id
   formModel.type = row.type === MenuType.Directory ? MenuType.Menu : MenuType.Button
   formModel.sort = row.type === MenuType.Directory ? 1 : 10
+  formVisible.value = true
 }
 
 function openEdit(row: AdminMenu) {
-  panelMode.value = 'edit'
+  formMode.value = 'edit'
   Object.assign(formModel, {
     id: row.id,
     parent_id: row.parent_id,
@@ -400,6 +422,7 @@ function openEdit(row: AdminMenu) {
     status: row.status,
     remark: row.remark,
   })
+  formVisible.value = true
 }
 
 async function handleSubmit() {
@@ -408,7 +431,7 @@ async function handleSubmit() {
   try {
     const payload = normalizedPayload()
 
-    if (panelMode.value === 'create') {
+    if (formMode.value === 'create') {
       await createMenu({
         ...payload,
         code: formModel.code.trim(),
@@ -422,9 +445,7 @@ async function handleSubmit() {
     }
 
     await loadMenus()
-    if (panelMode.value === 'create') {
-      resetForm()
-    }
+    formVisible.value = false
   } finally {
     saving.value = false
   }
@@ -460,7 +481,7 @@ async function handleDelete(row: AdminMenu) {
   await loadMenus()
 
   if (formModel.id === row.id) {
-    openCreateRoot()
+    formVisible.value = false
   }
 }
 
@@ -498,161 +519,168 @@ onMounted(loadMenus)
         {{ successText }}
       </NAlert>
 
-      <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_360px] gap-4 overflow-hidden">
-        <section class="flex min-h-0 flex-col gap-4 overflow-hidden">
-          <NCard :bordered="false" class="rounded-lg">
-            <NSpace align="center" :wrap="true">
-              <NInput
-                v-model:value="query.keyword"
-                clearable
-                placeholder="菜单名称 / 路由 / 权限标识"
-                class="w-56"
-              />
-              <NSelect v-model:value="query.type" :options="typeOptions" class="w-40" />
-              <NSelect v-model:value="query.status" :options="statusOptions" class="w-40" />
-              <NButton @click="handleResetQuery">重置</NButton>
-            </NSpace>
-          </NCard>
-
-          <NCard
-            class="min-h-0 flex-1 rounded-lg"
-            :bordered="false"
-            content-style="height: 100%; padding: 0;"
-          >
-            <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
-              <span class="text-sm text-[#374151]">
-                菜单树 ｜ 目录 {{ directoryCount }} 个，菜单 {{ menuCount }} 个，按钮权限
-                {{ buttonCount }} 个
-              </span>
-              <NSpace :size="14">
-                <NButton text type="primary">展开全部</NButton>
-                <NButton text type="primary">收起全部</NButton>
-                <NButton text type="primary" @click="loadMenus">刷新</NButton>
-              </NSpace>
-            </div>
-
-            <NDataTable
-              class="menu-table"
-              style="height: calc(100% - 103px)"
-              :columns="columns"
-              :data="displayMenus"
-              :loading="loading"
-              :row-key="rowKey"
-              :pagination="false"
-              :bordered="false"
-              children-key="children"
-              default-expand-all
-              flex-height
+      <NCard :bordered="false" class="rounded-lg">
+          <NSpace align="center" :wrap="true">
+            <NInput
+              v-model:value="query.keyword"
+              clearable
+              placeholder="菜单名称 / 路由 / 权限标识"
+              class="w-56"
             />
-
-            <div class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3">
-              <span class="text-sm text-[#6B7280]">
-                共 {{ flatMenus.length }} 个菜单节点，目录 {{ directoryCount }} 个，按钮权限
-                {{ buttonCount }} 个
-              </span>
-              <NSpace>
-                <NButton>导入</NButton>
-                <NButton>导出</NButton>
-                <NButton>同步路由</NButton>
-              </NSpace>
-            </div>
-          </NCard>
-        </section>
-
-        <NCard class="rounded-lg" :bordered="false" content-style="height: 100%;">
-          <div class="flex h-full flex-col">
-            <div class="mb-4">
-              <h2 class="text-xl font-bold text-[#111827]">
-                {{ panelMode === 'create' ? '新增菜单' : '编辑菜单' }}
-              </h2>
-              <p class="mt-1 text-sm text-[#6B7280]">
-                {{ panelMode === 'create' ? '选择节点类型后填写对应字段。' : '权限标识保持只读，避免影响按钮权限判断。' }}
-              </p>
-            </div>
-
-            <NForm
-              ref="formRef"
-              class="min-h-0 flex-1 overflow-y-auto pr-1"
-              :model="formModel"
-              :rules="rules"
-              label-placement="top"
-            >
-              <NFormItem label="菜单类型" path="type">
-                <NSelect
-                  v-model:value="formModel.type"
-                  :options="formTypeOptions"
-                  :disabled="panelMode === 'edit'"
-                />
-              </NFormItem>
-
-              <NFormItem label="父级节点" path="parent_id">
-                <NSelect
-                  v-model:value="formModel.parent_id"
-                  filterable
-                  :options="parentOptions"
-                />
-              </NFormItem>
-
-              <NFormItem label="菜单名称" path="title">
-                <NInput v-model:value="formModel.title" placeholder="请输入菜单名称" />
-              </NFormItem>
-
-              <NFormItem label="权限标识" path="code">
-                <NInput
-                  v-model:value="formModel.code"
-                  placeholder="system:example:list"
-                  :disabled="panelMode === 'edit'"
-                />
-              </NFormItem>
-
-              <NFormItem v-if="formModel.type !== MenuType.Button" label="路由地址" path="path">
-                <NInput v-model:value="formModel.path" placeholder="/system/example" />
-              </NFormItem>
-
-              <NFormItem
-                v-if="formModel.type === MenuType.Menu"
-                label="组件路径"
-                path="component"
-              >
-                <NInput v-model:value="formModel.component" placeholder="system/UserView" />
-              </NFormItem>
-
-              <NFormItem label="图标 / 排序">
-                <div class="grid w-full grid-cols-[1fr_120px] gap-2">
-                  <NInput v-model:value="formModel.icon" placeholder="layout-dashboard" />
-                  <NInputNumber v-model:value="formModel.sort" :min="0" />
-                </div>
-              </NFormItem>
-
-              <NFormItem label="显示状态">
-                <NSwitch
-                  :value="formModel.status === MenuStatus.Enabled"
-                  @update:value="
-                    (checked) => {
-                      formModel.status = checked ? MenuStatus.Enabled : MenuStatus.Disabled
-                    }
-                  "
-                />
-              </NFormItem>
-
-              <NFormItem label="备注">
-                <NInput
-                  v-model:value="formModel.remark"
-                  type="textarea"
-                  placeholder="请输入备注"
-                  :autosize="{ minRows: 3, maxRows: 5 }"
-                />
-              </NFormItem>
-            </NForm>
-
-            <div class="mt-4 flex justify-end gap-3 border-t border-[#E5E7EB] pt-4">
-              <NButton @click="openCreateRoot">取消</NButton>
-              <NButton type="primary" :loading="saving" @click="handleSubmit">确认</NButton>
-            </div>
-          </div>
+            <NSelect v-model:value="query.type" :options="typeOptions" class="w-40" />
+            <NSelect v-model:value="query.status" :options="statusOptions" class="w-40" />
+            <NButton @click="handleResetQuery">重置</NButton>
+          </NSpace>
         </NCard>
-      </div>
+
+      <NCard
+        class="min-h-0 flex-1 rounded-lg"
+        :bordered="false"
+        content-style="height: 100%; padding: 0;"
+      >
+        <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-2.5">
+          <span class="text-xs text-[#6B7280]">
+            共 {{ flatMenus.length }} 个节点 · 目录 {{ directoryCount }} · 菜单 {{ menuCount }} · 按钮 {{ buttonCount }}
+          </span>
+          <NSpace :size="12">
+            <NButton text size="small" @click="expandAll">展开全部</NButton>
+            <NButton text size="small" @click="collapseAll">收起全部</NButton>
+            <NButton text size="small" type="primary" @click="loadMenus">刷新</NButton>
+          </NSpace>
+        </div>
+
+        <NDataTable
+          class="menu-table"
+          style="height: calc(100% - 48px)"
+          :columns="columns"
+          :data="displayMenus"
+          :loading="loading"
+          :row-key="rowKey"
+          :expanded-row-keys="expandedRowKeys"
+          :pagination="false"
+          :bordered="false"
+          children-key="children"
+          @update:expanded-row-keys="handleExpandedChange"
+          flex-height
+        />
+      </NCard>
     </section>
+
+    <NModal
+      v-model:show="formVisible"
+      preset="card"
+      :closable="false"
+      class="menu-modal"
+      style="width: 600px; max-width: calc(100vw - 32px)"
+    >
+      <template #header>
+        <div class="modal-header">
+          <h2>{{ formMode === 'create' ? '新增菜单' : '编辑菜单' }}</h2>
+          <p>
+            {{
+              formMode === 'create'
+                ? '选择节点类型后填写对应字段。'
+                : '权限标识保持只读，避免影响按钮权限判断。'
+            }}
+          </p>
+          <button type="button" class="modal-close" @click="formVisible = false">
+            <NIcon :size="18">
+              <CloseOutline />
+            </NIcon>
+          </button>
+        </div>
+      </template>
+
+      <NForm
+        ref="formRef"
+        :model="formModel"
+        :rules="rules"
+        label-placement="left"
+        label-width="80"
+      >
+        <NFormItem label="菜单类型" path="type">
+          <div class="type-segment" :class="{ 'is-disabled': formMode === 'edit' }">
+            <button
+              v-for="opt in formTypeOptions"
+              :key="opt.value"
+              type="button"
+              class="type-segment__btn"
+              :class="{ 'type-segment__btn--active': formModel.type === opt.value }"
+              :disabled="formMode === 'edit'"
+              @click="formModel.type = opt.value as MenuType"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </NFormItem>
+
+        <NFormItem label="父级节点" path="parent_id">
+          <NSelect
+            v-model:value="formModel.parent_id"
+            filterable
+            :options="parentOptions"
+          />
+        </NFormItem>
+
+        <NFormItem label="菜单名称" path="title">
+          <NInput v-model:value="formModel.title" placeholder="请输入菜单名称" />
+        </NFormItem>
+
+        <NFormItem label="权限标识" path="code">
+          <NInput
+            v-model:value="formModel.code"
+            placeholder="system:example:list"
+            :disabled="formMode === 'edit'"
+          />
+        </NFormItem>
+
+        <NFormItem v-if="formModel.type !== MenuType.Button" label="路由地址" path="path">
+          <NInput v-model:value="formModel.path" placeholder="/system/example" />
+        </NFormItem>
+
+        <NFormItem
+          v-if="formModel.type === MenuType.Menu"
+          label="组件路径"
+          path="component"
+        >
+          <NInput v-model:value="formModel.component" placeholder="system/UserView" />
+        </NFormItem>
+
+        <NFormItem label="图标 / 排序">
+          <div class="grid w-full grid-cols-[1fr_120px] gap-2">
+            <NInput v-model:value="formModel.icon" placeholder="layout-dashboard" />
+            <NInputNumber v-model:value="formModel.sort" :min="0" />
+          </div>
+        </NFormItem>
+
+        <NFormItem label="显示状态">
+          <NSwitch
+            :value="formModel.status === MenuStatus.Enabled"
+            @update:value="
+              (checked) => {
+                formModel.status = checked ? MenuStatus.Enabled : MenuStatus.Disabled
+              }
+            "
+          />
+        </NFormItem>
+
+        <NFormItem label="备注">
+          <NInput
+            v-model:value="formModel.remark"
+            type="textarea"
+            placeholder="请输入备注"
+            :autosize="{ minRows: 3, maxRows: 5 }"
+          />
+        </NFormItem>
+      </NForm>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <NButton @click="formVisible = false">取消</NButton>
+          <NButton type="primary" :loading="saving" @click="handleSubmit">保存</NButton>
+        </div>
+      </template>
+    </NModal>
   </main>
 </template>
 
@@ -669,5 +697,87 @@ onMounted(loadMenus)
 
 .menu-table :deep(.n-data-table-tr:hover .n-data-table-td) {
   background: #f8fbff;
+}
+
+.menu-table :deep(.n-data-table-td .n-data-table-td__content) {
+  display: inline-flex;
+  align-items: center;
+}
+
+.menu-modal :deep(.n-card) {
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid #dfe9f5;
+  box-shadow: 0 24px 72px rgba(15, 23, 42, 0.16);
+}
+
+.menu-modal :deep(.n-card-header) {
+  padding: 0;
+}
+
+.modal-header {
+  position: relative;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #eff6ff 0%, #e8f2ff 58%, #f4f9ff 100%);
+}
+
+.modal-header h2 {
+  font-size: 19px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modal-header p {
+  margin-top: 8px;
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #64748b;
+}
+
+.type-segment {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #f3f4f6;
+}
+
+.type-segment.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.type-segment__btn {
+  padding: 4px 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.type-segment__btn--active {
+  background: #fff;
+  color: #18a058;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 </style>
