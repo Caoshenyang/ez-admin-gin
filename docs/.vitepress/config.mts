@@ -179,7 +179,8 @@ export default defineConfig({
             { text: '动态菜单', link: '/tutorial/chapter-5/dynamic-menu' },
             { text: '用户管理页面', link: '/tutorial/chapter-5/user-pages' },
             { text: '角色与菜单页面', link: '/tutorial/chapter-5/role-menu-pages' },
-            { text: '配置与文件页面', link: '/tutorial/chapter-5/config-file-pages' }
+            { text: '配置与文件页面', link: '/tutorial/chapter-5/config-file-pages' },
+            { text: '日志页面', link: '/tutorial/chapter-5/log-pages' }
           ]
         },
         {
