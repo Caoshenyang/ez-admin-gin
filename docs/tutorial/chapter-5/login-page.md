@@ -1,19 +1,52 @@
 ---
 title: 登录页
-description: "实现后台登录页，并打通登录接口和 Token 保存。"
+description: "参考原型实现后台登录页，使用 Tailwind CSS 4 组织页面骨架，并打通登录接口、验证码占位和记住登录。"
 ---
 
 # 登录页
 
-这一节把上一节的占位登录页替换成真正可用的登录入口：接入开发代理、调用后端登录接口、保存 Token，并在登录成功后跳转到工作台页面。
+这一节开始把上一节的占位页替换成真正可用的登录入口，并且页面结构要尽量贴近原型。除了打通 `/api/v1/auth/login`，还会把原型里的左右双栏、验证码区、记住登录、默认账号提示和页脚一起落到页面中。
 
 ::: tip 🎯 本节目标
-完成后，浏览器中可以直接输入管理员账号密码完成登录；登录成功后，前端会把 Token 保存到本地，并跳转到 `/dashboard`。
+完成后，登录页在桌面端会接近原型图；用户名和密码可以真实登录；验证码先用前端本地校验模拟；勾选“记住登录”时把 Token 存到 `localStorage`，不勾选时只保存在 `sessionStorage`。
 :::
 
-::: info 本节先完成登录主链路
-这一节重点是“能登录进去”。完整的后台布局、登录态守卫和动态菜单，会在后面几节继续补齐。
+![登录页原型](/prototypes/exports/myUgG.png)
+
+::: info 这一节参考的原型
+- 原型文件：`docs/public/prototypes/ui.pen`
+- 节点名称：`01 登录页 / Naive UI Form`
+- 导出图片：`docs/public/prototypes/exports/myUgG.png`
 :::
+
+::: warning ⚠️ 原型要参考，但接口能力要以教程现状为准
+原型图里有验证码、记住登录和忘记密码入口，但第 3 章后端登录接口目前仍然只接收 `username`、`password` 两个字段。
+
+所以这一节的处理方式是：
+
+- 页面结构和视觉层级按原型实现。
+- 验证码先做前端本地校验，用来表现 `NForm` 校验和登录流程。
+- “忘记密码”先保留入口，只提示“后续接入”。
+- 原型图里的默认账号文案是 `admin / 123456`，但本教程前面初始化的真实默认管理员密码是 `EzAdmin@123456`，这里要以教程里的真实账号为准。
+:::
+
+## 先看这一页要做成什么
+
+为了后面代码更好跟，我们先把原型拆成三块：
+
+| 区域 | 原型里有什么 | 本节怎么处理 |
+| --- | --- | --- |
+| 左侧品牌区 | 深色品牌面板、标题、副标题、四条能力说明 | 用 Tailwind CSS 4 组织页面骨架和背景层次 |
+| 右侧登录卡片 | 用户名、密码、验证码、记住登录、忘记密码、登录按钮 | 登录接口只提交用户名和密码；验证码走前端校验 |
+| 卡片下方补充信息 | 默认账号提示、页脚版权 | 一起实现，方便你验收页面完整度 |
+
+## 本节样式分工
+
+这一节继续遵守第五章的前端约束：
+
+- Tailwind CSS 4 负责页面骨架、栅格、间距、背景和响应式布局。
+- `NForm`、`NInput`、`NCheckbox`、`NButton`、`NCard`、`NAlert` 这些组件继续交给 Naive UI。
+- 需要原型感的部分，优先通过 Tailwind 调整页面层级，不把组件重新拆成原生标签手写。
 
 ## 本节会改什么
 
@@ -45,8 +78,8 @@ admin/
 | `src/types/auth.ts` | 定义登录请求和登录响应类型 |
 | `src/api/http.ts` | 创建 Axios 实例，并统一挂载认证请求头 |
 | `src/api/auth.ts` | 封装登录接口 |
-| `src/utils/auth.ts` | 读写本地 Token 和登录用户信息 |
-| `src/pages/auth/LoginPage.vue` | 实现登录表单和提交逻辑 |
+| `src/utils/auth.ts` | 按“记住登录”决定写入 `localStorage` 或 `sessionStorage` |
+| `src/pages/auth/LoginPage.vue` | 用 Tailwind 4 组织登录页骨架，并用 Naive UI 承担表单和卡片交互 |
 | `src/router/index.ts` | 让根路径和登录页根据本地 Token 做最小跳转 |
 
 ## 开始前先确认
@@ -69,22 +102,22 @@ admin/
 ```ts
 import { fileURLToPath, URL } from 'node:url'
 
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), vueDevTools()],
-  server: {
-    proxy: {
-      // 浏览器访问 /api 时，由 Vite 转发到本地后端。
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
-  },
+  plugins: [vue(), vueDevTools(), tailwindcss()],
+  server: { // [!code ++]
+    proxy: { // [!code ++]
+      '/api': { // [!code ++]
+        target: 'http://localhost:8080', // [!code ++]
+        changeOrigin: true, // [!code ++]
+      }, // [!code ++]
+    }, // [!code ++]
+  }, // [!code ++]
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -108,7 +141,7 @@ export interface ApiResponse<T> {
 }
 ```
 
-创建 `admin/src/types/auth.ts`。这里放登录请求和登录响应类型。
+创建 `admin/src/types/auth.ts`。这里仍然只保留真实登录接口需要的字段，和后端保持一致。
 
 ```ts
 // LoginRequest 对应登录接口请求体。
@@ -128,9 +161,18 @@ export interface LoginResponse {
 }
 ```
 
+::: details 为什么验证码没有写进 `LoginRequest`
+因为当前后端接口还没有验证码参数。如果现在把 `captcha` 也发给 `/api/v1/auth/login`，既没有实际收益，还会让前后端契约变得不一致。
+
+这一节先把验证码作为前端校验字段，用来提升页面完整度，并对齐原型图。等后面真的要接验证码接口时，再一起扩展请求结构。
+:::
+
 ## 🛠️ 封装本地登录态存储
 
-创建 `admin/src/utils/auth.ts`。这一层先统一管理 Token 和用户信息，后面做路由守卫、顶部用户信息、退出登录时都能直接复用。
+创建 `admin/src/utils/auth.ts`。这一层负责两件事：
+
+- 统一管理 Token、Token 类型和用户信息。
+- 根据“记住登录”决定把数据写进 `localStorage` 还是 `sessionStorage`。
 
 ```ts
 import type { LoginResponse } from '../types/auth'
@@ -139,6 +181,8 @@ const ACCESS_TOKEN_KEY = 'ez-admin-access-token'
 const TOKEN_TYPE_KEY = 'ez-admin-token-type'
 const USER_INFO_KEY = 'ez-admin-user-info'
 
+type StorageMode = 'local' | 'session'
+
 export interface AuthUserInfo {
   userId: number
   username: string
@@ -146,11 +190,23 @@ export interface AuthUserInfo {
   expiresAt: string
 }
 
+function getStorage(mode: StorageMode) {
+  return mode === 'local' ? localStorage : sessionStorage
+}
+
+function readStorageValue(key: string) {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? ''
+}
+
 // setAuthSession 在登录成功后保存本地登录态。
-export function setAuthSession(payload: LoginResponse) {
-  localStorage.setItem(ACCESS_TOKEN_KEY, payload.access_token)
-  localStorage.setItem(TOKEN_TYPE_KEY, payload.token_type)
-  localStorage.setItem(
+export function setAuthSession(payload: LoginResponse, rememberLogin: boolean) {
+  clearAuthSession()
+
+  const storage = getStorage(rememberLogin ? 'local' : 'session')
+
+  storage.setItem(ACCESS_TOKEN_KEY, payload.access_token)
+  storage.setItem(TOKEN_TYPE_KEY, payload.token_type)
+  storage.setItem(
     USER_INFO_KEY,
     JSON.stringify({
       userId: payload.user_id,
@@ -165,14 +221,18 @@ export function clearAuthSession() {
   localStorage.removeItem(ACCESS_TOKEN_KEY)
   localStorage.removeItem(TOKEN_TYPE_KEY)
   localStorage.removeItem(USER_INFO_KEY)
+
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+  sessionStorage.removeItem(TOKEN_TYPE_KEY)
+  sessionStorage.removeItem(USER_INFO_KEY)
 }
 
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY) ?? ''
+  return readStorageValue(ACCESS_TOKEN_KEY)
 }
 
 export function getTokenType() {
-  return localStorage.getItem(TOKEN_TYPE_KEY) ?? 'Bearer'
+  return readStorageValue(TOKEN_TYPE_KEY) || 'Bearer'
 }
 
 export function hasAccessToken() {
@@ -190,8 +250,13 @@ export function getAuthorizationHeader() {
 }
 ```
 
-::: details 为什么现在就单独抽出 `auth.ts`
-如果把 `localStorage` 读写直接散落到页面组件里，后面做路由守卫、退出登录、自动带 Token 请求头时就会开始重复。现在先把读写入口统一起来，后面扩展会轻松很多。
+::: details 为什么要同时支持 `localStorage` 和 `sessionStorage`
+原型里有“记住登录”复选框，如果无论是否勾选都固定写入 `localStorage`，这个交互就只是一个摆设。
+
+这里的约定是：
+
+- 勾选“记住登录”：刷新浏览器、关闭后重新打开，登录态仍然保留。
+- 不勾选“记住登录”：只在当前浏览器会话内保留，关闭标签页或浏览器后失效。
 :::
 
 ## 🛠️ 创建 Axios 实例
@@ -256,23 +321,35 @@ export async function login(payload: LoginRequest) {
 
 ## 🛠️ 实现登录页
 
-修改 `admin/src/pages/auth/LoginPage.vue`。这里直接整体替换成下面内容。
+修改 `admin/src/pages/auth/LoginPage.vue`。这次不是只做一个简单表单，而是要把原型里的主要元素都补齐。
+
+本次重点看 6 个点：
+
+- 页面壳子和响应式布局用 Tailwind 4 写。
+- 左侧是品牌介绍区，右侧是登录卡片。
+- 表单、按钮、提示卡片继续使用 Naive UI 组件。
+- 验证码先在前端随机生成，点击验证码可以刷新。
+- 验证码不通过时，不应该发起 `/auth/login` 请求。
+- “记住登录”决定 `setAuthSession` 写入哪种存储，“忘记密码”先保留入口。
+
+这里直接整体替换成下面内容：
 
 ```vue
 <script setup lang="ts">
 import axios from 'axios'
 import type { FormInst, FormRules } from 'naive-ui'
 import {
+  NAlert,
   NButton,
   NCard,
+  NCheckbox,
   NForm,
   NFormItem,
   NInput,
-  NSpace,
   NText,
   useMessage,
 } from 'naive-ui'
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { login } from '../../api/auth'
@@ -284,10 +361,29 @@ const message = useMessage()
 const formRef = ref<FormInst | null>(null)
 const submitting = ref(false)
 
-// 登录表单模型。
+const productFeatures = [
+  '权限模型：用户 / 角色 / 菜单 / 按钮',
+  '工作标签：多页面切换、刷新、关闭其他',
+  '审计能力：登录日志、操作日志、风险等级',
+  '工程友好：Gin API + Vue 页面快速扩展',
+]
+
+function createCaptcha() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  return Array.from({ length: 4 }, () => {
+    const index = Math.floor(Math.random() * alphabet.length)
+    return alphabet[index]
+  }).join('')
+}
+
+const captchaText = ref(createCaptcha())
+
+// 登录表单模型。验证码和记住登录只参与前端页面交互。
 const formModel = reactive({
-  username: '',
+  username: 'admin',
   password: '',
+  captcha: '',
+  rememberLogin: true,
 })
 
 const rules: FormRules = {
@@ -305,6 +401,33 @@ const rules: FormRules = {
       trigger: ['blur', 'input'],
     },
   ],
+  captcha: [
+    {
+      required: true,
+      message: '请输入验证码',
+      trigger: ['blur', 'input'],
+    },
+    {
+      validator: (_rule, value: string) =>
+        value.trim().toUpperCase() === captchaText.value
+          ? true
+          : new Error('验证码不正确'),
+      trigger: ['blur', 'input'],
+    },
+  ],
+}
+
+const footerText = computed(() => {
+  return `© ${new Date().getFullYear()} EZ Admin Gin · Naive UI Admin Template`
+})
+
+function refreshCaptcha() {
+  captchaText.value = createCaptcha()
+  formModel.captcha = ''
+}
+
+function handleForgotPassword() {
+  message.info('当前版本先保留入口，后面再接入找回密码流程')
 }
 
 // 如果本地已经有 Token，就直接跳到工作台。
@@ -327,7 +450,7 @@ async function handleSubmit() {
       password: formModel.password,
     })
 
-    setAuthSession(result)
+    setAuthSession(result, formModel.rememberLogin)
     message.success('登录成功')
     await router.push('/dashboard')
   } catch (error) {
@@ -336,6 +459,7 @@ async function handleSubmit() {
       : '登录失败，请稍后重试'
 
     message.error(errorMessage)
+    refreshCaptcha()
   } finally {
     submitting.value = false
   }
@@ -343,180 +467,169 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <main class="login-page">
-    <section class="login-panel">
-      <div class="login-copy">
-        <p class="login-eyebrow">EZ Admin</p>
-        <h1 class="login-title">通用后台管理系统底座</h1>
-        <p class="login-description">
-          从这一节开始，前端正式接入后端认证接口。先把登录链路打通，后面的布局、菜单和系统页面才有落脚点。
-        </p>
-      </div>
+  <main class="min-h-screen bg-[#F5F7FA] px-4 py-4 md:px-8 md:py-8">
+    <section
+      class="mx-auto grid max-w-[1256px] gap-7 pt-6 xl:grid-cols-[610px_430px] xl:justify-between xl:gap-14 xl:pt-[52px]"
+    >
+      <section class="rounded-lg bg-[#111827] px-6 py-7 md:px-11 md:py-11 xl:min-h-[732px]">
+        <div class="h-16 w-16 rounded-lg bg-[#18A058]" />
+        <h1 class="mt-9 text-[42px] leading-[1.12] font-bold tracking-tight text-white md:text-[56px]">
+          EZ Admin Gin
+        </h1>
+        <p class="mt-7 text-lg text-[#D1D5DB] md:text-xl">面向工程团队的 Naive UI 后台框架</p>
 
-      <NCard class="login-card" :bordered="false">
-        <div class="login-card-header">
-          <h2>账号登录</h2>
-          <NText depth="3">请输入管理员账号和密码。</NText>
+        <div class="mt-8 rounded-lg bg-[#1F2937] p-6">
+          <ul class="grid list-none gap-[18px] p-0">
+            <li
+              v-for="feature in productFeatures"
+              :key="feature"
+              class="text-[17px] leading-[1.7] text-[#F9FAFB]"
+            >
+              {{ feature }}
+            </li>
+          </ul>
         </div>
+      </section>
 
-        <NForm
-          ref="formRef"
-          :model="formModel"
-          :rules="rules"
-          label-placement="top"
-          size="large"
-          @submit.prevent="handleSubmit"
+      <section class="flex flex-col gap-6 xl:pt-[66px]">
+        <NCard
+          class="rounded-lg shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+          :bordered="false"
+          content-style="padding: 36px;"
         >
-          <NFormItem label="用户名" path="username">
-            <NInput
-              v-model:value="formModel.username"
-              placeholder="请输入用户名"
-              autocomplete="username"
-            />
-          </NFormItem>
+          <div class="mb-5">
+            <h2 class="mb-[10px] text-[28px] font-bold text-[#111827]">登录控制台</h2>
+            <NText depth="3">请使用管理员账号继续</NText>
+          </div>
 
-          <NFormItem label="密码" path="password">
-            <NInput
-              v-model:value="formModel.password"
-              type="password"
-              show-password-on="click"
-              placeholder="请输入密码"
-              autocomplete="current-password"
-            />
-          </NFormItem>
+          <NForm
+            ref="formRef"
+            :model="formModel"
+            :rules="rules"
+            label-placement="top"
+            size="large"
+            @submit.prevent="handleSubmit"
+          >
+            <NFormItem label="用户名" path="username">
+              <NInput
+                v-model:value="formModel.username"
+                placeholder="请输入用户名"
+                autocomplete="username"
+              />
+            </NFormItem>
 
-          <NSpace vertical :size="16">
+            <NFormItem label="密码" path="password">
+              <NInput
+                v-model:value="formModel.password"
+                type="password"
+                show-password-on="click"
+                placeholder="请输入密码"
+                autocomplete="current-password"
+              />
+            </NFormItem>
+
+            <NFormItem path="captcha" class="mb-0">
+              <div class="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
+                <NInput
+                  v-model:value="formModel.captcha"
+                  placeholder="验证码"
+                  maxlength="4"
+                />
+
+                <button
+                  type="button"
+                  class="cursor-pointer rounded border border-[#A7F3D0] bg-[#ECFDF5] text-[22px] font-bold text-[#18A058]"
+                  @click="refreshCaptcha"
+                >
+                  {{ captchaText }}
+                </button>
+              </div>
+            </NFormItem>
+
+            <div class="my-5 flex flex-col gap-3 sm:my-[20px] sm:flex-row sm:items-center sm:justify-between">
+              <NCheckbox v-model:checked="formModel.rememberLogin">
+                记住登录
+              </NCheckbox>
+
+              <button
+                type="button"
+                class="cursor-pointer border-none bg-transparent p-0 text-sm text-[#2080F0]"
+                @click="handleForgotPassword"
+              >
+                忘记密码？
+              </button>
+            </div>
+
             <NButton
               attr-type="submit"
               type="primary"
               size="large"
               block
+              color="#18A058"
               :loading="submitting"
             >
               登录
             </NButton>
+          </NForm>
 
-            <NText depth="3" class="login-tip">
-              默认管理员账号：`admin`，密码：`EzAdmin@123456`
-            </NText>
-          </NSpace>
-        </NForm>
-      </NCard>
+          <NAlert
+            type="info"
+            :show-icon="false"
+            class="mt-5"
+            title="默认账号：admin / EzAdmin@123456"
+          >
+            验证码用于表现 NForm 校验与登录流程。
+          </NAlert>
+        </NCard>
+
+        <p class="text-[13px] text-[#9CA3AF]">{{ footerText }}</p>
+      </section>
     </section>
   </main>
 </template>
-
-<style scoped>
-.login-page {
-  min-height: 100vh;
-  padding: 24px;
-  background:
-    radial-gradient(circle at top left, rgba(24, 160, 88, 0.12), transparent 36%),
-    linear-gradient(180deg, #f6fbf8 0%, #eef3f9 100%);
-}
-
-.login-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-  align-items: center;
-  gap: 48px;
-  min-height: 100vh;
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
-.login-copy {
-  max-width: 560px;
-}
-
-.login-eyebrow {
-  margin: 0 0 16px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #18a058;
-}
-
-.login-title {
-  margin: 0;
-  font-size: clamp(40px, 5vw, 60px);
-  line-height: 1.08;
-  color: #1f2937;
-}
-
-.login-description {
-  margin: 24px 0 0;
-  font-size: 18px;
-  line-height: 1.8;
-  color: #4b5563;
-}
-
-.login-card {
-  width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-}
-
-.login-card-header {
-  margin-bottom: 24px;
-}
-
-.login-card-header h2 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  color: #1f2937;
-}
-
-.login-tip {
-  display: block;
-  line-height: 1.7;
-}
-
-@media (max-width: 900px) {
-  .login-panel {
-    grid-template-columns: 1fr;
-    gap: 32px;
-    padding: 48px 0;
-  }
-}
-</style>
 ```
 
-::: warning ⚠️ 这里先不在页面里处理复杂登录状态
-这一节只在“登录成功后跳转”和“本地已有 Token 时跳过登录页”这两个点上做最小处理。
+::: warning ⚠️ 这一节先不接复杂登录能力
+这一节已经把原型图里的关键界面都放出来了，但真正接入的后端能力仍然只有登录接口本身。
 
-如果你在登录前直接手输 `/dashboard`，目前仍然能看到占位工作台页面，这不是本节遗漏，而是完整路由守卫还没接入。后面做后台布局时会一起补上。
+所以当前行为边界是：
+
+- `/login` 页可以登录、跳转、保存 Token。
+- 验证码只是前端校验，不参与后端鉴权。
+- “忘记密码”只是占位入口。
+- 如果你在未登录状态下手动输入 `/dashboard`，目前仍然能看到占位工作台页面。完整的全局路由守卫会在后面的后台布局章节一起补上。
 :::
 
 ## 🛠️ 调整路由最小跳转
 
 修改 `admin/src/router/index.ts`。本次主要加两个点：
 
-- 访问根路径时，根据本地 Token 决定跳到 `/login` 还是 `/dashboard`
-- 如果已经登录，再访问 `/login` 时直接回到 `/dashboard`
+- 访问根路径时，根据本地 Token 决定跳到 `/login` 还是 `/dashboard`。
+- 如果已经登录，再访问 `/login` 时直接回到 `/dashboard`。
 
 ```ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { hasAccessToken } from '../utils/auth'
+import { hasAccessToken } from '../utils/auth' // [!code ++]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: () => (hasAccessToken() ? '/dashboard' : '/login'),
+      redirect: () => (hasAccessToken() ? '/dashboard' : '/login'), // [!code ++]
     },
     {
       path: '/login',
       name: 'login',
       component: () => import('../pages/auth/LoginPage.vue'),
-      beforeEnter: () => {
-        if (hasAccessToken()) {
-          return '/dashboard'
-        }
+      beforeEnter: () => { // [!code ++]
+        if (hasAccessToken()) { // [!code ++]
+          return '/dashboard' // [!code ++]
+        } // [!code ++]
 
-        return true
-      },
+        return true // [!code ++]
+      }, // [!code ++]
     },
     {
       path: '/dashboard',
@@ -546,29 +659,72 @@ pnpm dev
 http://localhost:5173/
 ```
 
-现在按下面顺序验证：
+### 1. 验证页面结构是否对齐原型
 
-1. 打开登录页，确认页面能正常显示用户名和密码输入框。
-2. 输入管理员账号 `admin` 和密码 `EzAdmin@123456`。
-3. 点击“登录”后，页面应该提示“登录成功”，并跳转到 `/dashboard`。
-4. 打开浏览器开发者工具，在 `Application -> Local Storage` 中，应该能看到：
-   - `ez-admin-access-token`
-   - `ez-admin-token-type`
-   - `ez-admin-user-info`
-5. 打开 `Network` 面板，应该能看到：
-   - 请求地址：`/api/v1/auth/login`
-   - 请求方法：`POST`
-   - 响应状态：`200`
-   - 响应体中包含 `access_token`
+打开登录页后，先不着急点登录，先看页面结构。
 
-## ✅ 失败验证
+你应该能看到下面这些内容：
 
-把密码故意改错，再登录一次。
+- 左侧有深色品牌面板，包含 `EZ Admin Gin` 标题、副标题和四条能力说明。
+- 右侧有白色登录卡片，包含“登录控制台”标题。
+- 卡片内有用户名、密码、验证码、记住登录、忘记密码和登录按钮。
+- 登录按钮下方有默认账号提示，底部有版权文案。
+
+如果你把浏览器宽度缩到移动端，页面应该自动折成上下结构，而不是左右挤压变形。
+
+### 2. 验证验证码校验先于接口请求
+
+先随便输入一个错误验证码，再点“登录”。
 
 这时应该看到两件事：
 
+- 表单直接提示“验证码不正确”。
+- 浏览器 `Network` 面板里**不应该**出现 `/api/v1/auth/login` 请求。
+
+这一步用来确认页面先通过前端校验，再发起真实登录。
+
+### 3. 验证登录成功
+
+输入下面这组真实账号信息：
+
+- 用户名：`admin`
+- 密码：`EzAdmin@123456`
+- 验证码：输入当前页面显示的四位字符
+
+勾选“记住登录”后点击“登录”，应该看到：
+
+- 页面提示“登录成功”。
+- 页面跳转到 `/dashboard`。
+- `Network` 面板中出现：
+  - 请求地址：`/api/v1/auth/login`
+  - 请求方法：`POST`
+  - 响应状态：`200`
+  - 响应体中包含 `access_token`
+- 浏览器 `Application -> Local Storage` 中出现：
+  - `ez-admin-access-token`
+  - `ez-admin-token-type`
+  - `ez-admin-user-info`
+
+### 4. 验证“记住登录”是否生效
+
+清掉浏览器存储后，再做一次登录，但这次**取消勾选**“记住登录”。
+
+这时应该看到：
+
+- 登录成功后仍然会跳转到 `/dashboard`。
+- 数据写进的是 `Application -> Session Storage`，而不是 `Local Storage`。
+
+如果你关闭当前标签页或浏览器后重新打开，登录态应该失效；这说明“记住登录”不是摆设，而是真的影响了存储策略。
+
+### 5. 验证后端错误透传
+
+把密码故意改错，再登录一次。
+
+这时应该看到：
+
 - 页面停留在登录页，不会跳转。
 - 页面提示后端返回的错误信息，例如“用户名或密码错误”。
+- 验证码会刷新一次，要求重新输入。
 
 这一步很重要，它可以确认前端没有把后端错误吞掉。
 
@@ -580,18 +736,25 @@ http://localhost:5173/
 如果文件已经改了，但浏览器仍然报跨域，通常是因为 `pnpm dev` 还是旧进程。把开发服务停掉后重新启动，再刷新浏览器。
 :::
 
-::: details 登录按钮一直转圈
-先看浏览器开发者工具的 `Network` 面板。
+::: details 验证码总是不通过
+这一节的验证码比较时会先把输入值转成大写，所以大小写本身不是问题。
 
-- 如果请求根本没发出去，先看控制台是否有前端报错。
-- 如果请求一直挂起，先确认后端服务是否真的启动成功。
-- 如果返回了 `500`，优先看后端终端日志。
+优先检查两件事：
+
+- 你点击验证码刷新后，是否还在使用旧验证码输入值。
+- 自定义校验里是否真的使用了 `value.trim().toUpperCase() === captchaText.value`。
 :::
 
-::: details 登录成功了，但刷新后又回到登录页
-先看 `Application -> Local Storage` 里是否真的写入了 `ez-admin-access-token`。
+::: details 勾选“记住登录”后，Token 还是没有出现在 `Local Storage`
+先看 `setAuthSession` 是否接收了第二个参数 `rememberLogin`，并且页面提交时传入的是 `formModel.rememberLogin`。
 
-如果没有，通常是 `setAuthSession` 没有执行，或者浏览器当前处于无痕模式 / 存储受限环境。
+如果 `setAuthSession(result)` 仍然只有一个参数，就说明存储策略还没有真正接上。
+:::
+
+::: details 点击“忘记密码”没有跳转，是不是写漏了
+不是。这一节只保留原型里的入口位置，让页面完整度先和原型对齐。
+
+当前点击后只提示“后续接入”，这是本节的预期行为。
 :::
 
 下一节开始搭建后台整体骨架：[后台布局](./admin-layout)。
