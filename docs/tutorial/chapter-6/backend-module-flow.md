@@ -1,17 +1,280 @@
 ---
 title: 后端模块接入流程
-description: "说明一个新业务模块如何接入后端分层和路由。"
+description: "按步骤说明新业务模块如何接入后端，从 Model 到 Handler 到路由注册。"
 ---
 
 # 后端模块接入流程
 
-这一节后续会说明后端模块接入步骤。
+这一页会把一个新业务模块接入后端的过程拆成三步：定义 Model、实现 Handler、注册路由。完成这三步之后，模块的增删改查接口就能通过统一的响应格式返回数据，并自动经过认证、日志和权限中间件的校验。
 
-## 后续要补齐
+::: tip 🎯 本节目标
+按固定顺序完成 Model → Handler → Router 三层接入，新增的接口可以直接用 `curl` 或前端页面验证。
+:::
 
-- Model
-- Repository
-- Service
-- Handler
-- Router
-- 接口验证
+## 接入步骤总览
+
+整个后端模块的接入只涉及三个位置：
+
+| 步骤 | 涉及目录 | 做什么 |
+| --- | --- | --- |
+| 1. 定义 Model | `server/internal/model/` | 新建 GORM 结构体，声明表名和状态常量 |
+| 2. 实现 Handler | `server/internal/handler/` | 新建 Handler 结构体，注入 `*gorm.DB` 和 `*zap.Logger`，编写业务方法 |
+| 3. 注册路由 | `server/internal/router/router.go` | 构造 Handler 实例，把方法挂到路由分组上 |
+
+本项目没有 Service 和 Repository 层，Handler 直接使用 `h.db` 完成数据库操作。这种结构在个人项目中足够简洁，前提是每个 Handler 内部保持清晰的职责边界。
+
+::: details Go vs Java：为什么没有 Service 和 Repository
+在 Java 后台项目里，通常会把数据库访问封装到 Repository，把业务逻辑放在 Service，Controller 只负责参数绑定和响应。这种分层在大团队协作时有明确的职责边界。
+
+当前项目面向个人项目快速上线，Handler 直接操作 GORM 可以减少代码量和文件跳转。如果后续某个模块的业务逻辑变得复杂，可以在 Handler 内部拆分私有方法，而不需要提前引入额外层级。
+:::
+
+## Step 1：定义 Model
+
+Model 负责定义数据库表结构和 JSON 序列化规则。每个 Model 需要包含三个部分：状态常量、GORM 结构体和 `TableName()` 方法。
+
+下面是项目中已有的 Model 模式，以用户模型为例：
+
+<<< ../../../server/internal/model/user.go
+
+可以注意到几个固定写法：
+
+- **状态常量**用自定义类型 + `const` 块表达，启用值为 `1`，禁用值为 `2`。
+- **主键**使用 `gorm:"primaryKey"`，类型为 `uint`。
+- **软删除**使用 `gorm.DeletedAt`，并在 JSON 中标记为 `json:"-"`，避免敏感字段暴露。
+- **TableName()** 固定表名，防止 GORM 的命名策略变化影响已有表。
+
+再看一个系统配置模型的例子，它的字段比用户模型多，但结构完全一致：
+
+<<< ../../../server/internal/model/system_config.go
+
+两个 Model 的共同特征：
+
+| 要素 | 写法 |
+| --- | --- |
+| 状态类型 | `type XxxStatus int`，配合 `Enabled = 1`、`Disabled = 2` |
+| 主键 | `ID uint \`gorm:"primaryKey"\` |
+| 软删除 | `DeletedAt gorm.DeletedAt \`gorm:"index" json:"-"\` |
+| 表名 | `func (Xxx) TableName() string { return "sys_xxx" }` |
+
+::: warning ⚠️ 新表需要在数据库中手动创建
+本项目使用 PostgreSQL，统一通过 SQL 建表，不在代码中使用 `AutoMigrate`。定义完 Model 后，需要手动编写对应的 `CREATE TABLE` 语句并执行。建表语句的参考格式可以查看 [数据库建表语句](/reference/database-ddl)。
+
+建表时注意：带 `DeletedAt` 的表要同时创建 `deleted_at` 列和索引，否则软删除查询不会走索引。
+:::
+
+## Step 2：实现 Handler
+
+Handler 是后端模块的核心，包含所有业务逻辑。每个 Handler 遵循固定的构造模式：结构体持有 `*gorm.DB` 和 `*zap.Logger`，通过构造函数注入。
+
+### Handler 结构体和构造函数
+
+```go
+// XxxHandler 负责某某业务接口。
+type XxxHandler struct {
+    db  *gorm.DB
+    log *zap.Logger
+}
+
+// NewXxxHandler 创建 Handler，由路由层调用。
+func NewXxxHandler(db *gorm.DB, log *zap.Logger) *XxxHandler {
+    return &XxxHandler{db: db, log: log}
+}
+```
+
+如果模块需要 Redis 缓存（比如系统配置），构造函数会增加 `*goredis.Client` 参数。大多数业务模块只需要 DB 和 Logger 两个依赖。
+
+### 请求和响应结构体
+
+Handler 文件中通常会定义三组结构体，分别用于接收请求参数和构造响应数据：
+
+```go
+// 列表查询参数，通过 URL Query 绑定。
+type xxxListQuery struct {
+    Page     int    `form:"page"`
+    PageSize int    `form:"page_size"`
+    Keyword  string `form:"keyword"`
+    Status   int    `form:"status"`
+}
+
+// 创建请求参数，通过 JSON Body 绑定。
+type createXxxRequest struct {
+    Name   string         `json:"name"`
+    Status model.XxxStatus `json:"status"`
+    Remark string         `json:"remark"`
+}
+
+// 列表响应结构，包含分页信息。
+type xxxListResponse struct {
+    Items    []xxxResponse `json:"items"`
+    Total    int64         `json:"total"`
+    Page     int           `json:"page"`
+    PageSize int           `json:"page_size"`
+}
+```
+
+### 常见方法模式
+
+Handler 的核心方法通常包含四种操作：List（分页列表）、Create（创建）、Update（编辑）、UpdateStatus（状态变更）。下面是每个方法的标准流程，以系统配置 Handler 为例：
+
+<<< ../../../server/internal/handler/system/configs.go
+
+这段代码比较长，但阅读时抓住下面几条主线即可：
+
+| 方法 | 核心流程 |
+| --- | --- |
+| `List` | 绑定查询参数 → 构建条件 → 统计总数 → 分页查询 → 构造响应 |
+| `Create` | 绑定 JSON → 校验参数 → 开启事务写入 → 返回新记录 |
+| `Update` | 解析路径参数 ID → 绑定 JSON → 事务内先查再改 → 返回更新后记录 |
+| `UpdateStatus` | 解析 ID → 校验状态值 → 事务内更新单个字段 → 返回 ID 和新状态 |
+
+### 统一响应格式
+
+所有接口的返回值都经过 `response` 包统一处理，调用方不需要自己构造 JSON：
+
+```go
+// 成功时返回数据和 code=0。
+response.Success(c, data)
+
+// 错误时自动判断是否为 apperror.Error：
+//   - 是：使用其 Code、Message 和 HTTP Status
+//   - 否：记录日志，返回 500 和通用错误信息
+response.Error(c, err, h.log)
+```
+
+对应的响应体结构：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": { ... }
+}
+```
+
+### 错误处理模式
+
+Handler 内部的错误处理遵循固定套路：
+
+```go
+// 参数校验失败 → 使用 apperror.BadRequest
+response.Error(c, apperror.BadRequest("参数不正确"), h.log)
+
+// 记录不存在 → 使用 apperror.NotFound
+response.Error(c, apperror.NotFound("资源不存在"), h.log)
+
+// 数据库操作失败 → 使用 apperror.Internal，附带底层错误
+response.Error(c, apperror.Internal("查询失败", err), h.log)
+
+// 事务内的混合错误 → 使用统一的错误写入函数
+func writeXxxError(c *gin.Context, err error, fallbackMessage string, log *zap.Logger) {
+    var appErr *apperror.Error
+    if errors.As(err, &appErr) {
+        response.Error(c, appErr, log)
+        return
+    }
+    response.Error(c, apperror.Internal(fallbackMessage, err), log)
+}
+```
+
+`apperror` 包提供的常用错误构造函数：
+
+| 函数 | HTTP 状态码 | 业务码 | 适用场景 |
+| --- | --- | --- | --- |
+| `BadRequest(msg)` | 400 | 40000 | 参数校验失败 |
+| `Unauthorized(msg)` | 401 | 40100 | 未登录或 Token 过期 |
+| `Forbidden(msg)` | 403 | 40300 | 无权限访问 |
+| `NotFound(msg)` | 404 | 40400 | 资源不存在 |
+| `Internal(msg, err)` | 500 | 50000 | 数据库或其他内部错误 |
+
+## Step 3：注册路由
+
+Handler 写好后，需要在路由文件中完成两件事：构造 Handler 实例、把方法绑定到路由。
+
+打开 `server/internal/router/router.go`，找到对应的路由注册函数：
+
+<<< ../../../server/internal/router/router.go
+
+阅读这段代码时，关注三件事：
+
+### 构造 Handler 实例
+
+在 `registerSystemRoutes` 函数开头，每一行构造一个 Handler：
+
+```go
+configs := systemHandler.NewSystemConfigHandler(opts.DB, opts.Redis, opts.Log)
+```
+
+新增模块时，在已有构造语句下方加一行即可。
+
+### 绑定路由和方法
+
+路由绑定的格式是 `分组.HTTP方法("路径", handler.方法)`：
+
+```go
+system.GET("/configs", configs.List)
+system.POST("/configs", configs.Create)
+system.POST("/configs/:id/update", configs.Update)
+system.POST("/configs/:id/status", configs.UpdateStatus)
+```
+
+注意当前项目的一个惯例：更新和删除操作使用 `POST` 方法而不是 `PUT` / `DELETE`，路径中用 `/:id/update` 和 `/:id/status` 区分操作类型。
+
+### 中间件链
+
+`system` 路由组挂载了三层中间件，每个请求都会按顺序经过：
+
+```go
+system.Use(middleware.Auth(opts.Token, opts.Log))          // 1. 认证：解析 JWT，获取当前用户
+system.Use(middleware.OperationLog(opts.DB, opts.Log))      // 2. 操作日志：记录请求信息
+system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log)) // 3. 权限：根据角色和接口路径判断是否放行
+```
+
+这意味着所有注册到 `system` 分组下的接口默认都需要登录、会被记录操作日志、并且需要对应的权限配置才能访问。
+
+::: warning ⚠️ API 路径必须与权限定义一致
+权限中间件使用 `c.FullPath()`（即路由注册时的模板路径）和 `c.Request.Method`（HTTP 方法）作为权限判断的对象。例如注册了 `system.GET("/configs", ...)` 后，权限表中需要配置 `GET` 方法对 `/api/v1/system/configs` 的访问权限。
+
+如果路由路径改了但权限表没更新（或反过来），接口会返回 403。新增模块时，建议先确认路由路径，再在权限初始化数据中补齐对应记录。权限与菜单的具体配置方式在下一节 [权限、菜单与迁移接入](./permission-menu-migration) 中说明。
+:::
+
+## 验证清单
+
+完成三步接入后，按下面的顺序检查：
+
+1. **Model 文件存在**：`server/internal/model/` 下有对应的结构体文件，且 `TableName()` 返回的表名与数据库中一致。
+2. **数据库表已创建**：通过数据库客户端确认表和索引已存在。
+3. **Handler 文件存在**：`server/internal/handler/` 下有对应的 Handler 文件，包含至少 `List` 和 `Create` 方法。
+4. **路由已注册**：在 `router.go` 中可以看到对应的构造语句和路由绑定。
+5. **接口可访问**：启动后端服务后，使用 `curl` 或 API 工具调用接口，确认返回统一的 JSON 格式。
+
+```bash
+# 检查列表接口是否返回分页数据（需要先登录获取 Token）。
+curl -s -H "Authorization: Bearer <token>" \
+  http://localhost:8080/api/v1/system/configs | jq .
+```
+
+期望返回：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "items": [],
+    "total": 0,
+    "page": 1,
+    "page_size": 10
+  }
+}
+```
+
+## 小结
+
+后端模块接入的核心是固定的三步流程：
+
+- **Model**：定义 GORM 结构体、状态常量和表名，同时编写建表 SQL。
+- **Handler**：构造函数注入 DB 和 Logger，方法内直接使用 `h.db` 操作数据库，通过 `response.Success` / `response.Error` 统一返回。
+- **Router**：在 `router.go` 中构造 Handler 实例，把方法绑定到带中间件保护的路由分组。
+
+这三步完成后，接口就已经具备认证、日志和权限保护。接下来需要为模块补齐权限配置和菜单入口：[权限、菜单与迁移接入](./permission-menu-migration)。

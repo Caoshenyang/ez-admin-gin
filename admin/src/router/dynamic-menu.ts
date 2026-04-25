@@ -17,6 +17,7 @@ const routeComponentMap: Record<string, RouteComponent> = {
   'system/FileView': () => import('../pages/system/FileView.vue'),
   'system/OperationLogView': () => import('../pages/system/OperationLogView.vue'),
   'system/LoginLogView': () => import('../pages/system/LoginLogView.vue'),
+  'system/NoticeView': () => import('../pages/system/NoticeView.vue'),
 }
 
 const builtinMenuOptions: MenuOption[] = [

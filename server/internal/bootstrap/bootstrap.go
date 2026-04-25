@@ -53,6 +53,11 @@ const (
 	defaultOperationLogListCode = "system:operation-log:list"
 	defaultLoginLogMenuCode     = "system:login-log"
 	defaultLoginLogListCode     = "system:login-log:list"
+	defaultNoticeMenuCode       = "system:notice"
+	defaultNoticeListCode       = "system:notice:list"
+	defaultNoticeCreateCode     = "system:notice:create"
+	defaultNoticeUpdateCode     = "system:notice:update"
+	defaultNoticeStatusCode     = "system:notice:status"
 )
 
 type defaultPermissionSeed struct {
@@ -87,6 +92,10 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 	{Path: "/api/v1/system/files", Method: "POST"},
 	{Path: "/api/v1/system/operation-logs", Method: "GET"},
 	{Path: "/api/v1/system/login-logs", Method: "GET"},
+	{Path: "/api/v1/system/notices", Method: "GET"},
+	{Path: "/api/v1/system/notices", Method: "POST"},
+	{Path: "/api/v1/system/notices/:id/update", Method: "POST"},
+	{Path: "/api/v1/system/notices/:id/status", Method: "POST"},
 }
 
 // Run 执行服务启动时必须完成的初始化动作。
@@ -380,7 +389,39 @@ func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
 	}
 
 	menus = append(menus, *loginLogMenu)
-	for _, button := range loginLogButtons {
+		for _, button := range loginLogButtons {
+			createdButton, err := seedMenu(db, button, log)
+			if err != nil {
+				return nil, err
+			}
+			menus = append(menus, *createdButton)
+		}
+
+	noticeMenu, err := seedMenu(db, model.Menu{
+		ParentID:  systemMenu.ID,
+		Type:      model.MenuTypeMenu,
+		Code:      defaultNoticeMenuCode,
+		Title:     "公告管理",
+		Path:      "/system/notices",
+		Component: "system/NoticeView",
+		Icon:      "notification",
+		Sort:      90,
+		Status:    model.MenuStatusEnabled,
+		Remark:    "系统内置菜单",
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+
+	noticeButtons := []model.Menu{
+		{ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeListCode, Title: "查看公告", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeCreateCode, Title: "创建公告", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeUpdateCode, Title: "编辑公告", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+		{ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeStatusCode, Title: "修改公告状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
+	}
+
+	menus = append(menus, *noticeMenu)
+	for _, button := range noticeButtons {
 		createdButton, err := seedMenu(db, button, log)
 		if err != nil {
 			return nil, err

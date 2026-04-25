@@ -61,6 +61,7 @@ description: "EZ Admin Gin 从零搭建教程的小节划分，用于确定后�
 - [用户管理页面](./chapter-5/user-pages)
 - [角色与菜单页面](./chapter-5/role-menu-pages)
 - [配置与文件页面](./chapter-5/config-file-pages)
+- [日志页面](./chapter-5/log-pages)
 
 ## 第六阶段：业务模块接入规范
 
