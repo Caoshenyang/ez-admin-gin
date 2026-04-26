@@ -82,123 +82,35 @@ Docker 官方说明：[Docker Hub mirror](https://docs.docker.com/docker-hub/ima
 
 ## 创建 Compose 文件
 
-先创建本地数据目录：
+数据目录通过 `.env.local` 配置，一份 Compose 文件即可在 Windows 和 macOS 上通用。
+
+先创建环境变量文件 `deploy/.env.local`：
+
+<<< ../../../deploy/.env.local.example
 
 ::: code-group
 
 ```powershell [Windows PowerShell]
-# 创建 PostgreSQL 和 Redis 的本地数据目录
-New-Item -ItemType Directory -Path D:\ez-admin-gin-data\postgres, D:\ez-admin-gin-data\redis -Force
+# 复制模板后，按需修改 DATA_DIR 为本地路径（例如 D:/ez-admin-gin-data）
+Copy-Item deploy/.env.local.example deploy/.env.local
 ```
 
 ```bash [macOS / Linux]
-# 创建 PostgreSQL 和 Redis 的本地数据目录
-mkdir -p ~/ez-admin-gin-data/postgres ~/ez-admin-gin-data/redis
+# 复制模板即可，默认路径 ~/.ez-admin-gin-data 无需修改
+cp deploy/.env.local.example deploy/.env.local
 ```
 
 :::
 
-在项目根目录创建 `deploy/compose.local.yml`：
-
-::: code-group
-
-```yaml [Windows]
-name: ez-admin-gin
-
-services:
-  postgres:
-    # 使用 PostgreSQL 官方 Alpine 镜像，体积更小。
-    image: postgres:18-alpine
-    container_name: ez-admin-postgres
-    restart: unless-stopped
-    environment:
-      # 这三项会创建本地开发使用的默认用户和数据库。
-      POSTGRES_USER: ez_admin
-      POSTGRES_PASSWORD: ez_admin_123456
-      POSTGRES_DB: ez_admin
-      # 把数据库真实数据放到 pgdata 子目录，避免挂载目录权限问题。
-      PGDATA: /var/lib/postgresql/data/pgdata
-      TZ: Asia/Shanghai
-    ports:
-      # 左侧是本机端口，右侧是容器端口。
-      - "5432:5432"
-    volumes:
-      # 绑定挂载到本机目录，删除容器后数据仍然保留。
-      - D:/ez-admin-gin-data/postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    # 使用 Redis 官方 Alpine 镜像。
-    image: redis:8-alpine
-    container_name: ez-admin-redis
-    restart: unless-stopped
-    # 开启 AOF，让本地 Redis 数据可以持久化。
-    command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
-    volumes:
-      # Redis 数据保存到本机目录。
-      - D:/ez-admin-gin-data/redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-```
-
-```yaml [macOS / Linux]
-name: ez-admin-gin
-
-services:
-  postgres:
-    # 使用 PostgreSQL 官方 Alpine 镜像，体积更小。
-    image: postgres:18-alpine
-    container_name: ez-admin-postgres
-    restart: unless-stopped
-    environment:
-      # 这三项会创建本地开发使用的默认用户和数据库。
-      POSTGRES_USER: ez_admin
-      POSTGRES_PASSWORD: ez_admin_123456
-      POSTGRES_DB: ez_admin
-      # 把数据库真实数据放到 pgdata 子目录，避免挂载目录权限问题。
-      PGDATA: /var/lib/postgresql/data/pgdata
-      TZ: Asia/Shanghai
-    ports:
-      # 左侧是本机端口，右侧是容器端口。
-      - "5432:5432"
-    volumes:
-      # 绑定挂载到本机目录，删除容器后数据仍然保留。
-      - ${HOME}/ez-admin-gin-data/postgres:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    # 使用 Redis 官方 Alpine 镜像。
-    image: redis:8-alpine
-    container_name: ez-admin-redis
-    restart: unless-stopped
-    # 开启 AOF，让本地 Redis 数据可以持久化。
-    command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
-    volumes:
-      # Redis 数据保存到本机目录。
-      - ${HOME}/ez-admin-gin-data/redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-```
-
+::: warning ⚠️ Windows 用户注意
+Windows 下 `~` 路径可能不被 Docker 正确解析。请打开 `deploy/.env.local`，将 `DATA_DIR` 改为绝对路径，例如 `DATA_DIR=D:/ez-admin-gin-data`。
 :::
+
+然后创建 `deploy/compose.local.yml`：
+
+<<< ../../../deploy/compose.local.yml
+
+数据挂载路径使用 `${DATA_DIR}` 变量，未配置时默认回退到 `~/.ez-admin-gin-data`。
 
 ::: info 镜像版本
 截止 2026-04-21，Docker Hub 官方镜像已提供 PostgreSQL 18 和 Redis 8。本教程使用 `postgres:18-alpine`、`redis:8-alpine`，让补丁版本跟随官方镜像更新。
@@ -293,12 +205,7 @@ docker compose -f deploy/compose.local.yml restart
 
 ## 数据保存在哪里
 
-这份 Compose 使用绑定挂载保存数据，数据会落在你本机的目录里：
-
-| 平台 | 数据目录 |
-| --- | --- |
-| Windows | `D:\ez-admin-gin-data\postgres\pgdata`、`D:\ez-admin-gin-data\redis` |
-| macOS / Linux | `~/ez-admin-gin-data/postgres/pgdata`、`~/ez-admin-gin-data/redis` |
+数据目录由 `deploy/.env.local` 中的 `DATA_DIR` 控制，默认为 `~/.ez-admin-gin-data`。
 
 停止并删除容器不会删除这些本地数据：
 

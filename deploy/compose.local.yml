@@ -18,8 +18,8 @@ services:
       # 左侧是本机端口，右侧是容器端口。
       - "5432:5432"
     volumes:
-      # 绑定挂载到本机目录，删除容器后数据仍然保留。
-      - D:/ez-admin-gin-data/postgres:/var/lib/postgresql/data
+      # 数据目录通过 .env.local 的 DATA_DIR 控制，跨平台通用。
+      - ${DATA_DIR:-~/.ez-admin-gin-data}/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
       interval: 10s
@@ -36,8 +36,8 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      # Redis 数据保存到本机目录。
-      - D:/ez-admin-gin-data/redis:/data
+      # 数据目录通过 .env.local 的 DATA_DIR 控制，跨平台通用。
+      - ${DATA_DIR:-~/.ez-admin-gin-data}/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
