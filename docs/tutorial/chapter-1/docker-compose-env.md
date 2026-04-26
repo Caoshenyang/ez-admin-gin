@@ -105,16 +105,12 @@ mkdir -p ~/ez-admin-gin-data/postgres ~/ez-admin-gin-data/redis
 | `compose.local.yml` | macOS / Linux | `${HOME}/ez-admin-gin-data` |
 | `compose.local.win.yml` | Windows | `D:/ez-admin-gin-data` |
 
-::: code-group
-
-```yaml [macOS / Linux]
+::: details compose.local.yml — macOS / Linux
 <<< ../../../deploy/compose.local.yml
-```
+:::
 
-```yaml [Windows]
+::: details compose.local.win.yml — Windows
 <<< ../../../deploy/compose.local.win.yml
-```
-
 :::
 
 ::: info 镜像版本
