@@ -19,7 +19,7 @@ services:
       - "5432:5432"
     volumes:
       # 绑定挂载到本机目录，删除容器后数据仍然保留。
-      - ${HOME}/ez-admin-gin-data/postgres:/var/lib/postgresql/data
+      - D:/ez-admin-gin-data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ez_admin -d ez_admin"]
       interval: 10s
@@ -37,7 +37,7 @@ services:
       - "6379:6379"
     volumes:
       # Redis 数据保存到本机目录。
-      - ${HOME}/ez-admin-gin-data/redis:/data
+      - D:/ez-admin-gin-data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s

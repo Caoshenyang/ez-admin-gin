@@ -82,35 +82,40 @@ Docker 官方说明：[Docker Hub mirror](https://docs.docker.com/docker-hub/ima
 
 ## 创建 Compose 文件
 
-数据目录通过 `.env.local` 配置，一份 Compose 文件即可在 Windows 和 macOS 上通用。
-
-先创建环境变量文件 `deploy/.env.local`：
-
-<<< ../../../deploy/.env.local.example
+先创建本地数据目录：
 
 ::: code-group
 
 ```powershell [Windows PowerShell]
-# 复制模板后，按需修改 DATA_DIR 为本地路径（例如 D:/ez-admin-gin-data）
-Copy-Item deploy/.env.local.example deploy/.env.local
+# 创建 PostgreSQL 和 Redis 的本地数据目录
+New-Item -ItemType Directory -Path D:\ez-admin-gin-data\postgres, D:\ez-admin-gin-data\redis -Force
 ```
 
 ```bash [macOS / Linux]
-# 复制模板即可，默认路径 ~/.ez-admin-gin-data 无需修改
-cp deploy/.env.local.example deploy/.env.local
+# 创建 PostgreSQL 和 Redis 的本地数据目录
+mkdir -p ~/ez-admin-gin-data/postgres ~/ez-admin-gin-data/redis
 ```
 
 :::
 
-::: warning ⚠️ Windows 用户注意
-Windows 下 `~` 路径可能不被 Docker 正确解析。请打开 `deploy/.env.local`，将 `DATA_DIR` 改为绝对路径，例如 `DATA_DIR=D:/ez-admin-gin-data`。
-:::
+项目提供了两份本地 Compose 文件，按你的操作系统选择：
 
-然后创建 `deploy/compose.local.yml`：
+| 文件 | 适用平台 | 数据目录 |
+| --- | --- | --- |
+| `compose.local.yml` | macOS / Linux | `${HOME}/ez-admin-gin-data` |
+| `compose.local.win.yml` | Windows | `D:/ez-admin-gin-data` |
 
+::: code-group
+
+```yaml [macOS / Linux]
 <<< ../../../deploy/compose.local.yml
+```
 
-数据挂载路径使用 `${DATA_DIR}` 变量，未配置时默认回退到 `~/.ez-admin-gin-data`。
+```yaml [Windows]
+<<< ../../../deploy/compose.local.win.yml
+```
+
+:::
 
 ::: info 镜像版本
 截止 2026-04-21，Docker Hub 官方镜像已提供 PostgreSQL 18 和 Redis 8。本教程使用 `postgres:18-alpine`、`redis:8-alpine`，让补丁版本跟随官方镜像更新。
@@ -125,19 +130,33 @@ Windows 下 `~` 路径可能不被 Docker 正确解析。请打开 `deploy/.env.
 
 ## 🛠️ 启动基础服务
 
-在项目根目录执行：
+::: code-group
 
-```bash
-# 使用指定 Compose 文件在后台启动服务
+```bash [macOS / Linux]
+# 使用 macOS/Linux 版 Compose 文件启动服务
 docker compose -f deploy/compose.local.yml up -d
 ```
 
+```powershell [Windows PowerShell]
+# 使用 Windows 版 Compose 文件启动服务
+docker compose -f deploy/compose.local.win.yml up -d
+```
+
+:::
+
 查看运行状态：
 
-```bash
-# 查看容器运行状态和健康检查状态
+::: code-group
+
+```bash [macOS / Linux]
 docker compose -f deploy/compose.local.yml ps
 ```
+
+```powershell [Windows PowerShell]
+docker compose -f deploy/compose.local.win.yml ps
+```
+
+:::
 
 看到 `postgres` 和 `redis` 都处于 running / healthy 状态，就说明基础服务已经启动。
 
@@ -152,23 +171,37 @@ docker compose -f deploy/compose.local.yml ps
 
 ## ✅ 验证 PostgreSQL
 
-执行：
+::: code-group
 
-```bash
+```bash [macOS / Linux]
 # 在 postgres 容器中执行一条简单 SQL
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select 1;"
 ```
+
+```powershell [Windows PowerShell]
+# 在 postgres 容器中执行一条简单 SQL
+docker compose -f deploy/compose.local.win.yml exec postgres psql -U ez_admin -d ez_admin -c "select 1;"
+```
+
+:::
 
 能看到查询结果 `1`，说明数据库可以连接。
 
 ## ✅ 验证 Redis
 
-执行：
+::: code-group
 
-```bash
+```bash [macOS / Linux]
 # 在 redis 容器中执行 ping
 docker compose -f deploy/compose.local.yml exec redis redis-cli ping
 ```
+
+```powershell [Windows PowerShell]
+# 在 redis 容器中执行 ping
+docker compose -f deploy/compose.local.win.yml exec redis redis-cli ping
+```
+
+:::
 
 能看到：
 
@@ -180,7 +213,7 @@ PONG
 
 ## 常用管理命令
 
-后续开发时，经常会用到这些命令：
+后续开发时，经常会用到这些命令（以 macOS/Linux 为例，Windows 用户将文件名替换为 `compose.local.win.yml`）：
 
 ```bash
 # 查看服务状态
@@ -205,7 +238,12 @@ docker compose -f deploy/compose.local.yml restart
 
 ## 数据保存在哪里
 
-数据目录由 `deploy/.env.local` 中的 `DATA_DIR` 控制，默认为 `~/.ez-admin-gin-data`。
+数据目录取决于你使用的 Compose 文件：
+
+| 平台 | Compose 文件 | 数据目录 |
+| --- | --- | --- |
+| macOS / Linux | `compose.local.yml` | `~/ez-admin-gin-data/postgres/pgdata`、`~/ez-admin-gin-data/redis` |
+| Windows | `compose.local.win.yml` | `D:\ez-admin-gin-data\postgres\pgdata`、`D:\ez-admin-gin-data\redis` |
 
 停止并删除容器不会删除这些本地数据：
 
