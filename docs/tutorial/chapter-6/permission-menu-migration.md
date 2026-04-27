@@ -5,7 +5,7 @@ description: "说明业务模块如何接入接口权限、菜单权限、按钮
 
 # 权限、菜单与迁移接入
 
-写完 model、repository、service、handler 和 router 之后，接口能跑通了，但登录后台你会发现：侧边栏看不到新菜单、新接口返回 403、按钮全部隐藏。这些"看不见的水管"就是权限、菜单和种子数据——它们不参与业务逻辑，却决定了一个模块能不能真正用起来。
+写完 model、handler 和 router 之后，接口能跑通了，但登录后台你会发现：侧边栏看不到新菜单、新接口返回 403、按钮全部隐藏。这些"看不见的水管"就是权限、菜单和种子数据——它们不参与业务逻辑，却决定了一个模块能不能真正用起来。
 
 ::: tip 🎯 本节目标
 为一个业务模块同时补齐三件事：
@@ -21,9 +21,10 @@ description: "说明业务模块如何接入接口权限、菜单权限、按钮
 
 ### 权限是怎么判断的
 
-后端所有需要权限的接口都挂在 `/api/v1/system` 路由分组下，这个分组在注册时挂了两层中间件：
+后端所有需要权限的接口都挂在 `/api/v1/system` 路由分组下，这个分组在注册时挂了三层中间件：
 
 - `middleware.Auth`：从 Token 中解析出当前用户 ID。
+- `middleware.OperationLog`：记录请求信息，方便审计和排查。
 - `middleware.Permission`：根据用户角色和请求路径，查 Casbin 策略判断是否放行。
 
 判断逻辑很直接：取当前用户的启用角色编码，对每个角色执行一次 `enforcer.Enforce(roleCode, fullPath, method)`。只要有一个角色命中策略就放行，否则返回 403。
@@ -237,22 +238,24 @@ const routeComponentMap: Record<string, RouteComponent> = {
 
 ## 数据库迁移
 
-### 自动建表，无需迁移文件
+### 手动建表，不自动迁移
 
-本项目不使用独立的迁移文件或迁移工具。GORM 在连接数据库时通过 `gorm.Open` 自动完成表结构创建——只要模型结构体定义了 `TableName()` 方法，GORM 就会在首次访问时创建对应的表。
+本项目不使用独立迁移文件，也没有在启动流程里调用 `AutoMigrate`。`gorm.Open` 只负责建立连接，不会自动帮你创建业务表；Casbin 的 gorm-adapter 也显式关闭了自动迁移。
+
+这意味着新增业务模块时，模型定义和建表 SQL 需要一起落地：
 
 新增业务模块时，只需要在 `server/internal/model/` 下定义模型文件，确保：
 
 1. 结构体有 `gorm` 标签标注字段约束。
 2. 实现了 `TableName()` 方法指定表名。
-3. GORM 能扫描到该模型（项目通过 `gorm.Open` 时自动检测所有注册的模型）。
+3. 根据模型字段手动编写并执行对应的 `CREATE TABLE` / `CREATE INDEX` 语句。
 
-::: warning ⚠️ 已有表的结构变更
-GORM 的 `AutoMigrate` 只会新增字段，不会删除已有字段，也不会修改字段类型。如果需要变更已有列的定义（比如从 `varchar(64)` 改成 `varchar(128)`），需要手动执行 SQL。新增字段可以直接在结构体中添加，GORM 会自动补列。
+::: warning ⚠️ 重启服务不会自动补表
+如果你只写了 `model.Post`，但没有执行建表 SQL，那么重启服务后数据库里仍然不会出现 `biz_post`。教程里的“模型文件”和“数据库表结构”是两份都要维护的交付物。
 :::
 
 ::: details 为什么选择不引入迁移工具
-对于个人项目，独立迁移文件带来的好处（版本化、回滚）有限，而引入额外工具的配置和维护成本相对更高。当前方式在模型定义和数据库结构之间保持了最短的路径：改模型 → 重启服务 → 表结构同步。如果后续项目规模增长，可以按需引入 `golang-migrate` 或 `goose` 等工具。
+对于个人项目，独立迁移文件带来的好处（版本化、回滚）有限，而引入额外工具的配置和维护成本相对更高。当前项目选择的是更直接的路径：改模型 → 写 SQL → 执行 SQL → 重启服务。如果后续项目规模增长，可以按需引入 `golang-migrate` 或 `goose` 等工具。
 :::
 
 ### 新模块的模型示例
@@ -293,7 +296,24 @@ func (Post) TableName() string {
 }
 ```
 
-定义好模型后，重启服务，GORM 会自动创建 `biz_post` 表。
+定义好模型后，还需要手动执行建表 SQL。下面给一个 PostgreSQL 示例：
+
+```sql
+CREATE TABLE biz_post (
+  id BIGSERIAL PRIMARY KEY,
+  title VARCHAR(128) NOT NULL,
+  content TEXT NOT NULL,
+  status SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE INDEX idx_biz_post_deleted_at
+ON biz_post (deleted_at);
+```
+
+执行完成后，再启动服务验证路由、权限和菜单是否都已接通。
 
 ::: tip 📌 表名前缀约定
 系统模块的表名以 `sys_` 前缀（如 `sys_menu`、`sys_role`）。业务模块建议使用 `biz_` 前缀（如 `biz_post`），方便在数据库层面区分系统表和业务表。
@@ -305,7 +325,7 @@ func (Post) TableName() string {
 
 | # | 检查项 | 验证方式 | 期望结果 |
 | --- | --- | --- | --- |
-| 1 | 数据库有表 | 连接数据库执行 `\dt` 或查看表列表 | `biz_post` 表存在，字段与模型一致 |
+| 1 | 数据库有表 | 先执行建表 SQL，再用 `\dt` 或查看表列表 | `biz_post` 表存在，字段与模型一致 |
 | 2 | 后端路由已注册 | 启动服务，查看控制台日志或直接 curl | 路由路径和方法与 `router.go` 注册一致 |
 | 3 | Casbin 策略已写入 | 查询 `casbin_rule` 表 | 新增的 `{role_code, path, method}` 记录存在 |
 | 4 | 菜单已写入 | 查询 `sys_menu` 表 | 目录、菜单、按钮节点齐全，`parent_id` 层级正确 |
@@ -326,7 +346,7 @@ func (Post) TableName() string {
 
 - **接口权限**：在 `defaultPermissionSeeds` 中添加 `{Path, Method}` 种子，启动后自动写入 `casbin_rule`。
 - **菜单树**：按 目录 → 菜单 → 按钮三层结构在 `seedDefaultMenus` 中添加节点，`component` 字段对应前端组件映射，按钮 `code` 对应前端 `canUse()`。
-- **数据库迁移**：在 `model/` 下定义模型结构体，GORM 自动建表，无需迁移文件。
+- **数据库结构**：在 `model/` 下定义模型结构体，并手动执行对应的 SQL 建表语句。
 
 三件事全部完成后，用 `super_admin` 登录验证：侧边栏有菜单、页面有按钮、接口不报 403。
 

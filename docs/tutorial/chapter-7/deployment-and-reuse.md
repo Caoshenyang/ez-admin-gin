@@ -117,13 +117,21 @@ default menu created         menu_code=system
 ### 1. 健康检查
 
 ```bash
-curl http://localhost/api/v1/system/health
+curl http://localhost/health
 ```
 
 期望返回类似：
 
 ```json
-{ "code": 0, "data": { "status": "ok" } }
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "env": "prod",
+    "database": "ok",
+    "redis": "ok"
+  }
+}
 ```
 
 ### 2. 登录

@@ -232,7 +232,31 @@ const routeComponentMap: Record<string, RouteComponent> = {
 
 ### 1. 数据库迁移
 
-启动后端服务，GORM 的 `AutoMigrate` 会自动创建 `sys_notice` 表：
+先在数据库里手动创建 `sys_notice` 表。当前项目不会在启动时自动帮你建业务表，所以这一步要在 `go run main.go` 之前完成。
+
+下面给一个 PostgreSQL 示例：
+
+```sql
+CREATE TABLE sys_notice (
+  id BIGSERIAL PRIMARY KEY,
+  title VARCHAR(128) NOT NULL,
+  content TEXT NOT NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE INDEX idx_sys_notice_deleted_at
+ON sys_notice (deleted_at);
+
+CREATE INDEX idx_sys_notice_status
+ON sys_notice (status);
+```
+
+执行完成后，可以先用 `\d sys_notice` 或数据库客户端确认字段存在；然后再启动后端服务：
 
 ```bash
 cd server
