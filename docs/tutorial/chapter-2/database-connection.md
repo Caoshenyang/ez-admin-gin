@@ -252,13 +252,28 @@ func Close(db *gorm.DB) error {
 	return sqlDB.Close()
 }
 
-// DSN 返回当前驱动对应的连接字符串（供 golang-migrate 使用）。
-func DSN(cfg config.DatabaseConfig) (string, error) {
+// MigrateDSN 返回 golang-migrate 需要的连接字符串。
+// GORM 和 golang-migrate 对 DSN 格式要求不同，所以分开生成。
+func MigrateDSN(cfg config.DatabaseConfig) (string, error) {
 	switch cfg.Driver {
 	case "postgres":
-		return dsnPostgres(cfg), nil
+		return fmt.Sprintf(
+			"postgres://%s:%s@%s:%d/%s?sslmode=disable",
+			url.PathEscape(cfg.User),
+			url.PathEscape(cfg.Password),
+			cfg.Host,
+			cfg.Port,
+			url.PathEscape(cfg.Name),
+		), nil
 	case "mysql":
-		return dsnMySQL(cfg), nil
+		return fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4",
+			cfg.User,
+			cfg.Password,
+			cfg.Host,
+			cfg.Port,
+			cfg.Name,
+		), nil
 	default:
 		return "", fmt.Errorf("unsupported database driver: %s", cfg.Driver)
 	}

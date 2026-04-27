@@ -90,7 +90,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 
 ### 权限种子
 
-在 `server/migrations/{pgsql,mysql}/` 目录下创建新的迁移文件，添加公告的接口权限：
+在 `server/migrations/{postgres,mysql}/` 目录下创建新的迁移文件，添加公告的接口权限：
 
 ::: code-group
 
@@ -373,7 +373,7 @@ curl -s -X POST http://localhost:8080/api/v1/system/notices \
 | Model | `server/internal/model/notice.go` | 新增 |
 | Handler | `server/internal/handler/system/notices.go` | 新增 |
 | Router | `server/internal/router/router.go` | 追加 5 行 |
-| Migration | `server/migrations/{pgsql,mysql}/000003_notice_seed_data.up.sql` | 新增 |
+| Migration | `server/migrations/{postgres,mysql}/000003_notice_seed_data.up.sql` | 新增 |
 | Types | `admin/src/types/notice.ts` | 新增 |
 | API | `admin/src/api/notice.ts` | 新增 |
 | Page | `admin/src/pages/system/NoticeView.vue` | 新增 |

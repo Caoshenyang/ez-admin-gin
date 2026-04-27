@@ -131,7 +131,7 @@ func (UserRole) TableName() string {
 ```
 
 ::: tip 📌 超级管理员角色初始化
-超级管理员角色（`super_admin`）通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{pgsql,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限。
+超级管理员角色（`super_admin`）通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限。
 
 管理员账号需要通过 `/api/v1/setup/init` 接口创建，创建时会自动绑定到 `super_admin` 角色。
 :::

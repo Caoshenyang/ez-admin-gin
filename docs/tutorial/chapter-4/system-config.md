@@ -50,7 +50,7 @@ server/
 │  └─ router/
 │     └─ router.go
 └─ migrations/
-   ├─ pgsql/
+   ├─ postgres/
    │  └─ 000002_seed_data.up.sql
    └─ mysql/
       └─ 000002_seed_data.up.sql
@@ -62,7 +62,7 @@ server/
 | `internal/model/system_config.go` | 定义系统配置模型 |
 | `internal/handler/system/configs.go` | 提供配置管理与按键读取接口 |
 | `internal/router/router.go` | 注册系统配置路由 |
-| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化系统配置权限和菜单 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化系统配置权限和菜单 |
 
 ## 先创建数据表
 
@@ -728,7 +728,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 系统配置的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建系统配置相关的权限策略和菜单数据。
 
 ::: tip 💡 权限和菜单初始化
-- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入系统配置接口的 Casbin 规则
+- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入系统配置接口的 Casbin 规则
 - 菜单数据：在同一迁移文件中插入系统配置菜单和按钮
 - 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到系统配置菜单
 :::

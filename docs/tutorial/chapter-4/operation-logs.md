@@ -45,7 +45,7 @@ server/
 │  └─ router/
 │     └─ router.go
 └─ migrations/
-   ├─ pgsql/
+   ├─ postgres/
    │  └─ 000002_seed_data.up.sql
    └─ mysql/
       └─ 000002_seed_data.up.sql
@@ -58,7 +58,7 @@ server/
 | `internal/middleware/operation_log.go` | 请求结束后自动写日志 |
 | `internal/handler/system/operation_logs.go` | 提供操作日志查询接口 |
 | `internal/router/router.go` | 注册日志中间件和查询路由 |
-| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化操作日志权限和菜单 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化操作日志权限和菜单 |
 
 ## 先创建数据表
 
@@ -442,7 +442,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 操作日志的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建操作日志相关的权限策略和菜单数据。
 
 ::: tip 💡 权限和菜单初始化
-- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入操作日志接口的 Casbin 规则
+- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入操作日志接口的 Casbin 规则
 - 菜单数据：在同一迁移文件中插入操作日志菜单和按钮
 - 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到操作日志菜单
 :::

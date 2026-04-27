@@ -71,7 +71,7 @@ go run main.go
 后端监听地址：`http://localhost:8080`
 
 ::: tip 🔑 这一步会自动完成数据库迁移
-首次启动时，程序会通过 golang-migrate 自动执行 `server/migrations/pgsql/` 下的 SQL 迁移文件，**不需要手动建表或导入 SQL**：
+首次启动时，程序会通过 golang-migrate 自动执行 `server/migrations/postgres/` 下的 SQL 迁移文件，**不需要手动建表或导入 SQL**：
 
 1. **自动建表** — 执行 `000001_init_schema.up.sql`，创建所有系统表（用户、角色、菜单、配置、文件、日志、公告、权限策略等）
 2. **初始化种子数据** — 执行 `000002_seed_data.up.sql`，自动写入：

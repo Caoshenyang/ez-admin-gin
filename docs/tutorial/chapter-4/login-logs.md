@@ -45,7 +45,7 @@ server/
 │  └─ router/
 │     └─ router.go
 └─ migrations/
-   ├─ pgsql/
+   ├─ postgres/
    │  └─ 000002_seed_data.up.sql
    └─ mysql/
       └─ 000002_seed_data.up.sql
@@ -58,7 +58,7 @@ server/
 | `internal/handler/auth/login.go` | 登录成功和失败时写入日志 |
 | `internal/handler/system/login_logs.go` | 提供登录日志查询接口 |
 | `internal/router/router.go` | 注册登录日志查询路由 |
-| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化登录日志权限和菜单 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化登录日志权限和菜单 |
 
 ## 先创建数据表
 
@@ -455,7 +455,7 @@ system.GET("/login-logs", loginLogs.List) // [!code ++]
 登录日志的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建登录日志相关的权限策略和菜单数据。
 
 ::: tip 💡 权限和菜单初始化
-- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入登录日志接口的 Casbin 规则
+- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入登录日志接口的 Casbin 规则
 - 菜单数据：在同一迁移文件中插入登录日志菜单和按钮
 - 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到登录日志菜单
 :::

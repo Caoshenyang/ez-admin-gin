@@ -27,7 +27,7 @@ server/
 │  └─ router/
 │     └─ router.go
 └─ migrations/
-   ├─ pgsql/
+   ├─ postgres/
    │  └─ 000002_seed_data.up.sql
    └─ mysql/
       └─ 000002_seed_data.up.sql
@@ -37,7 +37,7 @@ server/
 | --- | --- |
 | `internal/model/menu.go` | 定义目录、菜单、按钮模型 |
 | `internal/model/role_menu.go` | 定义角色和菜单的绑定关系 |
-| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化默认菜单，并授权给超级管理员 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化默认菜单，并授权给超级管理员 |
 | `internal/handler/auth/menus.go` | 返回当前用户可见菜单树 |
 | `internal/router/router.go` | 注册 `/api/v1/auth/menus` |
 
@@ -168,7 +168,7 @@ func (RoleMenu) TableName() string {
 默认菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建系统管理相关的菜单数据和角色菜单绑定关系。
 
 ::: tip 💡 菜单初始化
-- 菜单数据：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入系统管理目录、菜单和按钮
+- 菜单数据：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入系统管理目录、菜单和按钮
 - 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到系统管理菜单
 - 初始菜单包括：系统管理目录、系统状态菜单和查看系统状态按钮
 :::

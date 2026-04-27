@@ -24,7 +24,7 @@ server/
 │  └─ router/
 │     └─ router.go
 └─ migrations/
-   ├─ pgsql/
+   ├─ postgres/
    │  └─ 000002_seed_data.up.sql
    └─ mysql/
       └─ 000002_seed_data.up.sql
@@ -34,7 +34,7 @@ server/
 | --- | --- |
 | `internal/handler/system/roles.go` | 角色管理接口 |
 | `internal/router/router.go` | 注册角色管理路由 |
-| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化角色管理权限和菜单 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化角色管理权限和菜单 |
 
 ::: info 本节不新增数据库表
 角色管理复用 `sys_role`、`sys_role_menu`、`casbin_rule`。其中 `sys_role` 保存角色本身，`sys_role_menu` 保存角色菜单关系，`casbin_rule` 保存接口权限策略。
@@ -788,7 +788,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 角色管理的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建角色管理相关的权限策略和菜单数据。
 
 ::: tip 💡 权限和菜单初始化
-- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入角色管理接口的 Casbin 规则
+- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入角色管理接口的 Casbin 规则
 - 菜单数据：在同一迁移文件中插入角色管理菜单和按钮
 - 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到角色管理菜单
 :::

@@ -43,7 +43,7 @@ Casbin 模型定义在 `server/configs/rbac_model.conf`：
 
 ### 如何为新模块添加权限种子
 
-权限种子通过 SQL 迁移文件管理，位于 `server/migrations/{pgsql,mysql}/` 目录下。系统初始权限写在 `000002_seed_data.up.sql` 中，新模块的权限应该写在新的迁移文件里（例如 `000003_blog_seed_data.up.sql`）。
+权限种子通过 SQL 迁移文件管理，位于 `server/migrations/{postgres,mysql}/` 目录下。系统初始权限写在 `000002_seed_data.up.sql` 中，新模块的权限应该写在新的迁移文件里（例如 `000003_blog_seed_data.up.sql`）。
 
 假设新模块的接口路径是 `/api/v1/blog/posts`，需要创建新的迁移文件来添加权限：
 
@@ -215,12 +215,12 @@ const routeComponentMap: Record<string, RouteComponent> = {
 
 ### golang-migrate 自动建表
 
-本项目使用 golang-migrate 管理数据库迁移。启动时，程序通过 `embed.FS` 嵌入 `server/migrations/{pgsql,mysql}/` 目录下的 SQL 文件，并自动执行未应用的迁移。
+本项目使用 golang-migrate 管理数据库迁移。启动时，程序通过 `embed.FS` 嵌入 `server/migrations/{postgres,mysql}/` 目录下的 SQL 文件，并自动执行未应用的迁移。
 
 迁移文件按序号命名，格式为 `NNNNNN_name.up.sql` / `NNNNNN_name.down.sql`：
 
 ```text
-server/migrations/pgsql/
+server/migrations/postgres/
 ├── 000001_init_schema.up.sql        -- 建所有系统表
 ├── 000001_init_schema.down.sql      -- 反向 DROP
 ├── 000002_seed_data.up.sql          -- 角色、菜单、权限、绑定

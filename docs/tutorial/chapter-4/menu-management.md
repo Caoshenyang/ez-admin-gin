@@ -646,7 +646,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 ```
 
 ::: tip 📌 菜单管理权限和菜单初始化
-菜单管理接口权限和菜单通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{pgsql,mysql}/000002_seed_data.up.sql` 迁移文件，创建系统默认的菜单管理权限和菜单。
+菜单管理接口权限和菜单通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建系统默认的菜单管理权限和菜单。
 
 这样可以确保菜单管理功能在服务启动时就已经准备就绪，不需要通过代码手动写入。
 :::

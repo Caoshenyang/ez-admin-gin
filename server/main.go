@@ -14,14 +14,13 @@ import (
 	"ez-admin-gin/server/internal/router"
 	"ez-admin-gin/server/internal/token"
 
-	"github.com/golang-migrate/migrate/v4"
 	"go.uber.org/zap"
 
 	// 嵌入迁移文件
 	"embed"
 )
 
-//go:embed migrations/pgsql migrations/mysql
+//go:embed migrations/postgres migrations/mysql
 var migrationsFS embed.FS
 
 func main() {
@@ -52,19 +51,12 @@ func main() {
 	}()
 
 	// 数据库连接成功后，执行 SQL 迁移（建表 + 种子数据）。
-	migrateDSN, err := database.DSN(cfg.Database)
+	migrateDSN, err := database.MigrateDSN(cfg.Database)
 	if err != nil {
 		log.Fatal("build migration dsn", zap.Error(err))
 	}
-	if cfg.Database.Driver == "postgres" {
-		migrateDSN = cfg.Database.Driver + "://" + migrateDSN
-	}
 	if err := appMigrate.Run(cfg.Database.Driver, migrateDSN, migrationsFS, log); err != nil {
-		if err == migrate.ErrNoChange {
-			log.Info("database migrations up to date")
-		} else {
-			log.Fatal("run database migrations", zap.Error(err))
-		}
+		log.Fatal("run database migrations", zap.Error(err))
 	}
 
 	// 启动时连接 Redis；连接失败就直接终止服务。

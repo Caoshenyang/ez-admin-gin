@@ -318,7 +318,7 @@ func currentRoleCodes(db *gorm.DB, userID uint) ([]string, error) {
 :::
 
 ::: tip 📌 默认接口权限初始化
-默认接口权限策略通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{pgsql,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限策略。
+默认接口权限策略通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限策略。
 
 这样可以确保权限策略在服务启动时就已经准备就绪，不需要通过代码手动写入。
 :::

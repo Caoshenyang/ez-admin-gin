@@ -13,8 +13,9 @@ import (
 )
 
 // Run 执行数据库迁移。根据 driver 参数加载对应子目录下的 SQL 文件。
+// 返回 nil 表示迁移成功（包括"已是最新"的情况）。
 func Run(driver, dsn string, migrationsFS embed.FS, log *zap.Logger) error {
-	sub, err := fs.Sub(migrationsFS, driver)
+	sub, err := fs.Sub(migrationsFS, "migrations/"+driver)
 	if err != nil {
 		return fmt.Errorf("open migrations/%s: %w", driver, err)
 	}
@@ -30,7 +31,8 @@ func Run(driver, dsn string, migrationsFS embed.FS, log *zap.Logger) error {
 	}
 	defer m.Close()
 
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 
