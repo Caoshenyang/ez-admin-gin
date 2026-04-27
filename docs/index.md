@@ -15,6 +15,9 @@ hero:
       text: 开始阅读
       link: /guide/
     - theme: alt
+      text: 更新日志
+      link: /changelog
+    - theme: alt
       text: 查看路线图
       link: /roadmap
 

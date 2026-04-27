@@ -86,6 +86,7 @@ export default defineConfig({
       { text: '开始这里', link: '/guide/', activeMatch: '^/guide/' },
       { text: '从零搭建', link: '/tutorial/', activeMatch: '^/tutorial/' },
       { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' },
+      { text: '更新日志', link: '/changelog', activeMatch: '^/changelog$' },
       { text: '路线图', link: '/roadmap', activeMatch: '^/roadmap$' }
     ],
     sidebar: {
@@ -96,6 +97,7 @@ export default defineConfig({
             { text: '使用指南', link: '/guide/' },
             { text: '从零搭建教程', link: '/tutorial/' },
             { text: '参考手册', link: '/reference/' },
+            { text: '更新日志', link: '/changelog' },
             { text: '路线图', link: '/roadmap' }
           ]
         }

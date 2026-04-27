@@ -16,3 +16,6 @@ favicon-preview.png
 Thumbs.db
 
 server/uploads/
+
+# Third-party skills not tracked in release
+.agents/skills/drawio-skill/
