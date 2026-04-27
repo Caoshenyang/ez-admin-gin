@@ -31,9 +31,11 @@ type ServerConfig struct {
 
 // DatabaseConfig 保存数据库连接配置。
 type DatabaseConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	User     string `mapstructure:"user"`
+	// Driver 指定数据库驱动，支持 postgres 和 mysql。
+	Driver string `mapstructure:"driver"`
+	Host   string `mapstructure:"host"`
+	Port   int    `mapstructure:"port"`
+	User   string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	Name     string `mapstructure:"name"`
 	// MaxIdleConns 控制空闲连接数量。
@@ -133,6 +135,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("app.name", "ez-admin")
 	v.SetDefault("app.env", "dev")
 	v.SetDefault("server.addr", ":8080")
+	v.SetDefault("database.driver", "postgres")
 	v.SetDefault("database.host", "localhost")
 	v.SetDefault("database.port", 5432)
 	v.SetDefault("database.user", "ez_admin")
@@ -173,6 +176,7 @@ func bindEnvs(v *viper.Viper) {
 		"app.name",
 		"app.env",
 		"server.addr",
+		"database.driver",
 		"database.host",
 		"database.port",
 		"database.user",

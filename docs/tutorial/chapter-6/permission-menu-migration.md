@@ -43,30 +43,36 @@ Casbin 模型定义在 `server/configs/rbac_model.conf`：
 
 ### 如何为新模块添加权限种子
 
-权限种子定义在 `server/internal/bootstrap/bootstrap.go` 的 `defaultPermissionSeeds` 切片中。应用启动时，`seedDefaultPermissions` 会逐条检查 `casbin_rule` 是否已存在，不存在才插入。
+权限种子通过 SQL 迁移文件管理，位于 `server/migrations/{pgsql,mysql}/` 目录下。系统初始权限写在 `000002_seed_data.up.sql` 中，新模块的权限应该写在新的迁移文件里（例如 `000003_blog_seed_data.up.sql`）。
 
-假设新模块的接口路径是 `/api/v1/blog/posts`，需要增加以下种子：
+假设新模块的接口路径是 `/api/v1/blog/posts`，需要创建新的迁移文件来添加权限：
 
-```go
-// server/internal/bootstrap/bootstrap.go
+::: code-group
 
-var defaultPermissionSeeds = []defaultPermissionSeed{
-    // ... 已有的系统权限 ...
-    {Path: "/api/v1/blog/posts", Method: "GET"},          // [!code ++]
-    {Path: "/api/v1/blog/posts", Method: "POST"},         // [!code ++]
-    {Path: "/api/v1/blog/posts/:id/update", Method: "POST"}, // [!code ++]
-    {Path: "/api/v1/blog/posts/:id/status", Method: "POST"}, // [!code ++]
-}
+```sql [PostgreSQL — 000003_blog_seed_data.up.sql]
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST');
 ```
 
-启动服务后，这些策略会被写入 `casbin_rule` 表。`super_admin` 角色会自动拥有这些接口的访问权限。
+```sql [MySQL — 000003_blog_seed_data.up.sql]
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET');
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST');
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST');
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST');
+```
 
-::: warning ⚠️ 路径必须和路由注册一致
-`defaultPermissionSeeds` 中的 `Path` 必须和 `router.go` 中 `system.GET(...)` / `system.POST(...)` 注册的路径完全一致，包括 `:id` 等参数占位符。如果不一致，中间件在 `c.FullPath()` 拿到的路径模板就和策略对不上，即使角色有权限也会返回 403。
 :::
 
-::: details 为什么不用迁移文件来管理权限数据
-权限策略是运行时数据，不是表结构。Casbin 的 gorm-adapter 负责读写 `casbin_rule`，策略的增删改查通过代码中的种子逻辑来保证幂等（已存在就跳过）。如果把策略放进独立的 SQL 迁移文件，反而需要额外处理"重复执行"和"与 Casbin 内部缓存同步"的问题。
+启动服务后，golang-migrate 会自动执行新的迁移文件，这些策略会被写入 `casbin_rule` 表。`super_admin` 角色会自动拥有这些接口的访问权限。
+
+::: warning ⚠️ 路径必须和路由注册一致
+迁移文件中的 `v1`（路径列）必须和 `router.go` 中 `system.GET(...)` / `system.POST(...)` 注册的路径完全一致，包括 `:id` 等参数占位符。如果不一致，中间件在 `c.FullPath()` 拿到的路径模板就和策略对不上，即使角色有权限也会返回 403。
+:::
+
+::: details 为什么权限数据用迁移文件管理
+权限策略通过 SQL 迁移文件管理，和表结构变更保持一致的版本化追踪。golang-migrate 通过 `schema_migrations` 表保证幂等——已执行的迁移不会重复运行。如果后续需要通过管理界面动态调整权限，Casbin 的 gorm-adapter 会直接读写 `casbin_rule` 表，和迁移文件互不冲突。
 :::
 
 ## 菜单树
@@ -142,81 +148,50 @@ function canUse(code: string) {
 
 ### 如何为新模块添加菜单种子
 
-菜单种子同样定义在 `server/internal/bootstrap/bootstrap.go` 的 `seedDefaultMenus` 函数中。每个菜单通过 `seedMenu()` 创建，该函数会按 `code` 查重，已存在则直接跳过。
+菜单种子通过 SQL 迁移文件管理。新模块的菜单数据应该写在新的迁移文件中（与权限种子可以放在同一个迁移文件里）。
 
 假设新模块是"博客管理"，添加步骤如下：
 
-**第一步**：在文件顶部常量区定义编码。
+**第一步**：设计菜单编码和固定 ID。
 
-```go
-// server/internal/bootstrap/bootstrap.go
-
-const (
-    // ... 已有常量 ...
-    defaultBlogMenuCode       = "blog"              // [!code ++]
-    defaultBlogPostMenuCode   = "blog:post"          // [!code ++]
-    defaultBlogPostListCode   = "blog:post:list"     // [!code ++]
-    defaultBlogPostCreateCode = "blog:post:create"   // [!code ++]
-    defaultBlogPostUpdateCode = "blog:post:update"   // [!code ++]
-    defaultBlogPostStatusCode = "blog:post:status"   // [!code ++]
-)
+```text
+博客管理目录  — code=blog,     ID=300
+文章管理菜单  — code=blog:post, ID=301
+  查看文章    — code=blog:post:list,   ID=1100
+  创建文章    — code=blog:post:create, ID=1101
+  编辑文章    — code=blog:post:update, ID=1102
+  修改文章状态 — code=blog:post:status, ID=1103
 ```
 
-**第二步**：在 `seedDefaultMenus` 中按 目录 → 菜单 → 按钮的顺序创建节点。
+**第二步**：在迁移文件中按 目录 → 菜单 → 按钮的顺序插入数据。
 
-::: details `seedDefaultMenus` 中新增博客管理模块的代码
-```go
-// seedDefaultMenus 函数末尾，return menus 之前
+::: details `000003_blog_seed_data.up.sql` 中新增博客管理模块的 SQL
+```sql
+-- 1. 创建目录
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (300, 0, 1, 'blog', '博客管理', '/blog', '', 'edit', 20, 1, '博客业务目录', NOW(), NOW());
 
-// 1. 创建目录
-blogMenu, err := seedMenu(db, model.Menu{
-    ParentID: 0,
-    Type:     model.MenuTypeDirectory,
-    Code:     defaultBlogMenuCode,
-    Title:    "博客管理",
-    Path:     "/blog",
-    Icon:     "edit",
-    Sort:     20,
-    Status:   model.MenuStatusEnabled,
-    Remark:   "博客业务目录",
-}, log)
-if err != nil {
-    return nil, err
-}
+-- 2. 创建菜单页面
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (301, 300, 2, 'blog:post', '文章管理', '/blog/posts', 'blog/PostView', 'document', 10, 1, '博客文章管理菜单', NOW(), NOW());
 
-// 2. 创建菜单页面
-blogPostMenu, err := seedMenu(db, model.Menu{
-    ParentID:  blogMenu.ID,
-    Type:      model.MenuTypeMenu,
-    Code:      defaultBlogPostMenuCode,
-    Title:     "文章管理",
-    Path:      "/blog/posts",
-    Component: "blog/PostView",
-    Icon:      "document",
-    Sort:      10,
-    Status:    model.MenuStatusEnabled,
-    Remark:    "博客文章管理菜单",
-}, log)
-if err != nil {
-    return nil, err
-}
+-- 3. 创建按钮权限
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1100, 301, 3, 'blog:post:list', '查看文章', '', '', '', 10, 1, '博客文章按钮', NOW(), NOW());
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1101, 301, 3, 'blog:post:create', '创建文章', '', '', '', 20, 1, '博客文章按钮', NOW(), NOW());
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1102, 301, 3, 'blog:post:update', '编辑文章', '', '', '', 30, 1, '博客文章按钮', NOW(), NOW());
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1103, 301, 3, 'blog:post:status', '修改文章状态', '', '', '', 40, 1, '博客文章按钮', NOW(), NOW());
 
-// 3. 创建按钮权限
-blogPostButtons := []model.Menu{
-    {ParentID: blogPostMenu.ID, Type: model.MenuTypeButton, Code: defaultBlogPostListCode, Title: "查看文章", Sort: 10, Status: model.MenuStatusEnabled, Remark: "博客文章按钮"},
-    {ParentID: blogPostMenu.ID, Type: model.MenuTypeButton, Code: defaultBlogPostCreateCode, Title: "创建文章", Sort: 20, Status: model.MenuStatusEnabled, Remark: "博客文章按钮"},
-    {ParentID: blogPostMenu.ID, Type: model.MenuTypeButton, Code: defaultBlogPostUpdateCode, Title: "编辑文章", Sort: 30, Status: model.MenuStatusEnabled, Remark: "博客文章按钮"},
-    {ParentID: blogPostMenu.ID, Type: model.MenuTypeButton, Code: defaultBlogPostStatusCode, Title: "修改文章状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "博客文章按钮"},
-}
-
-menus = append(menus, *blogMenu, *blogPostMenu)
-for _, button := range blogPostButtons {
-    createdButton, err := seedMenu(db, button, log)
-    if err != nil {
-        return nil, err
-    }
-    menus = append(menus, *createdButton)
-}
+-- 4. 绑定到 super_admin 角色
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 300, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 301, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1100, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1101, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1102, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1103, NOW(), NOW());
 ```
 :::
 
@@ -232,30 +207,45 @@ const routeComponentMap: Record<string, RouteComponent> = {
 
 ### 角色菜单绑定
 
-`seedRoleMenus` 函数会把 `seedDefaultMenus` 返回的所有菜单绑定到 `super_admin` 角色。这意味着只要新模块的菜单被加入 `menus` 切片，`super_admin` 就会自动拥有这些菜单和按钮权限——不需要手动在角色管理页面勾选。
+新模块的菜单需要在迁移文件中显式绑定到 `super_admin` 角色（ID=1），通过 `sys_role_menu` 表的 `INSERT` 语句实现。这意味着只要新模块的菜单绑定写入迁移文件，`super_admin` 就会自动拥有这些菜单和按钮权限——不需要手动在角色管理页面勾选。
 
 对于非超管角色，需要通过"角色管理"页面的"分配菜单权限"功能手动授权。
 
 ## 数据库迁移
 
-### 手动建表，不自动迁移
+### golang-migrate 自动建表
 
-本项目不使用独立迁移文件，也没有在启动流程里调用 `AutoMigrate`。`gorm.Open` 只负责建立连接，不会自动帮你创建业务表；Casbin 的 gorm-adapter 也显式关闭了自动迁移。
+本项目使用 golang-migrate 管理数据库迁移。启动时，程序通过 `embed.FS` 嵌入 `server/migrations/{pgsql,mysql}/` 目录下的 SQL 文件，并自动执行未应用的迁移。
 
-这意味着新增业务模块时，模型定义和建表 SQL 需要一起落地：
+迁移文件按序号命名，格式为 `NNNNNN_name.up.sql` / `NNNNNN_name.down.sql`：
 
-新增业务模块时，只需要在 `server/internal/model/` 下定义模型文件，确保：
+```text
+server/migrations/pgsql/
+├── 000001_init_schema.up.sql        -- 建所有系统表
+├── 000001_init_schema.down.sql      -- 反向 DROP
+├── 000002_seed_data.up.sql          -- 角色、菜单、权限、绑定
+├── 000002_seed_data.down.sql        -- 反向清空
+└── 000003_blog_seed_data.up.sql     -- 新模块的种子数据（示例）
+```
 
-1. 结构体有 `gorm` 标签标注字段约束。
-2. 实现了 `TableName()` 方法指定表名。
-3. 根据模型字段手动编写并执行对应的 `CREATE TABLE` / `CREATE INDEX` 语句。
-
-::: warning ⚠️ 重启服务不会自动补表
-如果你只写了 `model.Post`，但没有执行建表 SQL，那么重启服务后数据库里仍然不会出现 `biz_post`。教程里的“模型文件”和“数据库表结构”是两份都要维护的交付物。
+::: tip 📌 迁移文件命名规范
+- 序号固定 6 位，新迁移递增（`000003`、`000004`...）
+- 名称用小写 + 短横线（`add_biz_post`、`blog_seed_data`）
+- PostgreSQL 和 MySQL 各维护一份，放在对应子目录
+- `_up.sql` 是正向操作，`_down.sql` 是反向回滚
 :::
 
-::: details 为什么选择不引入迁移工具
-对于个人项目，独立迁移文件带来的好处（版本化、回滚）有限，而引入额外工具的配置和维护成本相对更高。当前项目选择的是更直接的路径：改模型 → 写 SQL → 执行 SQL → 重启服务。如果后续项目规模增长，可以按需引入 `golang-migrate` 或 `goose` 等工具。
+### 新增业务模块时的迁移步骤
+
+新增业务模块时，需要在 `server/internal/model/` 下定义模型，同时创建迁移文件：
+
+1. **定义模型** — 在 `model/` 下新增模型文件，确保有 `gorm` 标签和 `TableName()` 方法。
+2. **编写 DDL 迁移** — 创建 `00000X_add_xxx.up.sql`，包含 `CREATE TABLE` 和索引。
+3. **编写种子数据迁移** — 如果模块需要初始权限、菜单，创建对应的 `00000X_xxx_seed.up.sql`。
+4. **启动验证** — 重启服务，golang-migrate 会自动执行新迁移。
+
+::: warning ⚠️ PostgreSQL 需要重置序列计数器
+如果在迁移文件中使用了固定 ID 的 `INSERT`，PostgreSQL 版本需要在末尾添加 `SELECT setval(...)` 语句，确保后续 INSERT 的自增 ID 不会和固定 ID 冲突。
 :::
 
 ### 新模块的模型示例
@@ -335,7 +325,7 @@ ON biz_post (deleted_at);
 | 8 | 接口权限生效 | 通过前端操作或 curl 调用新接口 | 返回 200 而不是 403 |
 
 ::: warning ⚠️ 权限编码和按钮编码必须前后端一致
-后端 `defaultPermissionSeeds` 中的路径、前端 `routeComponentMap` 中的组件键名、按钮 `canUse()` 中的编码字符串——这三者分别和 `casbin_rule.v1`、`sys_menu.component`、`sys_menu.code` 对应。只要有一处拼写不一致（比如 `blog:post:create` vs `blog:posts:create`），就会出现"菜单能点但接口报 403"或"按钮不显示"的问题。
+迁移文件中 `casbin_rule.v1` 的路径、前端 `routeComponentMap` 中的组件键名、按钮 `canUse()` 中的编码字符串——这三者分别和 `router.go` 注册的路径、`sys_menu.component`、`sys_menu.code` 对应。只要有一处拼写不一致（比如 `blog:post:create` vs `blog:posts:create`），就会出现"菜单能点但接口报 403"或"按钮不显示"的问题。
 
 建议在开发新模块时，先把编码设计写在纸上或注释里，统一确认后再写代码，而不是写到一半才发现前后端编码对不上。
 :::
@@ -344,9 +334,9 @@ ON biz_post (deleted_at);
 
 这一节补齐了让业务模块"从能调用到能用起来"的三个关键环节：
 
-- **接口权限**：在 `defaultPermissionSeeds` 中添加 `{Path, Method}` 种子，启动后自动写入 `casbin_rule`。
-- **菜单树**：按 目录 → 菜单 → 按钮三层结构在 `seedDefaultMenus` 中添加节点，`component` 字段对应前端组件映射，按钮 `code` 对应前端 `canUse()`。
-- **数据库结构**：在 `model/` 下定义模型结构体，并手动执行对应的 SQL 建表语句。
+- **接口权限**：通过 SQL 迁移文件向 `casbin_rule` 表插入 `{ptype, v0, v1, v2}` 记录，启动时 golang-migrate 自动执行。
+- **菜单树**：按 目录 → 菜单 → 按钮三层结构在迁移文件中 `INSERT sys_menu`，`component` 字段对应前端组件映射，按钮 `code` 对应前端 `canUse()`。
+- **数据库结构**：在 `model/` 下定义模型结构体，并通过迁移文件创建对应的表和索引。
 
 三件事全部完成后，用 `super_admin` 登录验证：侧边栏有菜单、页面有按钮、接口不报 403。
 

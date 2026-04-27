@@ -83,30 +83,33 @@ export default defineConfig({
       provider: 'local'
     },
     nav: [
-      { text: '开始这里', link: '/guide/', activeMatch: '^/guide/' },
+      { text: '从这里开始', link: '/guide/', activeMatch: '^/guide/' },
       { text: '从零搭建', link: '/tutorial/', activeMatch: '^/tutorial/' },
       { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' },
-      { text: '更新日志', link: '/changelog', activeMatch: '^/changelog$' },
-      { text: '路线图', link: '/roadmap', activeMatch: '^/roadmap$' }
+      { text: '更新日志', link: '/guide/changelog', activeMatch: '^/guide/changelog$' }
     ],
     sidebar: {
       '/': [
         {
-          text: '项目入口',
+          text: '从这里开始',
           items: [
-            { text: '使用指南', link: '/guide/' },
-            { text: '从零搭建教程', link: '/tutorial/' },
-            { text: '参考手册', link: '/reference/' },
-            { text: '更新日志', link: '/changelog' },
-            { text: '路线图', link: '/roadmap' }
+            { text: '简介与快速启动', link: '/guide/' }
           ]
         }
       ],
       '/guide/': [
         {
-          text: '使用指南',
+          text: '从这里开始',
           items: [
-            { text: '指南首页', link: '/guide/' }
+            { text: '快速启动', link: '/guide/' },
+            { text: '项目结构', link: '/guide/project-structure' }
+          ]
+        },
+        {
+          text: '项目信息',
+          items: [
+            { text: '更新日志', link: '/guide/changelog' },
+            { text: '路线图', link: '/guide/roadmap' }
           ]
         }
       ],
@@ -218,12 +221,15 @@ export default defineConfig({
             { text: 'GORM 快速入门', link: '/reference/gorm-quick-start' },
             { text: 'Casbin 快速入门', link: '/reference/casbin-quick-start' },
             { text: '接口风格决策', link: '/reference/api-style-decision' },
+            { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' }
           ]
         }
       ]
     },
-    socialLinks: []
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/caoshenyang/ez-admin-gin' }
+    ]
   }
 })

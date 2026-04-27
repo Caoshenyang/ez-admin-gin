@@ -1,0 +1,12 @@
+DROP TABLE IF EXISTS schema_migrations;
+DROP TABLE IF EXISTS casbin_rule;
+DROP TABLE IF EXISTS sys_notice;
+DROP TABLE IF EXISTS sys_login_log;
+DROP TABLE IF EXISTS sys_operation_log;
+DROP TABLE IF EXISTS sys_file;
+DROP TABLE IF EXISTS sys_config;
+DROP TABLE IF EXISTS sys_role_menu;
+DROP TABLE IF EXISTS sys_menu;
+DROP TABLE IF EXISTS sys_user_role;
+DROP TABLE IF EXISTS sys_role;
+DROP TABLE IF EXISTS sys_user;

@@ -274,9 +274,9 @@ EZ_NGINX_PORT=80
 :::
 
 ::: details 登录后侧边栏没有菜单
-可能原因：`bootstrap.go` 的初始化数据没有写入成功，或者角色菜单绑定出了问题。
+可能原因：迁移文件没有执行成功，或者角色菜单绑定出了问题。
 
-排查方法：查看后端启动日志中是否有 `default menu created` 和 `default role menu bound` 相关记录。
+排查方法：查看后端启动日志中是否有 `database migrations applied` 记录，确认 `schema_migrations` 表中的版本号是否正确。
 :::
 
 ::: details 修改 .env 后配置没有生效
@@ -298,7 +298,7 @@ docker compose -f compose.prod.yml up -d
 - 用 Docker Compose 把 PostgreSQL、Redis、后端和 Nginx 四个服务编排在一起。
 - 配置了 Nginx 静态资源托管和 API 反向代理。
 - 整理了所有环境变量，理解了 `EZ_` 前缀的覆盖机制。
-- 了解了 `bootstrap.go` 如何自动创建管理员、角色、菜单和权限数据。
+- 了解了 golang-migrate 如何自动建表和写入种子数据，以及管理员初始化接口的使用方式。
 - 完成了从构建到验证的完整部署流程。
 - 说明了如何把这套底座复用到新的个人项目。
 
