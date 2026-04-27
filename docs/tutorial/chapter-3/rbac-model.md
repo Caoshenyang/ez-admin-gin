@@ -17,19 +17,16 @@ description: "设计角色表和用户角色关系表，为后续接口权限与
 
 ```text
 server/
-├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
-│  └─ model/
-│     ├─ role.go
-│     └─ user_role.go
+└─ internal/
+   └─ model/
+      ├─ role.go
+      └─ user_role.go
 ```
 
 | 位置 | 用途 |
 | --- | --- |
 | `internal/model/role.go` | 定义角色表结构 |
 | `internal/model/user_role.go` | 定义用户与角色的绑定关系 |
-| `internal/bootstrap/bootstrap.go` | 初始化超级管理员角色，并绑定默认管理员 |
 
 ## 先看关系
 
@@ -133,144 +130,10 @@ func (UserRole) TableName() string {
 }
 ```
 
-## 🛠️ 修改启动初始化
+::: tip 📌 超级管理员角色初始化
+超级管理员角色（`super_admin`）通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{pgsql,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限。
 
-修改 `server/internal/bootstrap/bootstrap.go`。这一节建议直接替换完整文件，避免漏掉函数返回值调整。
-
-```go
-package bootstrap
-
-import (
-	"errors"
-	"fmt"
-
-	"ez-admin-gin/server/internal/model"
-
-	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
-)
-
-const (
-	defaultAdminUsername = "admin"
-	defaultAdminPassword = "EzAdmin@123456"
-	defaultAdminRoleCode = "super_admin"
-	defaultAdminRoleName = "超级管理员"
-)
-
-// Run 执行服务启动时必须完成的初始化动作。
-func Run(db *gorm.DB, log *zap.Logger) error {
-	admin, err := seedDefaultAdmin(db, log)
-	if err != nil {
-		return fmt.Errorf("seed default admin: %w", err)
-	}
-
-	role, err := seedSuperAdminRole(db, log)
-	if err != nil {
-		return fmt.Errorf("seed super admin role: %w", err)
-	}
-
-	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
-		return fmt.Errorf("seed admin role: %w", err)
-	}
-
-	return nil
-}
-
-// seedDefaultAdmin 创建本地起步用的默认管理员。
-func seedDefaultAdmin(db *gorm.DB, log *zap.Logger) (*model.User, error) {
-	var user model.User
-	// Unscoped 会把已逻辑删除记录也查出来，避免重复创建同名默认账号。
-	err := db.Unscoped().Where("username = ?", defaultAdminUsername).First(&user).Error
-	if err == nil {
-		return &user, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(defaultAdminPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, fmt.Errorf("hash default admin password: %w", err)
-	}
-
-	user = model.User{
-		Username:     defaultAdminUsername,
-		PasswordHash: string(passwordHash),
-		Nickname:     "系统管理员",
-		Status:       model.UserStatusEnabled,
-	}
-
-	if err := db.Create(&user).Error; err != nil {
-		return nil, err
-	}
-
-	log.Info("default admin user created", zap.String("username", defaultAdminUsername))
-
-	return &user, nil
-}
-
-// seedSuperAdminRole 创建超级管理员角色。
-func seedSuperAdminRole(db *gorm.DB, log *zap.Logger) (*model.Role, error) {
-	var role model.Role
-	// 角色编码唯一，查询历史记录可以避免逻辑删除后重复创建同名编码。
-	err := db.Unscoped().Where("code = ?", defaultAdminRoleCode).First(&role).Error
-	if err == nil {
-		return &role, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	role = model.Role{
-		Code:   defaultAdminRoleCode,
-		Name:   defaultAdminRoleName,
-		Sort:   0,
-		Status: model.RoleStatusEnabled,
-		Remark: "系统内置角色",
-	}
-
-	if err := db.Create(&role).Error; err != nil {
-		return nil, err
-	}
-
-	log.Info("default admin role created", zap.String("role_code", defaultAdminRoleCode))
-
-	return &role, nil
-}
-
-// seedAdminRole 绑定默认管理员和超级管理员角色。
-func seedAdminRole(db *gorm.DB, userID uint, roleID uint, log *zap.Logger) error {
-	var userRole model.UserRole
-	err := db.Where("user_id = ? AND role_id = ?", userID, roleID).First(&userRole).Error
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
-	userRole = model.UserRole{
-		UserID: userID,
-		RoleID: roleID,
-	}
-
-	if err := db.Create(&userRole).Error; err != nil {
-		return err
-	}
-
-	log.Info(
-		"default admin role bound",
-		zap.Uint("user_id", userID),
-		zap.Uint("role_id", roleID),
-	)
-
-	return nil
-}
-```
-
-::: warning ⚠️ 启动初始化不是权限管理接口
-这里初始化 `super_admin` 角色，只是为了让本地起步有一条完整的用户角色关系。后续真正的角色创建、授权、解绑，要放在系统管理接口中处理。
+管理员账号需要通过 `/api/v1/setup/init` 接口创建，创建时会自动绑定到 `super_admin` 角色。
 :::
 
 ::: details 为什么默认角色叫 `super_admin`
@@ -279,7 +142,7 @@ func seedAdminRole(db *gorm.DB, userID uint, roleID uint, log *zap.Logger) error
 
 ## ✅ 整理依赖并启动
 
-本节没有新增第三方依赖，但修改了模型和初始化逻辑，仍然可以整理一次：
+本节没有新增第三方依赖，整理一次依赖：
 
 ```bash
 # 在 server/ 目录执行
@@ -303,16 +166,22 @@ go run .
 第一次启动后，控制台应该能看到类似日志：
 
 ```text
-INFO	default admin role created	{"role_code": "super_admin"}
-INFO	default admin role bound	{"user_id": 1, "role_id": 1}
+INFO	database migrations applied
 INFO	server started	{"addr": ":8080", "env": "dev"}
 ```
 
-如果角色和绑定关系已经存在，后续启动不会重复创建。
+## ✅ 创建管理员账号并验证角色和绑定关系
 
-## ✅ 验证角色和绑定关系
+服务启动后，先通过初始化接口创建管理员账号：
 
-打开另一个终端，在项目根目录执行：
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+```
+
+然后验证角色和绑定关系：
 
 ```bash
 # 查看默认角色
@@ -327,10 +196,10 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
   1 | super_admin | 超级管理员 |      1 |
 ```
 
-继续查看默认管理员和角色的绑定关系：
+继续查看管理员和角色的绑定关系：
 
 ```bash
-# 查看默认管理员绑定了哪些角色
+# 查看管理员绑定了哪些角色
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ur.id, u.username, r.code from sys_user_role ur join sys_user u on u.id = ur.user_id join sys_role r on r.id = ur.role_id;"
 ```
 
@@ -338,16 +207,15 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 
 ```text
  id | username |    code
-----+----------+-------------
-  1 | admin    | super_admin
+----+----------+-------------  1 | admin    | super_admin
 ```
 
 ::: details 如果提示 `relation "sys_role" does not exist`
-说明角色表还没有创建。先回到 [`sys_role` 建表语句](../../reference/database-ddl#sys-role)，执行对应数据库版本的 SQL，然后重新启动服务。
+说明角色表还没有创建。服务启动时会自动执行数据库迁移，创建表结构。如果迁移失败，查看服务启动日志获取详细信息。
 :::
 
 ::: details 如果绑定关系没有出现
-先确认 `bootstrap.Run` 中已经调用了 `seedAdminRole`，再确认 `sys_user` 和 `sys_role` 中分别存在默认管理员和 `super_admin` 角色。
+确认管理员账号已经通过 `/api/v1/setup/init` 接口创建成功，该接口会自动绑定 `super_admin` 角色。
 :::
 
 ## 常见问题

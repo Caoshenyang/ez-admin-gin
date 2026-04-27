@@ -80,7 +80,7 @@ go get github.com/golang-migrate/migrate/v4@latest
 | `gorm.io/gorm` | ORM 主库，负责模型映射、查询、事务等能力 | [Go 包文档](https://pkg.go.dev/gorm.io/gorm) / [官方文档](https://gorm.io/docs/) |
 | `gorm.io/driver/postgres` | GORM 的 PostgreSQL 驱动 | [Go 包文档](https://pkg.go.dev/gorm.io/driver/postgres) |
 | `gorm.io/driver/mysql` | GORM 的 MySQL 驱动 | [Go 包文档](https://pkg.go.dev/gorm.io/driver/mysql) |
-| `github.com/golang-migrate/migrate/v4` | 数据库迁移工具，管理建表和种子数据 | [GitHub](https://github.com/golang-migrate/migrate) |
+| `github.com/golang-migrate/migrate/v4` | 数据库迁移工具，管理建表和种子数据 | [GitHub](https://github.com/golang-migrate/migrate) / [数据库迁移工具选型](../../reference/migration-tool-selection) |
 
 ::: details 为什么先用 GORM
 后台底座后续会频繁操作用户、角色、菜单、日志等表。GORM 可以先提供稳定的数据访问入口，后面需要复杂 SQL 时，也可以在局部直接写原生查询。

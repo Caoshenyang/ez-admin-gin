@@ -18,20 +18,23 @@ description: "实现后台用户的列表、创建、编辑、禁用和角色分
 ```text
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ system/
 │  │     └─ users.go
 │  └─ router/
 │     └─ router.go
+└─ migrations/
+   ├─ pgsql/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
 | --- | --- |
 | `internal/handler/system/users.go` | 用户管理接口 |
 | `internal/router/router.go` | 注册用户管理路由 |
-| `internal/bootstrap/bootstrap.go` | 初始化用户管理权限和菜单 |
+| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化用户管理权限和菜单 |
 
 ::: info 本节不新增数据库表
 用户管理复用前面已经创建的 `sys_user`、`sys_role`、`sys_user_role`。如果本地还没有这些表，先回到参考手册执行对应建表语句：[数据库建表语句](../../reference/database-ddl)。
@@ -642,163 +645,14 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 }
 ```
 
-## 🛠️ 初始化用户管理接口权限
+## 🛠️ 初始化用户管理权限和菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。前面只初始化了一条健康检查权限，现在要改成权限列表。
+用户管理的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建用户管理相关的权限策略和菜单数据。
 
-先把默认权限常量改成权限列表：
-
-```go
-const (
-	defaultAdminUsername  = "admin"
-	defaultAdminPassword  = "EzAdmin@123456"
-	defaultAdminRoleCode  = "super_admin"
-	defaultAdminRoleName  = "超级管理员"
-	defaultSystemMenuCode = "system"
-	defaultHealthMenuCode = "system:health"
-	defaultHealthViewCode = "system:health:view"
-)
-
-type defaultPermissionSeed struct { // [!code ++]
-	Path   string // [!code ++]
-	Method string // [!code ++]
-} // [!code ++]
-
-var defaultPermissionSeeds = []defaultPermissionSeed{ // [!code ++]
-	{Path: "/api/v1/system/health", Method: "GET"}, // [!code ++]
-	{Path: "/api/v1/system/users", Method: "GET"}, // [!code ++]
-	{Path: "/api/v1/system/users", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/users/:id/update", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/users/:id/status", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/users/:id/roles", Method: "POST"}, // [!code ++]
-} // [!code ++]
-```
-
-在 `Run` 中，把 `seedDefaultPermission` 改成 `seedDefaultPermissions`：
-
-```go
-	if err := seedDefaultPermissions(db, log); err != nil { // [!code ++]
-		return fmt.Errorf("seed default permissions: %w", err) // [!code ++]
-	} // [!code ++]
-```
-
-然后用下面这个函数替换原来的 `seedDefaultPermission`：
-
-```go
-// seedDefaultPermissions 初始化超级管理员的默认接口权限。
-func seedDefaultPermissions(db *gorm.DB, log *zap.Logger) error {
-	for _, permission := range defaultPermissionSeeds {
-		var rule model.CasbinRule
-		err := db.Where(
-			"ptype = ? AND v0 = ? AND v1 = ? AND v2 = ?",
-			"p",
-			defaultAdminRoleCode,
-			permission.Path,
-			permission.Method,
-		).First(&rule).Error
-		if err == nil {
-			continue
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-
-		rule = model.CasbinRule{
-			Ptype: "p",
-			V0:    defaultAdminRoleCode,
-			V1:    permission.Path,
-			V2:    permission.Method,
-		}
-
-		if err := db.Create(&rule).Error; err != nil {
-			return err
-		}
-
-		log.Info(
-			"default permission created",
-			zap.String("role_code", defaultAdminRoleCode),
-			zap.String("path", permission.Path),
-			zap.String("method", permission.Method),
-		)
-	}
-
-	return nil
-}
-```
-
-::: warning ⚠️ 新增权限后需要重启服务
-Casbin Enforcer 在服务启动时加载策略。本节的权限初始化发生在 Enforcer 创建之前，所以重启服务后会自动加载新策略。
-:::
-
-## 🛠️ 初始化用户管理菜单
-
-继续修改 `server/internal/bootstrap/bootstrap.go`。先增加用户管理菜单和按钮编码：
-
-```go
-const (
-	defaultSystemMenuCode     = "system"
-	defaultHealthMenuCode     = "system:health"
-	defaultHealthViewCode     = "system:health:view"
-	defaultUserMenuCode       = "system:user" // [!code ++]
-	defaultUserListCode       = "system:user:list" // [!code ++]
-	defaultUserCreateCode     = "system:user:create" // [!code ++]
-	defaultUserUpdateCode     = "system:user:update" // [!code ++]
-	defaultUserStatusCode     = "system:user:status" // [!code ++]
-	defaultUserAssignRoleCode = "system:user:assign-role" // [!code ++]
-)
-```
-
-接着修改 `seedDefaultMenus`。先找到函数末尾原来的返回语句：
-
-```go
-return []model.Menu{*systemMenu, *healthMenu, *healthViewButton}, nil
-```
-
-把这行返回语句替换为下面整段代码。也就是说：下面代码放在 `healthViewButton` 创建成功之后，原 `return` 之前；替换完成后，函数末尾只保留 `return menus, nil`。
-
-```go
-	userMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultUserMenuCode,
-		Title:     "用户管理",
-		Path:      "/system/users",
-		Component: "system/UserView",
-		Icon:      "user",
-		Sort:      20,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	userButtons := []model.Menu{
-		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserListCode, Title: "查看用户", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserCreateCode, Title: "创建用户", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserUpdateCode, Title: "编辑用户", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserStatusCode, Title: "修改用户状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: userMenu.ID, Type: model.MenuTypeButton, Code: defaultUserAssignRoleCode, Title: "分配用户角色", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-	}
-
-	menus := []model.Menu{*systemMenu, *healthMenu, *healthViewButton, *userMenu}
-	for _, button := range userButtons {
-		createdButton, err := seedMenu(db, button, log)
-		if err != nil {
-			return nil, err
-		}
-		menus = append(menus, *createdButton)
-	}
-
-	return menus, nil
-```
-
-::: warning ⚠️ 不要保留原来的 `return`
-如果原来的 `return []model.Menu{*systemMenu, *healthMenu, *healthViewButton}, nil` 还留在下面，函数里会出现重复返回语句，后面的菜单初始化逻辑也会变得很难检查。
-:::
-
-::: details 菜单按钮和接口权限有什么关系
-菜单按钮用于前端判断“页面上显示哪些操作”；接口权限用于后端判断“请求能不能执行”。两者都要有，不能只靠前端隐藏按钮来保证安全。
+::: tip 💡 权限和菜单初始化
+- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入用户管理接口的 Casbin 规则
+- 菜单数据：在同一迁移文件中插入用户管理菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到用户管理菜单
 :::
 
 ## ✅ 整理依赖并启动
@@ -827,9 +681,19 @@ go run .
 第一次启动后，控制台应该能看到类似日志：
 
 ```text
-INFO	default permission created	{"role_code": "super_admin", "path": "/api/v1/system/users", "method": "GET"}
-INFO	default menu created	{"menu_code": "system:user"}
-INFO	default role menu bound	{"role_id": 1, "menu_id": 4}
+INFO	database migrations applied
+INFO	server started	{"addr": ":8080", "env": "dev"}
+```
+
+### 创建管理员账号
+
+服务启动后，先通过初始化接口创建管理员账号：
+
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 ```
 
 ## ✅ 验证权限和菜单数据
@@ -861,7 +725,7 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 ```powershell [Windows PowerShell]
 $body = @{
   username = "admin"
-  password = "EzAdmin@123456"
+  password = "YourPassword123"
 } | ConvertTo-Json
 
 $login = Invoke-RestMethod `
@@ -876,7 +740,7 @@ $token = $login.data.access_token
 ```bash [macOS / Linux]
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
+  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
 ```
 
 :::

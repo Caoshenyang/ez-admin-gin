@@ -18,8 +18,6 @@ description: "设计菜单、按钮和角色菜单关系，并返回当前用户
 ```text
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ auth/
 │  │     └─ menus.go
@@ -28,13 +26,18 @@ server/
 │  │  └─ role_menu.go
 │  └─ router/
 │     └─ router.go
+└─ migrations/
+   ├─ pgsql/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
 | --- | --- |
 | `internal/model/menu.go` | 定义目录、菜单、按钮模型 |
 | `internal/model/role_menu.go` | 定义角色和菜单的绑定关系 |
-| `internal/bootstrap/bootstrap.go` | 初始化默认菜单，并授权给超级管理员 |
+| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化默认菜单，并授权给超级管理员 |
 | `internal/handler/auth/menus.go` | 返回当前用户可见菜单树 |
 | `internal/router/router.go` | 注册 `/api/v1/auth/menus` |
 
@@ -162,160 +165,16 @@ func (RoleMenu) TableName() string {
 
 ## 🛠️ 初始化默认菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。这一处重点看三个变化：
+默认菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建系统管理相关的菜单数据和角色菜单绑定关系。
 
-- 增加默认菜单编码常量。
-- 启动时创建默认菜单。
-- 把默认菜单绑定给 `super_admin`。
-
-先扩展常量：
-
-```go
-const (
-	defaultAdminUsername    = "admin"
-	defaultAdminPassword    = "EzAdmin@123456"
-	defaultAdminRoleCode    = "super_admin"
-	defaultAdminRoleName    = "超级管理员"
-	defaultPermissionPath   = "/api/v1/system/health"
-	defaultPermissionMethod = "GET"
-	defaultSystemMenuCode   = "system" // [!code ++]
-	defaultHealthMenuCode   = "system:health" // [!code ++]
-	defaultHealthViewCode   = "system:health:view" // [!code ++]
-)
-```
-
-在 `Run` 中，角色初始化后继续初始化菜单和绑定关系：
-
-```go
-	role, err := seedSuperAdminRole(db, log)
-	if err != nil {
-		return fmt.Errorf("seed super admin role: %w", err)
-	}
-
-	menus, err := seedDefaultMenus(db, log) // [!code ++]
-	if err != nil { // [!code ++]
-		return fmt.Errorf("seed default menus: %w", err) // [!code ++]
-	} // [!code ++]
-
-	if err := seedDefaultPermission(db, log); err != nil {
-		return fmt.Errorf("seed default permission: %w", err)
-	}
-
-	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
-		return fmt.Errorf("seed admin role: %w", err)
-	}
-
-	if err := seedRoleMenus(db, role.ID, menus, log); err != nil { // [!code ++]
-		return fmt.Errorf("seed role menus: %w", err) // [!code ++]
-	} // [!code ++]
-```
-
-在文件末尾新增：
-
-```go
-// seedDefaultMenus 初始化默认菜单和按钮。
-func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
-	systemMenu, err := seedMenu(db, model.Menu{
-		ParentID: 0,
-		Type:     model.MenuTypeDirectory,
-		Code:     defaultSystemMenuCode,
-		Title:    "系统管理",
-		Path:     "/system",
-		Icon:     "setting",
-		Sort:     10,
-		Status:   model.MenuStatusEnabled,
-		Remark:   "系统内置目录",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	healthMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultHealthMenuCode,
-		Title:     "系统状态",
-		Path:      "/system/health",
-		Component: "system/HealthView",
-		Icon:      "monitor",
-		Sort:      10,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	healthViewButton, err := seedMenu(db, model.Menu{
-		ParentID: healthMenu.ID,
-		Type:     model.MenuTypeButton,
-		Code:     defaultHealthViewCode,
-		Title:    "查看系统状态",
-		Sort:     10,
-		Status:   model.MenuStatusEnabled,
-		Remark:   "系统内置按钮",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	return []model.Menu{*systemMenu, *healthMenu, *healthViewButton}, nil
-}
-
-// seedMenu 按菜单编码创建默认菜单。
-func seedMenu(db *gorm.DB, menu model.Menu, log *zap.Logger) (*model.Menu, error) {
-	var exists model.Menu
-	err := db.Unscoped().Where("code = ?", menu.Code).First(&exists).Error
-	if err == nil {
-		return &exists, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	if err := db.Create(&menu).Error; err != nil {
-		return nil, err
-	}
-
-	log.Info("default menu created", zap.String("menu_code", menu.Code))
-
-	return &menu, nil
-}
-
-// seedRoleMenus 把默认菜单授权给指定角色。
-func seedRoleMenus(db *gorm.DB, roleID uint, menus []model.Menu, log *zap.Logger) error {
-	for _, menu := range menus {
-		var roleMenu model.RoleMenu
-		err := db.Where("role_id = ? AND menu_id = ?", roleID, menu.ID).First(&roleMenu).Error
-		if err == nil {
-			continue
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-
-		roleMenu = model.RoleMenu{
-			RoleID: roleID,
-			MenuID: menu.ID,
-		}
-
-		if err := db.Create(&roleMenu).Error; err != nil {
-			return err
-		}
-
-		log.Info(
-			"default role menu bound",
-			zap.Uint("role_id", roleID),
-			zap.Uint("menu_id", menu.ID),
-		)
-	}
-
-	return nil
-}
-```
+::: tip 💡 菜单初始化
+- 菜单数据：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入系统管理目录、菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到系统管理菜单
+- 初始菜单包括：系统管理目录、系统状态菜单和查看系统状态按钮
+:::
 
 ::: warning ⚠️ 菜单初始化只提供最小起步数据
-这里先初始化一组菜单，方便验证菜单权限链路。后续真正的菜单新增、编辑、排序和授权，要放在系统管理接口中完成。
+迁移文件中初始化了一组菜单，方便验证菜单权限链路。后续真正的菜单新增、编辑、排序和授权，要放在系统管理接口中完成。
 :::
 
 ## 🛠️ 创建当前用户菜单接口

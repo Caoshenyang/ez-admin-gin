@@ -42,8 +42,6 @@ docs/
 
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ system/
 │  │     └─ configs.go
@@ -51,6 +49,11 @@ server/
 │  │  └─ system_config.go
 │  └─ router/
 │     └─ router.go
+└─ migrations/
+   ├─ pgsql/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
@@ -59,7 +62,7 @@ server/
 | `internal/model/system_config.go` | 定义系统配置模型 |
 | `internal/handler/system/configs.go` | 提供配置管理与按键读取接口 |
 | `internal/router/router.go` | 注册系统配置路由 |
-| `internal/bootstrap/bootstrap.go` | 初始化系统配置权限和菜单 |
+| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化系统配置权限和菜单 |
 
 ## 先创建数据表
 
@@ -720,107 +723,14 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 }
 ```
 
-## 🛠️ 初始化系统配置接口权限
+## 🛠️ 初始化系统配置权限和菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。先在常量区追加系统配置菜单和按钮编码：
+系统配置的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建系统配置相关的权限策略和菜单数据。
 
-```go
-const (
-	defaultMenuManageCode     = "system:menu"
-	defaultMenuListCode       = "system:menu:list"
-	defaultMenuCreateCode     = "system:menu:create"
-	defaultMenuUpdateCode     = "system:menu:update"
-	defaultMenuStatusCode     = "system:menu:status"
-	defaultMenuDeleteCode     = "system:menu:delete"
-	defaultConfigMenuCode     = "system:config" // [!code ++]
-	defaultConfigListCode     = "system:config:list" // [!code ++]
-	defaultConfigCreateCode   = "system:config:create" // [!code ++]
-	defaultConfigUpdateCode   = "system:config:update" // [!code ++]
-	defaultConfigStatusCode   = "system:config:status" // [!code ++]
-	defaultConfigValueCode    = "system:config:value" // [!code ++]
-)
-```
-
-然后在 `defaultPermissionSeeds` 中继续追加系统配置接口权限：
-
-```go
-var defaultPermissionSeeds = []defaultPermissionSeed{
-	{Path: "/api/v1/system/health", Method: "GET"},
-	{Path: "/api/v1/system/users", Method: "GET"},
-	{Path: "/api/v1/system/users", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles", Method: "GET"},
-	{Path: "/api/v1/system/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/permissions", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/menus", Method: "POST"},
-	{Path: "/api/v1/system/menus", Method: "GET"},
-	{Path: "/api/v1/system/menus", Method: "POST"},
-	{Path: "/api/v1/system/menus/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/menus/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/menus/:id/delete", Method: "POST"},
-	{Path: "/api/v1/system/configs", Method: "GET"}, // [!code ++]
-	{Path: "/api/v1/system/configs", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/configs/:id/update", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/configs/:id/status", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/configs/value/:key", Method: "GET"}, // [!code ++]
-}
-```
-
-## 🛠️ 初始化系统配置菜单
-
-继续修改 `server/internal/bootstrap/bootstrap.go`。
-
-先找到 `seedDefaultMenus` 当前函数末尾原来的这行返回语句：
-
-```go
-return menus, nil
-```
-
-把这行替换为下面整段代码。也就是说：下面代码要放在菜单管理按钮循环之后、原 `return menus, nil` 之前；替换完成后，函数末尾仍然只保留最后一个 `return menus, nil`。
-
-```go
-	configMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultConfigMenuCode,
-		Title:     "系统配置",
-		Path:      "/system/configs",
-		Component: "system/ConfigView",
-		Icon:      "tool",
-		Sort:      50,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	configButtons := []model.Menu{
-		{ParentID: configMenu.ID, Type: model.MenuTypeButton, Code: defaultConfigListCode, Title: "查看配置", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: configMenu.ID, Type: model.MenuTypeButton, Code: defaultConfigCreateCode, Title: "创建配置", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: configMenu.ID, Type: model.MenuTypeButton, Code: defaultConfigUpdateCode, Title: "编辑配置", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: configMenu.ID, Type: model.MenuTypeButton, Code: defaultConfigStatusCode, Title: "修改配置状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: configMenu.ID, Type: model.MenuTypeButton, Code: defaultConfigValueCode, Title: "读取配置值", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-	}
-
-	menus = append(menus, *configMenu)
-	for _, button := range configButtons {
-		createdButton, err := seedMenu(db, button, log)
-		if err != nil {
-			return nil, err
-		}
-		menus = append(menus, *createdButton)
-	}
-
-	return menus, nil
-```
-
-::: warning ⚠️ 这里只有一处 `return menus, nil`
-这几节连续补菜单时，最容易出问题的就是保留了旧的 `return`。确认 `seedDefaultMenus` 函数结尾只有最后这一处返回，不要留下前面旧的返回语句。
+::: tip 💡 权限和菜单初始化
+- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入系统配置接口的 Casbin 规则
+- 菜单数据：在同一迁移文件中插入系统配置菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到系统配置菜单
 :::
 
 ::: details 为什么配置键创建后不允许修改

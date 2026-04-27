@@ -24,8 +24,6 @@ server/
 ├─ configs/
 │  └─ config.yaml
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ config/
 │  │  └─ config.go
 │  ├─ handler/
@@ -35,7 +33,11 @@ server/
 │  │  └─ system_file.go
 │  └─ router/
 │     └─ router.go
-└─ uploads/
+└─ migrations/
+   ├─ pgsql/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
@@ -46,7 +48,7 @@ server/
 | `internal/model/system_file.go` | 定义文件记录模型 |
 | `internal/handler/system/files.go` | 实现文件上传和文件列表接口 |
 | `internal/router/router.go` | 注册静态文件访问和文件接口 |
-| `internal/bootstrap/bootstrap.go` | 初始化文件上传权限和菜单 |
+| `migrations/{pgsql,mysql}/000002_seed_data.up.sql` | 初始化文件上传权限和菜单 |
 
 ## 先创建数据表
 
@@ -754,86 +756,14 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 `/api/v1` 是接口路径；上传后的文件 URL 更像静态资源路径。把文件访问放到 `/uploads/...`，前端展示图片、下载文件都会更直接。
 :::
 
-## 🛠️ 初始化文件上传接口权限
+## 🛠️ 初始化文件上传权限和菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。先在常量区追加文件上传菜单和按钮编码：
+文件上传的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建文件上传相关的权限策略和菜单数据。
 
-```go
-const (
-	defaultConfigMenuCode   = "system:config"
-	defaultConfigListCode   = "system:config:list"
-	defaultConfigCreateCode = "system:config:create"
-	defaultConfigUpdateCode = "system:config:update"
-	defaultConfigStatusCode = "system:config:status"
-	defaultConfigValueCode  = "system:config:value"
-	defaultFileMenuCode     = "system:file" // [!code ++]
-	defaultFileListCode     = "system:file:list" // [!code ++]
-	defaultFileUploadCode   = "system:file:upload" // [!code ++]
-)
-```
-
-然后在 `defaultPermissionSeeds` 中继续追加文件接口权限：
-
-```go
-var defaultPermissionSeeds = []defaultPermissionSeed{
-	{Path: "/api/v1/system/configs", Method: "GET"},
-	{Path: "/api/v1/system/configs", Method: "POST"},
-	{Path: "/api/v1/system/configs/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/configs/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/configs/value/:key", Method: "GET"},
-	{Path: "/api/v1/system/files", Method: "GET"}, // [!code ++]
-	{Path: "/api/v1/system/files", Method: "POST"}, // [!code ++]
-}
-```
-
-## 🛠️ 初始化文件上传菜单
-
-继续修改 `server/internal/bootstrap/bootstrap.go`。
-
-先找到 `seedDefaultMenus` 当前函数末尾的这行返回语句：
-
-```go
-return menus, nil
-```
-
-把这行替换为下面整段代码。也就是说：下面代码要放在系统配置按钮循环之后、原 `return menus, nil` 之前；替换完成后，函数末尾仍然只保留最后一个 `return menus, nil`。
-
-```go
-	fileMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultFileMenuCode,
-		Title:     "文件管理",
-		Path:      "/system/files",
-		Component: "system/FileView",
-		Icon:      "folder",
-		Sort:      60,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	fileButtons := []model.Menu{
-		{ParentID: fileMenu.ID, Type: model.MenuTypeButton, Code: defaultFileListCode, Title: "查看文件", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: fileMenu.ID, Type: model.MenuTypeButton, Code: defaultFileUploadCode, Title: "上传文件", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-	}
-
-	menus = append(menus, *fileMenu)
-	for _, button := range fileButtons {
-		createdButton, err := seedMenu(db, button, log)
-		if err != nil {
-			return nil, err
-		}
-		menus = append(menus, *createdButton)
-	}
-
-	return menus, nil
-```
-
-::: warning ⚠️ 仍然只保留一处 `return menus, nil`
-连续追加菜单时，旧的 `return` 一旦没删，后面的初始化代码就不会按预期执行。确认 `seedDefaultMenus` 的结尾只有最后这一处返回。
+::: tip 💡 权限和菜单初始化
+- 权限策略：在 `migrations/{pgsql,mysql}/000002_seed_data.up.sql` 中插入文件上传接口的 Casbin 规则
+- 菜单数据：在同一迁移文件中插入文件上传菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到文件上传菜单
 :::
 
 ## ✅ 启动并观察初始化日志

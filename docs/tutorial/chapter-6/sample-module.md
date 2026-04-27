@@ -84,76 +84,90 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 `/notices` 而不是 `/notice`，与已有的 `/users`、`/roles`、`/menus` 保持一致。REST 风格里资源名用复数是常见约定，团队统一一种写法比争论哪一种更正确更有价值。
 :::
 
-## 后端：Bootstrap
+## 后端：数据库迁移
 
-Bootstrap 负责在服务启动时初始化权限种子和菜单种子。公告模块需要新增两类数据：接口权限（Casbin 规则）和菜单树（目录 + 菜单 + 按钮）。
+公告模块需要通过数据库迁移文件来初始化权限种子和菜单种子。创建新的迁移文件来添加公告管理的权限和菜单：
 
 ### 权限种子
 
-在 `defaultPermissionSeeds` 切片中追加公告的四条接口权限：
+在 `server/migrations/{pgsql,mysql}/` 目录下创建新的迁移文件，添加公告的接口权限：
 
-```go
-var defaultPermissionSeeds = []defaultPermissionSeed{
-    // ... 省略已有的权限 ...
+::: code-group
 
-    {Path: "/api/v1/system/notices", Method: "GET"},              // [!code ++]
-    {Path: "/api/v1/system/notices", Method: "POST"},             // [!code ++]
-    {Path: "/api/v1/system/notices/:id/update", Method: "POST"},  // [!code ++]
-    {Path: "/api/v1/system/notices/:id/status", Method: "POST"},  // [!code ++]
-}
+```sql [PostgreSQL — 000003_notice_seed_data.up.sql]
+-- 公告管理接口权限
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/system/notices', 'GET');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/system/notices', 'POST');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/system/notices/:id/update', 'POST');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/system/notices/:id/status', 'POST');
 ```
 
-在 `const` 块中同时补上权限编码常量：
-
-```go
-    defaultLoginLogListCode     = "system:login-log:list"
-    defaultNoticeMenuCode       = "system:notice"        // [!code ++]
-    defaultNoticeListCode       = "system:notice:list"   // [!code ++]
-    defaultNoticeCreateCode     = "system:notice:create" // [!code ++]
-    defaultNoticeUpdateCode     = "system:notice:update" // [!code ++]
-    defaultNoticeStatusCode     = "system:notice:status" // [!code ++]
-)
+```sql [MySQL — 000003_notice_seed_data.up.sql]
+-- 公告管理接口权限
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/system/notices', 'GET');
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/system/notices', 'POST');
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/system/notices/:id/update', 'POST');
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/system/notices/:id/status', 'POST');
 ```
+
+:::
 
 ### 菜单种子
 
-在 `seedDefaultMenus` 函数中追加公告菜单和按钮。公告菜单挂在 `system` 目录下，排序为 90（排在已有模块后面）：
+在同一个迁移文件中，添加公告菜单和按钮：
 
-```go
-    // ... 省略前面的菜单种子 ...
+::: code-group
 
-    noticeMenu, err := seedMenu(db, model.Menu{         // [!code ++]
-        ParentID:  systemMenu.ID,                        // [!code ++]
-        Type:      model.MenuTypeMenu,                   // [!code ++]
-        Code:      defaultNoticeMenuCode,                // [!code ++]
-        Title:     "公告管理",                            // [!code ++]
-        Path:      "/system/notices",                    // [!code ++]
-        Component: "system/NoticeView",                  // [!code ++]
-        Icon:      "notification",                       // [!code ++]
-        Sort:      90,                                   // [!code ++]
-        Status:    model.MenuStatusEnabled,              // [!code ++]
-        Remark:    "系统内置菜单",                        // [!code ++]
-    }, log)                                              // [!code ++]
+```sql [PostgreSQL — 000003_notice_seed_data.up.sql]
+-- 公告管理菜单
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (20, 1, 2, 'system:notice', '公告管理', '/system/notices', 'system/NoticeView', 'notification', 90, 1, '系统内置菜单', NOW(), NOW());
 
-    noticeButtons := []model.Menu{                       // [!code ++]
-        {ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeListCode, Title: "查看公告", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},   // [!code ++]
-        {ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeCreateCode, Title: "创建公告", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"}, // [!code ++]
-        {ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeUpdateCode, Title: "编辑公告", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"}, // [!code ++]
-        {ParentID: noticeMenu.ID, Type: model.MenuTypeButton, Code: defaultNoticeStatusCode, Title: "修改公告状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"}, // [!code ++]
-    }                                                    // [!code ++]
+-- 公告管理按钮
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1000, 20, 3, 'system:notice:list', '查看公告', '', '', '', 10, 1, '系统内置按钮', NOW(), NOW());
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1001, 20, 3, 'system:notice:create', '创建公告', '', '', '', 20, 1, '系统内置按钮', NOW(), NOW());
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1002, 20, 3, 'system:notice:update', '编辑公告', '', '', '', 30, 1, '系统内置按钮', NOW(), NOW());
+INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
+VALUES (1003, 20, 3, 'system:notice:status', '修改公告状态', '', '', '', 40, 1, '系统内置按钮', NOW(), NOW());
 
-    menus = append(menus, *noticeMenu)                   // [!code ++]
-    for _, button := range noticeButtons {               // [!code ++]
-        createdButton, err := seedMenu(db, button, log)  // [!code ++]
-        if err != nil {                                  // [!code ++]
-            return nil, err                              // [!code ++]
-        }                                                // [!code ++]
-        menus = append(menus, *createdButton)            // [!code ++]
-    }                                                    // [!code ++]
+-- 绑定到 super_admin 角色
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 20, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1000, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1001, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1002, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1003, NOW(), NOW());
 ```
 
+```sql [MySQL — 000003_notice_seed_data.up.sql]
+-- 公告管理菜单
+INSERT INTO `sys_menu` (`id`, `parent_id`, `type`, `code`, `title`, `path`, `component`, `icon`, `sort`, `status`, `remark`, `created_at`, `updated_at`)
+VALUES (20, 1, 2, 'system:notice', '公告管理', '/system/notices', 'system/NoticeView', 'notification', 90, 1, '系统内置菜单', NOW(), NOW());
+
+-- 公告管理按钮
+INSERT INTO `sys_menu` (`id`, `parent_id`, `type`, `code`, `title`, `path`, `component`, `icon`, `sort`, `status`, `remark`, `created_at`, `updated_at`)
+VALUES (1000, 20, 3, 'system:notice:list', '查看公告', '', '', '', 10, 1, '系统内置按钮', NOW(), NOW());
+INSERT INTO `sys_menu` (`id`, `parent_id`, `type`, `code`, `title`, `path`, `component`, `icon`, `sort`, `status`, `remark`, `created_at`, `updated_at`)
+VALUES (1001, 20, 3, 'system:notice:create', '创建公告', '', '', '', 20, 1, '系统内置按钮', NOW(), NOW());
+INSERT INTO `sys_menu` (`id`, `parent_id`, `type`, `code`, `title`, `path`, `component`, `icon`, `sort`, `status`, `remark`, `created_at`, `updated_at`)
+VALUES (1002, 20, 3, 'system:notice:update', '编辑公告', '', '', '', 30, 1, '系统内置按钮', NOW(), NOW());
+INSERT INTO `sys_menu` (`id`, `parent_id`, `type`, `code`, `title`, `path`, `component`, `icon`, `sort`, `status`, `remark`, `created_at`, `updated_at`)
+VALUES (1003, 20, 3, 'system:notice:status', '修改公告状态', '', '', '', 40, 1, '系统内置按钮', NOW(), NOW());
+
+-- 绑定到 super_admin 角色
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`, `created_at`, `updated_at`) VALUES (1, 20, NOW(), NOW());
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`, `created_at`, `updated_at`) VALUES (1, 1000, NOW(), NOW());
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`, `created_at`, `updated_at`) VALUES (1, 1001, NOW(), NOW());
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`, `created_at`, `updated_at`) VALUES (1, 1002, NOW(), NOW());
+INSERT INTO `sys_role_menu` (`role_id`, `menu_id`, `created_at`, `updated_at`) VALUES (1, 1003, NOW(), NOW());
+```
+
+:::
+
 ::: warning 菜单种子的 `Component` 字段必须与前端路由映射一致
-Bootstrap 里写的 `Component: "system/NoticeView"` 必须和前端 `dynamic-menu.ts` 中 `routeComponentMap` 的 key 完全匹配。如果这里写 `Notice` 而前端写 `system/NoticeView`，菜单能查到但页面会加载占位组件，不会报错但也不会显示真实页面。这类问题排查起来很费时间，建议在接入新模块时把 `Component` 值直接从前端 `routeComponentMap` 里复制过来。
+迁移文件里写的 `component: "system/NoticeView"` 必须和前端 `dynamic-menu.ts` 中 `routeComponentMap` 的 key 完全匹配。如果这里写 `Notice` 而前端写 `system/NoticeView`，菜单能查到但页面会加载占位组件，不会报错但也不会显示真实页面。这类问题排查起来很费时间，建议在接入新模块时把 `Component` 值直接从前端 `routeComponentMap` 里复制过来。
 :::
 
 ## 前端：Types
@@ -266,21 +280,30 @@ go run main.go
 启动日志中应该能看到类似输出：
 
 ```text
-default menu created  menu_code=system:notice
-default permission created  role_code=super_admin  path=/api/v1/system/notices  method=GET
+INFO	database migrations applied
+INFO	server started	{"addr": ":8080", "env": "dev"}
 ```
 
-如果表已存在，种子数据不会重复插入（`seedMenu` 会先按 `code` 查询）。
+### 2. 创建管理员账号
 
-### 2. 接口验证
+服务启动后，先通过初始化接口创建管理员账号：
+
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+```
+
+### 3. 接口验证
 
 使用 `curl` 验证接口是否正常工作。先登录获取 Token：
 
 ```bash
 TOKEN=$(curl -s http://localhost:8080/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' \
-  | jq -r '.data.token')
+  -d '{"username":"admin","password":"YourPassword123"}' \
+  | jq -r '.data.access_token')
 ```
 
 查询公告列表（应该返回空列表）：
@@ -350,12 +373,12 @@ curl -s -X POST http://localhost:8080/api/v1/system/notices \
 | Model | `server/internal/model/notice.go` | 新增 |
 | Handler | `server/internal/handler/system/notices.go` | 新增 |
 | Router | `server/internal/router/router.go` | 追加 5 行 |
-| Bootstrap | `server/internal/bootstrap/bootstrap.go` | 追加权限和菜单种子 |
+| Migration | `server/migrations/{pgsql,mysql}/000003_notice_seed_data.up.sql` | 新增 |
 | Types | `admin/src/types/notice.ts` | 新增 |
 | API | `admin/src/api/notice.ts` | 新增 |
 | Page | `admin/src/pages/system/NoticeView.vue` | 新增 |
 | Route | `admin/src/router/dynamic-menu.ts` | 追加 1 行 |
 
-这就是[模块固定结构](./module-structure)里定义的约定在真实代码里的落地方式。以后接入新模块，按同样的顺序和结构走一遍就行：先写 Model，再写 Handler，然后注册路由和种子，最后接前端。
+这就是[模块固定结构](./module-structure)里定义的约定在真实代码里的落地方式。以后接入新模块，按同样的顺序和结构走一遍就行：先写 Model，再写 Handler，然后注册路由，创建数据库迁移文件来初始化权限和菜单，最后接前端。
 
 回到本章目录：[第 6 章：业务模块接入规范](./index)。

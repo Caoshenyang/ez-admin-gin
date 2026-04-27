@@ -98,9 +98,7 @@ docker compose -f compose.prod.yml logs server
 日志中应该能看到类似这些信息：
 
 ```text
-default admin user created   username=admin
-default admin role created   role_code=super_admin
-default menu created         menu_code=system
+database migrations applied
 ...
 ```
 
@@ -134,18 +132,28 @@ curl http://localhost/health
 }
 ```
 
-### 2. 登录
+### 2. 创建管理员账号
 
-用浏览器打开 `http://localhost`，进入登录页面。输入默认管理员账号：
+服务启动后，需要先通过初始化接口创建管理员账号：
+
+```bash
+curl -X POST http://localhost/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+```
+
+### 3. 登录
+
+用浏览器打开 `http://localhost`，进入登录页面。输入刚才创建的管理员账号：
 
 | 项目 | 值 |
 | --- | --- |
-| 用户名 | `admin` |
-| 密码 | `EzAdmin@123456` |
+| 用户名 | 你刚才设置的用户名 |
+| 密码 | 你刚才设置的密码 |
 
 登录成功后，页面应该跳转到后台首页，侧边栏显示系统管理菜单。
 
-### 3. 菜单加载
+### 4. 菜单加载
 
 登录后检查侧边栏，应该能看到以下菜单项：
 
@@ -164,7 +172,7 @@ curl http://localhost/health
 
 点击“系统状态”后，页面里应该能看到当前环境（例如 `prod`）以及 `database = ok`、`redis = ok` 的检查结果。这一步可以顺手验证后台菜单、登录态和依赖状态页都已经接通。
 
-### 4. CRUD 操作验证
+### 5. CRUD 操作验证
 
 进入任意一个管理页面（比如用户管理），确认以下操作可用：
 

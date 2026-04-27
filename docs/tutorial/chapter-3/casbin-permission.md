@@ -20,8 +20,6 @@ server/
 ├─ configs/
 │  └─ rbac_model.conf
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ middleware/
 │  │  └─ permission.go
 │  ├─ model/
@@ -41,7 +39,6 @@ server/
 | `internal/model/casbin_rule.go` | 定义 Casbin 策略表结构，供初始化使用 |
 | `internal/permission/enforcer.go` | 创建 Casbin Enforcer，并关闭自动建表 |
 | `internal/middleware/permission.go` | 根据当前用户角色判断接口权限 |
-| `internal/bootstrap/bootstrap.go` | 初始化默认接口权限策略 |
 | `internal/router/router.go` | 给受保护接口挂载权限中间件 |
 | `main.go` | 创建权限 Enforcer 并传给路由 |
 
@@ -320,82 +317,11 @@ func currentRoleCodes(db *gorm.DB, userID uint) ([]string, error) {
 这样策略可以写成一条规则匹配一类接口。
 :::
 
-## 🛠️ 初始化默认接口权限
+::: tip 📌 默认接口权限初始化
+默认接口权限策略通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{pgsql,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限策略。
 
-修改 `server/internal/bootstrap/bootstrap.go`。这一处重点看两个变化：
-
-- 增加默认接口权限常量。
-- 在启动时写入 `casbin_rule`。
-
-先扩展常量：
-
-```go
-const (
-	defaultAdminUsername     = "admin"
-	defaultAdminPassword     = "EzAdmin@123456"
-	defaultAdminRoleCode     = "super_admin"
-	defaultAdminRoleName     = "超级管理员"
-	defaultPermissionPath    = "/api/v1/system/health" // [!code ++]
-	defaultPermissionMethod  = "GET" // [!code ++]
-)
-```
-
-在 `Run` 中绑定角色后，继续初始化权限策略：
-
-```go
-	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
-		return fmt.Errorf("seed admin role: %w", err)
-	}
-
-	if err := seedDefaultPermission(db, log); err != nil { // [!code ++]
-		return fmt.Errorf("seed default permission: %w", err) // [!code ++]
-	} // [!code ++]
-
-	return nil
-}
-```
-
-在文件末尾新增：
-
-```go
-// seedDefaultPermission 初始化超级管理员的默认接口权限。
-func seedDefaultPermission(db *gorm.DB, log *zap.Logger) error {
-	var rule model.CasbinRule
-	err := db.Where(
-		"ptype = ? AND v0 = ? AND v1 = ? AND v2 = ?",
-		"p",
-		defaultAdminRoleCode,
-		defaultPermissionPath,
-		defaultPermissionMethod,
-	).First(&rule).Error
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
-	rule = model.CasbinRule{
-		Ptype: "p",
-		V0:    defaultAdminRoleCode,
-		V1:    defaultPermissionPath,
-		V2:    defaultPermissionMethod,
-	}
-
-	if err := db.Create(&rule).Error; err != nil {
-		return err
-	}
-
-	log.Info(
-		"default permission created",
-		zap.String("role_code", defaultAdminRoleCode),
-		zap.String("path", defaultPermissionPath),
-		zap.String("method", defaultPermissionMethod),
-	)
-
-	return nil
-}
-```
+这样可以确保权限策略在服务启动时就已经准备就绪，不需要通过代码手动写入。
+:::
 
 ::: warning ⚠️ 策略初始化后需要重新加载
 本节的 Enforcer 在服务启动时加载策略。所以新增或修改 `casbin_rule` 后，当前服务进程不会自动感知。
@@ -540,8 +466,19 @@ go run .
 第一次启动后，控制台应该能看到类似日志：
 
 ```text
-INFO	default permission created	{"role_code": "super_admin", "path": "/api/v1/system/health", "method": "GET"}
+INFO	database migrations applied
 INFO	server started	{"addr": ":8080", "env": "dev"}
+```
+
+## ✅ 创建管理员账号
+
+服务启动后，先通过初始化接口创建管理员账号：
+
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 ```
 
 ## ✅ 验证策略已经写入
@@ -553,12 +490,14 @@ INFO	server started	{"addr": ":8080", "env": "dev"}
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule;"
 ```
 
-应该看到类似结果：
+应该看到类似结果，包含系统默认的权限策略：
 
 ```text
  ptype |     v0      |           v1            | v2
 -------+-------------+-------------------------+-----
  p     | super_admin | /api/v1/system/health   | GET
+ p     | super_admin | /api/v1/auth/login      | POST
+ p     | super_admin | /api/v1/setup/init      | POST
 ```
 
 ## ✅ 验证公开健康检查仍然可访问
@@ -608,7 +547,7 @@ curl -i http://localhost:8080/api/v1/system/health
 ```powershell [Windows PowerShell]
 $body = @{
   username = "admin"
-  password = "EzAdmin@123456"
+  password = "YourPassword123"
 } | ConvertTo-Json
 
 $login = Invoke-RestMethod `
@@ -628,7 +567,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
+  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
 
 curl -X GET http://localhost:8080/api/v1/system/health \
   -H "Authorization: Bearer ${TOKEN}"

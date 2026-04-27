@@ -184,6 +184,10 @@ description: "整理部署所需环境变量，理解配置覆盖机制，并了
 
 服务第一次启动时，会通过 golang-migrate 自动执行 `server/migrations/pgsql/`（或 `mysql/`）目录下的 SQL 迁移文件，完成数据库建表和种子数据写入。
 
+::: tip 📚 了解更多迁移工具
+想了解为什么选择 golang-migrate 以及它的工作原理，请参考：[数据库迁移工具选型](../../reference/migration-tool-selection)。
+:::
+
 ### 迁移执行顺序
 
 ```text
