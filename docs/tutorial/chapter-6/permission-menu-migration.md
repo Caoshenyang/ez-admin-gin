@@ -103,7 +103,7 @@ var defaultPermissionSeeds = []defaultPermissionSeed{
 ```ts
 // admin/src/router/dynamic-menu.ts
 const routeComponentMap: Record<string, RouteComponent> = {
-  'system/HealthView': placeholderPage,
+  'system/HealthView': () => import('../pages/system/HealthView.vue'),
   'system/UserView': () => import('../pages/system/UserView.vue'),
   'system/RoleView': () => import('../pages/system/RoleView.vue'),
   // ...

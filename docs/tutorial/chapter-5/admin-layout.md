@@ -49,6 +49,8 @@ description: "实现后台基础布局，包括侧边栏、顶部栏、工作标
 ```text
 admin/
 └─ src/
+   ├─ api/
+   │  └─ dashboard.ts
    ├─ layouts/
    │  └─ AdminLayout.vue
    ├─ pages/
@@ -60,6 +62,8 @@ admin/
    │  └─ index.ts
    ├─ styles/
    │  └─ main.css
+   ├─ types/
+   │  └─ dashboard.ts
    └─ utils/
       └─ auth.ts
 ```
@@ -68,8 +72,10 @@ admin/
 | --- | --- |
 | `src/styles/main.css` | 关闭浏览器级滚动，保证后台壳子固定一屏 |
 | `src/utils/auth.ts` | 读取本地登录用户信息，用在顶部栏用户区 |
+| `src/types/dashboard.ts` | 约束工作台概览接口返回值，避免页面继续写死假数据 |
+| `src/api/dashboard.ts` | 调用 `/api/v1/auth/dashboard`，统一获取工作台真实数据 |
 | `src/layouts/AdminLayout.vue` | 实现侧边栏、顶部栏、工作标签和内容区 |
-| `src/pages/dashboard/DashboardHome.vue` | 把原来的占位工作台升级成原型里的工作台页面 |
+| `src/pages/dashboard/DashboardHome.vue` | 把原来的演示工作台升级成真实项目首页 |
 | `src/pages/system/PlaceholderPage.vue` | 给静态菜单提供可复用的占位页 |
 | `src/router/index.ts` | 把布局挂到受保护路由上，让工作台和系统页共用后台壳子 |
 
@@ -80,6 +86,7 @@ admin/
 - 已完成上一节 [登录页](./login-page)。
 - 登录成功后，当前已经能跳转到 `/dashboard`。
 - `admin/src/styles/main.css` 已经接入 `@import "tailwindcss"`。
+- 当前项目后端已经提供 `GET /api/v1/auth/dashboard`，登录后可返回工作台概览数据。
 
 ## 🛠️ 先把浏览器默认滚动关掉
 
@@ -587,123 +594,30 @@ watch(
 
 ## 🛠️ 升级工作台页面
 
-修改 `admin/src/pages/dashboard/DashboardHome.vue`。这一步把原来的占位卡片替换成原型里的工作台内容：
+修改 `admin/src/pages/dashboard/DashboardHome.vue`。这一步不再继续堆“访问趋势”之类的演示占位，而是让首页直接读取当前项目的真实数据：
 
-- 顶部欢迎区和“新建用户”按钮
-- 四个指标卡片
-- 左侧访问趋势卡片
-- 右侧最近操作卡片
-- 底部快捷入口
+- 四个指标卡片直接放在最上面，先满足管理员“扫一眼看状态”的需求。
+- 顶部问候区收成更克制的总览面板，展示当前用户、当天日期和系统整体状态，不再单独拆出健康检查说明卡。
+- 右侧快捷入口只展示当前角色真正可访问的页面，并压缩成更短的信息块。
+- 底部区域回显最近操作、最近登录和最新公告，方便做管理员日常巡检。
 
-::: details `admin/src/pages/dashboard/DashboardHome.vue` — 升级工作台页面
+为了避免前端再次把接口字段写散，这里顺手把工作台接口类型和调用封装也补上。
 
-```vue
-<script setup lang="ts">
-import { NButton, NCard } from 'naive-ui'
+::: details `admin/src/types/dashboard.ts` — 工作台接口类型
 
-const metrics = [
-  { label: '总用户数', value: '12,846', hint: '较昨日 +128', color: '#18A058' },
-  { label: '活跃角色', value: '18', hint: '权限策略 42 条', color: '#2080F0' },
-  { label: '今日操作', value: '2,391', hint: '高风险 3 条', color: '#F0A020' },
-  { label: '系统健康度', value: '99.98%', hint: 'API 平均 38ms', color: '#18A058' },
-]
+<<< ../../../admin/src/types/dashboard.ts
 
-const trendBars = [
-  { width: '78%', color: '#18A058' },
-  { width: '92%', color: '#36AD6A' },
-  { width: '70%', color: '#63E2B7' },
-  { width: '94%', color: '#2080F0' },
-]
+:::
 
-const recentOperations = [
-  { text: '09:18 林青 新增用户 chenwei', color: '#374151' },
-  { text: '09:02 系统 同步菜单权限', color: '#374151' },
-  { text: '08:41 周敏 导出操作日志', color: '#374151' },
-  { text: '08:16 角色 devops 权限变更', color: '#D03050' },
-]
-</script>
+::: details `admin/src/api/dashboard.ts` — 工作台接口封装
 
-<template>
-  <main class="flex h-full flex-col gap-5 overflow-hidden">
-    <section class="flex items-center justify-between">
-      <div>
-        <h1 class="text-[28px] font-bold text-[#111827]">工作台</h1>
-        <p class="mt-1 text-sm text-[#6B7280]">今天是 2026-04-24，系统运行稳定。</p>
-      </div>
+<<< ../../../admin/src/api/dashboard.ts
 
-      <NButton type="primary" color="#18A058">
-        新建用户
-      </NButton>
-    </section>
+:::
 
-    <section class="grid gap-4 xl:grid-cols-4">
-      <NCard
-        v-for="item in metrics"
-        :key="item.label"
-        class="rounded-lg"
-        :bordered="false"
-        content-style="padding: 20px;"
-      >
-        <div class="flex flex-col gap-2">
-          <p class="text-sm text-[#6B7280]">{{ item.label }}</p>
-          <p class="text-3xl font-bold text-[#111827]">{{ item.value }}</p>
-          <p class="text-[13px]" :style="{ color: item.color }">{{ item.hint }}</p>
-        </div>
-      </NCard>
-    </section>
+::: details `admin/src/pages/dashboard/DashboardHome.vue` — 真实工作台页面
 
-    <section class="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1fr)_416px]">
-      <NCard
-        class="h-full rounded-lg"
-        :bordered="false"
-        content-style="height: 100%; padding: 22px;"
-      >
-        <section class="flex h-full flex-col gap-4.5">
-          <h2 class="text-lg font-bold text-[#111827]">访问趋势</h2>
-
-          <div class="grid flex-1 gap-3 rounded-md bg-[#F9FAFB] p-4.5">
-            <div
-              v-for="bar in trendBars"
-              :key="`${bar.color}-${bar.width}`"
-              class="h-6.5 rounded"
-              :style="{ width: bar.width, background: bar.color }"
-            />
-          </div>
-
-          <p class="text-sm text-[#6B7280]">
-            近 7 日访问量稳定上升，异常请求占比 0.06%。
-          </p>
-        </section>
-      </NCard>
-
-      <NCard
-        class="h-full rounded-lg"
-        :bordered="false"
-        content-style="height: 100%; padding: 22px;"
-      >
-        <section class="flex h-full flex-col gap-3.5">
-          <h2 class="text-lg font-bold text-[#111827]">最近操作</h2>
-
-          <p
-            v-for="item in recentOperations"
-            :key="item.text"
-            class="text-sm"
-            :style="{ color: item.color }"
-          >
-            {{ item.text }}
-          </p>
-        </section>
-      </NCard>
-    </section>
-
-    <section>
-      <NButton tertiary class="w-45">
-        用户管理
-      </NButton>
-    </section>
-  </main>
-</template>
-```
+<<< ../../../admin/src/pages/dashboard/DashboardHome.vue
 
 :::
 
@@ -885,7 +799,7 @@ pnpm dev
 - 左侧深色侧边栏固定在页面左边。
 - 右侧顶部有面包屑、搜索框、图标按钮和用户区。
 - 顶部栏下方有工作标签。
-- 主内容区显示工作台数据卡片。
+- 主内容区先显示顶部统计卡片，再往下展示真实工作台数据，而不是写死的演示数字。
 
 ### 2. 验证页面保持一屏，不出现浏览器默认滚动条
 
@@ -917,7 +831,19 @@ pnpm dev
 - 工作标签会增加当前打开的页面。
 - 内容区会切到对应页面，而不是整页刷新。
 
-### 4. 验证工作标签的基础交互
+### 4. 验证工作台已经接入真实项目数据
+
+回到 `/dashboard` 后，重点看下面几处：
+
+- 指标卡片数值会跟数据库里当前的用户、角色、文件、公告和日志数据联动。
+- 统计卡片会优先出现在页面最上方，便于快速扫描。
+- `Overview` 会直接概括环境状态和最近刷新信息，不再单独占一块“健康检查入口”卡片。
+- “最近操作”展示的是 `sys_operation_log` 中的最新记录。
+- “最近登录”展示的是 `sys_login_log` 中的最新记录。
+- “最新公告”展示的是启用中的公告，而不是前端手写数组。
+- “快捷入口”只会展示当前登录角色真正有权访问的页面。
+
+### 5. 验证工作标签的基础交互
 
 继续验证标签栏：
 

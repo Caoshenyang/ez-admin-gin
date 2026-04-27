@@ -48,6 +48,7 @@ func registerAuthRoutes(r *gin.Engine, opts Options) {
 	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token)
 	me := authHandler.NewMeHandler(opts.Log)
 	menus := authHandler.NewMenuHandler(opts.DB, opts.Log)
+	dashboard := authHandler.NewDashboardHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
@@ -57,7 +58,7 @@ func registerAuthRoutes(r *gin.Engine, opts Options) {
 	protectedAuth.Use(middleware.Auth(opts.Token, opts.Log))
 	protectedAuth.GET("/me", me.Me)
 	protectedAuth.GET("/menus", menus.Menus)
-
+	protectedAuth.GET("/dashboard", dashboard.Dashboard)
 }
 
 // registerSystemRoutes 注册系统级路由。
@@ -70,7 +71,7 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	files := systemHandler.NewFileHandler(opts.DB, opts.Config.Upload, opts.Log)
 	operationLogs := systemHandler.NewOperationLogHandler(opts.DB, opts.Log)
 	loginLogs := systemHandler.NewLoginLogHandler(opts.DB, opts.Log)
-		notices := systemHandler.NewNoticeHandler(opts.DB, opts.Log)
+	notices := systemHandler.NewNoticeHandler(opts.DB, opts.Log)
 
 	// /health 通常给部署探针和本地快速验证使用。
 	r.GET("/health", health.Check)
@@ -112,5 +113,4 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.POST("/notices", notices.Create)
 	system.POST("/notices/:id/update", notices.Update)
 	system.POST("/notices/:id/status", notices.UpdateStatus)
-
 }

@@ -61,6 +61,7 @@ const methodMeta: Record<string, { color: string; bg: string }> = {
 
 function getModule(path: string): string {
   const segments = path.replace(/^\/api\/v\d+\//, '').split('/')
+  const moduleKey = segments[1]
   const moduleMap: Record<string, string> = {
     users: '用户管理',
     roles: '角色权限',
@@ -71,7 +72,10 @@ function getModule(path: string): string {
     'login-logs': '登录日志',
     auth: '认证',
   }
-  return moduleMap[segments[1]] ?? segments[1] ?? path
+  if (!moduleKey) {
+    return path
+  }
+  return moduleMap[moduleKey] ?? moduleKey
 }
 
 function getAction(row: OperationLogItem): string {

@@ -67,7 +67,7 @@ admin/
 - 已完成上一节 [后台布局](./admin-layout)，并且登录后可以进入 `/dashboard`。
 - 后端 `/api/v1/auth/menus` 已经能按当前登录用户返回菜单树。
 - `admin/src/api/http.ts` 已经统一注入 `Authorization` 请求头。
-- 当前系统页面还没有真实实现，所以本节会先把后端组件编码映射到占位页。
+- 当前只有“系统状态”页已经接成真实页面，其它系统页面本节先继续映射到占位页。
 
 ## 🛠️ 定义菜单类型
 
@@ -140,7 +140,7 @@ type RouteComponent = NonNullable<RouteRecordRaw['component']>
 const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
 
 const routeComponentMap: Record<string, RouteComponent> = {
-  'system/HealthView': placeholderPage,
+  'system/HealthView': () => import('../pages/system/HealthView.vue'),
   'system/UserView': placeholderPage,
   'system/RoleView': placeholderPage,
   'system/MenuView': placeholderPage,
@@ -258,10 +258,10 @@ function toChildRoutePath(path: string) {
 
 :::
 
-::: details 为什么这里先把系统页面都映射到占位页
-后端初始化的菜单已经包含 `system/UserView`、`system/RoleView`、`system/MenuView` 等组件编码，但第五章后面的页面还没正式实现。
+::: details 为什么这里先把大多数系统页面映射到占位页
+后端初始化的菜单已经包含 `system/UserView`、`system/RoleView`、`system/MenuView` 等组件编码，但第五章后面的页面还没正式实现。当前只有 `system/HealthView` 已经接成真实页面，用来验证动态菜单、受保护健康检查接口和系统依赖状态。
 
-本节先把这些编码映射到 `PlaceholderPage.vue`，好处是动态菜单链路能先跑通。等后续写到用户、角色、菜单页面时，只需要把白名单里的某一项替换成真实页面即可。
+本节先把其余编码映射到 `PlaceholderPage.vue`，好处是动态菜单链路能先跑通。等后续写到用户、角色、菜单页面时，只需要把白名单里的某一项替换成真实页面即可。
 
 例如后续用户管理页面完成后，把这一行：
 

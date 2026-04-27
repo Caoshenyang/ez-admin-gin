@@ -1338,7 +1338,7 @@ onMounted(async () => {
 
 ```ts
 const routeComponentMap: Record<string, RouteComponent> = {
-  'system/HealthView': placeholderPage,
+  'system/HealthView': () => import('../pages/system/HealthView.vue'),
   'system/UserView': placeholderPage, // [!code --]
   'system/UserView': () => import('../pages/system/UserView.vue'), // [!code ++]
   'system/RoleView': placeholderPage,
