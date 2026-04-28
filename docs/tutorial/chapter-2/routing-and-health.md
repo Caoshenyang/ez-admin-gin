@@ -53,7 +53,7 @@ server/
 
 ## 🛠️ 创建健康检查 Handler
 
-创建 `server/internal/handler/system/health.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/handler/system/health.go` — 健康检查 Handler
 
 ```go
 package system
@@ -116,6 +116,8 @@ func (h *HealthHandler) Check(c *gin.Context) {
 }
 ```
 
+:::
+
 这个文件只做一件事：处理健康检查请求。它不负责创建路由，也不负责启动服务。
 
 ::: details 为什么要把 Handler 单独拆出来
@@ -124,7 +126,7 @@ func (h *HealthHandler) Check(c *gin.Context) {
 
 ## 🛠️ 创建路由包
 
-创建 `server/internal/router/router.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/router/router.go` — 路由注册
 
 ```go
 package router
@@ -171,6 +173,8 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/health", health.Check)
 }
 ```
+
+:::
 
 这个包负责三件事：
 
@@ -228,7 +232,7 @@ import (
 这一节删除的代码比较多。如果担心漏删旧的 `r.GET("/health", ...)`，可以直接替换完整 `main.go`，再让 IDE 自动整理 import。
 :::
 
-替换后，`main.go` 应该保留成下面这样：
+::: details `server/main.go` — 完整版
 
 ```go
 package main
@@ -304,6 +308,8 @@ func main() {
 	}
 }
 ```
+
+:::
 
 ## ✅ 启动并验证旧入口
 

@@ -64,13 +64,11 @@ server/
 
 本节新增 `sys_login_log`，用于保存后台登录成功和失败记录。
 
-::: tip 建表 SQL
-字段说明、审计表不做逻辑删除的原因、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_login_log`](../../reference/database-ddl#sys-login-log)。
-:::
+`sys_login_log` 表保存后台登录成功和失败记录，不做逻辑删除。字段和索引详情见 [数据库建表语句 - `sys_login_log`](/reference/database-ddl#sys-login-log)。
 
 ## 🛠️ 创建登录日志模型
 
-创建 `server/internal/model/login_log.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/model/login_log.go` — 登录日志模型
 
 ```go
 package model
@@ -105,14 +103,11 @@ func (LoginLog) TableName() string {
 }
 ```
 
+:::
+
 ## 🛠️ 修改登录接口写入日志
 
-修改 `server/internal/handler/auth/login.go`。本次要改两点：
-
-- 在不同登录结果分支中写入登录日志
-- 增加 `createLoginLog` 辅助方法
-
-建议直接用下面完整版本替换当前 `login.go`。
+::: details `server/internal/handler/auth/login.go` — 完整版（含日志记录）
 
 ```go
 package auth
@@ -241,13 +236,15 @@ func (h *LoginHandler) createLoginLog(c *gin.Context, userID uint, username stri
 }
 ```
 
+:::
+
 ::: warning ⚠️ 登录日志写入失败不应该阻断登录
 登录日志是审计能力，不是登录成功的前置条件。如果日志写入失败，记录服务端日志即可，不要让用户因为日志表短暂异常而无法登录。
 :::
 
 ## 🛠️ 创建登录日志查询接口
 
-创建 `server/internal/handler/system/login_logs.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/handler/system/login_logs.go` — 登录日志查询接口
 
 ```go
 package system
@@ -396,9 +393,11 @@ func buildLoginLogResponse(item model.LoginLog) loginLogResponse {
 }
 ```
 
+:::
+
 ## 🛠️ 注册登录日志查询路由
 
-修改 `server/internal/router/router.go`。在系统路由里新增登录日志 Handler 和查询路由：
+::: details `server/internal/router/router.go` — 注册登录日志路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -449,6 +448,8 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 system.GET("/login-logs", loginLogs.List) // [!code ++]
 }
 ```
+
+:::
 
 ## 🛠️ 初始化登录日志权限和菜单
 

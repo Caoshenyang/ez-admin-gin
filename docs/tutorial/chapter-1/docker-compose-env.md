@@ -105,6 +105,8 @@ mkdir -p ~/ez-admin-gin-data/postgres ~/ez-admin-gin-data/redis
 | `compose.local.yml` | macOS / Linux | `${HOME}/ez-admin-gin-data` |
 | `compose.local.win.yml` | Windows | `D:/ez-admin-gin-data` |
 
+::: details `deploy/compose.local.yml` — Docker Compose 本地开发配置
+
 ::: code-group
 
 ```yaml [macOS / Linux (compose.local.yml)]

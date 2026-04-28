@@ -128,16 +128,17 @@ DROP TABLE IF EXISTS sys_user;
 
 #### 示例：插入种子数据（000002_seed_data.up.sql）
 
+种子数据的 INSERT 必须幂等，避免迁移中途失败后重试时唯一键冲突：
+
 ```sql
--- 插入超级管理员角色
+-- PostgreSQL：使用 ON CONFLICT DO NOTHING
 INSERT INTO sys_role (id, code, name, status, remark, created_at, updated_at)
 VALUES (1, 'super_admin', '超级管理员', 1, '系统内置角色', NOW(), NOW())
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
--- 插入系统管理菜单
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1, 0, 1, 'system', '系统管理', '/system', '', 'setting', 10, 1, '系统内置目录', NOW(), NOW())
-ON CONFLICT (code) DO NOTHING;
+-- MySQL：使用 INSERT IGNORE
+INSERT IGNORE INTO `sys_role` (`id`, `code`, `name`, `status`, `remark`, `created_at`, `updated_at`)
+VALUES (1, 'super_admin', '超级管理员', 1, '系统内置角色', NOW(3), NOW(3));
 ```
 
 ### 步骤 4：在 Go 代码中集成
@@ -181,7 +182,21 @@ func Run(driver, dsn string, migrationsFS embed.FS, log *zap.Logger) error {
 	defer m.Close()
 
 	// 执行迁移
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		// 迁移失败时检查是否 dirty state（上次迁移中途崩溃），
+		// 自动解锁后重试，避免需要手动修复 schema_migrations 表。
+		version, dirty, vErr := m.Version()
+		if vErr == nil && dirty {
+			log.Warn("dirty migration detected, forcing unlock",
+				zap.Uint("version", version))
+			if forceErr := m.Force(int(version)); forceErr != nil {
+				return fmt.Errorf("force unlock dirty migration: %w", forceErr)
+			}
+			err = m.Up()
+		}
+	}
+	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 
@@ -271,8 +286,8 @@ INFO server started {"addr": ":8080", "env": "dev"}
    - 修复后重新启动服务
 
 3. **脏状态处理**
-   - 如果迁移中途失败，可能会留下脏状态
-   - 使用 `migrate force <version>` 命令恢复到指定版本
+   - 如果迁移中途失败，可能会留下脏状态（`schema_migrations.dirty = true`）
+   - 本项目已内置自动修复：检测到 dirty state 时自动 `Force` 解锁并重试，无需手动干预
 
 4. **回滚迁移**
    - 如需回滚，调用 `m.Down()` 方法或使用 `migrate down` 命令
@@ -280,10 +295,14 @@ INFO server started {"addr": ":8080", "env": "dev"}
 ### 最佳实践
 
 - **版本控制**：将迁移文件纳入版本控制，确保团队协作时的一致性
-- **幂等性**：使用 `IF NOT EXISTS` 和 `ON CONFLICT DO NOTHING` 确保迁移可以重复执行
+- **幂等性**：DDL 使用 `IF NOT EXISTS`，DML 使用 `ON CONFLICT DO NOTHING`（PostgreSQL）或 `INSERT IGNORE`（MySQL），确保迁移可以安全重试
 - **分阶段**：将建表和种子数据分开，便于管理和回滚
 - **测试**：在开发环境充分测试迁移，避免生产环境出错
 - **备份**：执行迁移前备份数据库，尤其是生产环境
+
+::: warning ⚠️ 不要在迁移文件中手动创建 schema_migrations 表
+`schema_migrations` 表由 golang-migrate 在执行 `m.Up()` 之前自动创建，用来记录当前迁移版本和脏状态。不需要在自己的迁移 SQL 中加 `CREATE TABLE schema_migrations`，golang-migrate 会自己管理这张表的生命周期。
+:::
 
 ## 候选工具
 
@@ -308,7 +327,7 @@ INFO server started {"addr": ":8080", "env": "dev"}
 | **数据库支持** | PostgreSQL、MySQL、SQLite、ClickHouse 等 | 20+ 种（最广） | PostgreSQL、MySQL、SQLite、SQL Server 等 |
 | **ORM 集成** | 基础 | 基础 | GORM、Ent、Prisma 深度集成 |
 | **CI/CD 集成** | 手动配置 | 手动配置 | 内置 lint 和 CI 支持 |
-| **脏状态处理** | 干净，版本锁简单 | 需要手动 `force` | 自动修复 |
+| **脏状态处理** | 干净，版本锁简单 | 需要手动 `force`（本项目已封装自动修复） | 自动修复 |
 | **学习曲线** | 低 | 低 | 中高 |
 | **复杂度** | 轻量 | 轻量 | 较重，概念多 |
 
@@ -348,7 +367,7 @@ CREATE TABLE users (...);
 DROP TABLE users;
 ```
 
-遇到脏状态（迁移中途失败）时需要手动 `migrate force <version>` 恢复，这是被吐槽最多的点。
+遇到脏状态（迁移中途失败）时需要手动 `migrate force <version>` 恢复，这是被吐槽最多的点。本项目已在 `internal/migrate/migrate.go` 中封装了自动修复逻辑：检测到 dirty state 时自动解锁并重试。
 
 适合：数据库种类多、团队习惯纯 SQL、追求最简单方案的项目。
 

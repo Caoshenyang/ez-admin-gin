@@ -33,6 +33,19 @@ func Run(driver, dsn string, migrationsFS embed.FS, log *zap.Logger) error {
 
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
+		// 迁移失败时检查是否 dirty state（上次迁移中途崩溃），
+		// 自动解锁后重试，避免需要手动修复 schema_migrations 表。
+		version, dirty, vErr := m.Version()
+		if vErr == nil && dirty {
+			log.Warn("dirty migration detected, forcing unlock",
+				zap.Uint("version", version))
+			if forceErr := m.Force(int(version)); forceErr != nil {
+				return fmt.Errorf("force unlock dirty migration: %w", forceErr)
+			}
+			err = m.Up()
+		}
+	}
+	if err != nil && err != migrate.ErrNoChange {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 

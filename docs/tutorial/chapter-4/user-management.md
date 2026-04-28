@@ -37,7 +37,7 @@ server/
 | `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化用户管理权限和菜单 |
 
 ::: info 本节不新增数据库表
-用户管理复用前面已经创建的 `sys_user`、`sys_role`、`sys_user_role`。如果本地还没有这些表，先回到参考手册执行对应建表语句：[数据库建表语句](../../reference/database-ddl)。
+用户管理复用前面已经创建的 `sys_user`、`sys_role`、`sys_user_role`，这些表在服务启动时由迁移文件自动创建。
 :::
 
 ## 接口规划
@@ -59,6 +59,8 @@ server/
 ## 🛠️ 创建用户管理 Handler
 
 创建 `server/internal/handler/system/users.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/handler/system/users.go` — 用户管理接口
 
 ```go
 package system
@@ -609,6 +611,8 @@ func writeError(c *gin.Context, err error, fallbackMessage string, log *zap.Logg
 	response.Error(c, apperror.Internal(fallbackMessage, err), log)
 }
 ```
+
+:::
 
 ::: details 为什么编辑用户时不允许修改 `username`
 `username` 是登录身份标识，已经参与唯一索引和历史审计。后台管理里可以先允许修改昵称、状态和角色；如果后续确实需要改用户名，建议单独做接口，并记录操作日志。

@@ -1,9 +1,9 @@
 ---
-title: 用户模型与登录接口
+title: 用户模型与登录
 description: "设计用户模型，初始化默认管理员，并实现后台登录接口的基本验证链路。"
 ---
 
-# 用户模型与登录接口
+# 用户模型与登录
 
 认证链路的第一步，是先让系统知道“用户是谁”。这一节先创建用户模型，启动时自动初始化一名默认管理员，并提供一个可以验证用户名和密码的登录接口。
 
@@ -79,13 +79,13 @@ go get golang.org/x/crypto@latest
 
 本节新增 `sys_user`，用于保存后台账号、密码哈希、用户状态和逻辑删除信息。
 
-::: tip 建表 SQL
-字段说明、索引设计、逻辑删除约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_user`](../../reference/database-ddl#sys-user)。
-:::
+`sys_user` 表存储后台用户账号、密码哈希和状态。字段和索引详情见 [数据库建表语句 - `sys_user`](/reference/database-ddl#sys-user)。
 
 ## 🛠️ 创建用户模型
 
 创建 `server/internal/model/user.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/model/user.go` — 用户模型
 
 ```go
 package model
@@ -124,9 +124,13 @@ func (User) TableName() string {
 }
 ```
 
+:::
+
 ## 🛠️ 创建管理员初始化接口
 
 创建 `server/internal/handler/setup/setup.go`。这是新增文件，用于提供管理员初始化接口。
+
+::: details `server/internal/handler/setup/setup.go` — 管理员初始化接口
 
 ```go
 package handler
@@ -223,6 +227,8 @@ func (h *SetupHandler) Init(c *gin.Context) {
 }
 ```
 
+:::
+
 ::: tip 📌 管理员初始化接口
 管理员账号通过 `/api/v1/setup/init` 接口创建，而不是在启动时自动生成。这样可以让用户设置自己的管理员账号和密码，更加安全。
 :::
@@ -230,6 +236,8 @@ func (h *SetupHandler) Init(c *gin.Context) {
 ## 🛠️ 创建登录 Handler
 
 创建 `server/internal/handler/auth/login.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/handler/auth/login.go` — 登录接口
 
 ```go
 package auth
@@ -318,6 +326,8 @@ func (h *LoginHandler) Login(c *gin.Context) {
 	})
 }
 ```
+
+:::
 
 ::: details 为什么用户名或密码错误返回同一句话
 登录失败时不要区分“用户名不存在”和“密码错误”。如果提示得太细，攻击者可以借此枚举系统里有哪些账号。
@@ -505,7 +515,7 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 ```
 
 ::: details 如果提示 `relation "sys_user" does not exist`
-说明用户表还没有创建。服务启动时会自动执行数据库迁移，创建表结构。如果迁移失败，查看服务启动日志获取详细信息。
+说明数据库迁移还没有执行。检查服务启动日志中是否有 `database migration` 相关错误，确认 PostgreSQL 连接正常后重启服务。
 :::
 
 ## ✅ 验证登录成功
@@ -629,4 +639,4 @@ go mod tidy
 ```
 :::
 
-下一节会在登录成功后签发 Token：[JWT 认证](./jwt-auth)。
+下一节会在登录成功后签发 Token：[Token 签发与解析](./jwt-auth)。

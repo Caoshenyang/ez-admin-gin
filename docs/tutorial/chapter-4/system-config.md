@@ -68,9 +68,7 @@ server/
 
 本节新增 `sys_config`，用于保存后台可维护的普通业务配置。
 
-::: tip 建表 SQL
-字段说明、配置值存储方式、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_config`](../../reference/database-ddl#sys-config)。
-:::
+`sys_config` 表保存后台可维护的普通业务配置，按配置键存储。字段和索引详情见 [数据库建表语句 - `sys_config`](/reference/database-ddl#sys-config)。
 
 ## 接口规划
 
@@ -92,6 +90,8 @@ server/
 ## 🛠️ 创建系统配置模型
 
 创建 `server/internal/model/system_config.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/model/system_config.go` — 系统配置模型
 
 ```go
 package model
@@ -133,9 +133,13 @@ func (SystemConfig) TableName() string {
 }
 ```
 
+:::
+
 ## 🛠️ 创建系统配置 Handler
 
 创建 `server/internal/handler/system/configs.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/handler/system/configs.go` — 配置管理接口
 
 ```go
 package system
@@ -669,6 +673,8 @@ func writeSystemConfigError(c *gin.Context, err error, fallbackMessage string, l
 }
 ```
 
+:::
+
 ::: warning ⚠️ 配置值统一按字符串存储
 这一版不在配置表里区分整数、布尔值或 JSON。后续业务模块如果需要布尔值或数字，读取配置后再自行解析。
 :::
@@ -680,6 +686,8 @@ func writeSystemConfigError(c *gin.Context, err error, fallbackMessage string, l
 ## 🛠️ 注册系统配置路由
 
 修改 `server/internal/router/router.go`。在系统路由里新增系统配置 Handler 和路由：
+
+::: details `server/internal/router/router.go` — 注册系统配置路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -722,6 +730,8 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/configs/value/:key", configs.Value) // [!code ++]
 }
 ```
+
+:::
 
 ## 🛠️ 初始化系统配置权限和菜单
 

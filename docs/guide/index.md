@@ -79,7 +79,7 @@ go run main.go
    - 系统管理菜单（目录、菜单、按钮）
    - 全量接口权限规则（Casbin）
    - 超级管理员与所有菜单的绑定关系
-3. **幂等安全** — golang-migrate 通过 `schema_migrations` 表追踪版本，已执行的迁移不会重复执行
+3. **幂等安全** — golang-migrate 通过 `schema_migrations` 表追踪版本，已执行的迁移不会重复执行；种子数据使用 `ON CONFLICT DO NOTHING`（PostgreSQL）或 `INSERT IGNORE`（MySQL），迁移中途失败后重试也不会报错
 
 如果你想重新初始化，删掉 PostgreSQL 容器和数据卷重来即可。
 :::

@@ -202,8 +202,3 @@ CREATE TABLE `casbin_rule` (
   KEY `idx_casbin_rule_subject` (`v0`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Casbin 权限策略表';
 
--- 迁移版本追踪表（golang-migrate 自动管理）
-CREATE TABLE IF NOT EXISTS `schema_migrations` (
- `version` bigint NOT NULL PRIMARY KEY,
- `dirty` boolean NOT NULL
-);

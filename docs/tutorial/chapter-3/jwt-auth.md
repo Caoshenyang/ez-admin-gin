@@ -1,9 +1,9 @@
 ---
-title: JWT 认证
+title: Token 签发与解析
 description: "生成和解析 JWT，让登录接口返回可以表达用户身份和过期时间的访问令牌。"
 ---
 
-# JWT 认证
+# Token 签发与解析
 
 上一节已经能校验用户名和密码。这一节在登录成功后签发 `access_token`，让前端后续可以携带这个令牌访问需要登录的接口。
 
@@ -156,6 +156,8 @@ type AuthConfig struct {
 
 创建 `server/internal/token/jwt.go`。这是新增文件，直接完整写入即可。
 
+::: details `server/internal/token/jwt.go` — JWT Token 管理
+
 ```go
 package token
 
@@ -267,6 +269,8 @@ func (m *Manager) ParseAccessToken(tokenString string) (*Claims, error) {
 }
 ```
 
+:::
+
 ::: details 为什么要校验签名算法
 解析 Token 时不能只看签名是否通过，还要确认算法就是系统预期的 `HS256`。否则错误配置或不安全的解析方式可能带来额外风险。
 :::
@@ -360,10 +364,10 @@ type Options struct {
 
 更新 `registerAuthRoutes`：
 
-```go
+```go {hl_lines="3"}
 // registerAuthRoutes 注册认证相关路由。
 func registerAuthRoutes(r *gin.Engine, opts Options) {
-	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token) // [!code focus]
+	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token)
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
@@ -577,4 +581,4 @@ go mod tidy
 ```
 :::
 
-下一节会用这个 Token 保护接口：[认证中间件](./auth-middleware)。
+下一节会用这个 Token 保护接口：[登录校验中间件](./auth-middleware)。

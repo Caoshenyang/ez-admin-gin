@@ -71,6 +71,8 @@ server/
 
 创建 `server/internal/handler/system/menus.go`。这是新增文件，直接完整写入即可。
 
+::: details `server/internal/handler/system/menus.go` — 菜单管理接口
+
 ```go
 package system
 
@@ -597,6 +599,8 @@ func writeMenuError(c *gin.Context, err error, fallbackMessage string, log *zap.
 }
 ```
 
+:::
+
 ::: details 为什么创建后不允许修改 `code`
 `code` 是前端判断按钮权限时最稳定的标识，也会出现在角色授权配置里。创建后如果随意改编码，前端按钮判断和历史授权会变得难排查。
 :::
@@ -608,6 +612,8 @@ func writeMenuError(c *gin.Context, err error, fallbackMessage string, log *zap.
 ## 🛠️ 注册菜单管理路由
 
 修改 `server/internal/router/router.go`。这一处在系统路由中新增菜单管理 Handler 和路由。
+
+::: details `server/internal/router/router.go` — 注册菜单管理路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -644,6 +650,8 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.POST("/menus/:id/delete", menus.Delete) // [!code ++]
 }
 ```
+
+:::
 
 ::: tip 📌 菜单管理权限和菜单初始化
 菜单管理接口权限和菜单通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建系统默认的菜单管理权限和菜单。

@@ -185,7 +185,7 @@ v.SetDefault("log.compress", false) // [!code ++]
 
 ## 🛠️ 创建日志包
 
-创建 `server/internal/logger/logger.go`。这是一个新增文件，直接完整写入即可。
+::: details `server/internal/logger/logger.go` — 日志初始化与 Gin 中间件
 
 ```go
 package logger
@@ -336,6 +336,8 @@ func newWriteSyncer(cfg config.LogConfig) (zapcore.WriteSyncer, error) {
 }
 ```
 
+:::
+
 这个包做了三件事：
 
 - 初始化 Zap 日志对象。
@@ -350,6 +352,8 @@ func newWriteSyncer(cfg config.LogConfig) (zapcore.WriteSyncer, error) {
 - 引入 `internal/logger` 和 `go.uber.org/zap`。
 - 把 `gin.Default()` 改成 `gin.New()`，避免重复输出默认日志。
 - 挂载自定义请求日志和异常恢复中间件。
+
+::: details `server/main.go` — 完整版
 
 ```go
 package main
@@ -406,6 +410,8 @@ func main() {
 	}
 }
 ```
+
+:::
 
 这里保留了标准库 `log`，只用于日志系统还没创建成功之前的启动错误。创建成功后，统一使用 Zap。
 

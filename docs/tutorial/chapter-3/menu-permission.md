@@ -1,9 +1,9 @@
 ---
-title: 菜单权限设计
+title: 角色菜单权限
 description: "设计菜单、按钮和角色菜单关系，并返回当前用户可见的菜单树。"
 ---
 
-# 菜单权限设计
+# 角色菜单权限
 
 前面已经能判断接口访问权限。这一节继续补齐前端管理台需要的菜单权限：用户登录后，根据角色拿到自己能看到的目录、菜单和按钮。
 
@@ -73,16 +73,11 @@ server/
 
 本节新增 `sys_menu` 和 `sys_role_menu`，分别用于保存目录、菜单、按钮权限点，以及角色和菜单的绑定关系。
 
-::: tip 建表 SQL
-字段说明、菜单类型、唯一编码、关系表约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：
-
-- [数据库建表语句 - `sys_menu`](../../reference/database-ddl#sys-menu)
-- [数据库建表语句 - `sys_role_menu`](../../reference/database-ddl#sys-role-menu)
-:::
+`sys_menu` 表保存目录、菜单和按钮权限点；`sys_role_menu` 表保存角色与菜单的绑定关系。字段和索引详情见 [数据库建表语句 - `sys_menu`](/reference/database-ddl#sys-menu) 和 [数据库建表语句 - `sys_role_menu`](/reference/database-ddl#sys-role-menu)。
 
 ## 🛠️ 创建菜单模型
 
-创建 `server/internal/model/menu.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/model/menu.go` — 菜单模型
 
 ```go
 package model
@@ -139,6 +134,8 @@ func (Menu) TableName() string {
 }
 ```
 
+:::
+
 ## 🛠️ 创建角色菜单关系模型
 
 创建 `server/internal/model/role_menu.go`。这是新增文件，直接完整写入即可。
@@ -179,7 +176,7 @@ func (RoleMenu) TableName() string {
 
 ## 🛠️ 创建当前用户菜单接口
 
-创建 `server/internal/handler/auth/menus.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/handler/auth/menus.go` — 菜单树接口
 
 ```go
 package auth
@@ -308,6 +305,8 @@ func menuNodesToResponses(nodes []*menuNode) []menuResponse {
 }
 ```
 
+:::
+
 ::: details 为什么 `/auth/menus` 不再挂 Casbin 权限
 这个接口本身就是“根据当前登录用户返回自己的菜单”。只要用户已经登录，就可以请求；真正能看到哪些菜单，由 `sys_role_menu` 决定。
 
@@ -433,7 +432,7 @@ curl -X GET http://localhost:8080/api/v1/auth/menus \
 
 :::
 
-应该看到类似结果：
+::: details 预期返回结果
 
 ```json
 {
@@ -480,6 +479,8 @@ curl -X GET http://localhost:8080/api/v1/auth/menus \
   ]
 }
 ```
+
+:::
 
 ::: details 为什么示例里按钮可能显示在 children 里
 本节接口返回的是完整权限树，按钮节点也会作为子节点返回。后续前端可以按 `type` 区分：`1`、`2` 用来生成菜单和路由，`3` 用来控制按钮或操作点。

@@ -50,17 +50,21 @@ Casbin 模型定义在 `server/configs/rbac_model.conf`：
 ::: code-group
 
 ```sql [PostgreSQL — 000003_blog_seed_data.up.sql]
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET');
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST');
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST');
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST');
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET')
+ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST')
+ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST')
+ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
+INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST')
+ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
 ```
 
 ```sql [MySQL — 000003_blog_seed_data.up.sql]
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET');
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST');
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST');
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST');
+INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET');
+INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST');
+INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST');
+INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST');
 ```
 
 :::
@@ -165,34 +169,48 @@ function canUse(code: string) {
 
 **第二步**：在迁移文件中按 目录 → 菜单 → 按钮的顺序插入数据。
 
-::: details `000003_blog_seed_data.up.sql` 中新增博客管理模块的 SQL
+::: details `000003_blog_seed_data.up.sql` 中新增博客管理模块的 SQL（PostgreSQL 版）
 ```sql
--- 1. 创建目录
+-- 1. 创建目录（ON CONFLICT DO NOTHING 保证幂等）
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (300, 0, 1, 'blog', '博客管理', '/blog', '', 'edit', 20, 1, '博客业务目录', NOW(), NOW());
+VALUES (300, 0, 1, 'blog', '博客管理', '/blog', '', 'edit', 20, 1, '博客业务目录', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- 2. 创建菜单页面
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (301, 300, 2, 'blog:post', '文章管理', '/blog/posts', 'blog/PostView', 'document', 10, 1, '博客文章管理菜单', NOW(), NOW());
+VALUES (301, 300, 2, 'blog:post', '文章管理', '/blog/posts', 'blog/PostView', 'document', 10, 1, '博客文章管理菜单', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- 3. 创建按钮权限
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1100, 301, 3, 'blog:post:list', '查看文章', '', '', '', 10, 1, '博客文章按钮', NOW(), NOW());
+VALUES (1100, 301, 3, 'blog:post:list', '查看文章', '', '', '', 10, 1, '博客文章按钮', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1101, 301, 3, 'blog:post:create', '创建文章', '', '', '', 20, 1, '博客文章按钮', NOW(), NOW());
+VALUES (1101, 301, 3, 'blog:post:create', '创建文章', '', '', '', 20, 1, '博客文章按钮', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1102, 301, 3, 'blog:post:update', '编辑文章', '', '', '', 30, 1, '博客文章按钮', NOW(), NOW());
+VALUES (1102, 301, 3, 'blog:post:update', '编辑文章', '', '', '', 30, 1, '博客文章按钮', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1103, 301, 3, 'blog:post:status', '修改文章状态', '', '', '', 40, 1, '博客文章按钮', NOW(), NOW());
+VALUES (1103, 301, 3, 'blog:post:status', '修改文章状态', '', '', '', 40, 1, '博客文章按钮', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
 -- 4. 绑定到 super_admin 角色
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 300, NOW(), NOW());
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 301, NOW(), NOW());
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1100, NOW(), NOW());
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1101, NOW(), NOW());
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1102, NOW(), NOW());
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1103, NOW(), NOW());
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 300, NOW(), NOW())
+ON CONFLICT (role_id, menu_id) DO NOTHING;
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 301, NOW(), NOW())
+ON CONFLICT (role_id, menu_id) DO NOTHING;
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1100, NOW(), NOW())
+ON CONFLICT (role_id, menu_id) DO NOTHING;
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1101, NOW(), NOW())
+ON CONFLICT (role_id, menu_id) DO NOTHING;
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1102, NOW(), NOW())
+ON CONFLICT (role_id, menu_id) DO NOTHING;
+INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1103, NOW(), NOW())
+ON CONFLICT (role_id, menu_id) DO NOTHING;
 ```
+
+MySQL 版本将 `ON CONFLICT (...) DO NOTHING` 替换为 `INSERT IGNORE INTO`，其余写法一致。
 :::
 
 **第三步**：前端注册组件映射。
@@ -252,6 +270,8 @@ server/migrations/postgres/
 
 假设博客模块需要一个 `Post` 模型：
 
+::: details `server/internal/model/post.go` — 文章模型
+
 ```go
 // server/internal/model/post.go
 package model
@@ -286,24 +306,9 @@ func (Post) TableName() string {
 }
 ```
 
-定义好模型后，还需要手动执行建表 SQL。下面给一个 PostgreSQL 示例：
+:::
 
-```sql
-CREATE TABLE biz_post (
-  id BIGSERIAL PRIMARY KEY,
-  title VARCHAR(128) NOT NULL,
-  content TEXT NOT NULL,
-  status SMALLINT NOT NULL DEFAULT 1,
-  created_at TIMESTAMPTZ NOT NULL,
-  updated_at TIMESTAMPTZ NOT NULL,
-  deleted_at TIMESTAMPTZ NULL
-);
-
-CREATE INDEX idx_biz_post_deleted_at
-ON biz_post (deleted_at);
-```
-
-执行完成后，再启动服务验证路由、权限和菜单是否都已接通。
+定义好模型后，还需要在迁移文件中创建对应的表。在 `server/migrations/{postgres,mysql}/` 下新增迁移文件，写入 `biz_post` 的建表语句。重启服务后 golang-migrate 会自动执行，不需要手动建表。
 
 ::: tip 📌 表名前缀约定
 系统模块的表名以 `sys_` 前缀（如 `sys_menu`、`sys_role`）。业务模块建议使用 `biz_` 前缀（如 `biz_post`），方便在数据库层面区分系统表和业务表。
@@ -315,7 +320,7 @@ ON biz_post (deleted_at);
 
 | # | 检查项 | 验证方式 | 期望结果 |
 | --- | --- | --- | --- |
-| 1 | 数据库有表 | 先执行建表 SQL，再用 `\dt` 或查看表列表 | `biz_post` 表存在，字段与模型一致 |
+| 1 | 数据库有表 | 重启服务执行迁移，再用 `\dt` 或查看表列表 | `biz_post` 表存在，字段与模型一致 |
 | 2 | 后端路由已注册 | 启动服务，查看控制台日志或直接 curl | 路由路径和方法与 `router.go` 注册一致 |
 | 3 | Casbin 策略已写入 | 查询 `casbin_rule` 表 | 新增的 `{role_code, path, method}` 记录存在 |
 | 4 | 菜单已写入 | 查询 `sys_menu` 表 | 目录、菜单、按钮节点齐全，`parent_id` 层级正确 |

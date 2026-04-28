@@ -331,8 +331,3 @@ COMMENT ON COLUMN casbin_rule.v3 IS '预留字段';
 COMMENT ON COLUMN casbin_rule.v4 IS '预留字段';
 COMMENT ON COLUMN casbin_rule.v5 IS '预留字段';
 
--- 迁移版本追踪表（golang-migrate 自动管理）
-CREATE TABLE IF NOT EXISTS schema_migrations (
- version bigint NOT NULL PRIMARY KEY,
- dirty boolean NOT NULL
-);

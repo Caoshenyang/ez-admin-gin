@@ -54,9 +54,7 @@ server/
 
 本节新增 `sys_file`，用于保存文件上传后的元数据，文件内容仍然保存在本地上传目录中。
 
-::: tip 建表 SQL
-字段说明、文件元数据设计、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_file`](../../reference/database-ddl#sys-file)。
-:::
+`sys_file` 表保存文件上传后的元数据，文件内容保存在本地上传目录。字段和索引详情见 [数据库建表语句 - `sys_file`](/reference/database-ddl#sys-file)。
 
 ## 文件如何保存
 
@@ -103,6 +101,8 @@ server/uploads/
 
 创建 `server/internal/model/system_file.go`。这是新增文件，直接完整写入即可。
 
+::: details `server/internal/model/system_file.go` — 文件记录模型
+
 ```go
 package model
 
@@ -147,6 +147,8 @@ func (SystemFile) TableName() string {
 	return "sys_file"
 }
 ```
+
+:::
 
 ## 🛠️ 增加上传配置
 
@@ -249,6 +251,8 @@ server/uploads/
 ## 🛠️ 创建文件上传 Handler
 
 创建 `server/internal/handler/system/files.go`。这个文件比较长，下面分两段展示；两段代码要放在同一个文件里，第二段紧接在第一段后面。
+
+::: details `server/internal/handler/system/files.go` — 上传与列表接口 (1/2)
 
 ```go
 package system
@@ -451,7 +455,11 @@ response.Success(c, buildFileResponse(file))
 }
 ```
 
+:::
+
 继续在同一个 `files.go` 中追加下面的辅助函数：
+
+::: details `server/internal/handler/system/files.go` — 辅助函数 (2/2)
 
 ```go
 func (h *FileHandler) validateUploadFile(fileHeader *multipart.FileHeader) error {
@@ -674,6 +682,8 @@ func writeFileError(c *gin.Context, err error, fallbackMessage string, log *zap.
 }
 ```
 
+:::
+
 ::: warning ⚠️ 后缀白名单只是第一层限制
 这一节先用后缀白名单和大小限制完成基础能力。真实项目里如果允许上传可执行风险更高的文件，还应该结合 MIME 检测、病毒扫描、私有访问策略等继续加强。
 :::
@@ -706,6 +716,8 @@ func New(opts Options) *gin.Engine {
 ```
 
 再修改 `registerSystemRoutes`：
+
+::: details `server/internal/router/router.go` — 注册文件路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -751,6 +763,8 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.POST("/files", files.Upload) // [!code ++]
 }
 ```
+
+:::
 
 ::: details 为什么静态文件路径不放到 `/api/v1`
 `/api/v1` 是接口路径；上传后的文件 URL 更像静态资源路径。把文件访问放到 `/uploads/...`，前端展示图片、下载文件都会更直接。

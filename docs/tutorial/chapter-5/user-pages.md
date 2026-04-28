@@ -172,6 +172,8 @@ export interface UpdateUserRolesPayload {
 
 新增 `admin/src/types/role.ts`。
 
+::: details `admin/src/types/role.ts` — 角色类型定义
+
 ```ts
 export const RoleStatus = {
   Enabled: 1,
@@ -210,6 +212,8 @@ export interface RoleListResponse {
   page_size: number
 }
 ```
+
+:::
 
 本节只用角色的 `id`、`code`、`name` 和 `status`，但类型里把接口返回字段补全，后续写角色页面时可以继续复用。
 

@@ -59,7 +59,7 @@ server/
 
 ## 🛠️ 创建角色管理 Handler
 
-创建 `server/internal/handler/system/roles.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/handler/system/roles.go` — 角色管理接口
 
 ```go
 package system
@@ -740,6 +740,8 @@ func writeRoleError(c *gin.Context, err error, fallbackMessage string, log *zap.
 	response.Error(c, apperror.Internal(fallbackMessage, err), log)
 }
 ```
+
+:::
 
 ::: details 为什么不允许修改角色编码
 `code` 会被写入 `casbin_rule.v0`，也是权限判断时使用的稳定标识。角色创建后可以改名称、排序、状态和备注，但不建议直接改编码。

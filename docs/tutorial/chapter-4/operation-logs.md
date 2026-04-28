@@ -64,9 +64,7 @@ server/
 
 本节新增 `sys_operation_log`，用于保存后台用户的关键写操作审计记录。
 
-::: tip 建表 SQL
-字段说明、审计表不做逻辑删除的原因、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_operation_log`](../../reference/database-ddl#sys-operation-log)。
-:::
+`sys_operation_log` 表保存后台用户的写操作审计记录，不做逻辑删除。字段和索引详情见 [数据库建表语句 - `sys_operation_log`](/reference/database-ddl#sys-operation-log)。
 
 ## 🛠️ 创建操作日志模型
 
@@ -104,6 +102,8 @@ func (OperationLog) TableName() string {
 ## 🛠️ 创建操作日志中间件
 
 创建 `server/internal/middleware/operation_log.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/middleware/operation_log.go` — 操作日志中间件
 
 ```go
 package middleware
@@ -194,6 +194,8 @@ func truncateOperationLogText(value string, maxLength int) string {
 }
 ```
 
+:::
+
 ::: details 为什么中间件只记录请求结束后的结果
 操作日志需要知道接口最终是成功还是失败、状态码是多少、耗时多久。这些信息只有在 `c.Next()` 执行完后才能拿到。
 :::
@@ -201,6 +203,8 @@ func truncateOperationLogText(value string, maxLength int) string {
 ## 🛠️ 创建操作日志查询接口
 
 创建 `server/internal/handler/system/operation_logs.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/handler/system/operation_logs.go` — 操作日志查询接口
 
 ```go
 package system
@@ -330,7 +334,11 @@ func (h *OperationLogHandler) List(c *gin.Context) {
 }
 ```
 
+:::
+
 继续在同一个 `operation_logs.go` 中追加下面的辅助函数：
+
+::: details `server/internal/handler/system/operation_logs.go` — 辅助函数
 
 ```go
 func normalizeOperationLogPage(page int, pageSize int) (int, int) {
@@ -378,12 +386,16 @@ func buildOperationLogResponse(item model.OperationLog) operationLogResponse {
 }
 ```
 
+:::
+
 ## 🛠️ 注册中间件和路由
 
 修改 `server/internal/router/router.go`。本次要改两处：
 
 - 新增操作日志 Handler
 - 在系统路由分组中挂载操作日志中间件和查询接口
+
+::: details `server/internal/router/router.go` — 挂载操作日志中间件与路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -432,6 +444,8 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 	system.GET("/operation-logs", operationLogs.List) // [!code ++]
 }
 ```
+
+:::
 
 ::: details 为什么操作日志中间件放在权限中间件前面
 顺序是：先认证，再进入操作日志中间件，再执行权限校验。这样即使某个已登录用户请求被权限拦截，写操作也能留下失败记录。

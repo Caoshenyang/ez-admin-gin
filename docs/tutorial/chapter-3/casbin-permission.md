@@ -1,9 +1,9 @@
 ---
-title: Casbin 权限控制
+title: 接口级权限控制
 description: "接入 Casbin，用角色编码判断接口访问权限。"
 ---
 
-# Casbin 权限控制
+# 接口级权限控制
 
 前面已经完成登录、Token 认证和用户角色关系。这一节接入 Casbin，把“某个角色能不能访问某个接口”交给策略表维护。
 
@@ -97,17 +97,13 @@ go get github.com/casbin/gorm-adapter/v3@latest
 | `github.com/casbin/casbin/v3` | 权限模型和策略判断 | [Go 包文档](https://pkg.go.dev/github.com/casbin/casbin/v3) |
 | `github.com/casbin/gorm-adapter/v3` | 从数据库加载 Casbin 策略 | [Go 包文档](https://pkg.go.dev/github.com/casbin/gorm-adapter/v3) |
 
-::: warning ⚠️ 继续使用 SQL 建表
-`gorm-adapter` 默认会尝试自动建表。本节会在代码中关闭它的自动迁移能力，表结构仍然以参考手册中的 SQL 为准。
+::: warning ⚠️ 关闭 gorm-adapter 自动建表
+`gorm-adapter` 默认会尝试自动建表。本节会在代码中关闭它的自动迁移能力，表结构由迁移文件统一管理。
 :::
 
 ## 先创建数据表
 
-本节新增 `casbin_rule`，用于保存 Casbin 接口权限策略。
-
-::: tip 建表 SQL
-字段说明、表名约定、唯一索引和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `casbin_rule`](../../reference/database-ddl#casbin-rule)。
-:::
+本节新增 `casbin_rule`，用于保存 Casbin 接口权限策略。`casbin_rule` 表已在迁移文件中创建，启动时自动执行。字段和索引详情见 [数据库建表语句 - `casbin_rule`](/reference/database-ddl#casbin-rule)。
 
 ## 🛠️ 创建 Casbin 模型文件
 
@@ -169,7 +165,7 @@ func (CasbinRule) TableName() string {
 
 ## 🛠️ 创建 Enforcer
 
-创建 `server/internal/permission/enforcer.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/permission/enforcer.go` — Casbin Enforcer
 
 ```go
 package permission
@@ -222,13 +218,15 @@ func (e *Enforcer) Enforce(sub string, obj string, act string) (bool, error) {
 }
 ```
 
+:::
+
 ::: details 为什么这里还要包装一层
 业务代码只需要知道“能不能访问”，不需要到处直接依赖 Casbin 的具体类型。后续如果要加缓存、重新加载策略、日志统计，也可以放在这个包里。
 :::
 
 ## 🛠️ 创建权限中间件
 
-创建 `server/internal/middleware/permission.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/middleware/permission.go` — 权限中间件
 
 ```go
 package middleware
@@ -310,6 +308,8 @@ func currentRoleCodes(db *gorm.DB, userID uint) ([]string, error) {
 	return roleCodes, nil
 }
 ```
+
+:::
 
 ::: details 为什么用 `c.FullPath()`
 `c.FullPath()` 返回路由注册时的路径。例如后续有 `/api/v1/users/:id`，它会返回带 `:id` 的模板路径，而不是某个具体 ID。
@@ -586,7 +586,7 @@ curl -X GET http://localhost:8080/api/v1/system/health \
 ## 常见问题
 
 ::: details 启动时报 `relation "casbin_rule" does not exist`
-说明 Casbin 策略表还没有创建。先执行 [`casbin_rule` 建表语句](../../reference/database-ddl#casbin-rule)，再重新启动服务。
+说明数据库迁移还没有执行。检查服务启动日志中是否有 `database migration` 相关错误，确认 PostgreSQL 连接正常后重启服务。
 :::
 
 ::: details 修改了 `casbin_rule`，权限没有立即变化
@@ -595,4 +595,4 @@ curl -X GET http://localhost:8080/api/v1/system/health \
 现在先重启服务让策略重新加载。后续做权限管理接口时，再补重新加载策略的代码路径。
 :::
 
-下一节会继续设计菜单和按钮权限：[菜单权限设计](./menu-permission)。
+下一节会继续设计菜单和按钮权限：[角色菜单权限](./menu-permission)。

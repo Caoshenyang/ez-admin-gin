@@ -151,12 +151,12 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-3/' },
-            { text: '用户模型与登录接口', link: '/tutorial/chapter-3/user-model-and-login' },
-            { text: 'JWT 认证', link: '/tutorial/chapter-3/jwt-auth' },
-            { text: '认证中间件', link: '/tutorial/chapter-3/auth-middleware' },
-            { text: '角色与权限模型', link: '/tutorial/chapter-3/rbac-model' },
-            { text: 'Casbin 权限控制', link: '/tutorial/chapter-3/casbin-permission' },
-            { text: '菜单权限设计', link: '/tutorial/chapter-3/menu-permission' }
+            { text: '用户模型与登录', link: '/tutorial/chapter-3/user-model-and-login' },
+            { text: 'Token 签发与解析', link: '/tutorial/chapter-3/jwt-auth' },
+            { text: '登录校验中间件', link: '/tutorial/chapter-3/auth-middleware' },
+            { text: 'RBAC 角色权限模型', link: '/tutorial/chapter-3/rbac-model' },
+            { text: '接口级权限控制', link: '/tutorial/chapter-3/casbin-permission' },
+            { text: '角色菜单权限', link: '/tutorial/chapter-3/menu-permission' }
           ]
         },
         {
@@ -205,11 +205,8 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-7/' },
-            { text: '后端与前端 Dockerfile', link: '/tutorial/chapter-7/dockerfile' },
-            { text: 'Docker Compose 编排', link: '/tutorial/chapter-7/docker-compose' },
-            { text: 'Nginx 配置', link: '/tutorial/chapter-7/nginx-config' },
-            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' },
-            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' }
+            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' },
+            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' }
           ]
         }
       ],
@@ -223,7 +220,9 @@ export default defineConfig({
             { text: '接口风格决策', link: '/reference/api-style-decision' },
             { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
-            { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' }
+            { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },
+            { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
+            { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' }
           ]
         }
       ]

@@ -1,0 +1,83 @@
+# 服务器基础环境 —— PostgreSQL、Redis、Nginx。
+# 后端二进制直接运行在宿主机上，前端静态文件挂载到 Nginx 容器。
+#
+# 使用方式：docker compose -f compose.server.yml up -d
+
+name: ez-admin-gin
+
+services:
+  # ---- 数据库 ----
+  postgres:
+    image: postgres:18-alpine
+    container_name: ez-admin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${EZ_DATABASE_USER:-ez_admin}
+      POSTGRES_PASSWORD: ${EZ_DATABASE_PASSWORD:-ez_admin_123456}
+      POSTGRES_DB: ${EZ_DATABASE_NAME:-ez_admin}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # 只监听本机，外部无法直连数据库。
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EZ_DATABASE_USER:-ez_admin} -d ${EZ_DATABASE_NAME:-ez_admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- 缓存 ----
+  redis:
+    image: redis:8-alpine
+    container_name: ez-admin-redis
+    restart: unless-stopped
+    environment:
+      EZ_REDIS_PASSWORD: ${EZ_REDIS_PASSWORD:-}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ -n "$EZ_REDIS_PASSWORD" ]; then
+          exec redis-server --appendonly yes --requirepass "$EZ_REDIS_PASSWORD"
+        else
+          exec redis-server --appendonly yes
+        fi
+    volumes:
+      - redis_data:/data
+    # 只监听本机。
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          if [ -n "$EZ_REDIS_PASSWORD" ]; then
+            redis-cli -a "$EZ_REDIS_PASSWORD" ping
+          else
+            redis-cli ping
+          fi
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Nginx（前端静态资源 + 反向代理）----
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ez-admin-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx 配置文件
+      - ./nginx/nginx-native.conf:/etc/nginx/conf.d/default.conf:ro
+      # 前端静态文件
+      - ./web:/usr/share/nginx/html:ro
+      # SSL 证书（Cloudflare 阶段使用）
+      - ./ssl:/etc/nginx/ssl:ro
+
+volumes:
+  postgres_data:
+  redis_data:

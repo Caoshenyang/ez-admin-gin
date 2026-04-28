@@ -1,9 +1,9 @@
 ---
-title: 角色与权限模型
+title: RBAC 角色权限模型
 description: "设计角色表和用户角色关系表，为后续接口权限与菜单权限打基础。"
 ---
 
-# 角色与权限模型
+# RBAC 角色权限模型
 
 前面已经能识别“当前登录用户是谁”。这一节开始补权限模型的基础：用户可以绑定角色，角色再承接后续的接口权限和菜单权限。
 
@@ -44,8 +44,8 @@ server/
 
 | 后续小节 | 继续完成什么 |
 | --- | --- |
-| Casbin 权限控制 | 让角色拥有接口访问权限 |
-| 菜单权限设计 | 让角色拥有菜单和按钮权限 |
+| 接口级权限控制 | 让角色拥有接口访问权限 |
+| 角色菜单权限 | 让角色拥有菜单和按钮权限 |
 
 ::: warning ⚠️ 本项目不使用数据库外键约束
 `sys_user_role.user_id` 和 `sys_user_role.role_id` 只表达关联关系，并建立普通索引和联合唯一索引，不创建数据库级外键。
@@ -57,16 +57,13 @@ server/
 
 本节新增 `sys_role` 和 `sys_user_role`，分别用于保存后台角色和用户角色绑定关系。
 
-::: tip 建表 SQL
-字段说明、索引设计、关系表约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：
-
-- [数据库建表语句 - `sys_role`](../../reference/database-ddl#sys-role)
-- [数据库建表语句 - `sys_user_role`](../../reference/database-ddl#sys-user-role)
-:::
+`sys_role` 表保存后台角色编码、名称和状态；`sys_user_role` 表保存用户与角色的绑定关系。字段和索引详情见 [数据库建表语句 - `sys_role`](/reference/database-ddl#sys-role) 和 [数据库建表语句 - `sys_user_role`](/reference/database-ddl#sys-user-role)。
 
 ## 🛠️ 创建角色模型
 
 创建 `server/internal/model/role.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/model/role.go` — 角色模型
 
 ```go
 package model
@@ -105,6 +102,8 @@ func (Role) TableName() string {
 	return "sys_role"
 }
 ```
+
+:::
 
 ## 🛠️ 创建用户角色关系模型
 
@@ -230,4 +229,4 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 本节先让用户拥有角色。下一节会用 Casbin 表达“角色可以访问哪些接口”；再下一节会用菜单模型表达“角色能看到哪些菜单和按钮”。
 :::
 
-下一节会把角色和接口权限连接起来：[Casbin 权限控制](./casbin-permission)。
+下一节会把角色和接口权限连接起来：[接口级权限控制](./casbin-permission)。
