@@ -15,9 +15,9 @@ description: "编译后端二进制、构建前端静态文件，部署到腾讯
 
 部署方式很直接：
 
-- Docker Compose 只负责 PostgreSQL 和 Redis（基础环境）
+- Docker Compose 负责 PostgreSQL、Redis 和 Nginx
 - 后端编译成 Linux 二进制，直接在服务器上运行
-- 前端构建成静态文件，由 Nginx 托管
+- 前端构建成静态文件，挂载到 Nginx 容器托管
 
 不需要 Docker Hub，不需要构建镜像，不需要在服务器上安装 Go 或 Node.js。
 
@@ -25,7 +25,7 @@ description: "编译后端二进制、构建前端静态文件，部署到腾讯
 
 - 本机有 Go 1.22+ 和 Node.js 22+
 - 有一个域名
-- 本机已安装 Docker 和 Docker Compose（V2）
+- 腾讯云轻量应用服务器（服务器上会安装 Docker）
 
 ## 本章会完成什么
 

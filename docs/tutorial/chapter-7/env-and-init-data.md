@@ -26,7 +26,41 @@ description: "部署环境变量完整参考、配置覆盖机制，以及启动
 下面是 `.env.example` 的完整内容，你可以在 `deploy/.env.example` 中找到它：
 
 ::: details deploy/.env.example — 部署环境变量模板
-<<< ../../../deploy/.env.example{sh}
+```sh
+# EZ Admin 环境变量配置
+# 上传到服务器后作为 .env 使用，由 systemd 服务文件加载。
+#
+# 必须修改：EZ_AUTH_JWT_SECRET
+# 建议修改：EZ_DATABASE_PASSWORD
+
+# ---- 必须修改 ----
+
+# JWT 签名密钥，生产环境必须替换为随机字符串。
+# 生成方法：openssl rand -hex 32
+EZ_AUTH_JWT_SECRET=change-me-to-a-random-string-at-least-32-chars
+
+# ---- 数据库 ----
+
+# 后端直接运行在宿主机上，Docker 容器的端口已绑定到 127.0.0.1，所以用 127.0.0.1。
+EZ_DATABASE_HOST=127.0.0.1
+EZ_DATABASE_PORT=5432
+EZ_DATABASE_USER=ez_admin
+EZ_DATABASE_PASSWORD=ez_admin_123456
+EZ_DATABASE_NAME=ez_admin
+
+# ---- Redis ----
+
+EZ_REDIS_HOST=127.0.0.1
+EZ_REDIS_PORT=6379
+EZ_REDIS_PASSWORD=
+
+# ---- 应用 ----
+
+EZ_APP_ENV=prod
+EZ_SERVER_ADDR=:8080
+EZ_LOG_LEVEL=info
+EZ_LOG_FORMAT=json
+```
 :::
 
 ### 环境变量参考表

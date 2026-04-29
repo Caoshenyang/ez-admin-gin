@@ -31,7 +31,19 @@ description: "说明业务模块如何接入接口权限、菜单权限、按钮
 
 Casbin 模型定义在 `server/configs/rbac_model.conf`：
 
-<<< ../../../server/configs/rbac_model.conf{ini}
+```ini
+[request_definition]
+r = sub, obj, act
+
+[policy_definition]
+p = sub, obj, act
+
+[policy_effect]
+e = some(where (p.eft == allow))
+
+[matchers]
+m = r.sub == p.sub && keyMatch2(r.obj, p.obj) && (r.act == p.act || p.act == "*")
+```
 
 策略匹配规则是 `sub == p.sub && keyMatch2(obj, p.obj) && (act == p.act || p.act == "*")`，其中：
 
