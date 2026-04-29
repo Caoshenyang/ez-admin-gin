@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  base: '/',
+  base: '/ez-admin-gin/',
   lang: 'zh-CN',
   title: 'EZ Admin',
   description: '面向个人项目快速上线的通用后台管理系统底座。',
