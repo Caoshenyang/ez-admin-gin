@@ -26,7 +26,7 @@ description: "部署环境变量完整参考、配置覆盖机制，以及启动
 下面是 `.env.example` 的完整内容，你可以在 `deploy/.env.example` 中找到它：
 
 ::: details deploy/.env.example — 部署环境变量模板
-<<< ../../../deploy/.env.example
+<<< ../../../deploy/.env.example{sh}
 :::
 
 ### 环境变量参考表
@@ -172,8 +172,8 @@ description: "部署环境变量完整参考、配置覆盖机制，以及启动
   </tbody>
 </table>
 
-::: warning ⚠️ 生产环境至少改两项
-`EZ_AUTH_JWT_SECRET` 是唯一标记为"必填"的环境变量，Docker Compose 会在它缺失时直接报错退出。除此之外，建议把 `EZ_DATABASE_PASSWORD` 也换成生产级别的密码，避免使用默认值。
+::: warning ⚠️ 生产环境必须改 JWT 密钥
+`EZ_AUTH_JWT_SECRET` 是唯一标记为"必填"的环境变量，生产环境使用默认值会导致 token 可被伪造。`.env` 上传后用 `openssl rand -hex 32` 生成随机值替换。如果对外暴露，建议同时修改 `EZ_DATABASE_PASSWORD`。
 :::
 
 ::: details 还有哪些可选变量？

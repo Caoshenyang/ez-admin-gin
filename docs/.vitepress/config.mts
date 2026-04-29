@@ -9,8 +9,8 @@ export default defineConfig({
   lastUpdated: true,
   ignoreDeadLinks: true,
   head: [
-    ['link', { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }],
-    ['link', { rel: 'alternate icon', href: '/favicon.ico', sizes: 'any' }],
+    ['link', { rel: 'icon', href: '/ez-admin-gin/favicon.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'alternate icon', href: '/ez-admin-gin/favicon.ico', sizes: 'any' }],
     ['meta', { name: 'theme-color', content: '#079aa2' }]
   ],
 
