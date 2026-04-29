@@ -43,7 +43,7 @@ const captchaText = ref(createCaptcha())
 // 登录表单模型。用户名和密码先默认填充，方便当前阶段联调。
 const formModel = reactive({
   username: 'admin',
-  password: 'EzAdmin@123456',
+  password: 'Admin@123456',
   captcha: '',
   rememberLogin: true,
 })
@@ -234,7 +234,7 @@ async function handleSubmit() {
             type="info"
             :show-icon="false"
             class="mt-2.5 compact-alert"
-            title="默认账号：admin / EzAdmin@123456"
+            title="默认账号：admin / Admin@123456"
           >
             验证码当前仅做占位，后续补齐真实校验。
           </NAlert>

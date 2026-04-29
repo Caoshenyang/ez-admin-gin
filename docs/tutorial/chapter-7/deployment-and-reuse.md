@@ -1,11 +1,11 @@
 ---
 title: 部署验证与复用说明
-description: "本地编译后端二进制、构建前端静态文件，部署到腾讯云轻量服务器，通过 Cloudflare 配置 HTTPS 域名访问。"
+description: "本地编译后端二进制、构建前端静态文件，打包成压缩包上传到服务器，通过 Docker 一键启动。"
 ---
 
 # 部署验证与复用说明
 
-这一节把后台底座部署到公网。思路很简单：本地编译好二进制和静态文件，上传到服务器直接运行，Docker 负责数据库、缓存和 Nginx。
+这一节把后台底座部署到公网。思路很简单：本地编译好二进制和静态文件，打成压缩包上传到服务器解压运行，Docker 负责数据库、缓存和 Nginx。
 
 ::: tip 🎯 本节目标
 完成后你能通过 `https://你的域名` 访问后台、登录并执行 CRUD。
@@ -19,7 +19,7 @@ description: "本地编译后端二进制、构建前端静态文件，部署到
 
 ---
 
-## 🚀 第一步：本地构建
+## 🚀 第一步：本地打包
 
 在项目根目录执行：
 
@@ -35,36 +35,20 @@ bash scripts/pack.sh
 
 :::
 
-脚本会自动编译后端（Linux amd64，已去掉调试符号）和构建前端，然后打包到 `deploy-package/` 目录。
+脚本会自动完成：
+
+1. 编译后端（Linux amd64，已去掉调试符号）
+2. 构建前端静态文件
+3. 收集部署配置文件
+4. 打包成压缩包（Windows 生成 `.zip`，macOS/Linux 生成 `.tar.gz`）
 
 完成后你会看到：
 
 ```text
-✅ 打包完成！上传 deploy-package 目录到服务器即可。
+✅ 打包完成！上传 deploy-package.tar.gz 到服务器即可。
 ```
 
-::: details 手动构建（备选）
-如果不使用脚本，可以手动执行：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-cd server
-$env:GOOS="linux"; $env:GOARCH="amd64"; go build -ldflags="-s -w" -o server .
-cd ..
-
-cd admin
-pnpm install; pnpm build
-cd ..
-```
-
-```bash [macOS / Linux]
-cd server && GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o server . && cd ..
-cd admin && pnpm install && pnpm build && cd ..
-```
-
-:::
-:::
+产物是项目根目录下的一个压缩包文件：`deploy-package.tar.gz` 或 `deploy-package.zip`。
 
 ---
 
@@ -109,41 +93,45 @@ docker --version && docker compose version
 
 两条命令都返回版本号即可。
 
+::: warning ⚠️ 国内服务器拉镜像可能失败
+如果后续执行 setup 脚本时报 `failed to resolve reference "docker.io"` 错误，说明无法连接 Docker Hub。请参考 [腾讯云镜像源加速 Docker](https://cloud.tencent.com/document/product/213/8623#.E4.BD.BF.E7.94.A8.E8.85.BE.E8.AE.AF.E4.BA.91.E9.95.9C.E5.83.8F.E6.BA.90.E5.8A.A0.E9.80.9F-docker) 配置镜像加速，修改后执行 `sudo systemctl restart docker` 重启 Docker，再重新运行 setup 脚本。
+:::
+
 ---
 
-## 📦 第三步：上传文件
+## 📦 第三步：上传并启动
 
-在 FinalShell / Xshell 中连接服务器，执行以下两步。
+### 1. 上传压缩包
 
-### 1. 创建目录 + 上传文件
+在 FinalShell / Xshell 的文件管理器中，把本地生成的压缩包（`deploy-package.tar.gz` 或 `deploy-package.zip`）上传到服务器的 `/opt/` 目录下。
 
-先在服务器终端创建项目目录：
-
-```bash
-mkdir -p /opt/ez-admin
-```
-
-然后通过文件管理器，把 `deploy-package/` 目录下的**所有内容**拖到服务器的 `/opt/ez-admin/`：
-
-| 文件 | 说明 |
-| --- | --- |
-| `server` | 后端二进制 |
-| `dist/` | 前端静态文件（整个目录） |
-| `compose.server.yml` | Docker Compose 配置 |
-| `nginx/nginx-native.conf` | Nginx 配置 |
-| `.env.example` | 环境变量模板 |
-| `ez-admin.service` | systemd 服务文件 |
-| `setup-server.sh` | 初始化脚本 |
-
-选中全部文件，一次性拖到服务器的 `/opt/ez-admin/` 即可。
-
-### 2. 运行初始化脚本
+### 2. 解压
 
 在服务器终端执行：
 
-```bash
-bash /opt/ez-admin/setup-server.sh
+::: code-group
+
+```bash [tar.gz]
+sudo mkdir -p /opt/ez-admin
+sudo tar xzf /opt/deploy-package.tar.gz -C /opt/ez-admin/
 ```
+
+```bash [zip]
+sudo mkdir -p /opt/ez-admin
+sudo unzip /opt/deploy-package.zip -d /opt/ez-admin/
+```
+
+:::
+
+### 3. 首次部署：运行 setup 脚本
+
+```bash
+sudo bash /opt/ez-admin/setup-server.sh
+```
+
+::: warning ⚠️ 此脚本仅在首次部署时执行
+`setup-server.sh` 负责 Docker 环境初始化、密钥生成和管理员创建。后续更新请使用 `update-server.sh`，不要重复执行 setup。
+:::
 
 脚本会自动完成：
 
@@ -170,41 +158,9 @@ bash /opt/ez-admin/setup-server.sh
 
 打开 `http://服务器IP`，登录并确认菜单和 CRUD 正常。**首次登录后请修改默认密码。**
 
-::: details 🖥️ 一键部署（命令行方式）
-如果你的本机终端支持 `scp` / `ssh`（Windows 10+ 自带），可以用一键部署脚本代替上面的手动操作：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-.\scripts\deploy.ps1 -Server ubuntu@你的服务器IP
-```
-
-```bash [macOS / Linux]
-bash scripts/deploy.sh ubuntu@你的服务器IP
-```
-
-:::
-
-脚本会自动完成：构建 → 打包 → 上传 → 远端初始化（包括生成密钥、启动服务、创建管理员）。输入两次服务器密码即可。
-:::
-
 ---
 
-## ⚙️ 第四步：配置环境变量
-
-脚本已自动生成 JWT 密钥。如果还需要修改其他配置（如数据库密码），在服务器上编辑：
-
-```bash
-nano /opt/ez-admin/.env
-```
-
-::: warning ⚠️ HOST 地址不能改
-`.env` 中 `EZ_DATABASE_HOST=127.0.0.1` 和 `EZ_REDIS_HOST=127.0.0.1` 已经是正确的。后端运行在宿主机上，Docker 容器的端口绑定在 `127.0.0.1`，所以后端通过 localhost 访问数据库和缓存。
-:::
-
----
-
-## 🌐 第五步：域名与 HTTPS
+## 🌐 第四步：域名与 HTTPS
 
 ### Cloudflare 托管域名
 
@@ -222,9 +178,9 @@ nano /opt/ez-admin/.env
 
 ```bash
 # 粘贴 Origin Certificate 内容
-nano /opt/ez-admin/ssl/cert.pem
+sudo nano /opt/ez-admin/ssl/cert.pem
 # 粘贴 Private Key 内容
-nano /opt/ez-admin/ssl/key.pem
+sudo nano /opt/ez-admin/ssl/key.pem
 ```
 
 4. 切换 Nginx 为 SSL 配置：将本地 `deploy/nginx/nginx-native-ssl.conf` 上传到 `/opt/ez-admin/nginx/nginx-native.conf`（覆盖原文件）
@@ -232,7 +188,7 @@ nano /opt/ez-admin/ssl/key.pem
 然后在服务器上重启 Nginx 容器：
 
 ```bash
-cd /opt/ez-admin && docker compose -f compose.server.yml restart nginx
+cd /opt/ez-admin && sudo docker compose -f compose.server.yml restart nginx
 ```
 
 5. DNS 记录开启代理（橙色云朵）
@@ -245,25 +201,7 @@ cd /opt/ez-admin && docker compose -f compose.server.yml restart nginx
 
 改完代码后，按以下步骤更新：
 
-### 方式一：一键更新（命令行）
-
-::: code-group
-
-```powershell [Windows PowerShell]
-.\scripts\deploy.ps1 -Server ubuntu@你的服务器IP
-```
-
-```bash [macOS / Linux]
-bash scripts/deploy.sh ubuntu@你的服务器IP
-```
-
-:::
-
-脚本会自动重新编译、上传、重启。重复执行是安全的（不会覆盖已有 .env 或重复创建管理员）。
-
-### 方式二：手动更新
-
-**1. 本地构建**
+**1. 本地重新打包**
 
 ::: code-group
 
@@ -277,36 +215,45 @@ bash scripts/pack.sh
 
 :::
 
-**2. 上传文件**
+**2. 上传压缩包到服务器**
 
-将 `deploy-package/` 目录下的所有文件拖到 `/opt/ez-admin/`（覆盖同名文件），然后执行：
+通过 FinalShell / Xshell 上传新的压缩包到 `/opt/`。
 
-```bash
-bash /opt/ez-admin/setup-server.sh
+**3. 解压并执行更新脚本**
+
+::: code-group
+
+```bash [tar.gz]
+sudo tar xzf /opt/deploy-package.tar.gz -C /opt/ez-admin/
+sudo bash /opt/ez-admin/update-server.sh
 ```
 
-如果只改了后端，只需上传 `server/server` + `sudo systemctl restart ez-admin`。
+```bash [zip]
+sudo unzip -o /opt/deploy-package.zip -d /opt/ez-admin/
+sudo bash /opt/ez-admin/update-server.sh
+```
+
+:::
+
+`update-server.sh` 只替换文件并重启后端，不会动 Docker 环境和已有配置。
 
 ---
 
-## ✅ 部署验证清单
+## ✅ 验证清单
 
 | 验证项 | 命令 | 期望结果 |
 | --- | --- | --- |
-| 容器状态 | `docker compose -f /opt/ez-admin/compose.server.yml ps` | postgres、redis、nginx 均 running/healthy |
+| 容器状态 | `sudo docker compose -f /opt/ez-admin/compose.server.yml ps` | postgres、redis、nginx 均 running/healthy |
 | 后端服务 | `sudo systemctl status ez-admin` | 显示 active (running) |
-| 健康接口 | `curl http://localhost/health` | 返回 ok |
-| 管理员初始化 | `curl -X POST http://localhost/api/v1/setup/init ...` | 返回 200（或 409 已存在） |
 | IP 访问 | 浏览器打开 `http://服务器IP` | 能登录 |
 | HTTPS 域名 | 浏览器打开 `https://域名` | 正常访问，显示锁头 |
-| CDN 代理 | `ping 域名` | 不显示真实 IP |
 
 ---
 
 ## 常见问题排查
 
 ::: details 后端启动失败，报数据库连接拒绝
-确认 Docker 容器在运行：`docker compose -f /opt/ez-admin/compose.server.yml ps`。
+确认 Docker 容器在运行：`sudo docker compose -f /opt/ez-admin/compose.server.yml ps`。
 
 确认 `.env` 中 `EZ_DATABASE_HOST=127.0.0.1`（不是 `postgres`）。
 
@@ -332,7 +279,7 @@ SSL 加密模式设成了 Flexible。改为 **Full（完全）**。
 :::
 
 ::: details 更新后端后接口没变化
-确认上传了新二进制且执行了 `sudo systemctl restart ez-admin`。
+确认上传了新二进制且执行了 `sudo bash /opt/ez-admin/update-server.sh`（脚本会自动重启后端）。
 :::
 
 ::: details 初始化管理员返回 409
@@ -382,8 +329,8 @@ go mod tidy
 ## 小结
 
 - Docker Compose 负责 PostgreSQL、Redis 和 Nginx，后端二进制直接运行在宿主机上。
-- 后端是一个 Linux 二进制，前端是一份静态文件，上传就能跑。
-- 更新只需要重新编译、上传、重启后端。
+- 后端是一个 Linux 二进制，前端是一份静态文件，打成一个压缩包上传即可部署。
+- 更新只需要重新打包、上传、解压、执行 setup 脚本。
 - Cloudflare 提供免费的 CDN + HTTPS + IP 隐藏。
 
 回到本章总览：[第 7 章：部署与复用](./)。
