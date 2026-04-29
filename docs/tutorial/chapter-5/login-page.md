@@ -270,6 +270,8 @@ export function getAuthorizationHeader() {
 - 统一请求前缀和超时时间。
 - 如果本地已经有 Token，就自动带上 `Authorization` 请求头。
 
+::: details `admin/src/utils/request.ts` — Axios 封装
+
 ```ts
 import axios from 'axios'
 
@@ -305,6 +307,8 @@ http.interceptors.response.use(
 
 export default http
 ```
+
+:::
 
 ## 🛠️ 封装登录接口
 
@@ -661,6 +665,8 @@ async function handleSubmit() {
 - 访问根路径时，根据本地 Token 决定跳到 `/login` 还是 `/dashboard`。
 - 如果已经登录，再访问 `/login` 时直接回到 `/dashboard`。
 
+::: details `admin/src/router/index.ts` — 路由守卫
+
 ```ts
 import { createRouter, createWebHistory } from 'vue-router'
 
@@ -695,6 +701,8 @@ const router = createRouter({
 
 export default router
 ```
+
+:::
 
 ## ✅ 启动验证
 

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  base: '/',
+  base: '/ez-admin-gin/',
   lang: 'zh-CN',
   title: 'EZ Admin',
   description: '面向个人项目快速上线的通用后台管理系统底座。',
@@ -83,30 +83,33 @@ export default defineConfig({
       provider: 'local'
     },
     nav: [
-      { text: '开始这里', link: '/guide/', activeMatch: '^/guide/' },
+      { text: '从这里开始', link: '/guide/', activeMatch: '^/guide/' },
       { text: '从零搭建', link: '/tutorial/', activeMatch: '^/tutorial/' },
       { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' },
-      { text: '更新日志', link: '/changelog', activeMatch: '^/changelog$' },
-      { text: '路线图', link: '/roadmap', activeMatch: '^/roadmap$' }
+      { text: '更新日志', link: '/guide/changelog', activeMatch: '^/guide/changelog$' }
     ],
     sidebar: {
       '/': [
         {
-          text: '项目入口',
+          text: '从这里开始',
           items: [
-            { text: '使用指南', link: '/guide/' },
-            { text: '从零搭建教程', link: '/tutorial/' },
-            { text: '参考手册', link: '/reference/' },
-            { text: '更新日志', link: '/changelog' },
-            { text: '路线图', link: '/roadmap' }
+            { text: '简介与快速启动', link: '/guide/' }
           ]
         }
       ],
       '/guide/': [
         {
-          text: '使用指南',
+          text: '从这里开始',
           items: [
-            { text: '指南首页', link: '/guide/' }
+            { text: '快速启动', link: '/guide/' },
+            { text: '项目结构', link: '/guide/project-structure' }
+          ]
+        },
+        {
+          text: '项目信息',
+          items: [
+            { text: '更新日志', link: '/guide/changelog' },
+            { text: '路线图', link: '/guide/roadmap' }
           ]
         }
       ],
@@ -148,12 +151,12 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-3/' },
-            { text: '用户模型与登录接口', link: '/tutorial/chapter-3/user-model-and-login' },
-            { text: 'JWT 认证', link: '/tutorial/chapter-3/jwt-auth' },
-            { text: '认证中间件', link: '/tutorial/chapter-3/auth-middleware' },
-            { text: '角色与权限模型', link: '/tutorial/chapter-3/rbac-model' },
-            { text: 'Casbin 权限控制', link: '/tutorial/chapter-3/casbin-permission' },
-            { text: '菜单权限设计', link: '/tutorial/chapter-3/menu-permission' }
+            { text: '用户模型与登录', link: '/tutorial/chapter-3/user-model-and-login' },
+            { text: 'Token 签发与解析', link: '/tutorial/chapter-3/jwt-auth' },
+            { text: '登录校验中间件', link: '/tutorial/chapter-3/auth-middleware' },
+            { text: 'RBAC 角色权限模型', link: '/tutorial/chapter-3/rbac-model' },
+            { text: '接口级权限控制', link: '/tutorial/chapter-3/casbin-permission' },
+            { text: '角色菜单权限', link: '/tutorial/chapter-3/menu-permission' }
           ]
         },
         {
@@ -202,11 +205,8 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-7/' },
-            { text: '后端与前端 Dockerfile', link: '/tutorial/chapter-7/dockerfile' },
-            { text: 'Docker Compose 编排', link: '/tutorial/chapter-7/docker-compose' },
-            { text: 'Nginx 配置', link: '/tutorial/chapter-7/nginx-config' },
-            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' },
-            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' }
+            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' },
+            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' }
           ]
         }
       ],
@@ -218,12 +218,17 @@ export default defineConfig({
             { text: 'GORM 快速入门', link: '/reference/gorm-quick-start' },
             { text: 'Casbin 快速入门', link: '/reference/casbin-quick-start' },
             { text: '接口风格决策', link: '/reference/api-style-decision' },
+            { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
-            { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' }
+            { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },
+            { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
+            { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' }
           ]
         }
       ]
     },
-    socialLinks: []
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/caoshenyang/ez-admin-gin' }
+    ]
   }
 })

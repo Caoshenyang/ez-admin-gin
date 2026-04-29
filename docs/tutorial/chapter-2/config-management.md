@@ -101,7 +101,7 @@ redis:
 
 ## 🛠️ 创建配置加载代码
 
-创建 `server/internal/config/config.go`：
+::: details `server/internal/config/config.go` — 配置加载
 
 ```go
 package config
@@ -219,6 +219,8 @@ func bindEnvs(v *viper.Viper) {
 }
 ```
 
+:::
+
 ::: details 为什么要写 `bindEnvs`
 环境变量覆盖要能稳定参与结构体解析。这里把配置项逐个绑定到环境变量，避免出现“环境变量设置了，但结构体里没读到”的情况。
 :::
@@ -230,6 +232,8 @@ func bindEnvs(v *viper.Viper) {
 - 引入 `internal/config` 包。
 - 启动地址从 `cfg.Server.Addr` 读取。
 - 健康检查接口返回当前运行环境。
+
+::: details `server/main.go` — 接入配置
 
 ```go
 package main
@@ -265,6 +269,8 @@ func main() {
 	}
 }
 ```
+
+:::
 
 这里先只把 `server.addr` 和 `app.env` 接进启动流程，数据库和 Redis 配置会在后续章节使用。
 

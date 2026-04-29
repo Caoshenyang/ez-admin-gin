@@ -27,7 +27,7 @@ GORM 是 Go 生态里常用的 ORM。它把数据库表映射成 Go 结构体，
 | --- | --- |
 | `server/internal/database/database.go` | 创建数据库连接、设置连接池、健康检查 |
 | `server/internal/model/*.go` | 定义数据库模型和表名 |
-| `server/internal/bootstrap/bootstrap.go` | 初始化默认账号、角色和权限策略 |
+| `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化默认账号、角色和权限策略 |
 | `server/internal/middleware/permission.go` | 查询用户角色并交给 Casbin 判断权限 |
 
 ::: info 版本以项目为准

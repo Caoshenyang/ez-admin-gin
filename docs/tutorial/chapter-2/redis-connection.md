@@ -162,7 +162,7 @@ v.SetDefault("redis.pool_size", 10) // [!code ++]
 
 ## 🛠️ 创建 Redis 包
 
-创建 `server/internal/redis/redis.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/redis/redis.go` — Redis 连接与健康检查
 
 ```go
 package redis
@@ -227,6 +227,8 @@ func Close(client *goredis.Client) error {
 }
 ```
 
+:::
+
 ::: details 为什么 `Ping` 要加超时
 健康检查应该尽快返回。如果 Redis 因为网络问题卡住，超时能避免接口长时间挂起。
 :::
@@ -239,6 +241,8 @@ func Close(client *goredis.Client) error {
 - 服务启动时创建 Redis 客户端，并在退出时关闭它。
 - `/health` 增加 Redis 连通性检查。
 - 健康检查结果同时返回数据库和 Redis 状态。
+
+::: details `server/main.go` — 完整版
 
 ```go
 package main
@@ -342,6 +346,8 @@ func main() {
 	}
 }
 ```
+
+:::
 
 ## ✅ 整理依赖并启动
 

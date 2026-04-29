@@ -1,0 +1,15 @@
+[Unit]
+Description=EZ Admin Server
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/ez-admin
+EnvironmentFile=/opt/ez-admin/.env
+ExecStart=/opt/ez-admin/server
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

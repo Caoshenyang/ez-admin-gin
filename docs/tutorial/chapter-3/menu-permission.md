@@ -1,9 +1,9 @@
 ---
-title: 菜单权限设计
+title: 角色菜单权限
 description: "设计菜单、按钮和角色菜单关系，并返回当前用户可见的菜单树。"
 ---
 
-# 菜单权限设计
+# 角色菜单权限
 
 前面已经能判断接口访问权限。这一节继续补齐前端管理台需要的菜单权限：用户登录后，根据角色拿到自己能看到的目录、菜单和按钮。
 
@@ -18,8 +18,6 @@ description: "设计菜单、按钮和角色菜单关系，并返回当前用户
 ```text
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ auth/
 │  │     └─ menus.go
@@ -28,13 +26,18 @@ server/
 │  │  └─ role_menu.go
 │  └─ router/
 │     └─ router.go
+└─ migrations/
+   ├─ postgres/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
 | --- | --- |
 | `internal/model/menu.go` | 定义目录、菜单、按钮模型 |
 | `internal/model/role_menu.go` | 定义角色和菜单的绑定关系 |
-| `internal/bootstrap/bootstrap.go` | 初始化默认菜单，并授权给超级管理员 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化默认菜单，并授权给超级管理员 |
 | `internal/handler/auth/menus.go` | 返回当前用户可见菜单树 |
 | `internal/router/router.go` | 注册 `/api/v1/auth/menus` |
 
@@ -70,16 +73,11 @@ server/
 
 本节新增 `sys_menu` 和 `sys_role_menu`，分别用于保存目录、菜单、按钮权限点，以及角色和菜单的绑定关系。
 
-::: tip 建表 SQL
-字段说明、菜单类型、唯一编码、关系表约定和 PostgreSQL / MySQL 建表语句统一放在参考手册：
-
-- [数据库建表语句 - `sys_menu`](../../reference/database-ddl#sys-menu)
-- [数据库建表语句 - `sys_role_menu`](../../reference/database-ddl#sys-role-menu)
-:::
+`sys_menu` 表保存目录、菜单和按钮权限点；`sys_role_menu` 表保存角色与菜单的绑定关系。字段和索引详情见 [数据库建表语句 - `sys_menu`](/reference/database-ddl#sys-menu) 和 [数据库建表语句 - `sys_role_menu`](/reference/database-ddl#sys-role-menu)。
 
 ## 🛠️ 创建菜单模型
 
-创建 `server/internal/model/menu.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/model/menu.go` — 菜单模型
 
 ```go
 package model
@@ -136,6 +134,8 @@ func (Menu) TableName() string {
 }
 ```
 
+:::
+
 ## 🛠️ 创建角色菜单关系模型
 
 创建 `server/internal/model/role_menu.go`。这是新增文件，直接完整写入即可。
@@ -162,165 +162,21 @@ func (RoleMenu) TableName() string {
 
 ## 🛠️ 初始化默认菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。这一处重点看三个变化：
+默认菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建系统管理相关的菜单数据和角色菜单绑定关系。
 
-- 增加默认菜单编码常量。
-- 启动时创建默认菜单。
-- 把默认菜单绑定给 `super_admin`。
-
-先扩展常量：
-
-```go
-const (
-	defaultAdminUsername    = "admin"
-	defaultAdminPassword    = "EzAdmin@123456"
-	defaultAdminRoleCode    = "super_admin"
-	defaultAdminRoleName    = "超级管理员"
-	defaultPermissionPath   = "/api/v1/system/health"
-	defaultPermissionMethod = "GET"
-	defaultSystemMenuCode   = "system" // [!code ++]
-	defaultHealthMenuCode   = "system:health" // [!code ++]
-	defaultHealthViewCode   = "system:health:view" // [!code ++]
-)
-```
-
-在 `Run` 中，角色初始化后继续初始化菜单和绑定关系：
-
-```go
-	role, err := seedSuperAdminRole(db, log)
-	if err != nil {
-		return fmt.Errorf("seed super admin role: %w", err)
-	}
-
-	menus, err := seedDefaultMenus(db, log) // [!code ++]
-	if err != nil { // [!code ++]
-		return fmt.Errorf("seed default menus: %w", err) // [!code ++]
-	} // [!code ++]
-
-	if err := seedDefaultPermission(db, log); err != nil {
-		return fmt.Errorf("seed default permission: %w", err)
-	}
-
-	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
-		return fmt.Errorf("seed admin role: %w", err)
-	}
-
-	if err := seedRoleMenus(db, role.ID, menus, log); err != nil { // [!code ++]
-		return fmt.Errorf("seed role menus: %w", err) // [!code ++]
-	} // [!code ++]
-```
-
-在文件末尾新增：
-
-```go
-// seedDefaultMenus 初始化默认菜单和按钮。
-func seedDefaultMenus(db *gorm.DB, log *zap.Logger) ([]model.Menu, error) {
-	systemMenu, err := seedMenu(db, model.Menu{
-		ParentID: 0,
-		Type:     model.MenuTypeDirectory,
-		Code:     defaultSystemMenuCode,
-		Title:    "系统管理",
-		Path:     "/system",
-		Icon:     "setting",
-		Sort:     10,
-		Status:   model.MenuStatusEnabled,
-		Remark:   "系统内置目录",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	healthMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultHealthMenuCode,
-		Title:     "系统状态",
-		Path:      "/system/health",
-		Component: "system/HealthView",
-		Icon:      "monitor",
-		Sort:      10,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	healthViewButton, err := seedMenu(db, model.Menu{
-		ParentID: healthMenu.ID,
-		Type:     model.MenuTypeButton,
-		Code:     defaultHealthViewCode,
-		Title:    "查看系统状态",
-		Sort:     10,
-		Status:   model.MenuStatusEnabled,
-		Remark:   "系统内置按钮",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	return []model.Menu{*systemMenu, *healthMenu, *healthViewButton}, nil
-}
-
-// seedMenu 按菜单编码创建默认菜单。
-func seedMenu(db *gorm.DB, menu model.Menu, log *zap.Logger) (*model.Menu, error) {
-	var exists model.Menu
-	err := db.Unscoped().Where("code = ?", menu.Code).First(&exists).Error
-	if err == nil {
-		return &exists, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
-	if err := db.Create(&menu).Error; err != nil {
-		return nil, err
-	}
-
-	log.Info("default menu created", zap.String("menu_code", menu.Code))
-
-	return &menu, nil
-}
-
-// seedRoleMenus 把默认菜单授权给指定角色。
-func seedRoleMenus(db *gorm.DB, roleID uint, menus []model.Menu, log *zap.Logger) error {
-	for _, menu := range menus {
-		var roleMenu model.RoleMenu
-		err := db.Where("role_id = ? AND menu_id = ?", roleID, menu.ID).First(&roleMenu).Error
-		if err == nil {
-			continue
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-
-		roleMenu = model.RoleMenu{
-			RoleID: roleID,
-			MenuID: menu.ID,
-		}
-
-		if err := db.Create(&roleMenu).Error; err != nil {
-			return err
-		}
-
-		log.Info(
-			"default role menu bound",
-			zap.Uint("role_id", roleID),
-			zap.Uint("menu_id", menu.ID),
-		)
-	}
-
-	return nil
-}
-```
+::: tip 💡 菜单初始化
+- 菜单数据：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入系统管理目录、菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到系统管理菜单
+- 初始菜单包括：系统管理目录、系统状态菜单和查看系统状态按钮
+:::
 
 ::: warning ⚠️ 菜单初始化只提供最小起步数据
-这里先初始化一组菜单，方便验证菜单权限链路。后续真正的菜单新增、编辑、排序和授权，要放在系统管理接口中完成。
+迁移文件中初始化了一组菜单，方便验证菜单权限链路。后续真正的菜单新增、编辑、排序和授权，要放在系统管理接口中完成。
 :::
 
 ## 🛠️ 创建当前用户菜单接口
 
-创建 `server/internal/handler/auth/menus.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/handler/auth/menus.go` — 菜单树接口
 
 ```go
 package auth
@@ -449,6 +305,8 @@ func menuNodesToResponses(nodes []*menuNode) []menuResponse {
 }
 ```
 
+:::
+
 ::: details 为什么 `/auth/menus` 不再挂 Casbin 权限
 这个接口本身就是“根据当前登录用户返回自己的菜单”。只要用户已经登录，就可以请求；真正能看到哪些菜单，由 `sys_role_menu` 决定。
 
@@ -574,7 +432,7 @@ curl -X GET http://localhost:8080/api/v1/auth/menus \
 
 :::
 
-应该看到类似结果：
+::: details 预期返回结果
 
 ```json
 {
@@ -621,6 +479,8 @@ curl -X GET http://localhost:8080/api/v1/auth/menus \
   ]
 }
 ```
+
+:::
 
 ::: details 为什么示例里按钮可能显示在 children 里
 本节接口返回的是完整权限树，按钮节点也会作为子节点返回。后续前端可以按 `type` 区分：`1`、`2` 用来生成菜单和路由，`3` 用来控制按钮或操作点。

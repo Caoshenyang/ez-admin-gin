@@ -1,7 +1,6 @@
 package main
 
 import (
-	"ez-admin-gin/server/internal/bootstrap"
 	"ez-admin-gin/server/internal/permission"
 
 	// stdlog 只用于日志系统初始化失败前的兜底输出。
@@ -10,12 +9,19 @@ import (
 	"ez-admin-gin/server/internal/config"
 	"ez-admin-gin/server/internal/database"
 	appLogger "ez-admin-gin/server/internal/logger"
+	appMigrate "ez-admin-gin/server/internal/migrate"
 	appRedis "ez-admin-gin/server/internal/redis"
 	"ez-admin-gin/server/internal/router"
 	"ez-admin-gin/server/internal/token"
 
 	"go.uber.org/zap"
+
+	// 嵌入迁移文件
+	"embed"
 )
+
+//go:embed migrations/postgres migrations/mysql
+var migrationsFS embed.FS
 
 func main() {
 	// 先读取配置，日志、数据库、Redis 初始化都依赖配置。
@@ -44,9 +50,13 @@ func main() {
 		}
 	}()
 
-	// 数据库连接成功后，创建基础表并准备默认管理员。
-	if err := bootstrap.Run(db, log); err != nil {
-		log.Fatal("bootstrap application", zap.Error(err))
+	// 数据库连接成功后，执行 SQL 迁移（建表 + 种子数据）。
+	migrateDSN, err := database.MigrateDSN(cfg.Database)
+	if err != nil {
+		log.Fatal("build migration dsn", zap.Error(err))
+	}
+	if err := appMigrate.Run(cfg.Database.Driver, migrateDSN, migrationsFS, log); err != nil {
+		log.Fatal("run database migrations", zap.Error(err))
 	}
 
 	// 启动时连接 Redis；连接失败就直接终止服务。

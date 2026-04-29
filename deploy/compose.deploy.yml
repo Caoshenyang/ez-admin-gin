@@ -1,0 +1,119 @@
+# 部署专用 Compose 文件 —— 从 Docker Hub 拉取镜像，适用于云服务器部署。
+# 使用方式：docker compose -f compose.deploy.yml up -d
+#
+# 前提：已在 .env 中配置 DOCKERHUB_USERNAME 和其他环境变量。
+# 镜像名格式：<DOCKERHUB_USERNAME>/ez-admin-server:latest
+#             <DOCKERHUB_USERNAME>/ez-admin-web:latest
+
+name: ez-admin-gin
+
+services:
+  # ---- 数据库 ----
+  postgres:
+    image: postgres:18-alpine
+    container_name: ez-admin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${EZ_DATABASE_USER:-ez_admin}
+      POSTGRES_PASSWORD: ${EZ_DATABASE_PASSWORD:-ez_admin_123456}
+      POSTGRES_DB: ${EZ_DATABASE_NAME:-ez_admin}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Asia/Shanghai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EZ_DATABASE_USER:-ez_admin} -d ${EZ_DATABASE_NAME:-ez_admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ---- 缓存 ----
+  redis:
+    image: redis:8-alpine
+    container_name: ez-admin-redis
+    restart: unless-stopped
+    environment:
+      EZ_REDIS_PASSWORD: ${EZ_REDIS_PASSWORD:-}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        if [ -n "$EZ_REDIS_PASSWORD" ]; then
+          exec redis-server --appendonly yes --requirepass "$EZ_REDIS_PASSWORD"
+        else
+          exec redis-server --appendonly yes
+        fi
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          if [ -n "$EZ_REDIS_PASSWORD" ]; then
+            redis-cli -a "$EZ_REDIS_PASSWORD" ping
+          else
+            redis-cli ping
+          fi
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ---- 后端服务（从 Docker Hub 拉取）----
+  server:
+    image: ${DOCKERHUB_USERNAME:?DOCKERHUB_USERNAME is required}/ez-admin-server:latest
+    container_name: ez-admin-server
+    restart: unless-stopped
+    environment:
+      EZ_APP_ENV: ${EZ_APP_ENV:-prod}
+      EZ_SERVER_ADDR: ":8080"
+      EZ_DATABASE_HOST: postgres
+      EZ_DATABASE_PORT: 5432
+      EZ_DATABASE_USER: ${EZ_DATABASE_USER:-ez_admin}
+      EZ_DATABASE_PASSWORD: ${EZ_DATABASE_PASSWORD:-ez_admin_123456}
+      EZ_DATABASE_NAME: ${EZ_DATABASE_NAME:-ez_admin}
+      EZ_REDIS_HOST: redis
+      EZ_REDIS_PORT: 6379
+      EZ_REDIS_PASSWORD: ${EZ_REDIS_PASSWORD:-}
+      EZ_AUTH_JWT_SECRET: ${EZ_AUTH_JWT_SECRET:?JWT_SECRET is required}
+      EZ_LOG_LEVEL: ${EZ_LOG_LEVEL:-info}
+      EZ_LOG_FORMAT: json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - backend
+
+  # ---- 前端 + Nginx 反向代理（从 Docker Hub 拉取）----
+  nginx:
+    image: ${DOCKERHUB_USERNAME:?DOCKERHUB_USERNAME is required}/ez-admin-web:latest
+    container_name: ez-admin-nginx
+    restart: unless-stopped
+    ports:
+      - "${EZ_NGINX_PORT:-80}:80"
+      - "443:443"
+    volumes:
+      # 非 SSL 模式使用 nginx.conf，SSL 模式使用 nginx-ssl.conf
+      - ./nginx/${EZ_NGINX_CONF:-nginx.conf}:/etc/nginx/conf.d/default.conf:ro
+      # SSL 证书目录（仅在 SSL 模式下挂载）
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - server
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:
+
+networks:
+  backend:
+    driver: bridge

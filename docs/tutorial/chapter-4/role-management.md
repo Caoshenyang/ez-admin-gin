@@ -18,20 +18,23 @@ description: "实现角色维护、接口权限分配和菜单权限分配能力
 ```text
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ system/
 │  │     └─ roles.go
 │  └─ router/
 │     └─ router.go
+└─ migrations/
+   ├─ postgres/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
 | --- | --- |
 | `internal/handler/system/roles.go` | 角色管理接口 |
 | `internal/router/router.go` | 注册角色管理路由 |
-| `internal/bootstrap/bootstrap.go` | 初始化角色管理权限和菜单 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化角色管理权限和菜单 |
 
 ::: info 本节不新增数据库表
 角色管理复用 `sys_role`、`sys_role_menu`、`casbin_rule`。其中 `sys_role` 保存角色本身，`sys_role_menu` 保存角色菜单关系，`casbin_rule` 保存接口权限策略。
@@ -56,7 +59,7 @@ server/
 
 ## 🛠️ 创建角色管理 Handler
 
-创建 `server/internal/handler/system/roles.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/handler/system/roles.go` — 角色管理接口
 
 ```go
 package system
@@ -738,6 +741,8 @@ func writeRoleError(c *gin.Context, err error, fallbackMessage string, log *zap.
 }
 ```
 
+:::
+
 ::: details 为什么不允许修改角色编码
 `code` 会被写入 `casbin_rule.v0`，也是权限判断时使用的稳定标识。角色创建后可以改名称、排序、状态和备注，但不建议直接改编码。
 :::
@@ -780,96 +785,14 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 }
 ```
 
-## 🛠️ 初始化角色管理接口权限
+## 🛠️ 初始化角色管理权限和菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。在上一节的 `defaultPermissionSeeds` 中继续追加角色管理接口权限：
+角色管理的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建角色管理相关的权限策略和菜单数据。
 
-```go
-var defaultPermissionSeeds = []defaultPermissionSeed{
-	{Path: "/api/v1/system/health", Method: "GET"},
-	{Path: "/api/v1/system/users", Method: "GET"},
-	{Path: "/api/v1/system/users", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles", Method: "GET"}, // [!code ++]
-	{Path: "/api/v1/system/roles", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/update", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/status", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/permissions", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/roles/:id/menus", Method: "POST"}, // [!code ++]
-}
-```
-
-## 🛠️ 初始化角色管理菜单
-
-继续修改 `server/internal/bootstrap/bootstrap.go`。先增加角色管理菜单和按钮编码：
-
-```go
-const (
-	defaultUserAssignRoleCode = "system:user:assign-role"
-	defaultRoleMenuCode       = "system:role" // [!code ++]
-	defaultRoleListCode       = "system:role:list" // [!code ++]
-	defaultRoleCreateCode     = "system:role:create" // [!code ++]
-	defaultRoleUpdateCode     = "system:role:update" // [!code ++]
-	defaultRoleStatusCode     = "system:role:status" // [!code ++]
-	defaultRolePermissionCode = "system:role:permission" // [!code ++]
-	defaultRoleMenuAssignCode = "system:role:menu" // [!code ++]
-)
-```
-
-接着修改 `seedDefaultMenus`。先找到上一节最后新增的返回语句：
-
-```go
-return menus, nil
-```
-
-把这行返回语句替换为下面整段代码。也就是说：下面代码放在用户管理按钮循环之后，原 `return menus, nil` 之前；替换完成后，函数末尾仍然只保留一个 `return menus, nil`。
-
-```go
-	roleMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultRoleMenuCode,
-		Title:     "角色管理",
-		Path:      "/system/roles",
-		Component: "system/RoleView",
-		Icon:      "team",
-		Sort:      30,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	roleButtons := []model.Menu{
-		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleListCode, Title: "查看角色", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleCreateCode, Title: "创建角色", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleUpdateCode, Title: "编辑角色", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleStatusCode, Title: "修改角色状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRolePermissionCode, Title: "分配接口权限", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: roleMenu.ID, Type: model.MenuTypeButton, Code: defaultRoleMenuAssignCode, Title: "分配菜单权限", Sort: 60, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-	}
-
-	menus = append(menus, *roleMenu)
-	for _, button := range roleButtons {
-		createdButton, err := seedMenu(db, button, log)
-		if err != nil {
-			return nil, err
-		}
-		menus = append(menus, *createdButton)
-	}
-
-	return menus, nil
-```
-
-::: warning ⚠️ 这一段是替换末尾返回，不是追加到函数外面
-角色管理菜单要继续复用上一节创建的 `menus` 切片，所以代码必须放在 `seedDefaultMenus` 函数内部、用户管理按钮循环之后。
-:::
-
-::: details 菜单分配为什么只保存菜单 ID
-菜单的标题、路径和层级保存在 `sys_menu`。角色菜单关系表只需要保存 `role_id` 和 `menu_id`，避免重复存储菜单信息。
+::: tip 💡 权限和菜单初始化
+- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入角色管理接口的 Casbin 规则
+- 菜单数据：在同一迁移文件中插入角色管理菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到角色管理菜单
 :::
 
 ## ✅ 整理依赖并启动
@@ -898,9 +821,19 @@ go run .
 第一次启动后，控制台应该能看到类似日志：
 
 ```text
-INFO	default permission created	{"role_code": "super_admin", "path": "/api/v1/system/roles", "method": "GET"}
-INFO	default menu created	{"menu_code": "system:role"}
-INFO	default role menu bound	{"role_id": 1, "menu_id": 10}
+INFO	database migrations applied
+INFO	server started	{"addr": ":8080", "env": "dev"}
+```
+
+### 创建管理员账号
+
+服务启动后，先通过初始化接口创建管理员账号：
+
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 ```
 
 ## ✅ 验证权限和菜单数据
@@ -932,7 +865,7 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 ```powershell [Windows PowerShell]
 $body = @{
   username = "admin"
-  password = "EzAdmin@123456"
+  password = "YourPassword123"
 } | ConvertTo-Json
 
 $login = Invoke-RestMethod `
@@ -947,7 +880,7 @@ $token = $login.data.access_token
 ```bash [macOS / Linux]
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
+  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
 ```
 
 :::

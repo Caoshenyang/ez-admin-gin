@@ -18,8 +18,6 @@ description: "实现后台菜单维护，为动态菜单和按钮权限提供配
 ```text
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ system/
 │  │     └─ menus.go
@@ -31,7 +29,6 @@ server/
 | --- | --- |
 | `internal/handler/system/menus.go` | 菜单管理接口 |
 | `internal/router/router.go` | 注册菜单管理路由 |
-| `internal/bootstrap/bootstrap.go` | 初始化菜单管理权限和菜单 |
 
 ::: info 本节不新增数据库表
 菜单管理复用 `sys_menu` 和 `sys_role_menu`。`sys_menu` 保存目录、菜单、按钮；`sys_role_menu` 保存角色拥有哪些菜单和按钮。
@@ -73,6 +70,8 @@ server/
 ## 🛠️ 创建菜单管理 Handler
 
 创建 `server/internal/handler/system/menus.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/handler/system/menus.go` — 菜单管理接口
 
 ```go
 package system
@@ -600,6 +599,8 @@ func writeMenuError(c *gin.Context, err error, fallbackMessage string, log *zap.
 }
 ```
 
+:::
+
 ::: details 为什么创建后不允许修改 `code`
 `code` 是前端判断按钮权限时最稳定的标识，也会出现在角色授权配置里。创建后如果随意改编码，前端按钮判断和历史授权会变得难排查。
 :::
@@ -611,6 +612,8 @@ func writeMenuError(c *gin.Context, err error, fallbackMessage string, log *zap.
 ## 🛠️ 注册菜单管理路由
 
 修改 `server/internal/router/router.go`。这一处在系统路由中新增菜单管理 Handler 和路由。
+
+::: details `server/internal/router/router.go` — 注册菜单管理路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -648,95 +651,12 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 }
 ```
 
-## 🛠️ 初始化菜单管理接口权限
+:::
 
-修改 `server/internal/bootstrap/bootstrap.go`。在 `defaultPermissionSeeds` 中继续追加菜单管理接口权限：
+::: tip 📌 菜单管理权限和菜单初始化
+菜单管理接口权限和菜单通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建系统默认的菜单管理权限和菜单。
 
-```go
-var defaultPermissionSeeds = []defaultPermissionSeed{
-	{Path: "/api/v1/system/health", Method: "GET"},
-	{Path: "/api/v1/system/users", Method: "GET"},
-	{Path: "/api/v1/system/users", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/users/:id/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles", Method: "GET"},
-	{Path: "/api/v1/system/roles", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/update", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/status", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/permissions", Method: "POST"},
-	{Path: "/api/v1/system/roles/:id/menus", Method: "POST"},
-	{Path: "/api/v1/system/menus", Method: "GET"}, // [!code ++]
-	{Path: "/api/v1/system/menus", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/menus/:id/update", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/menus/:id/status", Method: "POST"}, // [!code ++]
-	{Path: "/api/v1/system/menus/:id/delete", Method: "POST"}, // [!code ++]
-}
-```
-
-## 🛠️ 初始化菜单管理菜单
-
-继续修改 `server/internal/bootstrap/bootstrap.go`。先增加菜单管理菜单和按钮编码：
-
-```go
-const (
-	defaultRoleMenuAssignCode = "system:role:menu"
-	defaultMenuManageCode     = "system:menu" // [!code ++]
-	defaultMenuListCode       = "system:menu:list" // [!code ++]
-	defaultMenuCreateCode     = "system:menu:create" // [!code ++]
-	defaultMenuUpdateCode     = "system:menu:update" // [!code ++]
-	defaultMenuStatusCode     = "system:menu:status" // [!code ++]
-	defaultMenuDeleteCode     = "system:menu:delete" // [!code ++]
-)
-```
-
-接着修改 `seedDefaultMenus`。先找到上一节最后新增的返回语句：
-
-```go
-return menus, nil
-```
-
-把这行返回语句替换为下面整段代码。也就是说：下面代码放在角色管理按钮循环之后，原 `return menus, nil` 之前；替换完成后，函数末尾仍然只保留一个 `return menus, nil`。
-
-```go
-	menuManage, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultMenuManageCode,
-		Title:     "菜单管理",
-		Path:      "/system/menus",
-		Component: "system/MenuView",
-		Icon:      "menu",
-		Sort:      40,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	menuButtons := []model.Menu{
-		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuListCode, Title: "查看菜单", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuCreateCode, Title: "创建菜单", Sort: 20, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuUpdateCode, Title: "编辑菜单", Sort: 30, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuStatusCode, Title: "修改菜单状态", Sort: 40, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-		{ParentID: menuManage.ID, Type: model.MenuTypeButton, Code: defaultMenuDeleteCode, Title: "删除菜单", Sort: 50, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-	}
-
-	menus = append(menus, *menuManage)
-	for _, button := range menuButtons {
-		createdButton, err := seedMenu(db, button, log)
-		if err != nil {
-			return nil, err
-		}
-		menus = append(menus, *createdButton)
-	}
-
-	return menus, nil
-```
-
-::: warning ⚠️ 这一段仍然是在 `seedDefaultMenus` 函数内部
-菜单管理菜单要继续追加到已有的 `menus` 切片里，不要新建第二个 `menus`，也不要把代码放到 `seedDefaultMenus` 函数外。
+这样可以确保菜单管理功能在服务启动时就已经准备就绪，不需要通过代码手动写入。
 :::
 
 ::: warning ⚠️ 这里的变量名容易撞
@@ -769,9 +689,19 @@ go run .
 第一次启动后，控制台应该能看到类似日志：
 
 ```text
-INFO	default permission created	{"role_code": "super_admin", "path": "/api/v1/system/menus", "method": "GET"}
-INFO	default menu created	{"menu_code": "system:menu"}
-INFO	default role menu bound	{"role_id": 1, "menu_id": 18}
+INFO	database migrations applied
+INFO	server started	{"addr": ":8080", "env": "dev"}
+```
+
+## ✅ 创建管理员账号
+
+服务启动后，先通过初始化接口创建管理员账号：
+
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 ```
 
 ## ✅ 验证权限和菜单数据
@@ -803,7 +733,7 @@ docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_
 ```powershell [Windows PowerShell]
 $body = @{
   username = "admin"
-  password = "EzAdmin@123456"
+  password = "YourPassword123"
 } | ConvertTo-Json
 
 $login = Invoke-RestMethod `
@@ -818,7 +748,7 @@ $token = $login.data.access_token
 ```bash [macOS / Linux]
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
+  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
 ```
 
 :::

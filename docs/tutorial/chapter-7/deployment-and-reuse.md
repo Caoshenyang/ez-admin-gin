@@ -1,305 +1,361 @@
 ---
 title: 部署验证与复用说明
-description: "完成完整的部署验证流程，并把后台底座复用到下一个个人项目。"
+description: "本地编译后端二进制、构建前端静态文件，部署到腾讯云轻量服务器，通过 Cloudflare 配置 HTTPS 域名访问。"
 ---
 
 # 部署验证与复用说明
 
-这一节会完成两件事：先把整个部署流程从头到尾跑一遍，验证后台底座在 Docker 环境下能正常工作；再说明如何把这套代码复用到你自己的新项目里。
+这一节把后台底座部署到公网。思路很简单：本地编译好二进制和静态文件，上传到服务器直接运行，Docker 负责数据库、缓存和 Nginx。
 
 ::: tip 🎯 本节目标
-跟着步骤走完之后，你能通过浏览器访问后台、登录系统、看到完整菜单，并确认业务接口可用。之后如果需要开一个新项目，也知道该怎么改。
+完成后你能通过 `https://你的域名` 访问后台、登录并执行 CRUD。
 :::
 
 ## 前置条件
 
-在开始部署之前，确认本机已经安装了：
+- 本机有 Go 1.22+ 和 Node.js 22+
+- 一个域名
+- 腾讯云轻量应用服务器（Ubuntu 22.04）
 
-- Docker（20.10 及以上）
-- Docker Compose（V2，支持 `docker compose` 命令）
+---
 
-如果不确定版本，可以执行：
+## 🚀 第一步：本地构建
 
-```bash
-docker --version
-docker compose version
+在项目根目录执行：
+
+::: code-group
+
+```powershell [Windows PowerShell]
+cd server
+$env:GOOS="linux"; $env:GOARCH="amd64"; go build -o server .
+cd ..
+
+cd admin
+pnpm install; pnpm build
+cd ..
 ```
 
-两者都能正常返回版本号即可。
+```bash [macOS / Linux]
+cd server
+GOOS=linux GOARCH=amd64 go build -o server .
+cd ..
 
-## 🚀 部署步骤
-
-### 第一步：准备环境变量
-
-进入部署目录，复制模板并修改 JWT 密钥：
-
-```bash
-cd deploy
-cp .env.example .env
+cd admin
+pnpm install && pnpm build
+cd ..
 ```
 
-打开 `.env` 文件，找到 `EZ_AUTH_JWT_SECRET`，替换为一个随机字符串：
-
-```bash
-# 生成一个随机密钥（macOS / Linux）
-openssl rand -hex 32
-```
-
-把生成的字符串填入 `.env`：
-
-```bash
-EZ_AUTH_JWT_SECRET=你刚才生成的随机字符串
-```
-
-::: warning ⚠️ 不改密钥会启动失败
-`compose.prod.yml` 中 `EZ_AUTH_JWT_SECRET` 使用了 `${EZ_AUTH_JWT_SECRET:?JWT_SECRET is required}` 语法，意味着如果这个变量为空或不存在，Docker Compose 会直接报错退出。这是故意的——防止你带着开发密钥上线。
 :::
 
-### 第二步：构建并启动所有服务
+构建完成后你得到两个东西：
+- `server/server` — Linux 可执行文件
+- `admin/dist/` — 前端静态文件目录
 
-在 `deploy/` 目录下执行：
+---
 
-```bash
-docker compose -f compose.prod.yml up -d --build
-```
+## 🛠️ 第二步：服务器准备
 
-这条命令会：
+### 购买服务器
 
-- 构建后端和前端镜像
-- 启动 PostgreSQL、Redis、后端服务和 Nginx 四个容器
-- 等待数据库和 Redis 的健康检查通过后，再启动后端服务
+[腾讯云轻量应用服务器](https://console.cloud.tencent.com/lighthouse)，推荐 2 核 2G + Ubuntu 22.04。购买后记下公网 IP。
 
-首次构建可能需要几分钟，取决于网络速度。
+### 配置防火墙
 
-### 第三步：等待服务就绪
+实例详情 → 防火墙，确认开放 22（SSH）、80（HTTP）、443（HTTPS）。
 
-使用以下命令查看容器状态：
+### 连接服务器并安装 Docker
 
-```bash
-docker compose -f compose.prod.yml ps
-```
+推荐使用图形化 SSH 工具连接服务器，操作更直观方便：
 
-所有容器的状态应该显示为 `running`（或 `healthy`）：
+- **FinalShell**（免费）：[https://www.hostbuf.com/t/988.html](https://www.hostbuf.com/t/988.html)
+- **Xshell**（个人免费）：[https://www.netsarang.com/zh/xshell/](https://www.netsarang.com/zh/xshell/)
 
-```text
-NAME                 STATUS
-ez-admin-postgres    running (healthy)
-ez-admin-redis       running (healthy)
-ez-admin-server      running
-ez-admin-nginx       running
-```
+连接信息：
+- 主机：你的服务器公网 IP
+- 端口：22
+- 用户名：`ubuntu`
+- 密码：创建实例时设置的密码
 
-如果后端服务刚启动，可以查看初始化日志：
+连接成功后，在终端中执行以下命令安装 Docker：
 
 ```bash
-docker compose -f compose.prod.yml logs server
+curl -fsSL https://get.docker.com | sudo sh
 ```
 
-日志中应该能看到类似这些信息：
+验证安装：
 
-```text
-default admin user created   username=admin
-default admin role created   role_code=super_admin
-default menu created         menu_code=system
-...
+```bash
+docker --version && docker compose version
 ```
 
-::: details 日志怎么看？
-- `docker compose -f compose.prod.yml logs` 查看所有服务的日志。
-- 加上服务名（如 `logs server`）只看某一个服务。
-- 加 `-f` 参数可以持续跟踪：`logs -f server`。
+两条命令都返回版本号即可。
+
+---
+
+## 📦 第三步：上传文件
+
+### 查看服务器系统信息（可选）
+
+连接服务器后，可查看系统版本信息：
+
+```bash
+# 查看系统版本
+cat /etc/os-release
+
+# 查看内核版本
+uname -a
+
+# 查看当前用户
+whoami
+```
+
+::: warning ⚠️ Ubuntu 默认用户名
+
+如果使用 **Ubuntu 24.04.4 LTS**（推荐），默认用户名不是 `root`，而是 `ubuntu`。执行系统命令时需要用 `sudo` 提升权限。
 :::
 
-## ✅ 部署验证清单
+### 上传文件（使用图形化工具）
 
-服务全部启动后，按顺序验证以下四项：
+使用 FinalShell 或 Xshell 连接服务器后：
 
-### 1. 健康检查
+1. **创建目录**：在终端中执行
+   ```bash
+   mkdir -p /opt/ez-admin/nginx /opt/ez-admin/web /opt/ez-admin/ssl && sudo mkdir -p /etc/systemd/system
+   ```
+
+2. **上传文件**：通过工具的文件传输功能（SFTP）拖放以下文件：
+   - 本地 `server/server` → 服务器 `/opt/ez-admin/`
+   - 本地 `admin/dist/` 目录下所有文件 → 服务器 `/opt/ez-admin/web/`
+   - 本地 `deploy/compose.server.yml` → 服务器 `/opt/ez-admin/`
+   - 本地 `deploy/nginx/nginx-native.conf` → 服务器 `/opt/ez-admin/nginx/`
+   - 本地 `deploy/.env.example` → 服务器 `/opt/ez-admin/.env`
+   - 本地 `deploy/ez-admin.service` → 服务器 `/tmp/`，然后执行：
+     ```bash
+     sudo mv /tmp/ez-admin.service /etc/systemd/system/
+     ```
+
+---
+
+## ⚙️ 第四步：配置环境变量
+
+在服务器上编辑 `.env`：
 
 ```bash
+nano /opt/ez-admin/.env
+```
+
+重点修改：
+
+```bash {hl_lines="2 4 7"}
+# 后端连接本地 Docker 中的数据库和缓存
+EZ_DATABASE_HOST=127.0.0.1
+EZ_DATABASE_PORT=5432
+EZ_REDIS_HOST=127.0.0.1
+EZ_REDIS_PORT=6379
+
+# JWT 密钥（必须改，用 openssl rand -hex 32 生成）
+EZ_AUTH_JWT_SECRET=你生成的随机字符串
+
+# 数据库密码（建议改掉默认值）
+EZ_DATABASE_PASSWORD=你的数据库密码
+```
+
+::: warning ⚠️ 注意 HOST 地址
+后端直接运行在服务器上，不是在 Docker 容器里，所以数据库和 Redis 的 HOST 是 `127.0.0.1`，不是容器名。
+:::
+
+---
+
+## 🚀 第五步：启动所有服务
+
+在服务器上执行（Ubuntu 用户需在 `systemctl` 命令前加 `sudo`）：
+
+```bash
+# 1. 启动 PostgreSQL + Redis + Nginx
+cd /opt/ez-admin && docker compose -f compose.server.yml up -d
+
+# 2. 启动后端（通过 systemd，需要 sudo）
+chmod +x /opt/ez-admin/server
+sudo systemctl daemon-reload
+sudo systemctl enable --now ez-admin
+```
+
+验证：
+
+```bash
+# 检查容器状态（应该看到 postgres、redis、nginx 三个容器）
+docker compose -f /opt/ez-admin/compose.server.yml ps
+
+# 检查后端是否运行（需要 sudo）
+sudo systemctl status ez-admin
+
+# 检查健康接口
 curl http://localhost/health
 ```
 
-期望返回类似：
+三个都返回正常，服务就起来了。
 
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {
-    "env": "prod",
-    "database": "ok",
-    "redis": "ok"
-  }
-}
-```
-
-### 2. 登录
-
-用浏览器打开 `http://localhost`，进入登录页面。输入默认管理员账号：
-
-| 项目 | 值 |
-| --- | --- |
-| 用户名 | `admin` |
-| 密码 | `EzAdmin@123456` |
-
-登录成功后，页面应该跳转到后台首页，侧边栏显示系统管理菜单。
-
-### 3. 菜单加载
-
-登录后检查侧边栏，应该能看到以下菜单项：
-
-```text
-系统管理
-  ├── 系统状态
-  ├── 用户管理
-  ├── 角色管理
-  ├── 菜单管理
-  ├── 系统配置
-  ├── 文件管理
-  ├── 操作日志
-  ├── 登录日志
-  └── 公告管理
-```
-
-点击“系统状态”后，页面里应该能看到当前环境（例如 `prod`）以及 `database = ok`、`redis = ok` 的检查结果。这一步可以顺手验证后台菜单、登录态和依赖状态页都已经接通。
-
-### 4. CRUD 操作验证
-
-进入任意一个管理页面（比如用户管理），确认以下操作可用：
-
-- 列表数据正常加载
-- 新增记录可以提交
-- 编辑记录可以保存
-- 状态切换有响应
-
-::: tip 💡 快速排查思路
-如果菜单可见但接口报 403，检查角色是否绑定了对应菜单权限。如果接口返回数据库错误，查看后端日志确认数据库连接是否正常。
-:::
-
-## 🛠️ 复用：开始一个新项目
-
-后台底座的设计初衷就是让你快速复用到不同的个人项目中。下面是完整的复用步骤。
-
-### 第一步：复制仓库
-
-把仓库复制到你自己的项目目录：
+### 初始化管理员
 
 ```bash
-cp -r ez-admin-gin my-new-project
-cd my-new-project
+curl -X POST http://localhost/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"Admin@123456","nickname":"管理员"}'
 ```
 
-或者直接 Fork 仓库后 Clone 到本地。
+### 浏览器验证
 
-### 第二步：修改模块名称
+打开 `http://服务器IP`，登录并确认菜单和 CRUD 正常。
 
-打开 `server/go.mod`，把模块名改成你自己的项目名：
+---
 
-```go
-module my-new-project/server
-```
+## 🌐 第六步：域名与 HTTPS
 
-然后在 `server/` 目录下执行一次替换，把所有 import 路径中的旧模块名更新为新模块名：
+### Cloudflare 托管域名
+
+1. 登录 [Cloudflare](https://dash.cloudflare.com)，添加域名，选择 Free 计划
+2. 按提示到域名注册商修改 NS 为 Cloudflare 提供的地址，等待生效
+3. 添加 A 记录：Type `A`，Name `@`，IPv4 填服务器 IP，Proxy status 暂选 **DNS only**
+
+**验证**：`ping 你的域名` 解析到服务器 IP，`http://域名` 能访问。
+
+### 配置 SSL 证书
+
+1. Cloudflare → 你的域名 → SSL/TLS → Overview，设为 **Full（完全）**
+2. SSL/TLS → Origin Server → Create Certificate（RSA 2048，15 年）
+3. 保存证书和私钥到服务器：
 
 ```bash
-# macOS / Linux
+# 粘贴 Origin Certificate
+nano /opt/ez-admin/ssl/cert.pem
+# 粘贴 Private Key
+nano /opt/ez-admin/ssl/key.pem
+```
+
+4. 切换 Nginx 为 SSL 配置：
+   - 通过 SFTP 将本地 `deploy/nginx/nginx-native-ssl.conf` 上传到服务器 `/opt/ez-admin/nginx/nginx-native.conf`
+
+然后在服务器上重启 Nginx 容器：
+
+```bash
+cd /opt/ez-admin && docker compose -f compose.server.yml restart nginx
+```
+
+5. DNS 记录开启代理（橙色云朵）
+
+**验证**：`https://你的域名` 正常访问，浏览器显示锁头图标。
+
+---
+
+## 🔄 更新发布
+
+改完代码后，按以下步骤更新：
+
+### 1. 本地编译构建
+::: code-group
+
+```powershell [Windows PowerShell]
+# 编译后端
 cd server
-find . -name "*.go" -exec sed -i '' 's|ez-admin-gin/server|my-new-project/server|g' {} +
+$env:GOOS="linux"; $env:GOARCH="amd64"; go build -o server .
+cd ..
+
+# 构建前端
+cd admin; pnpm build; cd ..
 ```
 
-::: warning ⚠️ 替换后需要重新整理依赖
-模块名改完之后，执行 `go mod tidy` 确保依赖和 import 路径一致。
+```bash [macOS / Linux]
+# 编译后端
+cd server && GOOS=linux GOARCH=amd64 go build -o server . && cd ..
+
+# 构建前端
+cd admin && pnpm build && cd ..
+```
+
 :::
 
-### 第三步：更新配置
+### 2. 上传文件（使用图形化工具）
+通过 FinalShell 或 Xshell 的 SFTP 功能上传：
+- 本地 `server/server` → 服务器 `/opt/ez-admin/server`（覆盖原有文件）
+- 本地 `admin/dist/` 目录下所有文件 → 服务器 `/opt/ez-admin/web/`（覆盖原有文件）
 
-修改以下位置，把默认的 `ez-admin` 相关名称换成你自己的：
-
-| 文件 | 修改项 |
-| --- | --- |
-| `server/configs/config.yaml` | 应用名称、数据库名等 |
-| `deploy/.env.example` | 复制为 `.env`，修改密钥和数据库信息 |
-| `deploy/compose.prod.yml` | 项目名称、容器名称（可选） |
-
-### 第四步：添加业务模块
-
-按照第 6 章的模块接入规范，在 `server/internal/` 下创建新的业务模块目录。新增模块的结构和注册方式与系统模块一致。
-
-### 第五步：更新前端
-
-在 `admin/src/` 下创建业务模块对应的页面、API 和路由，复用已有的布局、请求封装和类型定义。
-
-### 第六步：部署到生产环境
-
-更新 `.env` 中的生产配置：
-
+### 3. 重启后端
+在服务器终端执行：
 ```bash
-EZ_APP_ENV=prod
-EZ_AUTH_JWT_SECRET=生产环境随机密钥
-EZ_DATABASE_PASSWORD=生产环境数据库密码
-EZ_LOG_FORMAT=json
-EZ_NGINX_PORT=80
+sudo systemctl restart ez-admin
 ```
 
-然后按前面讲过的部署流程启动即可。
+如果只改了后端，只需要编译+上传后端+重启。如果只改了前端，只需要构建+上传前端。
 
-::: details 复用后还需要注意什么？
-- **修改默认管理员密码**：首次登录后立即在用户管理页面修改。
-- **调整上传目录**：如果业务需要不同的文件存储路径，修改 `EZ_UPLOAD_DIR`。
-- **关闭调试信息**：确认 `EZ_APP_ENV=prod`，日志级别不低于 `info`。
-- **数据库连接池**：小型项目用默认值即可，并发量上来后再调整 `EZ_DATABASE_MAX_OPEN_CONNS` 等参数。
-:::
+---
+
+## ✅ 部署验证清单
+
+| 验证项 | 期望结果 |
+| --- | --- |
+| 容器状态 | PostgreSQL、Redis、Nginx 均 running/healthy |
+| 后端服务 | `systemctl status ez-admin` 显示 active |
+| 健康接口 | `curl http://localhost/health` 返回 ok |
+| 管理员初始化 | `/api/v1/setup/init` 返回成功 |
+| IP 访问 | `http://服务器IP` 能登录 |
+| HTTPS 域名 | `https://域名` 正常访问 |
+| CDN 代理 | `ping 域名` 不显示真实 IP |
+
+---
 
 ## 常见问题排查
 
-部署过程中如果遇到问题，按下面的清单逐项排查。
+::: details 后端启动失败，报数据库连接拒绝
+确认 Docker 容器在运行：`docker compose -f /opt/ez-admin/compose.server.yml ps`。
 
-::: details 容器启动失败：JWT_SECRET is required
-`.env` 文件中没有填写 `EZ_AUTH_JWT_SECRET`，或者 `.env` 文件不在 `deploy/` 目录下。
-
-确认方法：在 `deploy/` 目录下执行 `cat .env | grep JWT_SECRET`，应该能看到你填写的密钥。
+确认 `.env` 中 `EZ_DATABASE_HOST=127.0.0.1`（不是 `postgres`）。
 :::
 
-::: details 后端服务不断重启，日志报数据库连接失败
-可能原因：数据库容器还没有通过健康检查，后端就尝试连接了。
-
-排查方法：`docker compose -f compose.prod.yml ps` 确认 postgres 容器状态为 `healthy`。如果一直是 `starting`，查看数据库日志：`docker compose -f compose.prod.yml logs postgres`。
+::: details Nginx 报 502 Bad Gateway
+后端还没启动或已崩溃。检查：`systemctl status ez-admin`，查看日志：`journalctl -u ez-admin -f`。
 :::
 
-::: details 前端页面白屏，浏览器控制台报 502
-后端服务还没有完全启动，Nginx 反向代理找不到上游。
-
-排查方法：确认 server 容器正常运行，检查 `docker compose -f compose.prod.yml logs server`，等待看到路由注册完成的日志。
+::: details 前端白屏
+确认前端文件已上传到 `/opt/ez-admin/web/` 目录，且 Nginx 配置中有 `try_files $uri $uri/ /index.html;`。
 :::
 
-::: details 登录后侧边栏没有菜单
-可能原因：`bootstrap.go` 的初始化数据没有写入成功，或者角色菜单绑定出了问题。
-
-排查方法：查看后端启动日志中是否有 `default menu created` 和 `default role menu bound` 相关记录。
+::: details Cloudflare ERR_TOO_MANY_REDIRECTS
+SSL 加密模式设成了 Flexible。改为 **Full（完全）**。
 :::
 
-::: details 修改 .env 后配置没有生效
-修改 `.env` 后需要重启服务：
+::: details 更新后端后接口没变化
+确认上传了新二进制且执行了 `systemctl restart ez-admin`。
+:::
+
+---
+
+## 🛠️ 复用：开始一个新项目
+
+### 1. 复制仓库
 
 ```bash
-docker compose -f compose.prod.yml down
-docker compose -f compose.prod.yml up -d
+cp -r ez-admin-gin my-new-project && cd my-new-project
 ```
 
-只是重启单个服务不会重新读取 `.env`。
-:::
+### 2. 改模块名
+
+`server/go.mod` 中把 `ez-admin-gin/server` 替换为你的项目名，然后 `find . -name "*.go" -exec sed -i '' 's|ez-admin-gin/server|my-new-project/server|g' {} +`，最后 `go mod tidy`。
+
+### 3. 加业务模块
+
+按第 6 章的规范在 `server/internal/` 下新增模块，在 `admin/src/` 下新增页面。
+
+### 4. 部署
+
+按本节的步骤操作即可。
+
+---
 
 ## 小结
 
-到这里，第 7 章的所有内容就完成了。回顾一下本章做了什么：
-
-- 为后端和前端分别编写了 Dockerfile，实现了多阶段构建。
-- 用 Docker Compose 把 PostgreSQL、Redis、后端和 Nginx 四个服务编排在一起。
-- 配置了 Nginx 静态资源托管和 API 反向代理。
-- 整理了所有环境变量，理解了 `EZ_` 前缀的覆盖机制。
-- 了解了 `bootstrap.go` 如何自动创建管理员、角色、菜单和权限数据。
-- 完成了从构建到验证的完整部署流程。
-- 说明了如何把这套底座复用到新的个人项目。
+- Docker Compose 负责 PostgreSQL、Redis 和 Nginx，后端二进制直接运行在宿主机上。
+- 后端是一个 Linux 二进制，前端是一份静态文件，上传就能跑。
+- 更新只需要重新编译、上传、重启后端。
+- Cloudflare 提供免费的 CDN + HTTPS + IP 隐藏。
 
 回到本章总览：[第 7 章：部署与复用](./)。

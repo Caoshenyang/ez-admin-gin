@@ -35,8 +35,6 @@ docs/
 
 server/
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ handler/
 │  │  └─ system/
 │  │     └─ operation_logs.go
@@ -46,6 +44,11 @@ server/
 │  │  └─ operation_log.go
 │  └─ router/
 │     └─ router.go
+└─ migrations/
+   ├─ postgres/
+   │  └─ 000002_seed_data.up.sql
+   └─ mysql/
+      └─ 000002_seed_data.up.sql
 ```
 
 | 位置 | 用途 |
@@ -55,15 +58,13 @@ server/
 | `internal/middleware/operation_log.go` | 请求结束后自动写日志 |
 | `internal/handler/system/operation_logs.go` | 提供操作日志查询接口 |
 | `internal/router/router.go` | 注册日志中间件和查询路由 |
-| `internal/bootstrap/bootstrap.go` | 初始化操作日志权限和菜单 |
+| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化操作日志权限和菜单 |
 
 ## 先创建数据表
 
 本节新增 `sys_operation_log`，用于保存后台用户的关键写操作审计记录。
 
-::: tip 建表 SQL
-字段说明、审计表不做逻辑删除的原因、索引设计和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `sys_operation_log`](../../reference/database-ddl#sys-operation-log)。
-:::
+`sys_operation_log` 表保存后台用户的写操作审计记录，不做逻辑删除。字段和索引详情见 [数据库建表语句 - `sys_operation_log`](/reference/database-ddl#sys-operation-log)。
 
 ## 🛠️ 创建操作日志模型
 
@@ -101,6 +102,8 @@ func (OperationLog) TableName() string {
 ## 🛠️ 创建操作日志中间件
 
 创建 `server/internal/middleware/operation_log.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/middleware/operation_log.go` — 操作日志中间件
 
 ```go
 package middleware
@@ -191,6 +194,8 @@ func truncateOperationLogText(value string, maxLength int) string {
 }
 ```
 
+:::
+
 ::: details 为什么中间件只记录请求结束后的结果
 操作日志需要知道接口最终是成功还是失败、状态码是多少、耗时多久。这些信息只有在 `c.Next()` 执行完后才能拿到。
 :::
@@ -198,6 +203,8 @@ func truncateOperationLogText(value string, maxLength int) string {
 ## 🛠️ 创建操作日志查询接口
 
 创建 `server/internal/handler/system/operation_logs.go`。这是新增文件，直接完整写入即可。
+
+::: details `server/internal/handler/system/operation_logs.go` — 操作日志查询接口
 
 ```go
 package system
@@ -327,7 +334,11 @@ func (h *OperationLogHandler) List(c *gin.Context) {
 }
 ```
 
+:::
+
 继续在同一个 `operation_logs.go` 中追加下面的辅助函数：
+
+::: details `server/internal/handler/system/operation_logs.go` — 辅助函数
 
 ```go
 func normalizeOperationLogPage(page int, pageSize int) (int, int) {
@@ -375,12 +386,16 @@ func buildOperationLogResponse(item model.OperationLog) operationLogResponse {
 }
 ```
 
+:::
+
 ## 🛠️ 注册中间件和路由
 
 修改 `server/internal/router/router.go`。本次要改两处：
 
 - 新增操作日志 Handler
 - 在系统路由分组中挂载操作日志中间件和查询接口
+
+::: details `server/internal/router/router.go` — 挂载操作日志中间件与路由
 
 ```go
 // registerSystemRoutes 注册系统级路由。
@@ -430,78 +445,21 @@ func registerSystemRoutes(r *gin.Engine, opts Options) {
 }
 ```
 
+:::
+
 ::: details 为什么操作日志中间件放在权限中间件前面
 顺序是：先认证，再进入操作日志中间件，再执行权限校验。这样即使某个已登录用户请求被权限拦截，写操作也能留下失败记录。
 :::
 
-## 🛠️ 初始化操作日志接口权限
+## 🛠️ 初始化操作日志权限和菜单
 
-修改 `server/internal/bootstrap/bootstrap.go`。先在常量区追加操作日志菜单和按钮编码：
+操作日志的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建操作日志相关的权限策略和菜单数据。
 
-```go
-const (
-	defaultFileMenuCode         = "system:file"
-	defaultFileListCode         = "system:file:list"
-	defaultFileUploadCode       = "system:file:upload"
-	defaultOperationLogMenuCode = "system:operation-log" // [!code ++]
-	defaultOperationLogListCode = "system:operation-log:list" // [!code ++]
-)
-```
-
-然后在 `defaultPermissionSeeds` 中继续追加操作日志查询权限：
-
-```go
-var defaultPermissionSeeds = []defaultPermissionSeed{
-	{Path: "/api/v1/system/files", Method: "GET"},
-	{Path: "/api/v1/system/files", Method: "POST"},
-	{Path: "/api/v1/system/operation-logs", Method: "GET"}, // [!code ++]
-}
-```
-
-## 🛠️ 初始化操作日志菜单
-
-继续修改 `server/internal/bootstrap/bootstrap.go`。
-
-先找到 `seedDefaultMenus` 当前函数末尾的这行返回语句：
-
-```go
-return menus, nil
-```
-
-把这行替换为下面整段代码。也就是说：下面代码要放在文件管理按钮循环之后、原 `return menus, nil` 之前；替换完成后，函数末尾仍然只保留最后一个 `return menus, nil`。
-
-```go
-	operationLogMenu, err := seedMenu(db, model.Menu{
-		ParentID:  systemMenu.ID,
-		Type:      model.MenuTypeMenu,
-		Code:      defaultOperationLogMenuCode,
-		Title:     "操作日志",
-		Path:      "/system/operation-logs",
-		Component: "system/OperationLogView",
-		Icon:      "history",
-		Sort:      70,
-		Status:    model.MenuStatusEnabled,
-		Remark:    "系统内置菜单",
-	}, log)
-	if err != nil {
-		return nil, err
-	}
-
-	operationLogButtons := []model.Menu{
-		{ParentID: operationLogMenu.ID, Type: model.MenuTypeButton, Code: defaultOperationLogListCode, Title: "查看操作日志", Sort: 10, Status: model.MenuStatusEnabled, Remark: "系统内置按钮"},
-	}
-
-	menus = append(menus, *operationLogMenu)
-	for _, button := range operationLogButtons {
-		createdButton, err := seedMenu(db, button, log)
-		if err != nil {
-			return nil, err
-		}
-		menus = append(menus, *createdButton)
-	}
-
-	return menus, nil
-```
+::: tip 💡 权限和菜单初始化
+- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入操作日志接口的 Casbin 规则
+- 菜单数据：在同一迁移文件中插入操作日志菜单和按钮
+- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到操作日志菜单
+:::
 
 ::: warning ⚠️ 继续确认只有一处 `return menus, nil`
 操作日志菜单要接在文件管理菜单后面。不要在中间提前 `return`，否则后面的菜单不会初始化，也不会授权给 `super_admin`。

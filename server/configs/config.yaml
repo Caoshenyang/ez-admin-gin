@@ -9,6 +9,8 @@ server:
   addr: ":8080"
 
 database:
+  # 数据库驱动，支持 postgres 和 mysql。
+  driver: postgres
   # 数据库配置和 deploy/compose.local.yml 保持一致。
   host: localhost
   port: 5432

@@ -3,6 +3,7 @@ package router
 import (
 	"ez-admin-gin/server/internal/config"
 	authHandler "ez-admin-gin/server/internal/handler/auth"
+	setupHandler "ez-admin-gin/server/internal/handler/setup"
 	systemHandler "ez-admin-gin/server/internal/handler/system"
 	appLogger "ez-admin-gin/server/internal/logger"
 	"ez-admin-gin/server/internal/middleware"
@@ -39,8 +40,18 @@ func New(opts Options) *gin.Engine {
 
 	registerSystemRoutes(r, opts)
 	registerAuthRoutes(r, opts)
+	registerSetupRoutes(r, opts)
 
 	return r
+}
+
+// registerSetupRoutes 注册系统初始化路由（无需认证）。
+func registerSetupRoutes(r *gin.Engine, opts Options) {
+	setup := setupHandler.NewSetupHandler(opts.DB, opts.Log)
+
+	api := r.Group("/api/v1")
+	setupGroup := api.Group("/setup")
+	setupGroup.POST("/init", setup.Init)
 }
 
 // registerAuthRoutes 注册认证相关路由。

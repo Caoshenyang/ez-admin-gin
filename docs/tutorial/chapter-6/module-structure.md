@@ -22,7 +22,7 @@ description: "定义每个业务模块在后端、前端、权限和菜单中的
 | Model | `server/internal/model/{module}.go` | 定义数据库表结构和 GORM 模型 |
 | Handler | `server/internal/handler/{group}/{module}.go` | 处理 HTTP 请求、参数绑定和响应 |
 | Router | `server/internal/router/router.go` | 注册路由分组和中间件 |
-| Bootstrap | `server/internal/bootstrap/bootstrap.go` | 初始化权限种子和菜单种子 |
+| Migration | `server/migrations/{postgres,mysql}/000XXX_seed_data.up.sql` | 初始化权限种子和菜单种子 |
 
 现有模块的映射：
 
@@ -172,7 +172,7 @@ description: "定义每个业务模块在后端、前端、权限和菜单中的
 - [ ] 后端 Model：`server/internal/model/{module}.go`
 - [ ] 后端 Handler：`server/internal/handler/{group}/{module}.go`
 - [ ] 后端路由注册：在 `router.go` 中新增独立的注册函数
-- [ ] Bootstrap 种子：在 `bootstrap.go` 中补齐权限和菜单初始数据
+- [ ] Migration 种子：在 `migrations/{postgres,mysql}/000XXX_seed_data.up.sql` 中补齐权限和菜单初始数据
 - [ ] 前端类型：`admin/src/types/{module}.ts`
 - [ ] 前端 API：`admin/src/api/{module}.ts`
 - [ ] 前端页面：`admin/src/pages/{group}/{Module}View.vue`

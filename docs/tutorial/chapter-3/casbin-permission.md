@@ -1,9 +1,9 @@
 ---
-title: Casbin 权限控制
+title: 接口级权限控制
 description: "接入 Casbin，用角色编码判断接口访问权限。"
 ---
 
-# Casbin 权限控制
+# 接口级权限控制
 
 前面已经完成登录、Token 认证和用户角色关系。这一节接入 Casbin，把“某个角色能不能访问某个接口”交给策略表维护。
 
@@ -20,8 +20,6 @@ server/
 ├─ configs/
 │  └─ rbac_model.conf
 ├─ internal/
-│  ├─ bootstrap/
-│  │  └─ bootstrap.go
 │  ├─ middleware/
 │  │  └─ permission.go
 │  ├─ model/
@@ -41,7 +39,6 @@ server/
 | `internal/model/casbin_rule.go` | 定义 Casbin 策略表结构，供初始化使用 |
 | `internal/permission/enforcer.go` | 创建 Casbin Enforcer，并关闭自动建表 |
 | `internal/middleware/permission.go` | 根据当前用户角色判断接口权限 |
-| `internal/bootstrap/bootstrap.go` | 初始化默认接口权限策略 |
 | `internal/router/router.go` | 给受保护接口挂载权限中间件 |
 | `main.go` | 创建权限 Enforcer 并传给路由 |
 
@@ -100,17 +97,13 @@ go get github.com/casbin/gorm-adapter/v3@latest
 | `github.com/casbin/casbin/v3` | 权限模型和策略判断 | [Go 包文档](https://pkg.go.dev/github.com/casbin/casbin/v3) |
 | `github.com/casbin/gorm-adapter/v3` | 从数据库加载 Casbin 策略 | [Go 包文档](https://pkg.go.dev/github.com/casbin/gorm-adapter/v3) |
 
-::: warning ⚠️ 继续使用 SQL 建表
-`gorm-adapter` 默认会尝试自动建表。本节会在代码中关闭它的自动迁移能力，表结构仍然以参考手册中的 SQL 为准。
+::: warning ⚠️ 关闭 gorm-adapter 自动建表
+`gorm-adapter` 默认会尝试自动建表。本节会在代码中关闭它的自动迁移能力，表结构由迁移文件统一管理。
 :::
 
 ## 先创建数据表
 
-本节新增 `casbin_rule`，用于保存 Casbin 接口权限策略。
-
-::: tip 建表 SQL
-字段说明、表名约定、唯一索引和 PostgreSQL / MySQL 建表语句统一放在参考手册：[数据库建表语句 - `casbin_rule`](../../reference/database-ddl#casbin-rule)。
-:::
+本节新增 `casbin_rule`，用于保存 Casbin 接口权限策略。`casbin_rule` 表已在迁移文件中创建，启动时自动执行。字段和索引详情见 [数据库建表语句 - `casbin_rule`](/reference/database-ddl#casbin-rule)。
 
 ## 🛠️ 创建 Casbin 模型文件
 
@@ -172,7 +165,7 @@ func (CasbinRule) TableName() string {
 
 ## 🛠️ 创建 Enforcer
 
-创建 `server/internal/permission/enforcer.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/permission/enforcer.go` — Casbin Enforcer
 
 ```go
 package permission
@@ -225,13 +218,15 @@ func (e *Enforcer) Enforce(sub string, obj string, act string) (bool, error) {
 }
 ```
 
+:::
+
 ::: details 为什么这里还要包装一层
 业务代码只需要知道“能不能访问”，不需要到处直接依赖 Casbin 的具体类型。后续如果要加缓存、重新加载策略、日志统计，也可以放在这个包里。
 :::
 
 ## 🛠️ 创建权限中间件
 
-创建 `server/internal/middleware/permission.go`。这是新增文件，直接完整写入即可。
+::: details `server/internal/middleware/permission.go` — 权限中间件
 
 ```go
 package middleware
@@ -314,88 +309,19 @@ func currentRoleCodes(db *gorm.DB, userID uint) ([]string, error) {
 }
 ```
 
+:::
+
 ::: details 为什么用 `c.FullPath()`
 `c.FullPath()` 返回路由注册时的路径。例如后续有 `/api/v1/users/:id`，它会返回带 `:id` 的模板路径，而不是某个具体 ID。
 
 这样策略可以写成一条规则匹配一类接口。
 :::
 
-## 🛠️ 初始化默认接口权限
+::: tip 📌 默认接口权限初始化
+默认接口权限策略通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限策略。
 
-修改 `server/internal/bootstrap/bootstrap.go`。这一处重点看两个变化：
-
-- 增加默认接口权限常量。
-- 在启动时写入 `casbin_rule`。
-
-先扩展常量：
-
-```go
-const (
-	defaultAdminUsername     = "admin"
-	defaultAdminPassword     = "EzAdmin@123456"
-	defaultAdminRoleCode     = "super_admin"
-	defaultAdminRoleName     = "超级管理员"
-	defaultPermissionPath    = "/api/v1/system/health" // [!code ++]
-	defaultPermissionMethod  = "GET" // [!code ++]
-)
-```
-
-在 `Run` 中绑定角色后，继续初始化权限策略：
-
-```go
-	if err := seedAdminRole(db, admin.ID, role.ID, log); err != nil {
-		return fmt.Errorf("seed admin role: %w", err)
-	}
-
-	if err := seedDefaultPermission(db, log); err != nil { // [!code ++]
-		return fmt.Errorf("seed default permission: %w", err) // [!code ++]
-	} // [!code ++]
-
-	return nil
-}
-```
-
-在文件末尾新增：
-
-```go
-// seedDefaultPermission 初始化超级管理员的默认接口权限。
-func seedDefaultPermission(db *gorm.DB, log *zap.Logger) error {
-	var rule model.CasbinRule
-	err := db.Where(
-		"ptype = ? AND v0 = ? AND v1 = ? AND v2 = ?",
-		"p",
-		defaultAdminRoleCode,
-		defaultPermissionPath,
-		defaultPermissionMethod,
-	).First(&rule).Error
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-
-	rule = model.CasbinRule{
-		Ptype: "p",
-		V0:    defaultAdminRoleCode,
-		V1:    defaultPermissionPath,
-		V2:    defaultPermissionMethod,
-	}
-
-	if err := db.Create(&rule).Error; err != nil {
-		return err
-	}
-
-	log.Info(
-		"default permission created",
-		zap.String("role_code", defaultAdminRoleCode),
-		zap.String("path", defaultPermissionPath),
-		zap.String("method", defaultPermissionMethod),
-	)
-
-	return nil
-}
-```
+这样可以确保权限策略在服务启动时就已经准备就绪，不需要通过代码手动写入。
+:::
 
 ::: warning ⚠️ 策略初始化后需要重新加载
 本节的 Enforcer 在服务启动时加载策略。所以新增或修改 `casbin_rule` 后，当前服务进程不会自动感知。
@@ -540,8 +466,19 @@ go run .
 第一次启动后，控制台应该能看到类似日志：
 
 ```text
-INFO	default permission created	{"role_code": "super_admin", "path": "/api/v1/system/health", "method": "GET"}
+INFO	database migrations applied
 INFO	server started	{"addr": ":8080", "env": "dev"}
+```
+
+## ✅ 创建管理员账号
+
+服务启动后，先通过初始化接口创建管理员账号：
+
+```bash
+# 创建管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 ```
 
 ## ✅ 验证策略已经写入
@@ -553,12 +490,14 @@ INFO	server started	{"addr": ":8080", "env": "dev"}
 docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule;"
 ```
 
-应该看到类似结果：
+应该看到类似结果，包含系统默认的权限策略：
 
 ```text
  ptype |     v0      |           v1            | v2
 -------+-------------+-------------------------+-----
  p     | super_admin | /api/v1/system/health   | GET
+ p     | super_admin | /api/v1/auth/login      | POST
+ p     | super_admin | /api/v1/setup/init      | POST
 ```
 
 ## ✅ 验证公开健康检查仍然可访问
@@ -608,7 +547,7 @@ curl -i http://localhost:8080/api/v1/system/health
 ```powershell [Windows PowerShell]
 $body = @{
   username = "admin"
-  password = "EzAdmin@123456"
+  password = "YourPassword123"
 } | ConvertTo-Json
 
 $login = Invoke-RestMethod `
@@ -628,7 +567,7 @@ Invoke-RestMethod `
 ```bash [macOS / Linux]
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
+  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
 
 curl -X GET http://localhost:8080/api/v1/system/health \
   -H "Authorization: Bearer ${TOKEN}"
@@ -647,7 +586,7 @@ curl -X GET http://localhost:8080/api/v1/system/health \
 ## 常见问题
 
 ::: details 启动时报 `relation "casbin_rule" does not exist`
-说明 Casbin 策略表还没有创建。先执行 [`casbin_rule` 建表语句](../../reference/database-ddl#casbin-rule)，再重新启动服务。
+说明数据库迁移还没有执行。检查服务启动日志中是否有 `database migration` 相关错误，确认 PostgreSQL 连接正常后重启服务。
 :::
 
 ::: details 修改了 `casbin_rule`，权限没有立即变化
@@ -656,4 +595,4 @@ curl -X GET http://localhost:8080/api/v1/system/health \
 现在先重启服务让策略重新加载。后续做权限管理接口时，再补重新加载策略的代码路径。
 :::
 
-下一节会继续设计菜单和按钮权限：[菜单权限设计](./menu-permission)。
+下一节会继续设计菜单和按钮权限：[角色菜单权限](./menu-permission)。

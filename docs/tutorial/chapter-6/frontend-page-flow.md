@@ -190,13 +190,13 @@ const routeComponentMap: Record<string, RouteComponent> = {
 
 映射关系的来源：
 
-1. 后端 `bootstrap.go` 中种子菜单的 `Component` 字段（如 `"system/XxxView"`）。
+1. 后端迁移文件中种子菜单的 `Component` 字段（如 `"system/XxxView"`）。
 2. 前端 `routeComponentMap` 的 key 必须和种子数据完全一致。
 3. 如果 key 不在 map 中，会 fallback 到占位页。
 
 ::: warning ⚠️ 四个位置要一致
 一个模块要正常工作，下面四处必须对齐：
-1. 后端种子菜单的 `Component` 字段（如 `system/XxxView`）
+1. 后端迁移文件中种子菜单的 `Component` 字段（如 `system/XxxView`）
 2. 前端 `dynamic-menu.ts` 的 `routeComponentMap` key
 3. 前端页面文件的实际路径（如 `pages/system/XxxView.vue`）
 4. 菜单管理界面中菜单节点的 `component` 值（如果通过管理界面修改过）

@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm docs:build)",
+      "Bash(gh release:*)",
+      "Bash(winget install:*)",
+      "Bash(powershell.exe -Command \"winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements\" 2>&1)",
+      "Bash(gh auth:*)",
+      "Bash(where gh:*)",
+      "Bash(cmd.exe /c \"where gh\")",
+      "Read(//c/Program Files/GitHub CLI/**)",
+      "Read(//c/Program Files \\(x86\\)/GitHub CLI/**)",
+      "Read(//d/A/ez-admin-gin/$LOCALAPPDATA/Programs/GitHub CLI/**)",
+      "Read(//d/A/ez-admin-gin/$HOME/AppData/Local/Programs/GitHub CLI/**)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(mv docs/changelog.md docs/guide/changelog.md)",
+      "Bash(mv docs/roadmap.md docs/guide/roadmap.md)",
+      "WebSearch",
+      "Bash(go get:*)",
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(go env:*)",
+      "Bash(go list:*)",
+      "Bash(grep -E \"\\\\.\\(md|txt\\)$|README|CHANGELOG\")",
+      "Bash(node tmp_scan.js)",
+      "Bash(node -e \":*)"
+    ]
+  }
+}
