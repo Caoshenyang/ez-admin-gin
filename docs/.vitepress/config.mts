@@ -222,7 +222,8 @@ export default defineConfig({
             { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },
             { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
-            { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' }
+            { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' },
+            { text: 'VitePress 部署到 GitHub Pages', link: '/reference/vitepress-github-pages' }
           ]
         }
       ]
