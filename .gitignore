@@ -19,3 +19,8 @@ server/uploads/
 
 # Third-party skills not tracked in release
 .agents/skills/drawio-skill/
+
+# Local deployment packaging artifacts
+deploy-package/
+deploy-package.zip
+deploy-package.tar.gz
