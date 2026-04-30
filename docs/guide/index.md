@@ -1,14 +1,18 @@
 ---
 title: 快速启动
-description: "五步在本地跑起 EZ Admin Gin，附带初始化细节和常见问题。"
+description: "五步在本地跑起 EZ Admin Gin，并了解它为什么正在升级为企业级通用后台管理系统底座。"
 ---
 
 # 快速启动
 
-EZ Admin Gin 是一个面向个人项目快速上线的通用后台管理系统底座——登录、权限、菜单、配置、日志、文件上传，这些每个后台都要写的东西，这里已经沉淀好了。
+EZ Admin Gin 正在从“功能型后台模板”升级为一套面向 Java 转 Go 工程师的企业级通用后台管理系统底座。登录、权限、菜单、配置、日志、文件上传这些后台基础能力已经沉淀完成，`v2` 阶段会继续补组织体系、数据权限和企业级工程结构。
 
 ::: tip 🎯 这页解决什么
 用最短的时间帮你在本地把项目跑起来，确认它是不是你想要的。
+:::
+
+::: info 🧭 跑起来之后建议怎么读
+如果你主要关心工程结构升级，可以继续看 [企业级架构升级](/guide/enterprise-architecture) 和 [Go vs Java 工程结构](/guide/java-to-go-structure)。如果你想直接跟着做项目，再进入 [从零搭建教程](/tutorial/)。
 :::
 
 ## 📋 先确认环境
@@ -152,5 +156,7 @@ pnpm dev
 ## 🧭 接下来去哪
 
 - **了解项目用了什么技术** → [项目结构](/guide/project-structure)
+- **理解为什么项目开始往企业级底座升级** → [企业级架构升级](/guide/enterprise-architecture)
+- **把 Go 后端结构映射回熟悉的 Java 分层** → [Go vs Java 工程结构](/guide/java-to-go-structure)
 - **想学每一步怎么搭出来的** → [从零搭建教程](/tutorial/)
 - **查配置、接口、建表语句** → [参考手册](/reference/)

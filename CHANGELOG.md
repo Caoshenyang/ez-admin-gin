@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- v2 后端骨架：`bootstrap / platform / module` 命名空间与 `cmd/server` 启动入口
+- 组织体系和数据权限基础模型：部门、岗位、用户岗位关系、角色数据范围、自定义部门范围
+- PostgreSQL / MySQL `000003_enterprise_foundation` 迁移文件
+- 文档页：企业级架构升级、Go vs Java 工程结构、数据权限模型
+
+### Changed
+
+- 项目定位开始从“功能型后台模板”升级为“面向 Java 转 Go 工程师的企业级通用后台管理系统底座”
+- 使用指南、项目结构、教程首页、路线图和参考手册入口同步对齐 v2 升级方向
+
 ## [1.1.0] - 2026-04-30
 
 ### Added

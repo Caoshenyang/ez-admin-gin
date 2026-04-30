@@ -14,14 +14,7 @@ import (
 // Permission 根据当前用户角色判断接口访问权限。
 func Permission(db *gorm.DB, enforcer *permission.Enforcer, log *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, ok := CurrentUserID(c)
-		if !ok {
-			response.Error(c, apperror.Unauthorized("请先登录"), log)
-			c.Abort()
-			return
-		}
-
-		roleCodes, err := currentRoleCodes(db, userID)
+		roleCodes, err := permissionRoleCodes(c, db)
 		if err != nil {
 			response.Error(c, apperror.Internal("权限校验失败", err), log)
 			c.Abort()
@@ -57,6 +50,19 @@ func Permission(db *gorm.DB, enforcer *permission.Enforcer, log *zap.Logger) gin
 		response.Error(c, apperror.Forbidden("没有权限访问"), log)
 		c.Abort()
 	}
+}
+
+func permissionRoleCodes(c *gin.Context, db *gorm.DB) ([]string, error) {
+	if actor, ok := CurrentActor(c); ok {
+		return actor.RoleCodes, nil
+	}
+
+	userID, ok := CurrentUserID(c)
+	if !ok {
+		return nil, apperror.Unauthorized("请先登录")
+	}
+
+	return currentRoleCodes(db, userID)
 }
 
 // currentRoleCodes 查询当前用户拥有的启用角色编码。

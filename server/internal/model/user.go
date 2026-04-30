@@ -22,6 +22,7 @@ type User struct {
 	Username     string         `gorm:"size:64;not null;uniqueIndex" json:"username"`
 	PasswordHash string         `gorm:"size:255;not null" json:"-"`
 	Nickname     string         `gorm:"size:64;not null;default:''" json:"nickname"`
+	DepartmentID uint           `gorm:"not null;default:0;index" json:"department_id"`
 	Status       UserStatus     `gorm:"type:smallint;not null;default:1" json:"status"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`

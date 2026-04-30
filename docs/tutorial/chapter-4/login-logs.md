@@ -1,609 +1,188 @@
 ---
 title: 登录日志
-description: "记录登录成功和失败行为，为安全审计提供基础信息。"
+description: "用最终版模块结构承接登录日志查询入口，把登录行为审计稳定地落到认证链路和独立查询模块中。"
 ---
 
 # 登录日志
 
-操作日志记录的是已登录用户的后台写操作。登录日志补齐另一类安全审计：谁尝试登录、是否成功、来自哪个 IP、使用了什么客户端。
+操作日志记录的是“登录之后做了什么”，登录日志补齐的是另一条同样重要的安全审计链路：谁尝试登录、是否成功、来自哪个 IP、用了什么客户端。对企业后台来说，这两类日志通常要一起看，才能把一次异常行为讲完整。
 
 ::: tip 🎯 本节目标
-完成后，登录成功、密码错误、用户禁用等登录结果都会写入 `sys_login_log`；`super_admin` 可以查询登录日志列表。
+完成后，登录成功、密码错误、用户禁用等结果仍然会在登录入口自动写入 `sys_login_log`；而 `/api/v1/system/login-logs` 这组查询接口会切到独立模块，由标准的 `dto / repository / service / handler / routes / policy` 结构负责对外提供列表能力。
 :::
 
-## 登录日志和操作日志的区别
+## 先说明边界
 
-| 日志 | 记录对象 | 触发位置 |
-| --- | --- | --- |
-| 操作日志 | 已登录用户的后台写操作 | 受保护路由中间件 |
-| 登录日志 | 登录成功和失败行为 | 登录接口内部 |
+登录日志和操作日志一样，也分成两部分：
 
-登录接口本身还没有通过认证中间件，所以登录日志不能像操作日志那样依赖 `CurrentUserID`。它需要在登录 Handler 里主动记录。
+| 部分 | 职责 |
+| --- | --- |
+| 登录入口 | 在登录成功或失败时写入审计记录 |
+| `module/system/loginlog` | 提供后台查询入口 |
 
-::: warning ⚠️ 登录日志不要记录密码
-登录失败时也只记录用户名、IP、User-Agent 和失败原因，不记录明文密码，也不记录请求体。
+它和操作日志最大的不同是：登录接口发生在认证之前，所以这条日志不能靠受保护路由上的中间件自动生成，而要在登录入口里显式记录。
+
+::: warning ⚠️ 登录日志不能记录明文密码
+这一节的登录日志只记录用户名、登录结果、失败原因、IP 和 User-Agent，不保存密码，也不原样保存登录请求体。
 :::
 
 ## 本节会改什么
 
-本节会新增或修改下面这些文件：
+登录日志查询入口现在也直接按最终结构落地：
 
 ```text
-docs/
-└─ reference/
-   └─ database-ddl.md
-
 server/
 ├─ internal/
 │  ├─ handler/
-│  │  ├─ auth/
-│  │  │  └─ login.go
-│  │  └─ system/
-│  │     └─ login_logs.go
+│  │  └─ auth/
+│  │     └─ login.go
 │  ├─ model/
 │  │  └─ login_log.go
-│  └─ router/
-│     └─ router.go
-└─ migrations/
-   ├─ postgres/
-   │  └─ 000002_seed_data.up.sql
-   └─ mysql/
-      └─ 000002_seed_data.up.sql
+│  └─ module/
+│     └─ system/
+│        ├─ loginlog/
+│        │  ├─ dto.go
+│        │  ├─ entity.go
+│        │  ├─ handler.go
+│        │  ├─ policy.go
+│        │  ├─ repository.go
+│        │  ├─ routes.go
+│        │  └─ service.go
+│        └─ routes.go
 ```
 
 | 位置 | 用途 |
 | --- | --- |
-| `docs/reference/database-ddl.md` | 补充 `sys_login_log` 建表语句 |
-| `internal/model/login_log.go` | 定义登录日志模型 |
-| `internal/handler/auth/login.go` | 登录成功和失败时写入日志 |
-| `internal/handler/system/login_logs.go` | 提供登录日志查询接口 |
-| `internal/router/router.go` | 注册登录日志查询路由 |
-| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化登录日志权限和菜单 |
+| `handler/auth/login.go` | 登录成功或失败时主动写日志 |
+| `dto.go` | 分页查询结构、状态过滤器和返回结构 |
+| `repository.go` | 登录日志分页查询和过滤条件收口 |
+| `service.go` | 分页边界、状态参数校验和返回组装 |
+| `handler.go` | HTTP 协议层绑定与输出 |
+| `routes.go` | 注册 `/api/v1/system/login-logs` 路由 |
+| `policy.go` | 固定登录日志模块权限码元信息 |
 
 ## 先创建数据表
 
-本节新增 `sys_login_log`，用于保存后台登录成功和失败记录。
+本节复用已经存在的 `sys_login_log`，用于保存后台登录成功和失败记录。
 
 `sys_login_log` 表保存后台登录成功和失败记录，不做逻辑删除。字段和索引详情见 [数据库建表语句 - `sys_login_log`](/reference/database-ddl#sys-login-log)。
 
-## 🛠️ 创建登录日志模型
+## 为什么登录日志不能像操作日志那样只靠中间件
 
-::: details `server/internal/model/login_log.go` — 登录日志模型
+操作日志依赖当前登录人上下文，而登录日志发生在“拿到登录态之前”。  
+这决定了它天然需要在登录入口主动记录：
 
-```go
-package model
+- 用户名是否存在
+- 用户是否被禁用
+- 密码是否错误
+- Token 是否签发成功
 
-import "time"
+这些结果都属于认证流程本身的一部分，不适合由一个外层受保护中间件再去猜测。
 
-// LoginLogStatus 表示登录结果。
-type LoginLogStatus int
-
-const (
-	// LoginLogStatusSuccess 表示登录成功。
-	LoginLogStatusSuccess LoginLogStatus = 1
-	// LoginLogStatusFailed 表示登录失败。
-	LoginLogStatusFailed LoginLogStatus = 2
-)
-
-// LoginLog 是后台登录日志模型。
-type LoginLog struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	UserID    uint           `gorm:"not null;default:0;index" json:"user_id"`
-	Username  string         `gorm:"size:64;not null;default:'';index" json:"username"`
-	Status    LoginLogStatus `gorm:"type:smallint;not null;index" json:"status"`
-	Message   string         `gorm:"size:255;not null;default:''" json:"message"`
-	IP        string         `gorm:"column:ip;size:64;not null;default:'';index" json:"ip"`
-	UserAgent string         `gorm:"size:500;not null;default:''" json:"user_agent"`
-	CreatedAt time.Time      `json:"created_at"`
-}
-
-// TableName 固定登录日志表名。
-func (LoginLog) TableName() string {
-	return "sys_login_log"
-}
-```
-
+::: details 为什么登录日志写入失败不应该阻断登录
+登录日志是审计能力，不是登录成功的前置条件。即使日志表或数据库短暂异常，系统也应该优先保证“合法用户仍然能登录”，同时把日志写入失败记录到服务端日志中，留给后续排查。
 :::
 
-## 🛠️ 修改登录接口写入日志
+## 登录日志模块现在对外长什么样
 
-::: details `server/internal/handler/auth/login.go` — 完整版（含日志记录）
+当前主线保留 1 个稳定查询接口：
 
-```go
-package auth
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| `GET` | `/api/v1/system/login-logs` | 登录日志分页列表 |
 
-import (
-	"errors"
-	"strings"
-	"time"
+支持的查询条件保持简单稳定：
 
-	"ez-admin-gin/server/internal/apperror"
-	"ez-admin-gin/server/internal/model"
-	"ez-admin-gin/server/internal/response"
-	"ez-admin-gin/server/internal/token"
+- `page`
+- `page_size`
+- `username`
+- `ip`
+- `status`
 
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
-)
+其中 `status` 继续沿用模型里的枚举语义：
 
-// LoginHandler 负责登录相关接口。
-type LoginHandler struct {
-	db           *gorm.DB
-	log          *zap.Logger
-	tokenManager *token.Manager
-}
+- `1`：登录成功
+- `2`：登录失败
 
-// NewLoginHandler 创建登录 Handler。
-func NewLoginHandler(db *gorm.DB, log *zap.Logger, tokenManager *token.Manager) *LoginHandler {
-	return &LoginHandler{
-		db:           db,
-		log:          log,
-		tokenManager: tokenManager,
-	}
-}
+## 模块内部收了哪些规则
 
-type loginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
+### 1. 登录状态过滤器先统一在模块内部收口
 
-type loginResponse struct {
-	UserID      uint   `json:"user_id"`
-	Username    string `json:"username"`
-	Nickname    string `json:"nickname"`
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresAt   string `json:"expires_at"`
-}
+`status` 现在允许：
 
-// Login 校验用户名和密码。
-func (h *LoginHandler) Login(c *gin.Context) {
-	var req loginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		h.createLoginLog(c, 0, "", model.LoginLogStatusFailed, "用户名和密码不能为空")
-		response.Error(c, apperror.BadRequest("用户名和密码不能为空"), h.log)
-		return
-	}
+- `1`
+- `2`
 
-	req.Username = strings.TrimSpace(req.Username)
-	if req.Username == "" || req.Password == "" {
-		h.createLoginLog(c, 0, req.Username, model.LoginLogStatusFailed, "用户名和密码不能为空")
-		response.Error(c, apperror.BadRequest("用户名和密码不能为空"), h.log)
-		return
-	}
+任何其他值都会直接返回参数错误，而不是把非法状态继续带到 SQL 查询里。这样后面如果要把“登录失败原因分类”继续细分，也能在模块内部继续长。
 
-	var user model.User
-	// GORM 会自动过滤 deleted_at 不为空的记录。
-	err := h.db.Where("username = ?", req.Username).First(&user).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			h.createLoginLog(c, 0, req.Username, model.LoginLogStatusFailed, "用户名或密码错误")
-			response.Error(c, apperror.Unauthorized("用户名或密码错误"), h.log)
-			return
-		}
+### 2. 登录日志模块保持只读
 
-		h.createLoginLog(c, 0, req.Username, model.LoginLogStatusFailed, "登录失败")
-		h.log.Error("query login user failed", zap.Error(err))
-		response.Error(c, apperror.Internal("登录失败", err), h.log)
-		return
-	}
+这一节的登录日志模块同样只有查询接口，不提供：
 
-	if user.Status != model.UserStatusEnabled {
-		h.createLoginLog(c, user.ID, user.Username, model.LoginLogStatusFailed, "用户已被禁用")
-		response.Error(c, apperror.Forbidden("用户已被禁用"), h.log)
-		return
-	}
+- 手工新增
+- 手工编辑
+- 手工删除
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		h.createLoginLog(c, user.ID, user.Username, model.LoginLogStatusFailed, "用户名或密码错误")
-		response.Error(c, apperror.Unauthorized("用户名或密码错误"), h.log)
-		return
-	}
+登录日志和操作日志一样，越接近“自动生成、尽量不可篡改”，它作为安全审计依据的价值就越高。
 
-	accessToken, expiresAt, err := h.tokenManager.GenerateAccessToken(user.ID, user.Username)
-	if err != nil {
-		h.createLoginLog(c, user.ID, user.Username, model.LoginLogStatusFailed, "登录失败")
-		response.Error(c, apperror.Internal("登录失败", err), h.log)
-		return
-	}
+### 3. 登录日志和操作日志解决的是两条不同问题
 
-	h.createLoginLog(c, user.ID, user.Username, model.LoginLogStatusSuccess, "登录成功")
-	response.Success(c, loginResponse{
-		UserID:      user.ID,
-		Username:    user.Username,
-		Nickname:    user.Nickname,
-		AccessToken: accessToken,
-		TokenType:   "Bearer",
-		ExpiresAt:   expiresAt.UTC().Format(time.RFC3339),
-	})
-}
+这两类日志现在的职责边界应该明确：
 
-func (h *LoginHandler) createLoginLog(c *gin.Context, userID uint, username string, status model.LoginLogStatus, message string) {
-	record := model.LoginLog{
-		UserID:    userID,
-		Username:  strings.TrimSpace(username),
-		Status:    status,
-		Message:   message,
-		IP:        c.ClientIP(),
-		UserAgent: c.Request.UserAgent(),
-	}
+| 日志 | 解决的问题 |
+| --- | --- |
+| 登录日志 | 谁尝试进入系统，是否成功 |
+| 操作日志 | 进入系统后做了哪些关键写操作 |
 
-	if err := h.db.Create(&record).Error; err != nil && h.log != nil {
-		h.log.Warn("create login log failed", zap.Error(err))
-	}
-}
-```
+把这两者拆清楚后，后面做风控、账号安全和异常行为排查时，信息会更完整。
 
-:::
+## 系统聚合路由切换意味着什么
 
-::: warning ⚠️ 登录日志写入失败不应该阻断登录
-登录日志是审计能力，不是登录成功的前置条件。如果日志写入失败，记录服务端日志即可，不要让用户因为日志表短暂异常而无法登录。
-:::
+`/api/v1/system/login-logs` 现在不再由旧的全局 `LoginLogHandler` 直接挂路由，而是像操作日志、配置、文件一样，通过系统聚合路由统一装配。
 
-## 🛠️ 创建登录日志查询接口
+这一步的意义是：
 
-::: details `server/internal/handler/system/login_logs.go` — 登录日志查询接口
+- 登录审计查询能力也进入标准模块落点
+- 日志类系统模块开始形成一致结构
+- 后续如果要补保留策略、导出、链路字段或风险标记，不需要再回到全局 Handler 里扩写
 
-```go
-package system
+## 怎么验证这一节已经做成
 
-import (
-	"strings"
-	"time"
+### 1. 后端构建通过
 
-	"ez-admin-gin/server/internal/apperror"
-	"ez-admin-gin/server/internal/model"
-	"ez-admin-gin/server/internal/response"
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-)
-
-// LoginLogHandler 负责登录日志查询接口。
-type LoginLogHandler struct {
-	db  *gorm.DB
-	log *zap.Logger
-}
-
-// NewLoginLogHandler 创建登录日志 Handler。
-func NewLoginLogHandler(db *gorm.DB, log *zap.Logger) *LoginLogHandler {
-	return &LoginLogHandler{
-		db:  db,
-		log: log,
-	}
-}
-
-type loginLogListQuery struct {
-	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
-	Username string `form:"username"`
-	IP       string `form:"ip"`
-	Status   int    `form:"status"`
-}
-
-type loginLogResponse struct {
-	ID        uint                 `json:"id"`
-	UserID    uint                 `json:"user_id"`
-	Username  string               `json:"username"`
-	Status    model.LoginLogStatus `json:"status"`
-	Message   string               `json:"message"`
-	IP        string               `json:"ip"`
-	UserAgent string               `json:"user_agent"`
-	CreatedAt time.Time            `json:"created_at"`
-}
-
-type loginLogListResponse struct {
-	Items    []loginLogResponse `json:"items"`
-	Total    int64              `json:"total"`
-	Page     int                `json:"page"`
-	PageSize int                `json:"page_size"`
-}
-
-// List 返回登录日志分页列表。
-func (h *LoginLogHandler) List(c *gin.Context) {
-	var query loginLogListQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, apperror.BadRequest("查询参数不正确"), h.log)
-		return
-	}
-
-	page, pageSize := normalizeLoginLogPage(query.Page, query.PageSize)
-	queryDB := h.db.Model(&model.LoginLog{})
-
-	username := strings.TrimSpace(query.Username)
-	if username != "" {
-		queryDB = queryDB.Where("username = ?", username)
-	}
-
-	ip := strings.TrimSpace(query.IP)
-	if ip != "" {
-		queryDB = queryDB.Where("ip = ?", ip)
-	}
-
-	if query.Status != 0 {
-		status := model.LoginLogStatus(query.Status)
-		if !validLoginLogStatus(status) {
-			response.Error(c, apperror.BadRequest("登录状态不正确"), h.log)
-			return
-		}
-		queryDB = queryDB.Where("status = ?", status)
-	}
-
-	var total int64
-	if err := queryDB.Count(&total).Error; err != nil {
-		response.Error(c, apperror.Internal("查询登录日志总数失败", err), h.log)
-		return
-	}
-
-	var logs []model.LoginLog
-	if err := queryDB.
-		Order("id DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
-		Find(&logs).Error; err != nil {
-		response.Error(c, apperror.Internal("查询登录日志列表失败", err), h.log)
-		return
-	}
-
-	items := make([]loginLogResponse, 0, len(logs))
-	for _, item := range logs {
-		items = append(items, buildLoginLogResponse(item))
-	}
-
-	response.Success(c, loginLogListResponse{
-		Items:    items,
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	})
-}
-
-func normalizeLoginLogPage(page int, pageSize int) (int, int) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10
-	}
-	if pageSize > 100 {
-		pageSize = 100
-	}
-
-	return page, pageSize
-}
-
-func validLoginLogStatus(status model.LoginLogStatus) bool {
-	return status == model.LoginLogStatusSuccess || status == model.LoginLogStatusFailed
-}
-
-func buildLoginLogResponse(item model.LoginLog) loginLogResponse {
-	return loginLogResponse{
-		ID:        item.ID,
-		UserID:    item.UserID,
-		Username:  item.Username,
-		Status:    item.Status,
-		Message:   item.Message,
-		IP:        item.IP,
-		UserAgent: item.UserAgent,
-		CreatedAt: item.CreatedAt,
-	}
-}
-```
-
-:::
-
-## 🛠️ 注册登录日志查询路由
-
-::: details `server/internal/router/router.go` — 注册登录日志路由
-
-```go
-// registerSystemRoutes 注册系统级路由。
-func registerSystemRoutes(r *gin.Engine, opts Options) {
-	health := systemHandler.NewHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
-	users := systemHandler.NewUserHandler(opts.DB, opts.Log)
-	roles := systemHandler.NewRoleHandler(opts.DB, opts.Log)
-	menus := systemHandler.NewMenuAdminHandler(opts.DB, opts.Log)
-	configs := systemHandler.NewSystemConfigHandler(opts.DB, opts.Redis, opts.Log)
-	files := systemHandler.NewFileHandler(opts.DB, opts.Config.Upload, opts.Log)
-	operationLogs := systemHandler.NewOperationLogHandler(opts.DB, opts.Log)
-	loginLogs := systemHandler.NewLoginLogHandler(opts.DB, opts.Log) // [!code ++]
-
-	// /health 通常给部署探针和本地快速验证使用。
-	r.GET("/health", health.Check)
-
-	// /api/v1/system/health 放在接口版本分组下，方便统一管理后台接口。
-	api := r.Group("/api/v1")
-	system := api.Group("/system")
-	system.Use(middleware.Auth(opts.Token, opts.Log))
-	system.Use(middleware.OperationLog(opts.DB, opts.Log))
-	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
-	system.GET("/health", health.Check)
-	system.GET("/users", users.List)
-	system.POST("/users", users.Create)
-	system.POST("/users/:id/update", users.Update)
-	system.POST("/users/:id/status", users.UpdateStatus)
-	system.POST("/users/:id/roles", users.UpdateRoles)
-	system.GET("/roles", roles.List)
-	system.POST("/roles", roles.Create)
-	system.POST("/roles/:id/update", roles.Update)
-	system.POST("/roles/:id/status", roles.UpdateStatus)
-	system.POST("/roles/:id/permissions", roles.UpdatePermissions)
-	system.POST("/roles/:id/menus", roles.UpdateMenus)
-	system.GET("/menus", menus.Tree)
-	system.POST("/menus", menus.Create)
-	system.POST("/menus/:id/update", menus.Update)
-	system.POST("/menus/:id/status", menus.UpdateStatus)
-	system.POST("/menus/:id/delete", menus.Delete)
-	system.GET("/configs", configs.List)
-	system.POST("/configs", configs.Create)
-	system.POST("/configs/:id/update", configs.Update)
-	system.POST("/configs/:id/status", configs.UpdateStatus)
-	system.GET("/configs/value/:key", configs.Value)
-	system.GET("/files", files.List)
-	system.POST("/files", files.Upload)
-	system.GET("/operation-logs", operationLogs.List)
-system.GET("/login-logs", loginLogs.List) // [!code ++]
-}
-```
-
-:::
-
-## 🛠️ 初始化登录日志权限和菜单
-
-登录日志的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建登录日志相关的权限策略和菜单数据。
-
-::: tip 💡 权限和菜单初始化
-- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入登录日志接口的 Casbin 规则
-- 菜单数据：在同一迁移文件中插入登录日志菜单和按钮
-- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到登录日志菜单
-:::
-
-## ✅ 启动并观察初始化日志
-
-本节没有新增第三方依赖，可以直接启动：
+在 `server/` 目录执行：
 
 ```bash
-# 在 server/ 目录启动服务
-go run .
+go test ./...
 ```
 
-第一次启动后，控制台应该能看到类似日志：
+应该能看到 `internal/module/system/loginlog` 已经进入编译链路。
+
+### 2. 查询接口已经切到新模块
+
+登录后访问：
 
 ```text
-INFO	default permission created	{"role_code": "super_admin", "path": "/api/v1/system/login-logs", "method": "GET"}
-INFO	default menu created	{"menu_code": "system:login-log"}
-INFO	default role menu bound	{"role_id": 1, "menu_id": 25}
+GET /api/v1/system/login-logs?page=1&page_size=10
 ```
 
-## ✅ 验证登录日志写入
+应该仍然能拿到分页结果，说明系统聚合路由已经切到新模块。
 
-先发起一次失败登录：
+### 3. 登录写入链路仍然生效
 
-::: code-group
+可以连续做两次登录尝试：
 
-```powershell [Windows PowerShell]
-$body = @{
-  username = "admin"
-  password = "wrong-password"
-} | ConvertTo-Json
+- 一次输入错误密码
+- 一次输入正确密码
 
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body $body
-```
+然后查询登录日志列表，应该能看到成功和失败两类结果。说明这次重构只是在收口查询入口，没有破坏登录入口里的审计写入逻辑。
 
-```bash [macOS / Linux]
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"wrong-password"}'
-```
+## 本节最关键的收获
 
-:::
+这一节真正建立的判断标准是：
 
-这次请求应该返回“用户名或密码错误”。
+> 认证链路里的审计能力，不应该被误当成普通 CRUD 模块。登录日志适合由登录入口主动写入，再由独立模块负责查询，这样职责才稳定。
 
-再发起一次成功登录：
+登录日志现在的价值，不只是“能看到谁登录成功了”，而是它已经和操作日志一起，构成了后台底座里最基础的一套安全审计能力。
 
-::: code-group
-
-```powershell [Windows PowerShell]
-$body = @{
-  username = "admin"
-  password = "EzAdmin@123456"
-} | ConvertTo-Json
-
-$login = Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body $body
-
-$token = $login.data.access_token
-```
-
-```bash [macOS / Linux]
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
-```
-
-:::
-
-然后查询数据库：
-
-```bash
-# 查看最近的登录日志
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select id, user_id, username, status, message, ip, created_at from sys_login_log order by id desc limit 5;"
-```
-
-应该至少能看到两条记录：
-
-- `status = 1`，`message = 登录成功`
-- `status = 2`，`message = 用户名或密码错误`
-
-::: warning ⚠️ 失败登录不会保存密码
-验证数据库时，只应该看到用户名、登录结果、IP、User-Agent 等信息，不应该看到明文密码。
-:::
-
-## ✅ 验证登录日志查询接口
-
-调用登录日志列表接口：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/v1/system/login-logs?page=1&page_size=10" `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-```bash [macOS / Linux]
-curl "http://localhost:8080/api/v1/system/login-logs?page=1&page_size=10" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-:::
-
-应该能看到包含成功和失败登录记录的分页结果。
-
-也可以按状态筛选：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/v1/system/login-logs?status=2&page=1&page_size=10" `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-```bash [macOS / Linux]
-curl "http://localhost:8080/api/v1/system/login-logs?status=2&page=1&page_size=10" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-:::
-
-`status = 2` 表示登录失败。
-
-## 常见问题
-
-::: details 为什么登录日志不是中间件实现
-登录接口发生在认证之前，此时还没有当前登录用户上下文。直接在登录 Handler 中记录成功和失败结果，语义更明确，也更容易拿到具体失败原因。
-:::
-
-::: details 用户名不存在时为什么 `user_id` 是 `0`
-如果用户名不存在，就没有对应的用户 ID。此时只记录请求传入的用户名、失败结果和来源信息。
-:::
-
-::: details 登录日志会不会被操作日志重复记录
-不会。操作日志中间件挂在 `/api/v1/system` 受保护分组上，登录接口是 `/api/v1/auth/login`，两者不在同一个路由分组。
-:::
-
-到这里，第四章的通用系统模块主线就补齐了。下一章开始进入前端管理台：[第 5 章：前端管理台](../chapter-5/)。
+到这里，第四章的日志主线已经补齐。下一步继续往系统内容管理走：[公告管理](./notice-management)。

@@ -1,48 +1,65 @@
 ---
 title: 角色管理
-description: "实现角色维护、接口权限分配和菜单权限分配能力。"
+description: "用最终版模块结构实现角色管理，并把数据范围、自定义部门、菜单权限和接口权限统一收进角色模块。"
 ---
 
 # 角色管理
 
-上一节已经能管理用户，并能给用户绑定角色。这一节继续补齐角色本身的管理能力：创建角色、编辑角色、禁用角色，并为角色分配接口权限和菜单权限。
+用户模块拆到最终结构后，角色模块就成了下一块必须跟上的核心资源。因为数据权限虽然最终落在查询链路里，但它的配置入口并不在用户模块，而是在角色管理里。
 
 ::: tip 🎯 本节目标
-完成后，`super_admin` 可以访问角色管理接口；系统会初始化角色管理菜单和按钮；通过接口可以维护角色，并把接口权限、菜单权限分配给指定角色。
+完成后，`/api/v1/system/roles` 这组接口会由独立角色模块负责，角色本身会同时管理四类信息：基础字段、数据范围、自定义部门范围、接口与菜单权限。
 :::
 
 ## 本节会改什么
 
-本节会新增或修改下面这些文件：
+角色模块会和用户模块保持同样的结构，不再继续停留在全局 `handler/system/roles.go` 的写法：
 
 ```text
 server/
 ├─ internal/
-│  ├─ handler/
+│  ├─ module/
+│  │  ├─ iam/
+│  │  │  └─ role/
+│  │  │     ├─ dto.go
+│  │  │     ├─ entity.go
+│  │  │     ├─ handler.go
+│  │  │     ├─ policy.go
+│  │  │     ├─ repository.go
+│  │  │     ├─ routes.go
+│  │  │     └─ service.go
 │  │  └─ system/
-│  │     └─ roles.go
-│  └─ router/
-│     └─ router.go
-└─ migrations/
-   ├─ postgres/
-   │  └─ 000002_seed_data.up.sql
-   └─ mysql/
-      └─ 000002_seed_data.up.sql
+│  │     └─ routes.go
+│  └─ model/
+│     └─ role_data_scope.go
 ```
 
-| 位置 | 用途 |
+| 文件 | 作用 |
 | --- | --- |
-| `internal/handler/system/roles.go` | 角色管理接口 |
-| `internal/router/router.go` | 注册角色管理路由 |
-| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化角色管理权限和菜单 |
+| `dto.go` | 角色请求体、响应结构、数据范围和 ID 归一化 |
+| `repository.go` | 角色、菜单、接口权限、自定义部门范围的查询与替换 |
+| `service.go` | 超级管理员保护、事务边界、数据范围校验 |
+| `handler.go` | HTTP 协议层绑定与输出 |
+| `routes.go` | 注册 `/api/v1/system/roles` 相关路由 |
+| `policy.go` | 固定角色模块的权限码命名 |
 
-::: info 本节不新增数据库表
-角色管理复用 `sys_role`、`sys_role_menu`、`casbin_rule`。其中 `sys_role` 保存角色本身，`sys_role_menu` 保存角色菜单关系，`casbin_rule` 保存接口权限策略。
-:::
+## 为什么角色模块必须承载数据范围
 
-## 接口规划
+数据权限经常被误解成“用户进来后按部门过滤一下”，但真正决定“这个人能看到哪些数据”的是角色，而不是用户表本身。
 
-本节先实现 6 个接口：
+所以角色模块必须把下面几类信息统一管理起来：
+
+- 角色基础字段：编码、名称、状态、排序、备注
+- `data_scope`：角色的数据范围
+- `custom_department_ids`：当范围为 `custom_dept` 时，角色额外授予了哪些部门
+- 接口权限：这类角色能调哪些 API
+- 菜单权限：这类角色能看到哪些菜单与按钮
+
+如果这几类信息被拆散在多个位置，后面无论是排查权限问题，还是给前端做配置页面，都会非常痛苦。
+
+## 角色模块现在对外长什么样
+
+角色模块对外仍然保持一组稳定的后台接口：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -50,992 +67,141 @@ server/
 | `POST` | `/api/v1/system/roles` | 创建角色 |
 | `POST` | `/api/v1/system/roles/:id/update` | 编辑角色基础信息 |
 | `POST` | `/api/v1/system/roles/:id/status` | 修改角色状态 |
-| `POST` | `/api/v1/system/roles/:id/permissions` | 分配接口权限 |
-| `POST` | `/api/v1/system/roles/:id/menus` | 分配菜单权限 |
-
-::: warning ⚠️ 不要随意禁用 `super_admin`
-`super_admin` 是本教程本地起步的超级管理员角色。为了避免把自己锁在系统外，本节会阻止禁用这个角色。
-:::
-
-## 🛠️ 创建角色管理 Handler
-
-::: details `server/internal/handler/system/roles.go` — 角色管理接口
-
-```go
-package system
-
-import (
-	"errors"
-	"strconv"
-	"strings"
-	"time"
-
-	"ez-admin-gin/server/internal/apperror"
-	"ez-admin-gin/server/internal/model"
-	"ez-admin-gin/server/internal/response"
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-)
-
-const superAdminRoleCode = "super_admin"
-
-// RoleHandler 负责后台角色管理接口。
-type RoleHandler struct {
-	db  *gorm.DB
-	log *zap.Logger
-}
-
-// NewRoleHandler 创建角色管理 Handler。
-func NewRoleHandler(db *gorm.DB, log *zap.Logger) *RoleHandler {
-	return &RoleHandler{
-		db:  db,
-		log: log,
-	}
-}
-
-type roleListQuery struct {
-	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
-	Keyword  string `form:"keyword"`
-	Status   int    `form:"status"`
-}
-
-type createRoleRequest struct {
-	Code   string           `json:"code"`
-	Name   string           `json:"name"`
-	Sort   int              `json:"sort"`
-	Status model.RoleStatus `json:"status"`
-	Remark string           `json:"remark"`
-}
-
-type updateRoleRequest struct {
-	Name   string           `json:"name"`
-	Sort   int              `json:"sort"`
-	Status model.RoleStatus `json:"status"`
-	Remark string           `json:"remark"`
-}
-
-type updateRoleStatusRequest struct {
-	Status model.RoleStatus `json:"status"`
-}
-
-type rolePermissionItem struct {
-	Path   string `json:"path"`
-	Method string `json:"method"`
-}
-
-type updateRolePermissionsRequest struct {
-	Permissions []rolePermissionItem `json:"permissions"`
-}
-
-type updateRoleMenusRequest struct {
-	MenuIDs []uint `json:"menu_ids"`
-}
-
-type roleResponse struct {
-	ID          uint                 `json:"id"`
-	Code        string               `json:"code"`
-	Name        string               `json:"name"`
-	Sort        int                  `json:"sort"`
-	Status      model.RoleStatus     `json:"status"`
-	Remark      string               `json:"remark"`
-	Permissions []rolePermissionItem `json:"permissions"`
-	MenuIDs     []uint               `json:"menu_ids"`
-	CreatedAt   time.Time            `json:"created_at"`
-	UpdatedAt   time.Time            `json:"updated_at"`
-}
-
-type roleListResponse struct {
-	Items    []roleResponse `json:"items"`
-	Total    int64          `json:"total"`
-	Page     int            `json:"page"`
-	PageSize int            `json:"page_size"`
-}
-
-// List 返回角色分页列表。
-func (h *RoleHandler) List(c *gin.Context) {
-	var query roleListQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, apperror.BadRequest("查询参数不正确"), h.log)
-		return
-	}
-
-	page, pageSize := normalizeRolePage(query.Page, query.PageSize)
-	queryDB := h.db.Model(&model.Role{})
-
-	keyword := strings.TrimSpace(query.Keyword)
-	if keyword != "" {
-		like := "%" + keyword + "%"
-		queryDB = queryDB.Where("code LIKE ? OR name LIKE ?", like, like)
-	}
-
-	if query.Status != 0 {
-		status := model.RoleStatus(query.Status)
-		if !validRoleStatus(status) {
-			response.Error(c, apperror.BadRequest("角色状态不正确"), h.log)
-			return
-		}
-		queryDB = queryDB.Where("status = ?", status)
-	}
-
-	var total int64
-	if err := queryDB.Count(&total).Error; err != nil {
-		response.Error(c, apperror.Internal("查询角色总数失败", err), h.log)
-		return
-	}
-
-	var roles []model.Role
-	if err := queryDB.
-		Order("sort ASC, id ASC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
-		Find(&roles).Error; err != nil {
-		response.Error(c, apperror.Internal("查询角色列表失败", err), h.log)
-		return
-	}
-
-	permissions, err := h.rolePermissions(roles)
-	if err != nil {
-		response.Error(c, apperror.Internal("查询角色接口权限失败", err), h.log)
-		return
-	}
-
-	menuIDs, err := h.roleMenuIDs(roles)
-	if err != nil {
-		response.Error(c, apperror.Internal("查询角色菜单权限失败", err), h.log)
-		return
-	}
-
-	items := make([]roleResponse, 0, len(roles))
-	for _, role := range roles {
-		items = append(items, buildRoleResponse(role, permissions[role.Code], menuIDs[role.ID]))
-	}
-
-	response.Success(c, roleListResponse{
-		Items:    items,
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-	})
-}
-
-// Create 创建角色。
-func (h *RoleHandler) Create(c *gin.Context) {
-	var req createRoleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
-
-	code, name, status, remark, err := normalizeCreateRoleRequest(req)
-	if err != nil {
-		response.Error(c, err, h.log)
-		return
-	}
-
-	var created model.Role
-	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := ensureRoleCodeAvailable(tx, code); err != nil {
-			return err
-		}
-
-		role := model.Role{
-			Code:   code,
-			Name:   name,
-			Sort:   req.Sort,
-			Status: status,
-			Remark: remark,
-		}
-
-		if err := tx.Create(&role).Error; err != nil {
-			return err
-		}
-
-		created = role
-		return nil
-	})
-	if err != nil {
-		writeRoleError(c, err, "创建角色失败", h.log)
-		return
-	}
-
-	response.Success(c, buildRoleResponse(created, nil, nil))
-}
-
-// Update 编辑角色基础信息。
-func (h *RoleHandler) Update(c *gin.Context) {
-	roleID, ok := roleIDParam(c, h.log)
-	if !ok {
-		return
-	}
-
-	var req updateRoleRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
-
-	name, status, remark, err := normalizeUpdateRoleRequest(req)
-	if err != nil {
-		response.Error(c, err, h.log)
-		return
-	}
-
-	var role model.Role
-	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.First(&role, roleID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("角色不存在")
-			}
-			return err
-		}
-
-		if role.Code == superAdminRoleCode && status == model.RoleStatusDisabled {
-			return apperror.BadRequest("不能禁用超级管理员角色")
-		}
-
-		if err := tx.Model(&role).Updates(map[string]any{
-			"name":   name,
-			"sort":   req.Sort,
-			"status": status,
-			"remark": remark,
-		}).Error; err != nil {
-			return err
-		}
-
-		role.Name = name
-		role.Sort = req.Sort
-		role.Status = status
-		role.Remark = remark
-		return nil
-	})
-	if err != nil {
-		writeRoleError(c, err, "更新角色失败", h.log)
-		return
-	}
-
-	response.Success(c, buildRoleResponse(role, nil, nil))
-}
-
-// UpdateStatus 修改角色状态。
-func (h *RoleHandler) UpdateStatus(c *gin.Context) {
-	roleID, ok := roleIDParam(c, h.log)
-	if !ok {
-		return
-	}
-
-	var req updateRoleStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
-
-	if !validRoleStatus(req.Status) {
-		response.Error(c, apperror.BadRequest("角色状态不正确"), h.log)
-		return
-	}
-
-	err := h.db.Transaction(func(tx *gorm.DB) error {
-		var role model.Role
-		if err := tx.First(&role, roleID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("角色不存在")
-			}
-			return err
-		}
-
-		if role.Code == superAdminRoleCode && req.Status == model.RoleStatusDisabled {
-			return apperror.BadRequest("不能禁用超级管理员角色")
-		}
-
-		return tx.Model(&role).Update("status", req.Status).Error
-	})
-	if err != nil {
-		writeRoleError(c, err, "更新角色状态失败", h.log)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"id":     roleID,
-		"status": req.Status,
-	})
-}
-
-// UpdatePermissions 替换角色接口权限。
-func (h *RoleHandler) UpdatePermissions(c *gin.Context) {
-	roleID, ok := roleIDParam(c, h.log)
-	if !ok {
-		return
-	}
-
-	var req updateRolePermissionsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
-
-	permissions, err := normalizeRolePermissions(req.Permissions)
-	if err != nil {
-		response.Error(c, err, h.log)
-		return
-	}
-
-	var role model.Role
-	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.First(&role, roleID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("角色不存在")
-			}
-			return err
-		}
-
-		if role.Code == superAdminRoleCode {
-			return apperror.BadRequest("超级管理员角色权限不在这里修改")
-		}
-
-		return replaceRolePermissions(tx, role.Code, permissions)
-	})
-	if err != nil {
-		writeRoleError(c, err, "更新角色接口权限失败", h.log)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"id":          roleID,
-		"code":        role.Code,
-		"permissions": permissions,
-	})
-}
-
-// UpdateMenus 替换角色菜单权限。
-func (h *RoleHandler) UpdateMenus(c *gin.Context) {
-	roleID, ok := roleIDParam(c, h.log)
-	if !ok {
-		return
-	}
-
-	var req updateRoleMenusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
-
-	menuIDs, err := normalizeMenuIDs(req.MenuIDs)
-	if err != nil {
-		response.Error(c, err, h.log)
-		return
-	}
-
-	err = h.db.Transaction(func(tx *gorm.DB) error {
-		var role model.Role
-		if err := tx.First(&role, roleID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("角色不存在")
-			}
-			return err
-		}
-
-		if role.Code == superAdminRoleCode {
-			return apperror.BadRequest("超级管理员菜单权限不在这里修改")
-		}
-
-		if err := ensureMenusUsable(tx, menuIDs); err != nil {
-			return err
-		}
-
-		return replaceRoleMenus(tx, roleID, menuIDs)
-	})
-	if err != nil {
-		writeRoleError(c, err, "更新角色菜单权限失败", h.log)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"id":       roleID,
-		"menu_ids": menuIDs,
-	})
-}
-
-func (h *RoleHandler) rolePermissions(roles []model.Role) (map[string][]rolePermissionItem, error) {
-	result := make(map[string][]rolePermissionItem, len(roles))
-	if len(roles) == 0 {
-		return result, nil
-	}
-
-	roleCodes := make([]string, 0, len(roles))
-	for _, role := range roles {
-		roleCodes = append(roleCodes, role.Code)
-	}
-
-	var rows []model.CasbinRule
-	if err := h.db.
-		Where("ptype = ?", "p").
-		Where("v0 IN ?", roleCodes).
-		Order("v1 ASC, v2 ASC").
-		Find(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	for _, row := range rows {
-		result[row.V0] = append(result[row.V0], rolePermissionItem{
-			Path:   row.V1,
-			Method: row.V2,
-		})
-	}
-
-	return result, nil
-}
-
-func (h *RoleHandler) roleMenuIDs(roles []model.Role) (map[uint][]uint, error) {
-	result := make(map[uint][]uint, len(roles))
-	if len(roles) == 0 {
-		return result, nil
-	}
-
-	roleIDs := make([]uint, 0, len(roles))
-	for _, role := range roles {
-		roleIDs = append(roleIDs, role.ID)
-	}
-
-	var rows []model.RoleMenu
-	if err := h.db.Where("role_id IN ?", roleIDs).Order("menu_id ASC").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-
-	for _, row := range rows {
-		result[row.RoleID] = append(result[row.RoleID], row.MenuID)
-	}
-
-	return result, nil
-}
-
-func normalizeCreateRoleRequest(req createRoleRequest) (string, string, model.RoleStatus, string, error) {
-	code := strings.TrimSpace(req.Code)
-	if code == "" {
-		return "", "", 0, "", apperror.BadRequest("角色编码不能为空")
-	}
-	if len(code) > 64 {
-		return "", "", 0, "", apperror.BadRequest("角色编码不能超过 64 个字符")
-	}
-
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		return "", "", 0, "", apperror.BadRequest("角色名称不能为空")
-	}
-	if len(name) > 64 {
-		return "", "", 0, "", apperror.BadRequest("角色名称不能超过 64 个字符")
-	}
-
-	status := req.Status
-	if status == 0 {
-		status = model.RoleStatusEnabled
-	}
-	if !validRoleStatus(status) {
-		return "", "", 0, "", apperror.BadRequest("角色状态不正确")
-	}
-
-	remark := strings.TrimSpace(req.Remark)
-	if len(remark) > 255 {
-		return "", "", 0, "", apperror.BadRequest("备注不能超过 255 个字符")
-	}
-
-	return code, name, status, remark, nil
-}
-
-func normalizeUpdateRoleRequest(req updateRoleRequest) (string, model.RoleStatus, string, error) {
-	name := strings.TrimSpace(req.Name)
-	if name == "" {
-		return "", 0, "", apperror.BadRequest("角色名称不能为空")
-	}
-	if len(name) > 64 {
-		return "", 0, "", apperror.BadRequest("角色名称不能超过 64 个字符")
-	}
-
-	if !validRoleStatus(req.Status) {
-		return "", 0, "", apperror.BadRequest("角色状态不正确")
-	}
-
-	remark := strings.TrimSpace(req.Remark)
-	if len(remark) > 255 {
-		return "", 0, "", apperror.BadRequest("备注不能超过 255 个字符")
-	}
-
-	return name, req.Status, remark, nil
-}
-
-func normalizeRolePermissions(permissions []rolePermissionItem) ([]rolePermissionItem, error) {
-	unique := make([]rolePermissionItem, 0, len(permissions))
-	seen := make(map[string]struct{}, len(permissions))
-
-	for _, item := range permissions {
-		path := strings.TrimSpace(item.Path)
-		method := strings.ToUpper(strings.TrimSpace(item.Method))
-		if path == "" || method == "" {
-			return nil, apperror.BadRequest("接口权限参数不正确")
-		}
-
-		key := path + " " + method
-		if _, ok := seen[key]; ok {
-			continue
-		}
-
-		seen[key] = struct{}{}
-		unique = append(unique, rolePermissionItem{
-			Path:   path,
-			Method: method,
-		})
-	}
-
-	return unique, nil
-}
-
-func normalizeMenuIDs(menuIDs []uint) ([]uint, error) {
-	unique := make([]uint, 0, len(menuIDs))
-	seen := make(map[uint]struct{}, len(menuIDs))
-
-	for _, menuID := range menuIDs {
-		if menuID == 0 {
-			return nil, apperror.BadRequest("菜单 ID 不正确")
-		}
-		if _, ok := seen[menuID]; ok {
-			continue
-		}
-
-		seen[menuID] = struct{}{}
-		unique = append(unique, menuID)
-	}
-
-	return unique, nil
-}
-
-func normalizeRolePage(page int, pageSize int) (int, int) {
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 10
-	}
-	if pageSize > 100 {
-		pageSize = 100
-	}
-
-	return page, pageSize
-}
-
-func validRoleStatus(status model.RoleStatus) bool {
-	return status == model.RoleStatusEnabled || status == model.RoleStatusDisabled
-}
-
-func roleIDParam(c *gin.Context, log *zap.Logger) (uint, bool) {
-	rawID := c.Param("id")
-	id, err := strconv.ParseUint(rawID, 10, 64)
-	if err != nil || id == 0 {
-		response.Error(c, apperror.BadRequest("角色 ID 不正确"), log)
-		return 0, false
-	}
-
-	return uint(id), true
-}
-
-func ensureRoleCodeAvailable(db *gorm.DB, code string) error {
-	var role model.Role
-	err := db.Unscoped().Where("code = ?", code).First(&role).Error
-	if err == nil {
-		return apperror.BadRequest("角色编码已存在")
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
-	}
-
-	return err
-}
-
-func ensureMenusUsable(db *gorm.DB, menuIDs []uint) error {
-	if len(menuIDs) == 0 {
-		return nil
-	}
-
-	var count int64
-	err := db.Model(&model.Menu{}).
-		Where("id IN ?", menuIDs).
-		Where("status = ?", model.MenuStatusEnabled).
-		Count(&count).Error
-	if err != nil {
-		return err
-	}
-
-	if count != int64(len(menuIDs)) {
-		return apperror.BadRequest("菜单不存在或已禁用")
-	}
-
-	return nil
-}
-
-func replaceRolePermissions(db *gorm.DB, roleCode string, permissions []rolePermissionItem) error {
-	if err := db.Where("ptype = ? AND v0 = ?", "p", roleCode).Delete(&model.CasbinRule{}).Error; err != nil {
-		return err
-	}
-
-	if len(permissions) == 0 {
-		return nil
-	}
-
-	rows := make([]model.CasbinRule, 0, len(permissions))
-	for _, permission := range permissions {
-		rows = append(rows, model.CasbinRule{
-			Ptype: "p",
-			V0:    roleCode,
-			V1:    permission.Path,
-			V2:    permission.Method,
-		})
-	}
-
-	return db.Create(&rows).Error
-}
-
-func replaceRoleMenus(db *gorm.DB, roleID uint, menuIDs []uint) error {
-	if err := db.Where("role_id = ?", roleID).Delete(&model.RoleMenu{}).Error; err != nil {
-		return err
-	}
-
-	if len(menuIDs) == 0 {
-		return nil
-	}
-
-	rows := make([]model.RoleMenu, 0, len(menuIDs))
-	for _, menuID := range menuIDs {
-		rows = append(rows, model.RoleMenu{
-			RoleID: roleID,
-			MenuID: menuID,
-		})
-	}
-
-	return db.Create(&rows).Error
-}
-
-func buildRoleResponse(role model.Role, permissions []rolePermissionItem, menuIDs []uint) roleResponse {
-	return roleResponse{
-		ID:          role.ID,
-		Code:        role.Code,
-		Name:        role.Name,
-		Sort:        role.Sort,
-		Status:      role.Status,
-		Remark:      role.Remark,
-		Permissions: permissions,
-		MenuIDs:     menuIDs,
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
-	}
-}
-
-func writeRoleError(c *gin.Context, err error, fallbackMessage string, log *zap.Logger) {
-	var appErr *apperror.Error
-	if errors.As(err, &appErr) {
-		response.Error(c, appErr, log)
-		return
-	}
-
-	response.Error(c, apperror.Internal(fallbackMessage, err), log)
+| `POST` | `/api/v1/system/roles/:id/permissions` | 更新接口权限 |
+| `POST` | `/api/v1/system/roles/:id/menus` | 更新菜单权限 |
+
+和用户模块一样，内部结构已经进入最终版，但对外接口路径保持稳定。
+
+## 角色返回结构里多了什么
+
+角色管理接口现在不再只返回“角色名称和状态”，而是会把角色相关的权限配置一并带出来：
+
+```json
+{
+  "id": 2,
+  "code": "sales_manager",
+  "name": "销售主管",
+  "sort": 20,
+  "data_scope": "custom_dept",
+  "custom_department_ids": [3, 7],
+  "status": 1,
+  "remark": "负责销售部门数据",
+  "permissions": [
+    { "path": "/api/v1/system/users", "method": "GET" }
+  ],
+  "menu_ids": [10, 11, 12]
 }
 ```
 
+这一步的意义很直接：
+
+- 前端角色配置页可以一次拿到完整角色配置
+- 排查数据权限时，不需要再额外猜“这个角色到底有没有自定义部门范围”
+- 角色模块开始真正成为权限配置中心，而不是一个只有名称和状态的字典表
+
+## 超级管理员为什么要单独保护
+
+当前主线里，`super_admin` 仍然是系统兜底角色，所以角色模块对它保留了几条保护规则：
+
+- 不能禁用
+- 不能通过常规接口修改它的接口权限
+- 不能通过常规接口修改它的菜单权限
+- 不能修改它的数据范围
+
+::: warning ⚠️ 这是教程主线里的刻意保护，不是技术做不到
+如果后续你要把这套底座用于真实业务，也可以开放超级管理员配置能力，但建议同步加上二次确认、操作日志和恢复方案，而不是直接去掉全部保护。
 :::
 
-::: details 为什么不允许修改角色编码
-`code` 会被写入 `casbin_rule.v0`，也是权限判断时使用的稳定标识。角色创建后可以改名称、排序、状态和备注，但不建议直接改编码。
-:::
+## 数据范围怎么进入角色模块
 
-::: warning ⚠️ 修改接口权限后需要重新加载策略
-本节先用“重启服务”让 Casbin 重新加载策略。后续如果要在页面里即时修改权限，需要在保存权限后调用 Enforcer 的重新加载逻辑。
-:::
+角色模块现在已经支持：
 
-## 🛠️ 注册角色管理路由
+- `data_scope`
+- `custom_department_ids`
 
-修改 `server/internal/router/router.go`。这一处在系统路由中新增角色 Handler 和路由。
+也就是说，数据权限的入口已经正式从“模型设计”走进“可管理接口”了。
 
-```go
-// registerSystemRoutes 注册系统级路由。
-func registerSystemRoutes(r *gin.Engine, opts Options) {
-	health := systemHandler.NewHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
-	users := systemHandler.NewUserHandler(opts.DB, opts.Log)
-	roles := systemHandler.NewRoleHandler(opts.DB, opts.Log) // [!code ++]
+当 `data_scope` 不是 `custom_dept` 时，`custom_department_ids` 会被自动清空；  
+当它是 `custom_dept` 时，后端会校验这些部门是否真实存在且处于启用状态。
 
-	// /health 通常给部署探针和本地快速验证使用。
-	r.GET("/health", health.Check)
+这意味着角色模块现在不仅能“保存数据范围值”，还能确保这份配置本身是可执行的。
 
-	// /api/v1/system/health 放在接口版本分组下，方便统一管理后台接口。
-	api := r.Group("/api/v1")
-	system := api.Group("/system")
-	system.Use(middleware.Auth(opts.Token, opts.Log))
-	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
-	system.GET("/health", health.Check)
-	system.GET("/users", users.List)
-	system.POST("/users", users.Create)
-	system.POST("/users/:id/update", users.Update)
-	system.POST("/users/:id/status", users.UpdateStatus)
-	system.POST("/users/:id/roles", users.UpdateRoles)
-	system.GET("/roles", roles.List) // [!code ++]
-	system.POST("/roles", roles.Create) // [!code ++]
-	system.POST("/roles/:id/update", roles.Update) // [!code ++]
-	system.POST("/roles/:id/status", roles.UpdateStatus) // [!code ++]
-	system.POST("/roles/:id/permissions", roles.UpdatePermissions) // [!code ++]
-	system.POST("/roles/:id/menus", roles.UpdateMenus) // [!code ++]
-}
-```
+## 和第 5 章的关系是什么
 
-## 🛠️ 初始化角色管理权限和菜单
+这一节和第 5 章不是两条线，而是同一件事的两面：
 
-角色管理的权限和菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建角色管理相关的权限策略和菜单数据。
+- 第 5 章负责讲清“为什么要有组织体系、Actor 和查询作用域”
+- 这一节负责把“角色数据范围”变成可配置、可返回、可约束的模块实现
 
-::: tip 💡 权限和菜单初始化
-- 权限策略：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入角色管理接口的 Casbin 规则
-- 菜单数据：在同一迁移文件中插入角色管理菜单和按钮
-- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到角色管理菜单
-:::
+你可以把它理解成：
 
-## ✅ 整理依赖并启动
+- 第 5 章讲的是规则模型
+- 这一节讲的是规则入口
 
-本节没有新增第三方依赖，但修改了后端文件，仍然可以整理一次：
+## 怎么验证这一节已经做成
+
+### 1. 后端构建通过
+
+在 `server/` 目录执行：
 
 ```bash
-# 在 server/ 目录执行
-go mod tidy
+go test ./...
 ```
 
-确认数据库和 Redis 正在运行：
+应该能看到 `internal/module/iam/role` 已经进入编译链路，并整体通过。
 
-```bash
-# 在项目根目录执行，确认本地依赖服务处于运行状态
-docker compose -f deploy/compose.local.yml ps
-```
+### 2. 角色接口已经切到新模块
 
-回到 `server/` 目录启动服务：
-
-```bash
-# 在 server/ 目录启动服务
-go run .
-```
-
-第一次启动后，控制台应该能看到类似日志：
+登录后访问：
 
 ```text
-INFO	database migrations applied
-INFO	server started	{"addr": ":8080", "env": "dev"}
+GET /api/v1/system/roles?page=1&page_size=10
 ```
 
-### 创建管理员账号
+应该仍然能拿到角色分页结果，但返回体里会包含 `data_scope` 和 `custom_department_ids`。
 
-服务启动后，先通过初始化接口创建管理员账号：
+### 3. 创建角色时可以带数据范围
 
-```bash
-# 创建管理员账号
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+例如：
+
+```json
+{
+  "code": "ops_manager",
+  "name": "运维主管",
+  "sort": 30,
+  "data_scope": "custom_dept",
+  "custom_department_ids": [2, 5],
+  "status": 1,
+  "remark": "负责运维部门数据"
+}
 ```
 
-## ✅ 验证权限和菜单数据
+如果部门不存在或已禁用，后端会直接拒绝这次创建。
 
-先确认角色管理接口权限已经写入：
+### 4. 超级管理员保护仍然生效
 
-```bash
-# 查看角色管理相关接口权限
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule where v1 like '/api/v1/system/roles%' order by v1, v2;"
-```
+如果尝试：
 
-应该能看到角色列表、创建、编辑、状态修改、接口权限分配、菜单权限分配对应的策略。
+- 禁用 `super_admin`
+- 修改 `super_admin` 的数据范围
+- 通过普通接口改它的菜单或接口权限
 
-再确认角色管理菜单已经写入：
+后端都应该拒绝。
 
-```bash
-# 查看角色管理相关菜单和按钮
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select id, parent_id, type, code, title from sys_menu where code like 'system:role%' order by sort, id;"
-```
+## 本节最关键的收获
 
-应该能看到 `system:role` 以及几个 `system:role:*` 按钮编码。
+角色模块这一步真正建立的是另一个判断标准：
 
-## ✅ 验证角色管理接口
+> 当一个模块开始同时承载“权限配置入口”和“权限规则元信息”时，它就不能只当成普通 CRUD 表，而应该成为独立的权限配置模块。
 
-先登录拿到 Token：
+角色模块之所以重要，不是因为它比用户多几个接口，而是因为它同时连接着：
 
-::: code-group
+- 接口权限
+- 菜单权限
+- 数据权限
 
-```powershell [Windows PowerShell]
-$body = @{
-  username = "admin"
-  password = "YourPassword123"
-} | ConvertTo-Json
+这也是它必须尽早进入最终结构的原因。
 
-$login = Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body $body
+## 下一步
 
-$token = $login.data.access_token
-```
-
-```bash [macOS / Linux]
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
-```
-
-:::
-
-查看角色列表：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/v1/system/roles?page=1&page_size=10" `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-```bash [macOS / Linux]
-curl "http://localhost:8080/api/v1/system/roles?page=1&page_size=10" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-:::
-
-应该能看到包含 `super_admin` 的分页结果。
-
-创建一个测试角色：
-
-::: warning ⚠️ Windows PowerShell 发送中文 JSON 时要显式使用 UTF-8
-如果请求体中包含中文，建议先把 JSON 转成 UTF-8 字节再发送，避免中文在发送阶段变成 `????`。
-:::
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$body = @{
-  code = "demo_role"
-  name = "演示角色"
-  sort = 100
-  status = 1
-  remark = "用于验证角色管理接口"
-} | ConvertTo-Json
-
-$utf8Body = [System.Text.Encoding]::UTF8.GetBytes($body)
-
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/system/roles `
-  -ContentType "application/json; charset=utf-8" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body $utf8Body
-```
-
-```bash [macOS / Linux]
-curl -X POST http://localhost:8080/api/v1/system/roles \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"code":"demo_role","name":"演示角色","sort":100,"status":1,"remark":"用于验证角色管理接口"}'
-```
-
-:::
-
-给测试角色分配接口权限。下面示例假设新角色 ID 是 `2`：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$roleId = 2
-$body = @{
-  permissions = @(
-    @{ path = "/api/v1/system/users"; method = "GET" },
-    @{ path = "/api/v1/system/roles"; method = "GET" }
-  )
-} | ConvertTo-Json -Depth 4
-
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/v1/system/roles/$roleId/permissions" `
-  -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body $body
-```
-
-```bash [macOS / Linux]
-ROLE_ID=2
-
-curl -X POST "http://localhost:8080/api/v1/system/roles/${ROLE_ID}/permissions" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"permissions":[{"path":"/api/v1/system/users","method":"GET"},{"path":"/api/v1/system/roles","method":"GET"}]}'
-```
-
-:::
-
-给测试角色分配菜单权限。下面示例里的菜单 ID 需要按本地 `sys_menu` 查询结果替换：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$roleId = 2
-$body = @{
-  menu_ids = @(1, 4, 5)
-} | ConvertTo-Json
-
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/v1/system/roles/$roleId/menus" `
-  -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body $body
-```
-
-```bash [macOS / Linux]
-ROLE_ID=2
-
-curl -X POST "http://localhost:8080/api/v1/system/roles/${ROLE_ID}/menus" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"menu_ids":[1,4,5]}'
-```
-
-:::
-
-最后用 SQL 确认数据已经写入：
-
-```bash
-# 查看 demo_role 的接口权限和菜单权限
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule where v0 = 'demo_role' order by v1, v2;"
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select rm.role_id, r.code, rm.menu_id, m.code as menu_code from sys_role_menu rm join sys_role r on r.id = rm.role_id join sys_menu m on m.id = rm.menu_id where r.code = 'demo_role' order by rm.menu_id;"
-```
-
-::: warning ⚠️ 修改接口权限后记得重启服务再验证访问效果
-直接写入 `casbin_rule` 后，当前进程里的 Enforcer 不会自动刷新。现在先重启服务，让新权限生效。
-:::
-
-## 常见问题
-
-::: details 创建角色时提示“角色编码已存在”
-换一个新的角色编码即可。角色编码唯一规则见：[数据库建表语句 - `sys_role`](../../reference/database-ddl#sys-role)。
-:::
-
-::: details 分配菜单时提示“菜单不存在或已禁用”
-请求里的 `menu_ids` 必须对应已经存在且启用的菜单或按钮。可以先执行下面的 SQL 查看菜单：
-
-```sql
-select id, parent_id, type, code, title, status from sys_menu order by sort, id;
-```
-:::
-
-::: details 为什么不能在这个接口里修改 `super_admin`
-`super_admin` 是默认兜底角色。教程阶段先保护它，避免误操作导致默认管理员无法继续访问系统。
-
-真实项目如果要开放超级管理员权限修改，建议配合二次确认、操作日志和权限恢复方案。
-:::
-
-::: details 为什么权限分配用“整体替换”
-前端通常会提交当前勾选后的完整权限集合。后端整体替换可以保证数据库最终状态和页面勾选状态一致，验证也更直接。
-:::
-
-下一节会继续补齐菜单自身的管理能力：[菜单管理](./menu-management)。
+角色模块定稳之后，第 5 章就可以继续往下讲“角色数据范围如何通过 Actor 和 `gorm.Scopes(...)` 真正变成查询过滤”。建议接着看下一页的数据权限正文。

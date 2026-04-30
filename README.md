@@ -1,12 +1,12 @@
 # EZ Admin Gin
 
-面向个人项目快速上线的通用后台管理系统底座。登录、权限、菜单、配置、日志、文件上传等后台基础能力一次性沉淀，新项目直接复用。
+面向 Java 转 Go 工程师的企业级通用后台管理系统底座。登录、权限、菜单、配置、日志、文件上传等后台基础能力已经沉淀，`v2` 阶段会继续补组织体系、数据权限和企业级单体工程结构。
 
 ## 适用场景
 
-- 个人开发者需要一个"能直接用"的后台管理系统
-- 想从零学习 Go + Vue 3 全栈后台搭建
-- 已有业务 idea，不想重复写登录、权限、用户管理
+- 想从 Java 工程经验迁移到 Go 后台开发
+- 需要一套可长期扩展的企业级后台底座
+- 想系统理解登录、权限、数据权限、组织体系和模块化后台设计
 
 ## 技术栈
 
@@ -44,6 +44,8 @@ PostgreSQL 和 Redis 会自动启动，数据持久化到本机目录。
 cd server
 cp configs/config.yaml.example configs/config.yaml  # 按需修改
 go run main.go
+# 或使用 v2 入口
+go run ./cmd/server
 ```
 
 首次启动会自动创建数据库表和默认管理员账号。
@@ -81,8 +83,11 @@ pnpm docs:dev
 
 - JWT 登录认证
 - RBAC 角色权限（Casbin）
+- v2 第一阶段结构骨架：`bootstrap / platform / module`
 - 动态菜单（目录 / 菜单 / 按钮三级）
 - 用户管理、角色管理、菜单管理
+- 组织体系基础模型：部门、岗位、用户岗位关系
+- 数据权限基础模型：角色数据范围、自定义部门范围
 - 系统配置（键值对，支持启用 / 禁用）
 - 文件上传（本地存储，白名单后缀）
 - 操作日志、登录日志
@@ -112,8 +117,10 @@ pnpm docs:dev
 ```
 ez-admin-gin/
 ├── server/          # Go 后端
+│   ├── cmd/         # v2 启动入口
 │   ├── configs/     # 配置文件
-│   └── internal/    # 业务代码
+│   ├── internal/    # 启动装配、平台能力和业务模块
+│   └── migrations/  # 数据库迁移
 ├── admin/           # Vue 3 前端
 │   └── src/
 ├── docs/            # VitePress 文档站
@@ -125,7 +132,7 @@ ez-admin-gin/
 ## 文档
 
 - [使用指南](https://caoshenyang.github.io/ez-admin-gin/guide/)
-- [从零搭建教程](https://caoshenyang.github.io/ez-admin-gin/tutorial/)（7 章，从空仓库到可部署）
+- [从零搭建教程](https://caoshenyang.github.io/ez-admin-gin/tutorial/)（当前为 7 章主线，正在升级为企业级完整版）
 - [参考手册](https://caoshenyang.github.io/ez-admin-gin/reference/)
 - [路线图](https://caoshenyang.github.io/ez-admin-gin/roadmap)
 

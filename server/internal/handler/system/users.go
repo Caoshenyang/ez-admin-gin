@@ -9,6 +9,7 @@ import (
 	"ez-admin-gin/server/internal/apperror"
 	"ez-admin-gin/server/internal/middleware"
 	"ez-admin-gin/server/internal/model"
+	"ez-admin-gin/server/internal/platform/datascope"
 	"ez-admin-gin/server/internal/response"
 
 	"github.com/gin-gonic/gin"
@@ -85,7 +86,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	}
 
 	page, pageSize := normalizePage(query.Page, query.PageSize)
-	queryDB := h.db.Model(&model.User{})
+	queryDB := h.scopedUserQuery(h.db, c).Model(&model.User{})
 
 	keyword := strings.TrimSpace(query.Keyword)
 	if keyword != "" {
@@ -219,7 +220,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 	var user model.User
 	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.First(&user, userID).Error; err != nil {
+		if err := h.scopedUserQuery(tx, c).First(&user, userID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return apperror.NotFound("用户不存在")
 			}
@@ -276,7 +277,7 @@ func (h *UserHandler) UpdateStatus(c *gin.Context) {
 
 	err := h.db.Transaction(func(tx *gorm.DB) error {
 		var user model.User
-		if err := tx.First(&user, userID).Error; err != nil {
+		if err := h.scopedUserQuery(tx, c).First(&user, userID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return apperror.NotFound("用户不存在")
 			}
@@ -322,7 +323,7 @@ func (h *UserHandler) UpdateRoles(c *gin.Context) {
 
 	err = h.db.Transaction(func(tx *gorm.DB) error {
 		var user model.User
-		if err := tx.First(&user, userID).Error; err != nil {
+		if err := h.scopedUserQuery(tx, c).First(&user, userID).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return apperror.NotFound("用户不存在")
 			}
@@ -367,6 +368,16 @@ func (h *UserHandler) userRoleIDs(users []model.User) (map[uint][]uint, error) {
 	}
 
 	return result, nil
+}
+
+func (h *UserHandler) scopedUserQuery(db *gorm.DB, c *gin.Context) *gorm.DB {
+	actor, ok := middleware.CurrentActor(c)
+	if !ok {
+		return db.Where("1 = 0")
+	}
+
+	// 用户资源同时具备部门归属和本人归属，先在这里接入统一的数据权限作用域。
+	return db.Scopes(datascope.UserQueryScope(db, actor, "department_id", "id"))
 }
 
 func normalizeCreateUserRequest(req createUserRequest) (string, string, string, model.UserStatus, []uint, error) {

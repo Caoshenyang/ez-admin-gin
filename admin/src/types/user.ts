@@ -9,8 +9,10 @@ export interface UserItem {
   id: number
   username: string
   nickname: string
+  department_id: number
   status: UserStatus
   role_ids: number[]
+  post_ids: number[]
   created_at: string
   updated_at: string
 }
@@ -34,13 +36,17 @@ export interface CreateUserPayload {
   username: string
   password: string
   nickname: string
+  department_id: number
   status: UserStatus
   role_ids: number[]
+  post_ids: number[]
 }
 
 export interface UpdateUserPayload {
   nickname: string
+  department_id: number
   status: UserStatus
+  post_ids: number[]
 }
 
 export interface UpdateUserStatusPayload {

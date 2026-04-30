@@ -27,6 +27,7 @@ import {
 } from 'naive-ui'
 import { computed, h, onMounted, reactive, ref } from 'vue'
 
+import { getPosts } from '../../api/post'
 import { getRoles } from '../../api/role'
 import {
   createUser,
@@ -36,6 +37,7 @@ import {
   updateUserStatus,
 } from '../../api/user'
 import { buttonPermissionCodes } from '../../router/dynamic-menu'
+import { PostStatus, type PostItem } from '../../types/post'
 import { RoleStatus, type RoleItem } from '../../types/role'
 import { UserStatus, type UserItem, type UserListQuery } from '../../types/user'
 
@@ -44,8 +46,10 @@ interface UserFormModel {
   username: string
   password: string
   nickname: string
+  department_id: number
   status: UserStatus
   role_ids: number[]
+  post_ids: number[]
 }
 
 const message = useMessage()
@@ -53,6 +57,7 @@ const loading = ref(false)
 const saving = ref(false)
 const users = ref<UserItem[]>([])
 const roles = ref<RoleItem[]>([])
+const posts = ref<PostItem[]>([])
 const total = ref(0)
 const checkedRowKeys = ref<DataTableRowKey[]>([])
 const successText = ref('')
@@ -73,8 +78,10 @@ const formModel = reactive<UserFormModel>({
   username: '',
   password: '',
   nickname: '',
+  department_id: 0,
   status: UserStatus.Enabled,
   role_ids: [],
+  post_ids: [],
 })
 
 const roleVisible = ref(false)
@@ -90,6 +97,17 @@ const roleOptions = computed<SelectOption[]>(() => {
   return roles.value.map((role) => ({
     label: `${role.name}（${role.code}）`,
     value: role.id,
+  }))
+})
+
+const postNameMap = computed(() => {
+  return new Map(posts.value.map((post) => [post.id, post.name]))
+})
+
+const postOptions = computed<SelectOption[]>(() => {
+  return posts.value.map((post) => ({
+    label: `${post.name}（${post.code}）`,
+    value: post.id,
   }))
 })
 
@@ -161,6 +179,31 @@ const columns: DataTableColumns<UserItem> = [
                 NTag,
                 { size: 'small', bordered: false },
                 { default: () => roleNameMap.value.get(roleID) ?? `角色 ${roleID}` },
+              ),
+            ),
+        },
+      )
+    },
+  },
+  {
+    title: '岗位',
+    key: 'post_ids',
+    minWidth: 220,
+    render(row) {
+      if (row.post_ids.length === 0) {
+        return h('span', { class: 'text-sm text-[#9CA3AF]' }, '未绑定')
+      }
+
+      return h(
+        NSpace,
+        { size: 6 },
+        {
+          default: () =>
+            row.post_ids.map((postID) =>
+              h(
+                NTag,
+                { size: 'small', bordered: false, type: 'info' },
+                { default: () => postNameMap.value.get(postID) ?? `岗位 ${postID}` },
               ),
             ),
         },
@@ -330,8 +373,10 @@ function resetForm() {
     username: '',
     password: '',
     nickname: '',
+    department_id: 0,
     status: UserStatus.Enabled,
     role_ids: [],
+    post_ids: [],
   })
 }
 
@@ -361,6 +406,13 @@ async function loadRoles() {
   roles.value = data.items
 }
 
+async function loadPosts() {
+  const data = await getPosts({
+    status: PostStatus.Enabled,
+  })
+  posts.value = data
+}
+
 function handleSearch() {
   query.page = 1
   void loadUsers()
@@ -379,8 +431,10 @@ function openEdit(row: UserItem) {
     username: row.username,
     password: '',
     nickname: row.nickname,
+    department_id: row.department_id,
     status: row.status,
     role_ids: row.role_ids,
+    post_ids: row.post_ids,
   })
   formVisible.value = true
 }
@@ -394,15 +448,19 @@ async function handleSubmit() {
         username: formModel.username,
         password: formModel.password,
         nickname: formModel.nickname,
+        department_id: formModel.department_id,
         status: formModel.status,
         role_ids: formModel.role_ids,
+        post_ids: formModel.post_ids,
       })
       successText.value = '用户创建成功，临时密码已生成'
       message.success('用户创建成功')
     } else {
       await updateUser(formModel.id, {
         nickname: formModel.nickname,
+        department_id: formModel.department_id,
         status: formModel.status,
+        post_ids: formModel.post_ids,
       })
       successText.value = '用户信息已更新'
       message.success('用户更新成功')
@@ -446,7 +504,7 @@ async function handleSaveRoles() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadRoles(), loadUsers()])
+  await Promise.all([loadRoles(), loadPosts(), loadUsers()])
 })
 </script>
 
@@ -626,6 +684,24 @@ onMounted(async () => {
                 <NSelect v-model:value="formModel.status" :options="statusOptions.slice(1)" />
               </NFormItem>
             </div>
+          </section>
+
+          <section class="form-section form-section--muted">
+            <div class="form-section__head">
+              <h3>岗位归属</h3>
+              <p>岗位是用户归属的一部分，会直接影响后续通讯录、审批和业务协作能力的扩展空间。</p>
+            </div>
+
+            <NFormItem label="岗位" path="post_ids" class="mb-0">
+              <NSelect
+                v-model:value="formModel.post_ids"
+                multiple
+                filterable
+                :options="postOptions"
+                placeholder="请选择岗位"
+              />
+            </NFormItem>
+            <p class="form-section__tip">一个用户可以同时挂多个岗位，这里维护的是岗位归属，不会直接替代角色权限。</p>
           </section>
 
           <section v-if="formMode === 'create'" class="form-section form-section--muted">

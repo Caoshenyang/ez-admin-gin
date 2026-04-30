@@ -4,7 +4,7 @@ export default defineConfig({
   base: '/ez-admin-gin/',
   lang: 'zh-CN',
   title: 'EZ Admin',
-  description: '面向个人项目快速上线的通用后台管理系统底座。',
+  description: '面向 Java 转 Go 工程师的企业级通用后台管理系统底座。',
   cleanUrls: true,
   lastUpdated: true,
   ignoreDeadLinks: true,
@@ -76,7 +76,7 @@ export default defineConfig({
       next: '下一页'
     },
     footer: {
-      message: '面向个人项目快速上线的通用后台管理系统底座',
+      message: '面向 Java 转 Go 工程师的企业级通用后台管理系统底座',
       copyright: '2026 EZ Admin'
     },
     search: {
@@ -102,7 +102,10 @@ export default defineConfig({
           text: '从这里开始',
           items: [
             { text: '快速启动', link: '/guide/' },
-            { text: '项目结构', link: '/guide/project-structure' }
+            { text: '项目结构', link: '/guide/project-structure' },
+            { text: '执行计划与状态', link: '/guide/execution-plan' },
+            { text: '企业级架构升级', link: '/guide/enterprise-architecture' },
+            { text: 'Go vs Java 工程结构', link: '/guide/java-to-go-structure' }
           ]
         },
         {
@@ -147,23 +150,41 @@ export default defineConfig({
           ]
         },
         {
-          text: '第 3 章：认证与权限',
+          text: '第 3 章：认证与登录态',
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-3/' },
             { text: '用户模型与登录', link: '/tutorial/chapter-3/user-model-and-login' },
             { text: 'Token 签发与解析', link: '/tutorial/chapter-3/jwt-auth' },
-            { text: '登录校验中间件', link: '/tutorial/chapter-3/auth-middleware' },
+            { text: '登录校验中间件', link: '/tutorial/chapter-3/auth-middleware' }
+          ]
+        },
+        {
+          text: '第 4 章：接口权限体系',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-4/' },
             { text: 'RBAC 角色权限模型', link: '/tutorial/chapter-3/rbac-model' },
             { text: '接口级权限控制', link: '/tutorial/chapter-3/casbin-permission' },
             { text: '角色菜单权限', link: '/tutorial/chapter-3/menu-permission' }
           ]
         },
         {
-          text: '第 4 章：通用系统模块',
+          text: '第 5 章：组织体系与数据权限',
           collapsible: true,
           items: [
-            { text: '章节导读', link: '/tutorial/chapter-4/' },
+            { text: '章节导读', link: '/tutorial/chapter-5/' },
+            { text: '组织模型设计', link: '/tutorial/chapter-5/organization-model-design' },
+            { text: '角色数据范围与查询作用域', link: '/tutorial/chapter-5/role-data-scope-and-query-scopes' },
+            { text: '部门树与部门管理', link: '/tutorial/chapter-5/department-tree-and-management' },
+            { text: '岗位管理与用户归属', link: '/tutorial/chapter-5/post-management-and-user-affiliation' }
+          ]
+        },
+        {
+          text: '第 6 章：核心系统模块',
+          collapsible: true,
+          items: [
+            { text: '章节导读', link: '/tutorial/chapter-6/' },
             { text: '用户管理', link: '/tutorial/chapter-4/user-management' },
             { text: '角色管理', link: '/tutorial/chapter-4/role-management' },
             { text: '菜单管理', link: '/tutorial/chapter-4/menu-management' },
@@ -174,10 +195,10 @@ export default defineConfig({
           ]
         },
         {
-          text: '第 5 章：前端管理台',
+          text: '第 7 章：前端企业级管理台',
           collapsible: true,
           items: [
-            { text: '章节导读', link: '/tutorial/chapter-5/' },
+            { text: '章节导读', link: '/tutorial/chapter-7/' },
             { text: 'Vue 3 管理台初始化', link: '/tutorial/chapter-5/vue-project-init' },
             { text: '登录页', link: '/tutorial/chapter-5/login-page' },
             { text: '后台布局', link: '/tutorial/chapter-5/admin-layout' },
@@ -189,10 +210,10 @@ export default defineConfig({
           ]
         },
         {
-          text: '第 6 章：业务模块接入规范',
+          text: '第 8 章：模块化接入规范',
           collapsible: true,
           items: [
-            { text: '章节导读', link: '/tutorial/chapter-6/' },
+            { text: '章节导读', link: '/tutorial/chapter-8/' },
             { text: '模块固定结构', link: '/tutorial/chapter-6/module-structure' },
             { text: '后端模块接入流程', link: '/tutorial/chapter-6/backend-module-flow' },
             { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' },
@@ -201,10 +222,10 @@ export default defineConfig({
           ]
         },
         {
-          text: '第 7 章：部署与复用',
+          text: '第 9 章：部署、升级与复用',
           collapsible: true,
           items: [
-            { text: '章节导读', link: '/tutorial/chapter-7/' },
+            { text: '章节导读', link: '/tutorial/chapter-9/' },
             { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' },
             { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' }
           ]
@@ -218,6 +239,7 @@ export default defineConfig({
             { text: 'GORM 快速入门', link: '/reference/gorm-quick-start' },
             { text: 'Casbin 快速入门', link: '/reference/casbin-quick-start' },
             { text: '接口风格决策', link: '/reference/api-style-decision' },
+            { text: '数据权限模型', link: '/reference/data-scope-model' },
             { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },

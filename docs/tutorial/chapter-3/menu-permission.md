@@ -1,513 +1,159 @@
 ---
 title: 角色菜单权限
-description: "设计菜单、按钮和角色菜单关系，并返回当前用户可见的菜单树。"
+description: "把当前登录用户可见菜单树收进最终版认证模块，让前端侧边栏、页面路由和按钮权限拥有统一的数据来源。"
 ---
 
 # 角色菜单权限
 
-前面已经能判断接口访问权限。这一节继续补齐前端管理台需要的菜单权限：用户登录后，根据角色拿到自己能看到的目录、菜单和按钮。
+前面已经有了登录态和认证中间件。接下来要补的是前端真正依赖的一条链路：登录后，当前用户应该能拿到“自己能看到哪些目录、页面和按钮”。
 
 ::: tip 🎯 本节目标
-完成后，数据库中会新增 `sys_menu` 和 `sys_role_menu` 两张表；启动服务时会初始化系统管理菜单，并把它授权给 `super_admin`；访问 `/api/v1/auth/menus` 可以返回当前用户菜单树。
+完成后，`/api/v1/auth/menus` 会由最终版认证模块返回当前登录用户可见的菜单树；这个结果会成为前端动态菜单、页面路由和按钮显隐的统一来源。
+:::
+
+## 先区分两类菜单接口
+
+当前项目里，菜单相关接口已经分成两条完全不同的线：
+
+| 接口 | 用途 |
+| --- | --- |
+| `/api/v1/auth/menus` | 当前登录用户可见菜单树 |
+| `/api/v1/system/menus` | 后台菜单配置管理 |
+
+这两者一定不要混。
+
+::: warning ⚠️ `/auth/menus` 不是菜单管理接口
+`/auth/menus` 解决的是“这个用户现在能看到什么”；`/system/menus` 解决的是“系统里配置了哪些菜单、按钮和层级结构”。一个是消费入口，一个是配置入口。
 :::
 
 ## 本节会改什么
 
-本节会新增或修改下面这些文件：
+当前主线里，这一节主要对应下面这些位置：
 
 ```text
 server/
 ├─ internal/
-│  ├─ handler/
-│  │  └─ auth/
-│  │     └─ menus.go
 │  ├─ model/
 │  │  ├─ menu.go
 │  │  └─ role_menu.go
-│  └─ router/
-│     └─ router.go
-└─ migrations/
-   ├─ postgres/
-   │  └─ 000002_seed_data.up.sql
-   └─ mysql/
-      └─ 000002_seed_data.up.sql
+│  └─ module/
+│     └─ auth/
+│        ├─ dto.go
+│        ├─ repository.go
+│        ├─ menus_service.go
+│        ├─ menus_handler.go
+│        └─ routes.go
 ```
 
 | 位置 | 用途 |
 | --- | --- |
-| `internal/model/menu.go` | 定义目录、菜单、按钮模型 |
-| `internal/model/role_menu.go` | 定义角色和菜单的绑定关系 |
-| `migrations/{postgres,mysql}/000002_seed_data.up.sql` | 初始化默认菜单，并授权给超级管理员 |
-| `internal/handler/auth/menus.go` | 返回当前用户可见菜单树 |
-| `internal/router/router.go` | 注册 `/api/v1/auth/menus` |
+| `model/menu.go` | 定义目录、菜单、按钮节点 |
+| `model/role_menu.go` | 定义角色与菜单绑定关系 |
+| `repository.go` | 查询当前用户可见菜单节点 |
+| `menus_service.go` | 组装菜单树 |
+| `menus_handler.go` | 暴露 `/api/v1/auth/menus` |
+| `routes.go` | 把菜单接口挂到受保护认证路由组 |
 
-## 菜单权限关系
+## 当前菜单权限链路解决的是哪件事
 
-本节落地下面这条关系：
+这一节真正打通的是：
 
 ```text
-用户 sys_user
+当前登录用户
   ↓
-用户角色关系 sys_user_role
+用户角色 sys_user_role
   ↓
-角色 sys_role
+角色菜单 sys_role_menu
   ↓
-角色菜单关系 sys_role_menu
+菜单节点 sys_menu
   ↓
-菜单 sys_menu
+当前用户菜单树 /auth/menus
 ```
 
-`sys_menu` 同时承载三类数据：
+这条链路会直接影响后面的三件事：
 
-| 类型 | 含义 | 示例 |
-| --- | --- | --- |
-| `1` | 目录 | 系统管理 |
-| `2` | 菜单 | 系统状态 |
-| `3` | 按钮 | 查看系统状态 |
+- 前端侧边栏显示哪些菜单
+- 哪些页面会被动态注册成路由
+- 哪些按钮权限码会被前端收集
 
-::: warning ⚠️ 菜单权限不替代接口权限
-菜单权限控制“前端展示什么”；Casbin 控制“接口能不能访问”。即使前端隐藏了某个按钮，后端接口仍然必须做权限判断。
+## 为什么 `/auth/menus` 仍然属于认证模块
+
+虽然菜单本身的配置管理已经在系统模块里了，但“当前登录用户可见菜单树”这件事，本质上还是认证之后的身份消费结果，所以它仍然留在 `module/auth` 里更合理。
+
+你可以把它理解成：
+
+- `system/menus` 管理菜单配置
+- `auth/menus` 消费菜单授权结果
+
+这也是为什么当前仓库里菜单模块和认证模块会同时碰到 `sys_menu`，但职责完全不同。
+
+## 菜单树为什么放在 Service 层组装
+
+仓储层更适合负责“查出当前用户有权看到哪些菜单节点”。  
+而菜单树本身已经不是单条 SQL 的职责了，它更像一层领域结构转换：
+
+- 把平铺节点按 `parent_id` 组起来
+- 保持目录、菜单、按钮的顺序
+- 输出前端更容易直接消费的树结构
+
+所以当前主线把这部分放在 `menus_service.go`，而不是继续塞进 Handler 里。
+
+## 当前 `/auth/menus` 返回的到底是什么
+
+这一节需要建立一个很重要的判断：
+
+> `/auth/menus` 返回的不只是侧边栏菜单，而是一棵完整权限树。
+
+其中：
+
+- `type = 1`：目录
+- `type = 2`：页面菜单
+- `type = 3`：按钮权限点
+
+这意味着按钮节点虽然不会直接显示在侧边栏里，但它们仍然会作为树的一部分返回给前端，后续由前端自己提取按钮权限码。
+
+::: details 为什么按钮节点也要一起返回
+如果按钮权限再额外走一条接口，前端初始化阶段就要做两次权限请求，还要自己合并。当前主线直接返回完整权限树，能让前端菜单和按钮权限来自同一份数据源。
 :::
 
-## 先创建数据表
+## 怎么验证这一节已经做成
 
-本节新增 `sys_menu` 和 `sys_role_menu`，分别用于保存目录、菜单、按钮权限点，以及角色和菜单的绑定关系。
+### 1. 当前用户能拿到自己的菜单树
 
-`sys_menu` 表保存目录、菜单和按钮权限点；`sys_role_menu` 表保存角色与菜单的绑定关系。字段和索引详情见 [数据库建表语句 - `sys_menu`](/reference/database-ddl#sys-menu) 和 [数据库建表语句 - `sys_role_menu`](/reference/database-ddl#sys-role-menu)。
-
-## 🛠️ 创建菜单模型
-
-::: details `server/internal/model/menu.go` — 菜单模型
-
-```go
-package model
-
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
-
-// MenuType 表示菜单节点类型。
-type MenuType int
-
-const (
-	// MenuTypeDirectory 表示目录节点。
-	MenuTypeDirectory MenuType = 1
-	// MenuTypeMenu 表示可访问页面。
-	MenuTypeMenu MenuType = 2
-	// MenuTypeButton 表示页面内按钮或操作点。
-	MenuTypeButton MenuType = 3
-)
-
-// MenuStatus 表示菜单状态。
-type MenuStatus int
-
-const (
-	// MenuStatusEnabled 表示菜单正常启用。
-	MenuStatusEnabled MenuStatus = 1
-	// MenuStatusDisabled 表示菜单已禁用。
-	MenuStatusDisabled MenuStatus = 2
-)
-
-// Menu 是后台菜单和按钮权限模型。
-type Menu struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	ParentID  uint           `gorm:"not null;default:0;index" json:"parent_id"`
-	Type      MenuType       `gorm:"type:smallint;not null" json:"type"`
-	Code      string         `gorm:"size:128;not null;uniqueIndex" json:"code"`
-	Title     string         `gorm:"size:64;not null" json:"title"`
-	Path      string         `gorm:"size:255;not null;default:''" json:"path"`
-	Component string         `gorm:"size:255;not null;default:''" json:"component"`
-	Icon      string         `gorm:"size:64;not null;default:''" json:"icon"`
-	Sort      int            `gorm:"not null;default:0" json:"sort"`
-	Status    MenuStatus     `gorm:"type:smallint;not null;default:1" json:"status"`
-	Remark    string         `gorm:"size:255;not null;default:''" json:"remark"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-}
-
-// TableName 固定菜单表名。
-func (Menu) TableName() string {
-	return "sys_menu"
-}
-```
-
-:::
-
-## 🛠️ 创建角色菜单关系模型
-
-创建 `server/internal/model/role_menu.go`。这是新增文件，直接完整写入即可。
-
-```go
-package model
-
-import "time"
-
-// RoleMenu 是角色和菜单的绑定关系。
-type RoleMenu struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	RoleID    uint      `gorm:"not null;uniqueIndex:uk_sys_role_menu_role_menu;index:idx_sys_role_menu_role_id" json:"role_id"`
-	MenuID    uint      `gorm:"not null;uniqueIndex:uk_sys_role_menu_role_menu;index:idx_sys_role_menu_menu_id" json:"menu_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// TableName 固定角色菜单关系表名。
-func (RoleMenu) TableName() string {
-	return "sys_role_menu"
-}
-```
-
-## 🛠️ 初始化默认菜单
-
-默认菜单已经在数据库迁移文件中初始化。迁移文件会在服务启动时自动执行，创建系统管理相关的菜单数据和角色菜单绑定关系。
-
-::: tip 💡 菜单初始化
-- 菜单数据：在 `migrations/{postgres,mysql}/000002_seed_data.up.sql` 中插入系统管理目录、菜单和按钮
-- 角色菜单绑定：在同一迁移文件中绑定 `super_admin` 角色到系统管理菜单
-- 初始菜单包括：系统管理目录、系统状态菜单和查看系统状态按钮
-:::
-
-::: warning ⚠️ 菜单初始化只提供最小起步数据
-迁移文件中初始化了一组菜单，方便验证菜单权限链路。后续真正的菜单新增、编辑、排序和授权，要放在系统管理接口中完成。
-:::
-
-## 🛠️ 创建当前用户菜单接口
-
-::: details `server/internal/handler/auth/menus.go` — 菜单树接口
-
-```go
-package auth
-
-import (
-	"ez-admin-gin/server/internal/apperror"
-	"ez-admin-gin/server/internal/middleware"
-	"ez-admin-gin/server/internal/model"
-	"ez-admin-gin/server/internal/response"
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-)
-
-// MenuHandler 负责当前用户菜单相关接口。
-type MenuHandler struct {
-	db  *gorm.DB
-	log *zap.Logger
-}
-
-// NewMenuHandler 创建菜单 Handler。
-func NewMenuHandler(db *gorm.DB, log *zap.Logger) *MenuHandler {
-	return &MenuHandler{
-		db:  db,
-		log: log,
-	}
-}
-
-type menuResponse struct {
-	ID        uint           `json:"id"`
-	ParentID  uint           `json:"parent_id"`
-	Type      model.MenuType `json:"type"`
-	Code      string         `json:"code"`
-	Title     string         `json:"title"`
-	Path      string         `json:"path"`
-	Component string         `json:"component"`
-	Icon      string         `json:"icon"`
-	Sort      int            `json:"sort"`
-	Children  []menuResponse `json:"children,omitempty"`
-}
-
-type menuNode struct {
-	menuResponse
-	children []*menuNode
-}
-
-// Menus 返回当前登录用户可见的菜单树。
-func (h *MenuHandler) Menus(c *gin.Context) {
-	userID, ok := middleware.CurrentUserID(c)
-	if !ok {
-		response.Error(c, apperror.Unauthorized("请先登录"), h.log)
-		return
-	}
-
-	var menus []model.Menu
-	err := h.db.
-		Table("sys_menu AS m").
-		Select("DISTINCT m.*").
-		Joins("JOIN sys_role_menu AS rm ON rm.menu_id = m.id").
-		Joins("JOIN sys_user_role AS ur ON ur.role_id = rm.role_id").
-		Joins("JOIN sys_role AS r ON r.id = ur.role_id").
-		Where("ur.user_id = ?", userID).
-		Where("m.status = ?", model.MenuStatusEnabled).
-		Where("r.status = ?", model.RoleStatusEnabled).
-		Where("m.deleted_at IS NULL").
-		Where("r.deleted_at IS NULL").
-		Order("m.sort ASC, m.id ASC").
-		Find(&menus).Error
-	if err != nil {
-		response.Error(c, apperror.Internal("查询菜单失败", err), h.log)
-		return
-	}
-
-	response.Success(c, buildMenuTree(menus))
-}
-
-func buildMenuTree(menus []model.Menu) []menuResponse {
-	nodes := make(map[uint]*menuNode, len(menus))
-
-	for _, menu := range menus {
-		nodes[menu.ID] = &menuNode{
-			menuResponse: menuResponse{
-				ID:        menu.ID,
-				ParentID:  menu.ParentID,
-				Type:      menu.Type,
-				Code:      menu.Code,
-				Title:     menu.Title,
-				Path:      menu.Path,
-				Component: menu.Component,
-				Icon:      menu.Icon,
-				Sort:      menu.Sort,
-			},
-		}
-	}
-
-	roots := make([]*menuNode, 0)
-	for _, menu := range menus {
-		node := nodes[menu.ID]
-		if menu.ParentID == 0 {
-			roots = append(roots, node)
-			continue
-		}
-
-		parent, ok := nodes[menu.ParentID]
-		if !ok {
-			roots = append(roots, node)
-			continue
-		}
-
-		parent.children = append(parent.children, node)
-	}
-
-	return menuNodesToResponses(roots)
-}
-
-func menuNodesToResponses(nodes []*menuNode) []menuResponse {
-	result := make([]menuResponse, 0, len(nodes))
-	for _, node := range nodes {
-		item := node.menuResponse
-		item.Children = menuNodesToResponses(node.children)
-		result = append(result, item)
-	}
-
-	return result
-}
-```
-
-:::
-
-::: details 为什么 `/auth/menus` 不再挂 Casbin 权限
-这个接口本身就是“根据当前登录用户返回自己的菜单”。只要用户已经登录，就可以请求；真正能看到哪些菜单，由 `sys_role_menu` 决定。
-
-如果再给它加 Casbin 权限，容易出现“没有菜单权限就连菜单列表也拿不到”的绕口问题。
-:::
-
-## 🛠️ 注册菜单接口
-
-修改 `server/internal/router/router.go`。这一处只需要在认证路由里增加菜单 Handler 和路由。
-
-```go
-// registerAuthRoutes 注册认证相关路由。
-func registerAuthRoutes(r *gin.Engine, opts Options) {
-	login := authHandler.NewLoginHandler(opts.DB, opts.Log, opts.Token)
-	me := authHandler.NewMeHandler(opts.Log)
-	menus := authHandler.NewMenuHandler(opts.DB, opts.Log) // [!code ++]
-
-	api := r.Group("/api/v1")
-	auth := api.Group("/auth")
-	auth.POST("/login", login.Login)
-
-	protectedAuth := auth.Group("")
-	protectedAuth.Use(middleware.Auth(opts.Token, opts.Log))
-	protectedAuth.GET("/me", me.Me)
-	protectedAuth.GET("/menus", menus.Menus) // [!code ++]
-}
-```
-
-## ✅ 整理依赖并启动
-
-本节没有新增第三方依赖，但修改了模型、初始化逻辑和路由，仍然可以整理一次：
-
-```bash
-# 在 server/ 目录执行
-go mod tidy
-```
-
-确认数据库和 Redis 正在运行：
-
-```bash
-# 在项目根目录执行，确认本地依赖服务处于运行状态
-docker compose -f deploy/compose.local.yml ps
-```
-
-回到 `server/` 目录启动服务：
-
-```bash
-# 在 server/ 目录启动服务
-go run .
-```
-
-第一次启动后，控制台应该能看到类似日志：
+登录后请求：
 
 ```text
-INFO	default menu created	{"menu_code": "system"}
-INFO	default menu created	{"menu_code": "system:health"}
-INFO	default menu created	{"menu_code": "system:health:view"}
-INFO	default role menu bound	{"role_id": 1, "menu_id": 1}
+GET /api/v1/auth/menus
 ```
 
-## ✅ 验证菜单和授权数据
+应该能返回一棵树结构，而不是普通分页列表。
 
-打开另一个终端，在项目根目录执行：
+### 2. 菜单树里既有页面节点，也可能带按钮节点
 
-```bash
-# 查看默认菜单
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select id, parent_id, type, code, title, path, sort from sys_menu order by sort, id;"
-```
+当前主线里，响应节点至少会包含：
 
-应该看到类似结果：
+- `id`
+- `parent_id`
+- `type`
+- `code`
+- `title`
+- `path`
+- `component`
+- `icon`
+- `sort`
 
-```text
- id | parent_id | type |        code         |    title     |      path       | sort
-----+-----------+------+---------------------+--------------+-----------------+------
-  1 |         0 |    1 | system              | 系统管理     | /system         |   10
-  2 |         1 |    2 | system:health       | 系统状态     | /system/health  |   10
-  3 |         2 |    3 | system:health:view  | 查看系统状态 |                 |   10
-```
+如果某个页面下配置了按钮权限点，按钮节点也会出现在 `children` 里。
 
-继续查看角色菜单绑定：
+### 3. 这个接口本身不额外挂 Casbin 授权
 
-```bash
-# 查看超级管理员绑定了哪些菜单
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select rm.id, r.code as role_code, m.code as menu_code from sys_role_menu rm join sys_role r on r.id = rm.role_id join sys_menu m on m.id = rm.menu_id order by rm.id;"
-```
+只要用户已经登录，就可以请求 `/auth/menus`。真正决定返回哪些菜单的，是角色菜单绑定关系，而不是再给这个接口额外套一层菜单级 Casbin 校验。
 
-应该看到 `super_admin` 已经绑定上面三个菜单节点。
+## 本节最关键的收获
 
-## ✅ 验证当前用户菜单接口
+这一节真正建立的判断标准是：
 
-先登录拿到 Token，再请求 `/api/v1/auth/menus`：
+> 菜单权限不是“把菜单查出来”这么简单，它是前端动态菜单、页面路由和按钮显隐的统一权限源。
 
-::: code-group
+`/auth/menus` 收稳之后，前端就不需要再分别向多个接口猜“我能看到什么”，而是可以围绕一棵稳定的权限树继续展开动态路由和按钮控制。
 
-```powershell [Windows PowerShell]
-$body = @{
-  username = "admin"
-  password = "EzAdmin@123456"
-} | ConvertTo-Json
-
-$login = Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body $body
-
-$token = $login.data.access_token
-
-Invoke-RestMethod `
-  -Method Get `
-  -Uri http://localhost:8080/api/v1/auth/menus `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-```bash [macOS / Linux]
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' | jq -r '.data.access_token')
-
-curl -X GET http://localhost:8080/api/v1/auth/menus \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-:::
-
-::: details 预期返回结果
-
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": [
-    {
-      "id": 1,
-      "parent_id": 0,
-      "type": 1,
-      "code": "system",
-      "title": "系统管理",
-      "path": "/system",
-      "component": "",
-      "icon": "setting",
-      "sort": 10,
-      "children": [
-        {
-          "id": 2,
-          "parent_id": 1,
-          "type": 2,
-          "code": "system:health",
-          "title": "系统状态",
-          "path": "/system/health",
-          "component": "system/HealthView",
-          "icon": "monitor",
-          "sort": 10,
-          "children": [
-            {
-              "id": 3,
-              "parent_id": 2,
-              "type": 3,
-              "code": "system:health:view",
-              "title": "查看系统状态",
-              "path": "",
-              "component": "",
-              "icon": "",
-              "sort": 10
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-:::
-
-::: details 为什么示例里按钮可能显示在 children 里
-本节接口返回的是完整权限树，按钮节点也会作为子节点返回。后续前端可以按 `type` 区分：`1`、`2` 用来生成菜单和路由，`3` 用来控制按钮或操作点。
-:::
-
-## 常见问题
-
-::: details 请求 `/api/v1/auth/menus` 提示 `请先登录`
-这个接口需要登录。先调用 `/api/v1/auth/login` 拿到 `access_token`，再按下面格式传请求头：
-
-```http
-Authorization: Bearer <access_token>
-```
-:::
-
-::: details 菜单接口返回空数组
-优先检查三件事：
-
-- `sys_menu` 里是否有启用菜单。
-- `sys_role_menu` 是否已经把菜单绑定给 `super_admin`。
-- 当前用户是否通过 `sys_user_role` 绑定了 `super_admin`。
-:::
-
-::: details 菜单和 Casbin 策略有什么区别
-菜单权限控制前端展示；Casbin 策略控制后端接口访问。
-
-两者可以有关联，但不要互相替代。隐藏菜单不等于接口安全，接口安全必须由后端权限校验保证。
-:::
-
-到这里，第 3 章的认证与权限主链路就完整了。
+下一节开始把这套菜单权限真正接进前端动态路由：[第 5 章：前端管理台](../chapter-5/)。

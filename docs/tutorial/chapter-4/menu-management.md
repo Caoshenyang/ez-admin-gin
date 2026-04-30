@@ -1,34 +1,45 @@
 ---
 title: 菜单管理
-description: "实现后台菜单维护，为动态菜单和按钮权限提供配置入口。"
+description: "用最终版模块结构实现后台菜单维护，让目录、菜单、按钮和角色菜单授权拥有稳定的配置入口。"
 ---
 
 # 菜单管理
 
-前面已经能根据角色返回当前用户可见菜单。现在补齐菜单本身的管理能力：查询菜单树、创建菜单、编辑菜单、禁用菜单和删除菜单。
+前面已经能根据角色返回当前用户可见菜单。现在要补的是菜单本身的“配置入口”。这一节不再把菜单管理写成一个临时的后台 Handler，而是直接把它收进最终版模块结构，让目录、菜单、按钮三类节点都能在同一套职责边界里维护。
 
 ::: tip 🎯 本节目标
-完成后，`super_admin` 可以访问菜单管理接口；系统会初始化菜单管理菜单和按钮；通过接口可以维护目录、菜单和按钮节点。
+完成后，`/api/v1/system/menus` 这组接口会由独立菜单模块负责，系统能稳定维护目录、菜单和按钮节点，同时也能更清楚地区分“菜单配置管理”和“当前用户可见菜单”这两条链路。
 :::
 
 ## 本节会改什么
 
-本节会新增或修改下面这些文件：
+菜单模块现在和用户、角色、部门、岗位一样，直接进入最终结构：
 
 ```text
 server/
 ├─ internal/
-│  ├─ handler/
+│  ├─ module/
+│  │  ├─ iam/
+│  │  │  └─ menu/
+│  │  │     ├─ dto.go
+│  │  │     ├─ entity.go
+│  │  │     ├─ handler.go
+│  │  │     ├─ policy.go
+│  │  │     ├─ repository.go
+│  │  │     ├─ routes.go
+│  │  │     └─ service.go
 │  │  └─ system/
-│  │     └─ menus.go
-│  └─ router/
-│     └─ router.go
+│  │     └─ routes.go
 ```
 
 | 位置 | 用途 |
 | --- | --- |
-| `internal/handler/system/menus.go` | 菜单管理接口 |
-| `internal/router/router.go` | 注册菜单管理路由 |
+| `dto.go` | 请求体、响应结构、菜单类型与状态校验 |
+| `repository.go` | 菜单查询、编码唯一校验、父子层级约束、删除前检查 |
+| `service.go` | 事务边界和菜单树组装 |
+| `handler.go` | HTTP 协议层绑定与输出 |
+| `routes.go` | 注册 `/api/v1/system/menus` 相关路由 |
+| `policy.go` | 固定菜单模块的权限码元信息 |
 
 ::: info 本节不新增数据库表
 菜单管理复用 `sys_menu` 和 `sys_role_menu`。`sys_menu` 保存目录、菜单、按钮；`sys_role_menu` 保存角色拥有哪些菜单和按钮。
@@ -44,12 +55,12 @@ server/
 | `/api/v1/system/menus` | 菜单配置管理，用于管理员维护菜单树 |
 
 ::: warning ⚠️ 不要把两个接口混在一起
-`/api/v1/auth/menus` 要按当前用户角色过滤；`/api/v1/system/menus` 是管理接口，返回系统内菜单配置，只有有权限的管理员才能访问。
+`/api/v1/auth/menus` 要按当前用户角色过滤；`/api/v1/system/menus` 是管理接口，返回系统内菜单配置，只有有权限的管理员才能访问。一个负责“我能看到什么”，另一个负责“系统里配置了什么”。
 :::
 
 ## 接口规划
 
-本节先实现 5 个接口：
+菜单模块保持这 5 个稳定接口：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -67,831 +78,116 @@ server/
 | `2` | 菜单 | 用户管理 |
 | `3` | 按钮 | 创建用户 |
 
-## 🛠️ 创建菜单管理 Handler
+## 为什么菜单模块也要独立出来
 
-创建 `server/internal/handler/system/menus.go`。这是新增文件，直接完整写入即可。
+菜单看起来像“只是一个系统字典”，但它实际上同时连接着三类事情：
 
-::: details `server/internal/handler/system/menus.go` — 菜单管理接口
+- 前端侧边栏和页面路由
+- 按钮级权限编码
+- 角色菜单授权关系
 
-```go
-package system
+如果继续把这套逻辑堆在一个全局 Handler 里，后面每次碰菜单树、按钮节点或角色绑定，都会把查询和约束写得越来越散。  
+所以菜单模块现在也进入标准结构：
 
-import (
-	"errors"
-	"strconv"
-	"strings"
-	"time"
+- `handler` 只做请求绑定和响应输出
+- `service` 负责事务边界和树结构组装
+- `repository` 负责菜单查询、父级约束和删除前检查
+- `policy` 固定权限码元信息，避免后面再散落命名
 
-	"ez-admin-gin/server/internal/apperror"
-	"ez-admin-gin/server/internal/model"
-	"ez-admin-gin/server/internal/response"
+## 菜单模块现在对外长什么样
 
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-)
+系统聚合路由不再手动 new 一个 `MenuAdminHandler`，而是像用户、角色、部门、岗位一样，把 `/menus` 这组接口交给菜单模块自己注册。
 
-// MenuAdminHandler 负责后台菜单管理接口。
-type MenuAdminHandler struct {
-	db  *gorm.DB
-	log *zap.Logger
-}
+这一步的意义不是“少写了几行路由”，而是菜单模块从现在开始也拥有了稳定落点：
 
-// NewMenuAdminHandler 创建菜单管理 Handler。
-func NewMenuAdminHandler(db *gorm.DB, log *zap.Logger) *MenuAdminHandler {
-	return &MenuAdminHandler{
-		db:  db,
-		log: log,
-	}
-}
+- 后续要补菜单元信息、菜单树缓存、菜单导入导出时，有地方继续长
+- 角色模块处理菜单授权时，边界更清楚
+- 第 6 章讲“模块化接入规范”时，菜单自己也成了最终结构的一部分，而不是例外
 
-type createMenuRequest struct {
-	ParentID  uint             `json:"parent_id"`
-	Type      model.MenuType   `json:"type"`
-	Code      string           `json:"code"`
-	Title     string           `json:"title"`
-	Path      string           `json:"path"`
-	Component string           `json:"component"`
-	Icon      string           `json:"icon"`
-	Sort      int              `json:"sort"`
-	Status    model.MenuStatus `json:"status"`
-	Remark    string           `json:"remark"`
-}
+## 菜单模块内部收了哪些规则
 
-type updateMenuRequest struct {
-	ParentID  uint             `json:"parent_id"`
-	Type      model.MenuType   `json:"type"`
-	Title     string           `json:"title"`
-	Path      string           `json:"path"`
-	Component string           `json:"component"`
-	Icon      string           `json:"icon"`
-	Sort      int              `json:"sort"`
-	Status    model.MenuStatus `json:"status"`
-	Remark    string           `json:"remark"`
-}
+### 1. 菜单编码创建后保持稳定
 
-type updateMenuStatusRequest struct {
-	Status model.MenuStatus `json:"status"`
-}
+`code` 现在只在创建时传入，更新接口不允许随意修改。原因很直接：
 
-type menuAdminResponse struct {
-	ID        uint                `json:"id"`
-	ParentID  uint                `json:"parent_id"`
-	Type      model.MenuType      `json:"type"`
-	Code      string              `json:"code"`
-	Title     string              `json:"title"`
-	Path      string              `json:"path"`
-	Component string              `json:"component"`
-	Icon      string              `json:"icon"`
-	Sort      int                 `json:"sort"`
-	Status    model.MenuStatus    `json:"status"`
-	Remark    string              `json:"remark"`
-	Children  []menuAdminResponse `json:"children,omitempty"`
-	CreatedAt time.Time           `json:"created_at"`
-	UpdatedAt time.Time           `json:"updated_at"`
-}
+- 按钮权限显隐依赖按钮节点的 `code`
+- 角色菜单授权要长期引用这些节点
+- 后续文档和种子数据都把它当成稳定标识
 
-type menuAdminNode struct {
-	menuAdminResponse
-	children []*menuAdminNode
-}
+菜单编码如果频繁改名，排查“为什么按钮不显示、为什么角色授权不生效”会变得非常痛苦。
 
-// Tree 返回完整菜单树。
-func (h *MenuAdminHandler) Tree(c *gin.Context) {
-	var menus []model.Menu
-	if err := h.db.Order("sort ASC, id ASC").Find(&menus).Error; err != nil {
-		response.Error(c, apperror.Internal("查询菜单树失败", err), h.log)
-		return
-	}
+### 2. 菜单层级约束在仓储层统一守住
 
-	response.Success(c, buildMenuAdminTree(menus))
-}
+当前主线保留三条核心约束：
 
-// Create 创建菜单、目录或按钮。
-func (h *MenuAdminHandler) Create(c *gin.Context) {
-	var req createMenuRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
+- 根节点只能是目录
+- 按钮下面不能再挂子节点
+- 按钮只能挂在菜单下面
 
-	menu, err := normalizeCreateMenuRequest(req)
-	if err != nil {
-		response.Error(c, err, h.log)
-		return
-	}
+这些规则放在 `repository.go` 的父级校验里，而不是散落在页面和 Handler 中。
 
-	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := ensureMenuCodeAvailable(tx, menu.Code); err != nil {
-			return err
-		}
+### 3. 删除前先检查子节点和角色绑定
 
-		if err := ensureParentMenuUsable(tx, menu.ParentID, menu.Type, 0); err != nil {
-			return err
-		}
+当前项目没有把这类业务约束交给数据库外键处理，所以删除菜单前会先检查：
 
-		return tx.Create(&menu).Error
-	})
-	if err != nil {
-		writeMenuError(c, err, "创建菜单失败", h.log)
-		return
-	}
+- 是否仍有子菜单
+- 是否已经被角色绑定
 
-	response.Success(c, buildMenuAdminResponse(menu))
-}
+这样能避免删出一棵残缺菜单树，或者留下“前端已经看不到，但角色表里还绑着”的脏关系。
 
-// Update 编辑菜单基础信息。
-func (h *MenuAdminHandler) Update(c *gin.Context) {
-	menuID, ok := menuIDParam(c, h.log)
-	if !ok {
-		return
-	}
+## 菜单树为什么放在 Service 层组装
 
-	var req updateMenuRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
+菜单列表返回的是树，不是普通分页表。  
+这类结构更适合放在 `service.go` 里统一组装，因为它已经不是“单次 SQL 查询”的职责，而是“把一批节点组织成领域可用结构”的职责。
 
-	update, err := normalizeUpdateMenuRequest(req)
-	if err != nil {
-		response.Error(c, err, h.log)
-		return
-	}
+这也解释了一个很重要的取舍：
 
-	var menu model.Menu
-	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.First(&menu, menuID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("菜单不存在")
-			}
-			return err
-		}
+- `repository` 负责拿到“排好序的节点列表”
+- `service` 负责把它变成“完整菜单树”
+- `handler` 不再去碰树结构细节
 
-		if err := ensureParentMenuUsable(tx, update.ParentID, update.Type, menuID); err != nil {
-			return err
-		}
+## 怎么验证这一节已经做成
 
-		if err := tx.Model(&menu).Updates(map[string]any{
-			"parent_id":  update.ParentID,
-			"type":       update.Type,
-			"title":      update.Title,
-			"path":       update.Path,
-			"component":  update.Component,
-			"icon":       update.Icon,
-			"sort":       update.Sort,
-			"status":     update.Status,
-			"remark":     update.Remark,
-		}).Error; err != nil {
-			return err
-		}
+### 1. 后端构建通过
 
-		menu.ParentID = update.ParentID
-		menu.Type = update.Type
-		menu.Title = update.Title
-		menu.Path = update.Path
-		menu.Component = update.Component
-		menu.Icon = update.Icon
-		menu.Sort = update.Sort
-		menu.Status = update.Status
-		menu.Remark = update.Remark
-		return nil
-	})
-	if err != nil {
-		writeMenuError(c, err, "更新菜单失败", h.log)
-		return
-	}
-
-	response.Success(c, buildMenuAdminResponse(menu))
-}
-
-// UpdateStatus 修改菜单状态。
-func (h *MenuAdminHandler) UpdateStatus(c *gin.Context) {
-	menuID, ok := menuIDParam(c, h.log)
-	if !ok {
-		return
-	}
-
-	var req updateMenuStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, apperror.BadRequest("请求参数不正确"), h.log)
-		return
-	}
-
-	if !validMenuStatus(req.Status) {
-		response.Error(c, apperror.BadRequest("菜单状态不正确"), h.log)
-		return
-	}
-
-	err := h.db.Transaction(func(tx *gorm.DB) error {
-		var menu model.Menu
-		if err := tx.First(&menu, menuID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("菜单不存在")
-			}
-			return err
-		}
-
-		return tx.Model(&menu).Update("status", req.Status).Error
-	})
-	if err != nil {
-		writeMenuError(c, err, "更新菜单状态失败", h.log)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"id":     menuID,
-		"status": req.Status,
-	})
-}
-
-// Delete 删除菜单。
-func (h *MenuAdminHandler) Delete(c *gin.Context) {
-	menuID, ok := menuIDParam(c, h.log)
-	if !ok {
-		return
-	}
-
-	err := h.db.Transaction(func(tx *gorm.DB) error {
-		var menu model.Menu
-		if err := tx.First(&menu, menuID).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.NotFound("菜单不存在")
-			}
-			return err
-		}
-
-		if err := ensureMenuCanDelete(tx, menuID); err != nil {
-			return err
-		}
-
-		return tx.Delete(&menu).Error
-	})
-	if err != nil {
-		writeMenuError(c, err, "删除菜单失败", h.log)
-		return
-	}
-
-	response.Success(c, gin.H{
-		"id": menuID,
-	})
-}
-
-func normalizeCreateMenuRequest(req createMenuRequest) (model.Menu, error) {
-	code := strings.TrimSpace(req.Code)
-	if code == "" {
-		return model.Menu{}, apperror.BadRequest("菜单编码不能为空")
-	}
-	if len(code) > 128 {
-		return model.Menu{}, apperror.BadRequest("菜单编码不能超过 128 个字符")
-	}
-
-	title, path, component, icon, status, remark, err := normalizeMenuFields(
-		req.Type,
-		req.Title,
-		req.Path,
-		req.Component,
-		req.Icon,
-		req.Status,
-		req.Remark,
-	)
-	if err != nil {
-		return model.Menu{}, err
-	}
-
-	return model.Menu{
-		ParentID:  req.ParentID,
-		Type:      req.Type,
-		Code:      code,
-		Title:     title,
-		Path:      path,
-		Component: component,
-		Icon:      icon,
-		Sort:      req.Sort,
-		Status:    status,
-		Remark:    remark,
-	}, nil
-}
-
-func normalizeUpdateMenuRequest(req updateMenuRequest) (model.Menu, error) {
-	title, path, component, icon, status, remark, err := normalizeMenuFields(
-		req.Type,
-		req.Title,
-		req.Path,
-		req.Component,
-		req.Icon,
-		req.Status,
-		req.Remark,
-	)
-	if err != nil {
-		return model.Menu{}, err
-	}
-
-	return model.Menu{
-		ParentID:  req.ParentID,
-		Type:      req.Type,
-		Title:     title,
-		Path:      path,
-		Component: component,
-		Icon:      icon,
-		Sort:      req.Sort,
-		Status:    status,
-		Remark:    remark,
-	}, nil
-}
-
-func normalizeMenuFields(menuType model.MenuType, title string, path string, component string, icon string, status model.MenuStatus, remark string) (string, string, string, string, model.MenuStatus, string, error) {
-	if !validMenuType(menuType) {
-		return "", "", "", "", 0, "", apperror.BadRequest("菜单类型不正确")
-	}
-
-	title = strings.TrimSpace(title)
-	if title == "" {
-		return "", "", "", "", 0, "", apperror.BadRequest("菜单名称不能为空")
-	}
-	if len(title) > 64 {
-		return "", "", "", "", 0, "", apperror.BadRequest("菜单名称不能超过 64 个字符")
-	}
-
-	path = strings.TrimSpace(path)
-	component = strings.TrimSpace(component)
-	icon = strings.TrimSpace(icon)
-	remark = strings.TrimSpace(remark)
-
-	if len(path) > 255 {
-		return "", "", "", "", 0, "", apperror.BadRequest("路由路径不能超过 255 个字符")
-	}
-	if len(component) > 255 {
-		return "", "", "", "", 0, "", apperror.BadRequest("组件路径不能超过 255 个字符")
-	}
-	if len(icon) > 64 {
-		return "", "", "", "", 0, "", apperror.BadRequest("图标标识不能超过 64 个字符")
-	}
-	if len(remark) > 255 {
-		return "", "", "", "", 0, "", apperror.BadRequest("备注不能超过 255 个字符")
-	}
-
-	if status == 0 {
-		status = model.MenuStatusEnabled
-	}
-	if !validMenuStatus(status) {
-		return "", "", "", "", 0, "", apperror.BadRequest("菜单状态不正确")
-	}
-
-	if menuType == model.MenuTypeMenu && path == "" {
-		return "", "", "", "", 0, "", apperror.BadRequest("菜单节点需要填写路由路径")
-	}
-
-	return title, path, component, icon, status, remark, nil
-}
-
-func ensureMenuCodeAvailable(db *gorm.DB, code string) error {
-	var menu model.Menu
-	err := db.Unscoped().Where("code = ?", code).First(&menu).Error
-	if err == nil {
-		return apperror.BadRequest("菜单编码已存在")
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
-	}
-
-	return err
-}
-
-func ensureParentMenuUsable(db *gorm.DB, parentID uint, menuType model.MenuType, currentID uint) error {
-	if parentID == 0 {
-		if menuType != model.MenuTypeDirectory {
-			return apperror.BadRequest("根节点只能是目录")
-		}
-		return nil
-	}
-
-	if parentID == currentID {
-		return apperror.BadRequest("父级菜单不能选择自己")
-	}
-
-	var parent model.Menu
-	if err := db.First(&parent, parentID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apperror.BadRequest("父级菜单不存在")
-		}
-		return err
-	}
-
-	if parent.Type == model.MenuTypeButton {
-		return apperror.BadRequest("按钮下面不能再添加子节点")
-	}
-
-	if menuType == model.MenuTypeButton && parent.Type != model.MenuTypeMenu {
-		return apperror.BadRequest("按钮只能挂在菜单下面")
-	}
-
-	return nil
-}
-
-func ensureMenuCanDelete(db *gorm.DB, menuID uint) error {
-	var childCount int64
-	if err := db.Model(&model.Menu{}).Where("parent_id = ?", menuID).Count(&childCount).Error; err != nil {
-		return err
-	}
-	if childCount > 0 {
-		return apperror.BadRequest("请先删除子菜单")
-	}
-
-	var roleMenuCount int64
-	if err := db.Model(&model.RoleMenu{}).Where("menu_id = ?", menuID).Count(&roleMenuCount).Error; err != nil {
-		return err
-	}
-	if roleMenuCount > 0 {
-		return apperror.BadRequest("菜单已分配给角色，不能删除")
-	}
-
-	return nil
-}
-
-func validMenuType(menuType model.MenuType) bool {
-	return menuType == model.MenuTypeDirectory ||
-		menuType == model.MenuTypeMenu ||
-		menuType == model.MenuTypeButton
-}
-
-func validMenuStatus(status model.MenuStatus) bool {
-	return status == model.MenuStatusEnabled || status == model.MenuStatusDisabled
-}
-
-func menuIDParam(c *gin.Context, log *zap.Logger) (uint, bool) {
-	rawID := c.Param("id")
-	id, err := strconv.ParseUint(rawID, 10, 64)
-	if err != nil || id == 0 {
-		response.Error(c, apperror.BadRequest("菜单 ID 不正确"), log)
-		return 0, false
-	}
-
-	return uint(id), true
-}
-
-func buildMenuAdminTree(menus []model.Menu) []menuAdminResponse {
-	nodes := make(map[uint]*menuAdminNode, len(menus))
-
-	for _, menu := range menus {
-		nodes[menu.ID] = &menuAdminNode{
-			menuAdminResponse: buildMenuAdminResponse(menu),
-		}
-	}
-
-	roots := make([]*menuAdminNode, 0)
-	for _, menu := range menus {
-		node := nodes[menu.ID]
-		if menu.ParentID == 0 {
-			roots = append(roots, node)
-			continue
-		}
-
-		parent, ok := nodes[menu.ParentID]
-		if !ok {
-			roots = append(roots, node)
-			continue
-		}
-
-		parent.children = append(parent.children, node)
-	}
-
-	return menuAdminNodesToResponses(roots)
-}
-
-func menuAdminNodesToResponses(nodes []*menuAdminNode) []menuAdminResponse {
-	result := make([]menuAdminResponse, 0, len(nodes))
-	for _, node := range nodes {
-		item := node.menuAdminResponse
-		item.Children = menuAdminNodesToResponses(node.children)
-		result = append(result, item)
-	}
-
-	return result
-}
-
-func buildMenuAdminResponse(menu model.Menu) menuAdminResponse {
-	return menuAdminResponse{
-		ID:        menu.ID,
-		ParentID:  menu.ParentID,
-		Type:      menu.Type,
-		Code:      menu.Code,
-		Title:     menu.Title,
-		Path:      menu.Path,
-		Component: menu.Component,
-		Icon:      menu.Icon,
-		Sort:      menu.Sort,
-		Status:    menu.Status,
-		Remark:    menu.Remark,
-		CreatedAt: menu.CreatedAt,
-		UpdatedAt: menu.UpdatedAt,
-	}
-}
-
-func writeMenuError(c *gin.Context, err error, fallbackMessage string, log *zap.Logger) {
-	var appErr *apperror.Error
-	if errors.As(err, &appErr) {
-		response.Error(c, appErr, log)
-		return
-	}
-
-	response.Error(c, apperror.Internal(fallbackMessage, err), log)
-}
-```
-
-:::
-
-::: details 为什么创建后不允许修改 `code`
-`code` 是前端判断按钮权限时最稳定的标识，也会出现在角色授权配置里。创建后如果随意改编码，前端按钮判断和历史授权会变得难排查。
-:::
-
-::: details 为什么删除菜单前要检查子菜单和角色绑定
-本项目不使用数据库外键，关联约束要放在业务逻辑里维护。删除菜单前先检查子节点和 `sys_role_menu`，可以避免留下不可见但仍被授权的数据。
-:::
-
-## 🛠️ 注册菜单管理路由
-
-修改 `server/internal/router/router.go`。这一处在系统路由中新增菜单管理 Handler 和路由。
-
-::: details `server/internal/router/router.go` — 注册菜单管理路由
-
-```go
-// registerSystemRoutes 注册系统级路由。
-func registerSystemRoutes(r *gin.Engine, opts Options) {
-	health := systemHandler.NewHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
-	users := systemHandler.NewUserHandler(opts.DB, opts.Log)
-	roles := systemHandler.NewRoleHandler(opts.DB, opts.Log)
-	menus := systemHandler.NewMenuAdminHandler(opts.DB, opts.Log) // [!code ++]
-
-	// /health 通常给部署探针和本地快速验证使用。
-	r.GET("/health", health.Check)
-
-	// /api/v1/system/health 放在接口版本分组下，方便统一管理后台接口。
-	api := r.Group("/api/v1")
-	system := api.Group("/system")
-	system.Use(middleware.Auth(opts.Token, opts.Log))
-	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
-	system.GET("/health", health.Check)
-	system.GET("/users", users.List)
-	system.POST("/users", users.Create)
-	system.POST("/users/:id/update", users.Update)
-	system.POST("/users/:id/status", users.UpdateStatus)
-	system.POST("/users/:id/roles", users.UpdateRoles)
-	system.GET("/roles", roles.List)
-	system.POST("/roles", roles.Create)
-	system.POST("/roles/:id/update", roles.Update)
-	system.POST("/roles/:id/status", roles.UpdateStatus)
-	system.POST("/roles/:id/permissions", roles.UpdatePermissions)
-	system.POST("/roles/:id/menus", roles.UpdateMenus)
-	system.GET("/menus", menus.Tree) // [!code ++]
-	system.POST("/menus", menus.Create) // [!code ++]
-	system.POST("/menus/:id/update", menus.Update) // [!code ++]
-	system.POST("/menus/:id/status", menus.UpdateStatus) // [!code ++]
-	system.POST("/menus/:id/delete", menus.Delete) // [!code ++]
-}
-```
-
-:::
-
-::: tip 📌 菜单管理权限和菜单初始化
-菜单管理接口权限和菜单通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建系统默认的菜单管理权限和菜单。
-
-这样可以确保菜单管理功能在服务启动时就已经准备就绪，不需要通过代码手动写入。
-:::
-
-::: warning ⚠️ 这里的变量名容易撞
-前面已经有 `/api/v1/auth/menus` 的 `menus` Handler。为了避免在 `system` 包里读起来混乱，本节把管理端 Handler 命名为 `MenuAdminHandler`。
-:::
-
-## ✅ 整理依赖并启动
-
-本节没有新增第三方依赖，但修改了后端文件，仍然可以整理一次：
+在 `server/` 目录执行：
 
 ```bash
-# 在 server/ 目录执行
-go mod tidy
+go test ./...
 ```
 
-确认数据库和 Redis 正在运行：
+应该能看到 `internal/module/iam/menu` 已经进入编译链路。
 
-```bash
-# 在项目根目录执行，确认本地依赖服务处于运行状态
-docker compose -f deploy/compose.local.yml ps
-```
+### 2. 菜单接口已经切到新模块
 
-回到 `server/` 目录启动服务：
-
-```bash
-# 在 server/ 目录启动服务
-go run .
-```
-
-第一次启动后，控制台应该能看到类似日志：
+登录后访问：
 
 ```text
-INFO	database migrations applied
-INFO	server started	{"addr": ":8080", "env": "dev"}
+GET /api/v1/system/menus
 ```
 
-## ✅ 创建管理员账号
+应该仍然能拿到完整菜单树，说明系统聚合路由已经切到新模块。
 
-服务启动后，先通过初始化接口创建管理员账号：
+### 3. 菜单层级约束仍然生效
 
-```bash
-# 创建管理员账号
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
-```
+例如：
 
-## ✅ 验证权限和菜单数据
+- `parent_id = 0` 时只能创建目录
+- 按钮只能挂在菜单节点下面
+- 父级节点不能选择自己
 
-先确认菜单管理接口权限已经写入：
+这些规则都应该由后端直接拒绝，而不是依赖页面自己兜底。
 
-```bash
-# 查看菜单管理相关接口权限
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule where v1 like '/api/v1/system/menus%' order by v1, v2;"
-```
+### 4. 删除前检查仍然生效
 
-应该能看到菜单树、创建、编辑、状态修改、删除对应的策略。
+如果一个菜单仍有子节点，或者已经存在 `sys_role_menu` 绑定，删除接口应该拒绝。
 
-再确认菜单管理菜单已经写入：
+## 本节最关键的收获
 
-```bash
-# 查看菜单管理相关菜单和按钮
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select id, parent_id, type, code, title from sys_menu where code like 'system:menu%' order by sort, id;"
-```
+这一节真正建立的判断标准是：
 
-应该能看到 `system:menu` 以及几个 `system:menu:*` 按钮编码。
+> 菜单不是一个普通字典表。只要它同时牵涉菜单树、按钮权限编码和角色菜单授权，它就应该进入最终版模块结构。
 
-## ✅ 验证菜单管理接口
-
-先登录拿到 Token：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$body = @{
-  username = "admin"
-  password = "YourPassword123"
-} | ConvertTo-Json
-
-$login = Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body $body
-
-$token = $login.data.access_token
-```
-
-```bash [macOS / Linux]
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
-```
-
-:::
-
-查看菜单树：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-Invoke-RestMethod `
-  -Method Get `
-  -Uri http://localhost:8080/api/v1/system/menus `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-```bash [macOS / Linux]
-curl http://localhost:8080/api/v1/system/menus \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-:::
-
-应该能看到完整菜单树，包括目录、菜单和按钮。
-
-创建一个测试菜单。下面示例假设 `系统管理` 的菜单 ID 是 `1`，如果不确定，可以先查询 `sys_menu`：
-
-::: warning ⚠️ Windows PowerShell 发送中文 JSON 时要显式使用 UTF-8
-请求体中包含中文时，先把 JSON 转成 UTF-8 字节再发送，避免中文在发送阶段变成 `????`。
-:::
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$body = @{
-  parent_id = 1
-  type = 2
-  code = "system:demo"
-  title = "演示菜单"
-  path = "/system/demo"
-  component = "system/DemoView"
-  icon = "experiment"
-  sort = 90
-  status = 1
-  remark = "用于验证菜单管理接口"
-} | ConvertTo-Json
-
-$utf8Body = [System.Text.Encoding]::UTF8.GetBytes($body)
-
-Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/system/menus `
-  -ContentType "application/json; charset=utf-8" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body $utf8Body
-```
-
-```bash [macOS / Linux]
-curl -X POST http://localhost:8080/api/v1/system/menus \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"parent_id":1,"type":2,"code":"system:demo","title":"演示菜单","path":"/system/demo","component":"system/DemoView","icon":"experiment","sort":90,"status":1,"remark":"用于验证菜单管理接口"}'
-```
-
-:::
-
-创建成功后，用 SQL 确认菜单已经写入：
-
-```bash
-# 查看演示菜单
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select id, parent_id, type, code, title, path, status from sys_menu where code = 'system:demo';"
-```
-
-修改菜单状态。把上一步返回的菜单 ID 替换到路径里：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$menuId = 20
-$body = @{ status = 2 } | ConvertTo-Json
-
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/v1/system/menus/$menuId/status" `
-  -ContentType "application/json" `
-  -Headers @{ Authorization = "Bearer $token" } `
-  -Body $body
-```
-
-```bash [macOS / Linux]
-MENU_ID=20
-
-curl -X POST "http://localhost:8080/api/v1/system/menus/${MENU_ID}/status" \
-  -H "Authorization: Bearer ${TOKEN}" \
-  -H "Content-Type: application/json" \
-  -d '{"status":2}'
-```
-
-:::
-
-`status = 2` 表示禁用。禁用后，这个菜单不会出现在当前用户菜单接口中。
-
-删除测试菜单：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-$menuId = 20
-
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/v1/system/menus/$menuId/delete" `
-  -Headers @{ Authorization = "Bearer $token" }
-```
-
-```bash [macOS / Linux]
-MENU_ID=20
-
-curl -X POST "http://localhost:8080/api/v1/system/menus/${MENU_ID}/delete" \
-  -H "Authorization: Bearer ${TOKEN}"
-```
-
-:::
-
-::: warning ⚠️ 不要直接删除已经分配给角色的菜单
-如果菜单已经存在子菜单，或者已经写入 `sys_role_menu`，删除接口会拒绝操作。验证删除逻辑时，建议使用刚创建且未分配给角色的测试菜单。
-:::
-
-## 常见问题
-
-::: details 创建菜单时提示“根节点只能是目录”
-`parent_id = 0` 表示根节点。根节点只能创建目录，菜单和按钮都应该挂在已有父级下面。
-:::
-
-::: details 创建按钮时提示“按钮只能挂在菜单下面”
-按钮代表页面内操作点，应该挂在具体菜单下面。目录下面可以挂目录或菜单，菜单下面可以挂按钮。
-:::
-
-::: details 删除菜单时提示“请先删除子菜单”
-先删除或迁移它的子节点，再删除当前菜单。这样可以避免菜单树出现断层。
-:::
-
-::: details 删除菜单时提示“菜单已分配给角色，不能删除”
-先在角色管理中取消这个菜单的角色绑定，再删除菜单。
-:::
+菜单模块现在的价值，不只是“能新增一个目录节点”，而是它已经成为接口权限体系里那块稳定的配置入口。
 
 下一节会继续补齐系统配置能力：[系统配置](./system-config)。
