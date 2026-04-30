@@ -15,6 +15,7 @@ import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { login } from '../../api/auth'
+import BrandLogo from '../../components/BrandLogo.vue'
 import { hasAccessToken, setAuthSession } from '../../utils/auth'
 
 const router = useRouter()
@@ -66,7 +67,7 @@ const rules: FormRules = {
 }
 
 const footerText = computed(() => {
-  return `© ${new Date().getFullYear()} EZ Admin Gin · Naive UI Admin Template`
+  return `© ${new Date().getFullYear()} EZ Admin · Naive UI Admin Template`
 })
 
 function refreshCaptcha() {
@@ -122,13 +123,11 @@ async function handleSubmit() {
         class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[#111827] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
       >
         <div>
-          <div class="h-14 w-14 rounded-[14px] bg-[#18A058]" />
-          <h1 class="mt-6 text-[38px] leading-[1.06] font-bold tracking-tight text-white md:text-[48px]">
-            EZ Admin Gin
-          </h1>
-          <p class="mt-4 text-[15px] leading-7 text-[#D1D5DB] md:text-[17px]">
-            面向工程团队的 Naive UI 后台框架
-          </p>
+          <BrandLogo
+            :width="196"
+            subtitle="面向工程团队的 Naive UI 后台框架"
+            variant="dark"
+          />
         </div>
 
         <div class="mt-6 rounded-2xl bg-[#1F2937] p-5 md:p-6">

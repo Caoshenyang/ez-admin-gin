@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-04-30
+
+### Added
+
+- 基于 `golang-migrate` 的数据库迁移流程，补充 MySQL 支持和初始化入口
+- 文档站 GitHub Pages 部署工作流与配套说明
+- Linux 一键部署脚本 `scripts/deploy.sh`，以及拆分后的 `setup/update` 服务端脚本
+- 前端品牌 Logo 资源与复用组件，统一登录页和后台侧栏品牌展示
+
+### Changed
+
+- 默认管理员密码统一为 `EzAdmin@123456`
+- 后台侧栏品牌区调整为图形 Logo + 品牌文字，保留底部菜单折叠入口
+- 动态菜单图标白名单和前端教程示例同步更新
+- 第 5-7 章教程改为更完整的内联代码示例，部署流程说明更聚焦实际落地
+
+### Fixed
+
+- 迁移目录命名和 DSN 处理逻辑
+- 文档部署环境切换为 `pnpm` + Node 22
+- 示例语言标记、favicon 路径等文档站细节问题
+
 ## [1.0.0] - 2026-04-27
 
 ### Added

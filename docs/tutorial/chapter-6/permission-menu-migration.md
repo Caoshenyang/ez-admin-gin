@@ -134,6 +134,21 @@ const routeComponentMap: Record<string, RouteComponent> = {
 
 新增模块页面时，需要在这个 Map 中注册对应的组件路径。如果 `component` 值在 Map 中找不到，页面会回退到 `placeholderPage` 占位组件。
 
+### Icon 字段与前端图标白名单
+
+菜单的 `icon` 字段不是前端组件名，而是一个稳定的图标标识，例如 `setting`、`notification`、`layout-dashboard`。`admin/src/router/dynamic-menu.ts` 会先把这个字符串归一化，再去命中前端维护的 `menuIconMap`：
+
+```ts
+function resolveMenuIcon(icon: string) {
+  return renderMenuIcon(menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon)
+}
+```
+
+这条链路有两个好处：
+
+- 数据库只保存业务可读的图标标识，不和具体前端组件实现耦合。
+- 如果后端返回了空值或未知值，侧边栏会安全回退到默认图标，不会因为菜单配置错误把渲染打挂。
+
 ### 按钮权限与 canUse
 
 按钮类型的菜单节点不会出现在侧边栏中，它的 `code` 字段用于前端按钮级权限控制。登录后，前端会从 `/api/v1/auth/menus` 接口拿到当前用户被授权的完整菜单树（包括按钮），`dynamic-menu.ts` 中的 `buttonPermissionCodes` 会递归收集所有按钮编码：

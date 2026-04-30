@@ -5,7 +5,7 @@ description: "根据后端菜单权限生成前端路由和侧边菜单。"
 
 # 动态菜单
 
-上一节已经把后台壳子搭好了，但侧边栏菜单还是写死在前端。现在把它升级成真正的权限菜单：登录后请求 `/api/v1/auth/menus`，根据后端返回的菜单树生成 `NMenu`，同时把可访问页面注册成前端路由。
+这一节把上一节搭好的后台壳子接到真正的权限菜单链路：登录后请求 `/api/v1/auth/menus`，根据后端返回的菜单树生成 `NMenu`，同时把可访问页面注册成前端路由。
 
 ::: tip 🎯 本节目标
 完成后，侧边栏不再依赖前端静态数组，而是由当前登录用户的角色权限决定。刷新页面后，前端会重新拉取菜单并恢复动态路由；没有权限的菜单不会显示，也不能直接通过地址访问。
@@ -19,15 +19,22 @@ description: "根据后端菜单权限生成前端路由和侧边菜单。"
 | --- | --- |
 | `type = 1` | 目录，只出现在侧边栏分组里 |
 | `type = 2` | 菜单，会注册成可访问路由 |
-| `type = 3` | 按钮权限，本节先收集起来，后续页面里再用于按钮显隐 |
+| `type = 3` | 按钮权限，前端收集后直接用于页面内按钮显隐 |
 | `path` | 路由地址，也是 `NMenu` 的 `key` |
 | `component` | 后端保存的组件编码，前端用白名单映射到真实页面组件 |
+| `icon` | 菜单图标标识，前端命中白名单后渲染；空值或未知值回退到默认图标 |
 | `children` | 递归生成菜单层级 |
 
 ::: warning ⚠️ 不要直接把后端 `component` 拼成动态 import
 `component` 是数据库配置，不应该直接参与任意路径导入。前端要维护一张明确的组件白名单：后端只负责返回组件编码，前端只允许编码命中白名单后加载对应页面。
 
 这样做虽然多写几行映射，但能避免菜单配置错误导致构建路径不可控，也更适合后续做页面级权限审计。
+:::
+
+::: info `icon` 字段也是“标识”而不是组件名
+当前仓库把 `setting`、`notification`、`layout-dashboard` 这类字符串视为菜单图标标识，真正的图标组件由前端在 `admin/src/router/dynamic-menu.ts` 里用白名单映射到 `@vicons/ionicons5`。
+
+这样数据库里不用存前端组件名；即使后端返回了空值或未知值，侧边栏也只会安全回退到默认图标，不会把菜单渲染打挂。
 :::
 
 ## 本节会改什么
@@ -67,7 +74,7 @@ admin/
 - 已完成上一节 [后台布局](./admin-layout)，并且登录后可以进入 `/dashboard`。
 - 后端 `/api/v1/auth/menus` 已经能按当前登录用户返回菜单树。
 - `admin/src/api/http.ts` 已经统一注入 `Authorization` 请求头。
-- 当前只有“系统状态”页已经接成真实页面，其它系统页面本节先继续映射到占位页。
+- 当前白名单已映射 `HealthView`、`UserView`、`RoleView`、`MenuView`、`ConfigView`、`FileView`、`OperationLogView`、`LoginLogView`、`NoticeView`；只有未知 `component` 才会回退到 `PlaceholderPage.vue`。
 
 ## 🛠️ 定义菜单类型
 
@@ -129,31 +136,109 @@ export async function getCurrentUserMenus() {
 ::: details `admin/src/router/dynamic-menu.ts` — 菜单转换工具
 
 ```ts
-import type { MenuOption } from 'naive-ui'
+import {
+  AlbumsOutline,
+  AppsOutline,
+  BeakerOutline,
+  BuildOutline,
+  CogOutline,
+  DocumentTextOutline,
+  FolderOpenOutline,
+  GridOutline,
+  LayersOutline,
+  ListOutline,
+  NotificationsOutline,
+  PeopleOutline,
+  PulseOutline,
+  ServerOutline,
+  SettingsOutline,
+  ShieldCheckmarkOutline,
+  TimeOutline,
+} from '@vicons/ionicons5'
+import { NIcon, type MenuOption } from 'naive-ui'
 import type { RouteRecordRaw } from 'vue-router'
-import { computed, shallowRef } from 'vue'
+import { computed, h, shallowRef, type Component } from 'vue'
 
 import { MenuType, type AuthMenu } from '../types/menu'
 
 type RouteComponent = NonNullable<RouteRecordRaw['component']>
+type MenuIconComponent = Component
 
 const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
 
 const routeComponentMap: Record<string, RouteComponent> = {
   'system/HealthView': () => import('../pages/system/HealthView.vue'),
-  'system/UserView': placeholderPage,
-  'system/RoleView': placeholderPage,
-  'system/MenuView': placeholderPage,
-  'system/ConfigView': placeholderPage,
-  'system/FileView': placeholderPage,
-  'system/OperationLogView': placeholderPage,
-  'system/LoginLogView': placeholderPage,
+  'system/UserView': () => import('../pages/system/UserView.vue'),
+  'system/RoleView': () => import('../pages/system/RoleView.vue'),
+  'system/MenuView': () => import('../pages/system/MenuView.vue'),
+  'system/ConfigView': () => import('../pages/system/ConfigView.vue'),
+  'system/FileView': () => import('../pages/system/FileView.vue'),
+  'system/OperationLogView': () => import('../pages/system/OperationLogView.vue'),
+  'system/LoginLogView': () => import('../pages/system/LoginLogView.vue'),
+  'system/NoticeView': () => import('../pages/system/NoticeView.vue'),
+}
+
+const defaultMenuIcon = AppsOutline
+
+// 后端 icon 字段只允许命中这份前端白名单，避免把任意字符串直接当组件渲染。
+const menuIconMap: Record<string, MenuIconComponent> = {
+  albums: AlbumsOutline,
+  app: AppsOutline,
+  apps: AppsOutline,
+  beaker: BeakerOutline,
+  blog: DocumentTextOutline,
+  build: BuildOutline,
+  cog: CogOutline,
+  config: BuildOutline,
+  dashboard: GridOutline,
+  directory: AlbumsOutline,
+  document: DocumentTextOutline,
+  edit: DocumentTextOutline,
+  experiment: BeakerOutline,
+  file: FolderOpenOutline,
+  files: FolderOpenOutline,
+  folder: FolderOpenOutline,
+  grid: GridOutline,
+  health: PulseOutline,
+  history: TimeOutline,
+  home: GridOutline,
+  layout: GridOutline,
+  layoutdashboard: GridOutline,
+  layers: LayersOutline,
+  list: ListOutline,
+  log: ListOutline,
+  loginlog: TimeOutline,
+  loginlogs: TimeOutline,
+  logs: ListOutline,
+  menu: LayersOutline,
+  menus: LayersOutline,
+  monitor: PulseOutline,
+  notice: NotificationsOutline,
+  notices: NotificationsOutline,
+  notification: NotificationsOutline,
+  notifications: NotificationsOutline,
+  operationlog: ListOutline,
+  operationlogs: ListOutline,
+  page: DocumentTextOutline,
+  people: PeopleOutline,
+  person: PeopleOutline,
+  role: ShieldCheckmarkOutline,
+  roles: ShieldCheckmarkOutline,
+  server: ServerOutline,
+  setting: SettingsOutline,
+  settings: SettingsOutline,
+  shield: ShieldCheckmarkOutline,
+  system: SettingsOutline,
+  time: TimeOutline,
+  user: PeopleOutline,
+  users: PeopleOutline,
 }
 
 const builtinMenuOptions: MenuOption[] = [
   {
     label: '工作台',
     key: '/dashboard',
+    icon: renderMenuIcon(GridOutline),
   },
 ]
 
@@ -210,6 +295,7 @@ function toMenuOption(menu: AuthMenu): MenuOption | null {
   return {
     label: menu.title,
     key,
+    icon: resolveMenuIcon(menu.icon),
     disabled: menu.type === MenuType.Directory && children.length === 0,
     children: children.length > 0 ? children : undefined,
   }
@@ -251,6 +337,21 @@ function resolveRouteComponent(component: string) {
   return routeComponentMap[component] ?? placeholderPage
 }
 
+function resolveMenuIcon(icon: string) {
+  return renderMenuIcon(menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon)
+}
+
+function renderMenuIcon(icon: MenuIconComponent) {
+  return () =>
+    h(NIcon, null, {
+      default: () => h(icon),
+    })
+}
+
+function normalizeMenuIcon(icon: string) {
+  return icon.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
 function toChildRoutePath(path: string) {
   return path.replace(/^\/+/, '')
 }
@@ -258,22 +359,14 @@ function toChildRoutePath(path: string) {
 
 :::
 
-::: details 为什么这里先把大多数系统页面映射到占位页
-后端初始化的菜单已经包含 `system/UserView`、`system/RoleView`、`system/MenuView` 等组件编码，但第五章后面的页面还没正式实现。当前只有 `system/HealthView` 已经接成真实页面，用来验证动态菜单、受保护健康检查接口和系统依赖状态。
-
-本节先把其余编码映射到 `PlaceholderPage.vue`，好处是动态菜单链路能先跑通。等后续写到用户、角色、菜单页面时，只需要把白名单里的某一项替换成真实页面即可。
-
-例如后续用户管理页面完成后，把这一行：
+::: details 为什么还保留 `PlaceholderPage.vue`
+当前仓库里常用系统页已经全部命中 `routeComponentMap`，`PlaceholderPage.vue` 只作为兜底页保留。也就是说，只有后端返回了一个前端白名单里还没登记的 `component` 编码时，才会走到这句：
 
 ```ts
-'system/UserView': placeholderPage,
+return routeComponentMap[component] ?? placeholderPage
 ```
 
-替换成：
-
-```ts
-'system/UserView': () => import('../pages/system/UserView.vue'),
-```
+这样做的目的不是“先占位，后面再补”，而是避免菜单配置错误时直接把前端路由打崩。已命中真实页面映射的菜单不会显示这个兜底页。
 :::
 
 ## 🛠️ 在路由守卫里加载菜单
@@ -589,7 +682,7 @@ watch(
 启动前后端后，用管理员账号登录：
 
 ```text
-admin / EzAdmin@123456
+admin / <你的管理员密码>
 ```
 
 登录成功后重点看这几件事：
@@ -612,7 +705,7 @@ $login = Invoke-RestMethod `
   -Method Post `
   -Uri http://localhost:8080/api/v1/auth/login `
   -ContentType "application/json" `
-  -Body '{"username":"admin","password":"EzAdmin@123456"}'
+  -Body '{"username":"admin","password":"<你的管理员密码>"}'
 
 Invoke-RestMethod `
   -Method Get `
@@ -623,7 +716,7 @@ Invoke-RestMethod `
 ```bash [curl]
 TOKEN=$(curl -s http://localhost:8080/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"EzAdmin@123456"}' \
+  -d '{"username":"admin","password":"<你的管理员密码>"}' \
   | jq -r '.data.access_token')
 
 curl http://localhost:8080/api/v1/auth/menus \
@@ -648,7 +741,7 @@ pnpm exec vue-tsc --noEmit
 
 ### 菜单显示了，但点击没有页面
 
-检查后端 `component` 是否命中了 `routeComponentMap`。如果没有命中，本节的代码会先回退到 `PlaceholderPage.vue`，不会直接报错。后续接真实页面时，再把对应编码映射到真实组件。
+检查后端 `component` 是否命中了 `routeComponentMap`。如果没有命中，当前代码会先回退到 `PlaceholderPage.vue`，方便你直接定位是哪一个编码还没登记到前端白名单。
 
 ### 目录菜单点不了
 
@@ -656,7 +749,7 @@ pnpm exec vue-tsc --noEmit
 
 ### 按钮权限在哪里用
 
-本节先把 `type = 3` 的按钮权限收集到 `buttonPermissionCodes`，后续写用户管理、角色管理页面时，再用它控制“新增、编辑、禁用、删除”等按钮是否显示。
+`buttonPermissionCodes` 当前已经在 `UserView`、`RoleView`、`MenuView`、`NoticeView` 等页面里使用，用来控制“新增、编辑、分配角色、启用 / 禁用”等按钮显隐。
 
 ## 本节小结
 

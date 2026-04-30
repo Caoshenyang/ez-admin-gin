@@ -1340,13 +1340,33 @@ onMounted(() => {
 修改后，`system/ConfigView` 和 `system/FileView` 会从占位页切换为真实页面。
 
 ```ts
-import type { MenuOption } from 'naive-ui'
+import {
+  AlbumsOutline,
+  AppsOutline,
+  BeakerOutline,
+  BuildOutline,
+  CogOutline,
+  DocumentTextOutline,
+  FolderOpenOutline,
+  GridOutline,
+  LayersOutline,
+  ListOutline,
+  NotificationsOutline,
+  PeopleOutline,
+  PulseOutline,
+  ServerOutline,
+  SettingsOutline,
+  ShieldCheckmarkOutline,
+  TimeOutline,
+} from '@vicons/ionicons5'
+import { NIcon, type MenuOption } from 'naive-ui'
 import type { RouteRecordRaw } from 'vue-router'
-import { computed, shallowRef } from 'vue'
+import { computed, h, shallowRef, type Component } from 'vue'
 
 import { MenuType, type AuthMenu } from '../types/menu'
 
 type RouteComponent = NonNullable<RouteRecordRaw['component']>
+type MenuIconComponent = Component
 
 const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
 
@@ -1362,10 +1382,67 @@ const routeComponentMap: Record<string, RouteComponent> = {
   'system/NoticeView': () => import('../pages/system/NoticeView.vue'),
 }
 
+const defaultMenuIcon = AppsOutline
+
+// 后端 icon 字段只允许命中这份前端白名单，避免把任意字符串直接当组件渲染。
+const menuIconMap: Record<string, MenuIconComponent> = {
+  albums: AlbumsOutline,
+  app: AppsOutline,
+  apps: AppsOutline,
+  beaker: BeakerOutline,
+  blog: DocumentTextOutline,
+  build: BuildOutline,
+  cog: CogOutline,
+  config: BuildOutline,
+  dashboard: GridOutline,
+  directory: AlbumsOutline,
+  document: DocumentTextOutline,
+  edit: DocumentTextOutline,
+  experiment: BeakerOutline,
+  file: FolderOpenOutline,
+  files: FolderOpenOutline,
+  folder: FolderOpenOutline,
+  grid: GridOutline,
+  health: PulseOutline,
+  history: TimeOutline,
+  home: GridOutline,
+  layout: GridOutline,
+  layoutdashboard: GridOutline,
+  layers: LayersOutline,
+  list: ListOutline,
+  log: ListOutline,
+  loginlog: TimeOutline,
+  loginlogs: TimeOutline,
+  logs: ListOutline,
+  menu: LayersOutline,
+  menus: LayersOutline,
+  monitor: PulseOutline,
+  notice: NotificationsOutline,
+  notices: NotificationsOutline,
+  notification: NotificationsOutline,
+  notifications: NotificationsOutline,
+  operationlog: ListOutline,
+  operationlogs: ListOutline,
+  page: DocumentTextOutline,
+  people: PeopleOutline,
+  person: PeopleOutline,
+  role: ShieldCheckmarkOutline,
+  roles: ShieldCheckmarkOutline,
+  server: ServerOutline,
+  setting: SettingsOutline,
+  settings: SettingsOutline,
+  shield: ShieldCheckmarkOutline,
+  system: SettingsOutline,
+  time: TimeOutline,
+  user: PeopleOutline,
+  users: PeopleOutline,
+}
+
 const builtinMenuOptions: MenuOption[] = [
   {
     label: '工作台',
     key: '/dashboard',
+    icon: renderMenuIcon(GridOutline),
   },
 ]
 
@@ -1422,6 +1499,7 @@ function toMenuOption(menu: AuthMenu): MenuOption | null {
   return {
     label: menu.title,
     key,
+    icon: resolveMenuIcon(menu.icon),
     disabled: menu.type === MenuType.Directory && children.length === 0,
     children: children.length > 0 ? children : undefined,
   }
@@ -1461,6 +1539,21 @@ function collectButtonCodes(menus: AuthMenu[]) {
 
 function resolveRouteComponent(component: string) {
   return routeComponentMap[component] ?? placeholderPage
+}
+
+function resolveMenuIcon(icon: string) {
+  return renderMenuIcon(menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon)
+}
+
+function renderMenuIcon(icon: MenuIconComponent) {
+  return () =>
+    h(NIcon, null, {
+      default: () => h(icon),
+    })
+}
+
+function normalizeMenuIcon(icon: string) {
+  return icon.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
 function toChildRoutePath(path: string) {

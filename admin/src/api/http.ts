@@ -2,6 +2,8 @@ import axios from 'axios'
 
 import { clearAuthSession, getAuthorizationHeader } from '../utils/auth'
 
+const publicApiPaths = new Set(['/auth/login', '/setup/init'])
+
 const http = axios.create({
   // 通过 Vite 代理转发到本地后端。
   baseURL: '/api/v1',
@@ -9,6 +11,11 @@ const http = axios.create({
 })
 
 http.interceptors.request.use((config) => {
+  const requestPath = config.url ?? ''
+  if (publicApiPaths.has(requestPath)) {
+    return config
+  }
+
   const authorization = getAuthorizationHeader()
 
   if (authorization) {

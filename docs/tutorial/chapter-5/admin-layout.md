@@ -19,15 +19,14 @@ description: "实现后台基础布局，包括侧边栏、顶部栏、工作标
 - 导出图片：`docs/public/prototypes/exports/mipsi.png`
 :::
 
-::: warning ⚠️ 这一节先实现静态后台壳子
-这一节的重点是把后台框架搭稳，不是把所有系统页面一次性接完。
+::: warning ⚠️ 这一节只聚焦后台壳子本身
+当前仓库代码已经把菜单接到动态路由链路，但这一节关注的重点仍然是一屏布局、顶部栏、标签栏和工作台骨架。
 
-所以当前边界是：
+结合当前实现，可以先记住三点：
 
-- 侧边栏菜单先使用前端静态配置。
-- 工作标签先基于当前前端路由维护。
-- 用户管理、角色权限、菜单管理、操作日志、系统设置先放占位页，用于验证布局和路由出口。
-- 下一节 [动态菜单](./dynamic-menu) 再把菜单和路由与后端 `/api/v1/auth/menus` 真正打通。
+- `AdminLayout.vue` 左侧菜单已经改为读取 `sideMenuOptions`，不再维护本地静态菜单数组。
+- 工作标签仍然按当前路由维护，这是后台壳子的职责。
+- 登录拦截、动态路由注册和菜单清理已经放进 `router/index.ts`，下一节再专门展开这条链路。
 :::
 
 ## 先明确这一节的布局约束
@@ -38,7 +37,7 @@ description: "实现后台基础布局，包括侧边栏、顶部栏、工作标
 
 - 页面整体高度限制在一屏内，根容器使用 `h-screen`。
 - 不出现浏览器默认滚动条，`html`、`body`、`#app` 和布局根节点都要关闭浏览器级滚动。
-- 如果后续有超出一屏的内容，优先让内容区内部滚动，而不是让整个浏览器页面滚动。
+- 页面超出一屏时，优先让内容区内部滚动，而不是让整个浏览器页面滚动。
 - Naive UI 优先负责后台布局、菜单、标签、输入框、按钮、卡片、空状态、下拉菜单这些成熟组件。
 - Tailwind CSS 4 负责组件外层的尺寸约束、留白、颜色微调和响应式补充。
 
@@ -56,9 +55,8 @@ admin/
    ├─ pages/
    │  ├─ dashboard/
    │  │  └─ DashboardHome.vue
-   │  └─ system/
-   │     └─ PlaceholderPage.vue
    ├─ router/
+   │  ├─ dynamic-menu.ts
    │  └─ index.ts
    ├─ styles/
    │  └─ main.css
@@ -74,10 +72,10 @@ admin/
 | `src/utils/auth.ts` | 读取本地登录用户信息，用在顶部栏用户区 |
 | `src/types/dashboard.ts` | 约束工作台概览接口返回值，避免页面继续写死假数据 |
 | `src/api/dashboard.ts` | 调用 `/api/v1/auth/dashboard`，统一获取工作台真实数据 |
-| `src/layouts/AdminLayout.vue` | 实现侧边栏、顶部栏、工作标签和内容区 |
+| `src/layouts/AdminLayout.vue` | 实现侧边栏、顶部栏、工作标签和内容区，并消费动态菜单状态 |
 | `src/pages/dashboard/DashboardHome.vue` | 把原来的演示工作台升级成真实项目首页 |
-| `src/pages/system/PlaceholderPage.vue` | 给静态菜单提供可复用的占位页 |
-| `src/router/index.ts` | 把布局挂到受保护路由上，让工作台和系统页共用后台壳子 |
+| `src/router/dynamic-menu.ts` | 提供侧边栏菜单状态、页面标题查找和按钮权限集合 |
+| `src/router/index.ts` | 把后台布局、登录守卫和动态路由挂载放到同一条路由链路里 |
 
 ## 开始前先确认
 
@@ -280,12 +278,12 @@ export function getAuthorizationHeader() {
 - `NMenu` 负责侧边栏菜单，不再手写菜单按钮列表。
 - 工作标签保留轻量自实现，以贴近原型里的小标签视觉。
 
-页面里仍然会保留少量 Tailwind 类，用来控制高度、留白、颜色和一屏约束。
+页面里仍然会保留少量 Tailwind 类，用来控制高度、留白、颜色和一屏约束。按当前仓库代码，`AdminLayout.vue` 主要承接四块：
 
-- 左侧静态菜单
-- 顶部栏
-- 工作标签
-- 路由内容区
+- 左侧菜单区：读取 `sideMenuOptions`
+- 顶部栏：面包屑、搜索框、快捷按钮和用户区
+- 工作标签：按当前路由维护打开页签
+- 路由内容区：承接工作台和动态注册页面
 
 这里直接完整写入即可。
 
@@ -302,7 +300,7 @@ import {
   NotificationsOutline,
   SearchOutline,
 } from '@vicons/ionicons5'
-import type { DropdownOption, MenuOption } from 'naive-ui'
+import type { DropdownOption } from 'naive-ui'
 import {
   NButton,
   NDropdown,
@@ -318,12 +316,9 @@ import {
 import { computed, h, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
+import { resetDynamicRoutes } from '../router'
+import { findMenuTitleByPath, sideMenuOptions } from '../router/dynamic-menu'
 import { clearAuthSession, getAuthUserInfo } from '../utils/auth'
-
-interface MenuItem {
-  title: string
-  to: string
-}
 
 interface WorkTab {
   title: string
@@ -335,36 +330,23 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
-const menuItems: MenuItem[] = [
-  { title: '工作台', to: '/dashboard' },
-  { title: '用户管理', to: '/users' },
-  { title: '角色权限', to: '/roles' },
-  { title: '菜单管理', to: '/menus' },
-  { title: '操作日志', to: '/logs' },
-  { title: '系统设置', to: '/settings' },
-]
-
-const menuOptions: MenuOption[] = menuItems.map((item) => ({
-  label: item.title,
-  key: item.to,
-}))
-
-const openTabs = ref<WorkTab[]>([
-  { title: '工作台', to: '/dashboard', closable: false },
-])
+const openTabs = ref<WorkTab[]>([{ title: '工作台', to: '/dashboard', closable: false }])
 
 const currentUser = computed(() => getAuthUserInfo())
 const displayName = computed(() => {
   return currentUser.value?.nickname || currentUser.value?.username || '管理员'
 })
 
+const routeTitle = computed(() => {
+  return String(route.meta.title ?? findMenuTitleByPath(route.path) ?? '工作台')
+})
+
 const breadcrumbText = computed(() => {
-  const title = String(route.meta.title ?? '工作台')
-  return `首页 / ${title}`
+  return `首页 / ${routeTitle.value}`
 })
 
 const activeMenuKey = computed(() => {
-  return menuItems.some((item) => item.to === route.path) ? route.path : null
+  return route.path
 })
 
 const dropdownOptions: DropdownOption[] = [
@@ -372,18 +354,14 @@ const dropdownOptions: DropdownOption[] = [
     label: '退出登录',
     key: 'logout',
     icon: () =>
-      h(
-        NIcon,
-        null,
-        {
-          default: () => h(LogOutOutline),
-        },
-      ),
+      h(NIcon, null, {
+        default: () => h(LogOutOutline),
+      }),
   },
 ]
 
 function ensureCurrentTab() {
-  const title = String(route.meta.title ?? '')
+  const title = routeTitle.value
   if (!title || route.path === '/login') {
     return
   }
@@ -410,9 +388,8 @@ function handleMenuUpdate(key: string | number) {
 
 function handleCloseTab(path: string) {
   const nextTabs = openTabs.value.filter((tab) => tab.to !== path)
-  openTabs.value = nextTabs.length > 0
-    ? nextTabs
-    : [{ title: '工作台', to: '/dashboard', closable: false }]
+  openTabs.value =
+    nextTabs.length > 0 ? nextTabs : [{ title: '工作台', to: '/dashboard', closable: false }]
 
   if (route.path === path) {
     const fallback = openTabs.value[openTabs.value.length - 1]
@@ -428,9 +405,7 @@ function handleCloseTab(path: string) {
 function handleCloseOtherTabs() {
   const current = openTabs.value.find((tab) => tab.to === route.path)
 
-  openTabs.value = [
-    { title: '工作台', to: '/dashboard', closable: false },
-  ]
+  openTabs.value = [{ title: '工作台', to: '/dashboard', closable: false }]
 
   if (current && current.to !== '/dashboard') {
     openTabs.value.push(current)
@@ -447,6 +422,7 @@ function handleUserAction(key: string | number) {
   }
 
   clearAuthSession()
+  resetDynamicRoutes()
   message.success('已退出登录')
   void router.replace('/login')
 }
@@ -483,7 +459,7 @@ watch(
       <NMenu
         class="mt-3"
         :value="activeMenuKey"
-        :options="menuOptions"
+        :options="sideMenuOptions"
         :indent="18"
         inverted
         @update:value="handleMenuUpdate"
@@ -1335,70 +1311,30 @@ onMounted(() => {
 
 :::
 
-## 🛠️ 创建可复用占位页
+## 🛠️ 路由里挂上后台壳子
 
-创建 `admin/src/pages/system/PlaceholderPage.vue`。这一页用于先把后台布局的路由出口接上，后续做到具体系统页时再逐步替换成真实内容。
+当前仓库里，后台布局并不是“静态路由 + 占位页”那一版，而是已经并入统一的全局守卫链路：
 
-::: details `admin/src/pages/system/PlaceholderPage.vue` — 可复用占位页
-
-```vue
-<script setup lang="ts">
-import { NButton, NCard, NEmpty } from 'naive-ui'
-
-defineProps<{
-  title: string
-  description: string
-}>()
-</script>
-
-<template>
-  <main class="h-full overflow-hidden">
-    <section class="flex h-full flex-col gap-6 overflow-hidden">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[28px] font-bold text-[#111827]">{{ title }}</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">{{ description }}</p>
-        </div>
-
-        <NButton tertiary type="primary">
-          后续接入
-        </NButton>
-      </div>
-
-      <NCard
-        class="min-h-0 flex-1 rounded-lg"
-        :bordered="false"
-        content-style="height: 100%;"
-      >
-        <div class="flex h-full items-center justify-center">
-          <NEmpty description="本页会在后续小节继续补齐">
-            <template #extra>
-              <p class="text-sm text-[#6B7280]">当前先验证后台布局、路由出口和工作标签。</p>
-            </template>
-          </NEmpty>
-        </div>
-      </NCard>
-    </section>
-  </main>
-</template>
-```
-
-:::
-
-## 🛠️ 把后台布局接进路由
-
-修改 `admin/src/router/index.ts`。这一处要做的核心变化有三件：
-
-- 登录后不再直接进入单独页面，而是进入统一后台布局。
-- 后台布局下挂工作台和静态系统页。
-- `meta.title` 先补上，方便顶部栏和工作标签读取页面标题。
+- `AdminLayout.vue` 固定挂在 `name: 'admin'` 的父路由下。
+- `dashboard` 作为内置子路由常驻存在。
+- 其余页面在首次进入后台时，通过 `/api/v1/auth/menus` 动态注册。
+- `PlaceholderPage.vue` 仍然保留，但只作为未知 `component` 编码的兜底页，不再是本章默认路由出口。
 
 ::: details `admin/src/router/index.ts` — 后台布局接进路由
 
 ```ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { hasAccessToken } from '../utils/auth'
+import { getCurrentUserMenus } from '../api/menu'
+import { clearAuthSession, hasAccessToken } from '../utils/auth'
+import {
+  buildDynamicRoutes,
+  clearAuthMenus,
+  setAuthMenus,
+} from './dynamic-menu'
+
+const removeDynamicRouteCallbacks: Array<() => void> = []
+let dynamicRoutesReady = false
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -1411,85 +1347,68 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../pages/auth/LoginPage.vue'),
-      beforeEnter: () => {
-        if (hasAccessToken()) {
-          return '/dashboard'
-        }
-
-        return true
-      },
     },
     {
       path: '/',
-      component: () => import('../layouts/AdminLayout.vue'), // [!code ++]
-      beforeEnter: () => { // [!code ++]
-        if (!hasAccessToken()) { // [!code ++]
-          return '/login' // [!code ++]
-        } // [!code ++]
-
-        return true // [!code ++]
-      }, // [!code ++]
-      children: [ // [!code ++]
+      name: 'admin',
+      component: () => import('../layouts/AdminLayout.vue'),
+      children: [
         {
           path: 'dashboard',
           name: 'dashboard',
           component: () => import('../pages/dashboard/DashboardHome.vue'),
-          meta: { title: '工作台' }, // [!code ++]
-        },
-        {
-          path: 'users',
-          name: 'users',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '用户管理',
-            description: '这一页下一节会开始接入真实用户列表和操作表单。',
-          },
-          meta: { title: '用户管理' }, // [!code ++]
-        },
-        {
-          path: 'roles',
-          name: 'roles',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '角色权限',
-            description: '当前先验证后台布局和标签栏，角色页面后续章节继续补齐。',
-          },
-          meta: { title: '角色权限' }, // [!code ++]
-        },
-        {
-          path: 'menus',
-          name: 'menus',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '菜单管理',
-            description: '这一页下一节会开始与动态菜单能力衔接。',
-          },
-          meta: { title: '菜单管理' }, // [!code ++]
-        },
-        {
-          path: 'logs',
-          name: 'logs',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '操作日志',
-            description: '当前先保留路由出口，后续章节再接真实日志页面。',
-          },
-          meta: { title: '操作日志' }, // [!code ++]
-        },
-        {
-          path: 'settings',
-          name: 'settings',
-          component: () => import('../pages/system/PlaceholderPage.vue'),
-          props: {
-            title: '系统设置',
-            description: '当前先验证后台布局结构，配置页后续章节继续补齐。',
-          },
-          meta: { title: '系统设置' }, // [!code ++]
+          meta: { title: '工作台' },
         },
       ],
     },
   ],
 })
+
+router.beforeEach(async (to) => {
+  if (to.path === '/login') {
+    return hasAccessToken() ? '/dashboard' : true
+  }
+
+  if (!hasAccessToken()) {
+    resetDynamicRoutes()
+    return {
+      path: '/login',
+      query: {
+        redirect: to.fullPath,
+      },
+    }
+  }
+
+  if (!dynamicRoutesReady) {
+    try {
+      const menus = await getCurrentUserMenus()
+      setAuthMenus(menus)
+
+      for (const route of buildDynamicRoutes(menus)) {
+        removeDynamicRouteCallbacks.push(router.addRoute('admin', route))
+      }
+
+      dynamicRoutesReady = true
+      return to.fullPath
+    } catch {
+      clearAuthSession()
+      resetDynamicRoutes()
+      return '/login'
+    }
+  }
+
+  return true
+})
+
+export function resetDynamicRoutes() {
+  for (const removeRoute of removeDynamicRouteCallbacks) {
+    removeRoute()
+  }
+
+  removeDynamicRouteCallbacks.length = 0
+  dynamicRoutesReady = false
+  clearAuthMenus()
+}
 
 export default router
 ```
@@ -1528,16 +1447,9 @@ pnpm dev
 - 布局根节点是否用了 `h-screen overflow-hidden`
 - 右侧主区域里是否缺少 `min-h-0`
 
-### 3. 验证静态菜单和路由出口
+### 3. 验证侧边栏、标签和路由出口
 
-依次点击左侧菜单里的：
-
-- `工作台`
-- `用户管理`
-- `角色权限`
-- `菜单管理`
-- `操作日志`
-- `系统设置`
+登录后，左侧应该能看到 `工作台` 和当前账号有权访问的菜单项。依次点击其中几个页面，重点观察：
 
 这时应该看到：
 
@@ -1605,4 +1517,4 @@ pnpm dev
 如果没有这个函数，或者 JSON 解析失败后没有回退逻辑，顶部栏就拿不到真实昵称。
 :::
 
-下一节继续把左侧菜单从“前端写死”升级成“根据后端返回生成”：[动态菜单](./dynamic-menu)。
+下一节继续展开当前这套路由链路里的动态菜单部分，包括 `/api/v1/auth/menus`、运行时路由注册和按钮权限集合：[动态菜单](./dynamic-menu)。

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import {
+  ChevronBackOutline,
   ChevronDownOutline,
+  ChevronForwardOutline,
   EllipsisHorizontal,
   ExpandOutline,
   LogOutOutline,
@@ -24,6 +26,7 @@ import {
 import { computed, h, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
+import BrandLogo from '../components/BrandLogo.vue'
 import { resetDynamicRoutes } from '../router'
 import { findMenuTitleByPath, sideMenuOptions } from '../router/dynamic-menu'
 import { clearAuthSession, getAuthUserInfo } from '../utils/auth'
@@ -39,6 +42,7 @@ const router = useRouter()
 const message = useMessage()
 
 const openTabs = ref<WorkTab[]>([{ title: '工作台', to: '/dashboard', closable: false }])
+const sidebarCollapsed = ref(false)
 
 const currentUser = computed(() => getAuthUserInfo())
 const displayName = computed(() => {
@@ -55,6 +59,17 @@ const breadcrumbText = computed(() => {
 
 const activeMenuKey = computed(() => {
   return route.path
+})
+
+const siderWidth = computed(() => {
+  return sidebarCollapsed.value ? 76 : 240
+})
+
+const siderContentStyle = computed(() => {
+  return {
+    padding: sidebarCollapsed.value ? '18px 10px 14px' : '18px 16px 14px',
+    background: '#111827',
+  }
 })
 
 const dropdownOptions: DropdownOption[] = [
@@ -124,6 +139,10 @@ function handleRefresh() {
   window.location.reload()
 }
 
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
 function handleUserAction(key: string | number) {
   if (key !== 'logout') {
     return
@@ -147,30 +166,54 @@ watch(
   <NLayout class="h-screen overflow-hidden bg-[#F5F7FA]" has-sider :native-scrollbar="false">
     <NLayoutSider
       inverted
-      :width="240"
+      collapse-mode="width"
+      :collapsed="sidebarCollapsed"
+      :collapsed-width="76"
+      :width="siderWidth"
       :native-scrollbar="false"
       content-class="flex h-full flex-col"
-      content-style="padding: 18px 16px; background: #111827;"
+      :content-style="siderContentStyle"
     >
-      <button
-        type="button"
-        class="flex h-12 items-center gap-2.5 border-none bg-transparent px-0 text-left text-white"
-        @click="navigateTo('/dashboard')"
-      >
-        <span class="h-7 w-7 rounded-[5px] bg-[#18A058]" />
-        <span class="text-lg font-bold">EZ Admin</span>
-      </button>
+      <div class="flex" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'">
+        <button
+          type="button"
+          class="flex min-h-10 items-center border-none bg-transparent px-0 py-0 text-left text-white transition-opacity hover:opacity-90"
+          @click="navigateTo('/dashboard')"
+        >
+          <BrandLogo
+            :width="sidebarCollapsed ? 34 : 44"
+            direction="inline"
+            :show-title="!sidebarCollapsed"
+            variant="dark"
+          />
+        </button>
+      </div>
 
-      <p class="mt-6 text-xs font-semibold tracking-wide text-[#6B7280]">主菜单</p>
+      <p v-if="!sidebarCollapsed" class="mt-6 text-xs font-semibold tracking-wide text-[#6B7280]">
+        主菜单
+      </p>
 
       <NMenu
         class="mt-3"
         :value="activeMenuKey"
         :options="sideMenuOptions"
         :indent="18"
+        :collapsed="sidebarCollapsed"
+        :collapsed-width="76"
+        :collapsed-icon-size="20"
         inverted
         @update:value="handleMenuUpdate"
       />
+
+      <button
+        type="button"
+        class="mt-auto flex h-10 items-center rounded-xl border-none bg-white/6 px-3 text-sm text-[#D1D5DB] transition-colors hover:bg-white/10 hover:text-white"
+        :class="sidebarCollapsed ? 'justify-center' : 'justify-start gap-2.5'"
+        @click="toggleSidebar"
+      >
+        <NIcon :component="sidebarCollapsed ? ChevronForwardOutline : ChevronBackOutline" />
+        <span v-if="!sidebarCollapsed">收起菜单</span>
+      </button>
     </NLayoutSider>
 
     <NLayout class="h-screen min-w-0 overflow-hidden bg-[#F5F7FA]" :native-scrollbar="false">

@@ -648,7 +648,7 @@ onMounted(loadMenus)
 
         <NFormItem label="图标 / 排序">
           <div class="grid w-full grid-cols-[1fr_120px] gap-2">
-            <NInput v-model:value="formModel.icon" placeholder="layout-dashboard" />
+            <NInput v-model:value="formModel.icon" placeholder="setting / notification / layout-dashboard" />
             <NInputNumber v-model:value="formModel.sort" :min="0" />
           </div>
         </NFormItem>

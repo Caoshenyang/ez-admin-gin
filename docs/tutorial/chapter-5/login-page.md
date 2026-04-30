@@ -1,14 +1,14 @@
 ---
 title: 登录页
-description: "参考原型实现后台登录页，优化一屏布局，并打通登录接口、验证码占位和记住登录。"
+description: "参考原型实现后台登录页，优化一屏布局，并打通登录接口、记住登录和当前路由跳转。"
 ---
 
 # 登录页
 
-这一节开始把上一节的占位页替换成真正可用的登录入口，并且页面结构要尽量贴近原型。除了打通 `/api/v1/auth/login`，还会把原型里的左右双栏、验证码区、记住登录、默认账号提示和页脚一起落到页面中。
+这一节把登录入口接到真实 `/api/v1/auth/login`，并把原型里的左右双栏、验证码区、记住登录、默认账号提示和页脚一起落到页面中。
 
 ::: tip 🎯 本节目标
-完成后，登录页在桌面端会接近原型图；页面高度稳定控制在一屏内；用户名和密码默认填充便于联调；验证码区域先保留界面占位，不参与当前登录校验；勾选“记住登录”时把 Token 存到 `localStorage`，不勾选时只保存在 `sessionStorage`。
+完成后，登录页在桌面端会接近原型图；页面高度稳定控制在一屏内；用户名和密码默认填充便于联调；验证码区域保留 UI 位置但不参与当前登录校验；勾选“记住登录”时把 Token 存到 `localStorage`，不勾选时只保存在 `sessionStorage`；当前路由守卫会负责登录页回跳和未登录拦截。
 :::
 
 ![登录页原型](/prototypes/exports/myUgG.png)
@@ -26,8 +26,8 @@ description: "参考原型实现后台登录页，优化一屏布局，并打通
 
 - 页面结构和视觉层级按原型实现。
 - 验证码区域先保留，但当前不参与登录校验。
-- “忘记密码”先保留入口，只提示“后续接入”。
-- 原型图里的默认账号文案是 `admin / 123456`，但本教程前面初始化的真实默认管理员密码是 `EzAdmin@123456`，这里要以教程里的真实账号为准。
+- “忘记密码”按钮当前只提示未接入找回密码流程。
+- `LoginPage.vue` 当前默认填充值和提示文案是 `admin / Admin@123456`；如果你的后端仍沿用前文初始化示例 `EzAdmin@123456`，以你实际初始化时设置的密码为准。
 :::
 
 ## 先看这一页要做成什么
@@ -37,7 +37,7 @@ description: "参考原型实现后台登录页，优化一屏布局，并打通
 | 区域 | 原型里有什么 | 本节怎么处理 |
 | --- | --- | --- |
 | 左侧品牌区 | 深色品牌面板、标题、副标题、四条能力说明 | 用 Tailwind CSS 4 组织页面骨架和背景层次 |
-| 右侧登录卡片 | 用户名、密码、验证码、记住登录、忘记密码、登录按钮 | 登录接口只提交用户名和密码；验证码先保留占位，后续再接真实校验 |
+| 右侧登录卡片 | 用户名、密码、验证码、记住登录、忘记密码、登录按钮 | 登录接口只提交用户名和密码；验证码只保留 UI；忘记密码按钮当前只提示未接入 |
 | 卡片下方补充信息 | 默认账号提示、页脚版权 | 一起实现，方便你验收页面完整度 |
 
 ## 本节样式分工
@@ -164,7 +164,7 @@ export interface LoginResponse {
 ::: details 为什么验证码没有写进 `LoginRequest`
 因为当前后端接口还没有验证码参数。如果现在把 `captcha` 也发给 `/api/v1/auth/login`，既没有实际收益，还会让前后端契约变得不一致。
 
-这一节先把验证码区域作为界面占位保留下来，用来和原型图对齐。等后面真的要接验证码接口时，再一起扩展请求结构和表单校验。
+所以当前代码只保留验证码的界面位置和刷新交互，不把它纳入请求体和前端校验。
 :::
 
 ## 🛠️ 封装本地登录态存储
@@ -296,7 +296,7 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    // 后面做完整登录态守卫前，先在 401 时清掉本地旧 Token。
+    // 401 时清掉本地旧 Token，避免失效登录态残留。
     if (error.response?.status === 401) {
       clearAuthSession()
     }
@@ -392,7 +392,7 @@ const captchaText = ref(createCaptcha())
 // 登录表单模型。用户名和密码先默认填充，方便当前阶段联调。
 const formModel = reactive({
   username: 'admin',
-  password: 'EzAdmin@123456',
+  password: 'Admin@123456',
   captcha: '',
   rememberLogin: true,
 })
@@ -424,7 +424,7 @@ function refreshCaptcha() {
 }
 
 function handleForgotPassword() {
-  message.info('当前版本先保留入口，后面再接入找回密码流程')
+  message.info('当前版本暂未接入找回密码流程')
 }
 
 // 如果本地已经有 Token，就直接跳到工作台。
@@ -583,9 +583,9 @@ async function handleSubmit() {
             type="info"
             :show-icon="false"
             class="mt-2.5 compact-alert"
-            title="默认账号：admin / EzAdmin@123456"
+            title="默认账号：admin / Admin@123456"
           >
-            验证码当前仅做占位，后续补齐真实校验。
+            验证码当前仅做界面占位。
           </NAlert>
         </NCard>
 
@@ -654,50 +654,107 @@ async function handleSubmit() {
 
 - `/login` 页可以登录、跳转、保存 Token。
 - 验证码区域当前只做界面占位，不参与后端鉴权和前端提交拦截。
-- “忘记密码”只是占位入口。
-- 如果你在未登录状态下手动输入 `/dashboard`，目前仍然能看到占位工作台页面。完整的全局路由守卫会在后面的后台布局章节一起补上。
+- “忘记密码”按钮当前只提示未接入找回密码流程。
+- 如果你在未登录状态下手动输入 `/dashboard` 或其他后台页，当前全局守卫会重定向到 `/login`，并带上 `redirect` 查询参数。
 :::
 
-## 🛠️ 调整路由最小跳转
+## 🛠️ 对齐当前路由跳转
 
-修改 `admin/src/router/index.ts`。本次主要加两个点：
+修改 `admin/src/router/index.ts`。按当前仓库代码，登录相关跳转已经统一收敛到全局守卫：
 
 - 访问根路径时，根据本地 Token 决定跳到 `/login` 还是 `/dashboard`。
 - 如果已经登录，再访问 `/login` 时直接回到 `/dashboard`。
+- 如果未登录访问后台页，统一跳回 `/login`，并保留原始目标地址。
 
 ::: details `admin/src/router/index.ts` — 路由守卫
 
 ```ts
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { hasAccessToken } from '../utils/auth' // [!code ++]
+import { getCurrentUserMenus } from '../api/menu'
+import { clearAuthSession, hasAccessToken } from '../utils/auth'
+import {
+  buildDynamicRoutes,
+  clearAuthMenus,
+  setAuthMenus,
+} from './dynamic-menu'
+
+const removeDynamicRouteCallbacks: Array<() => void> = []
+let dynamicRoutesReady = false
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: () => (hasAccessToken() ? '/dashboard' : '/login'), // [!code ++]
+      redirect: () => (hasAccessToken() ? '/dashboard' : '/login'),
     },
     {
       path: '/login',
       name: 'login',
       component: () => import('../pages/auth/LoginPage.vue'),
-      beforeEnter: () => { // [!code ++]
-        if (hasAccessToken()) { // [!code ++]
-          return '/dashboard' // [!code ++]
-        } // [!code ++]
-
-        return true // [!code ++]
-      }, // [!code ++]
     },
     {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('../pages/dashboard/DashboardHome.vue'),
+      path: '/',
+      name: 'admin',
+      component: () => import('../layouts/AdminLayout.vue'),
+      children: [
+        {
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('../pages/dashboard/DashboardHome.vue'),
+          meta: { title: '工作台' },
+        },
+      ],
     },
   ],
 })
+
+router.beforeEach(async (to) => {
+  if (to.path === '/login') {
+    return hasAccessToken() ? '/dashboard' : true
+  }
+
+  if (!hasAccessToken()) {
+    resetDynamicRoutes()
+    return {
+      path: '/login',
+      query: {
+        redirect: to.fullPath,
+      },
+    }
+  }
+
+  if (!dynamicRoutesReady) {
+    try {
+      const menus = await getCurrentUserMenus()
+      setAuthMenus(menus)
+
+      for (const route of buildDynamicRoutes(menus)) {
+        removeDynamicRouteCallbacks.push(router.addRoute('admin', route))
+      }
+
+      dynamicRoutesReady = true
+      return to.fullPath
+    } catch {
+      clearAuthSession()
+      resetDynamicRoutes()
+      return '/login'
+    }
+  }
+
+  return true
+})
+
+export function resetDynamicRoutes() {
+  for (const removeRoute of removeDynamicRouteCallbacks) {
+    removeRoute()
+  }
+
+  removeDynamicRouteCallbacks.length = 0
+  dynamicRoutesReady = false
+  clearAuthMenus()
+}
 
 export default router
 ```
@@ -739,18 +796,18 @@ http://localhost:5173/
 打开页面后，应该能直接看到：
 
 - 用户名默认是 `admin`
-- 密码默认是 `EzAdmin@123456`
+- 密码输入框当前默认填充值是 `Admin@123456`
 - 验证码区域有展示值，也可以点击刷新
-- 页面提示会说明“验证码区域当前仅做界面占位，后续会接入真实校验流程”
+- 页面提示会说明“验证码区域当前仅做界面占位”
 
 这一步的重点是确认当前阶段联调更顺手，而不是先把验证码校验做重。
 
 ### 3. 验证登录成功
 
-输入下面这组真实账号信息：
+输入管理员账号：
 
 - 用户名：`admin`
-- 密码：`EzAdmin@123456`
+- 密码：以你当前初始化结果为准。当前前端默认填充值是 `Admin@123456`，如果你仍沿用前文初始化示例，则可能还是 `EzAdmin@123456`。
 
 勾选“记住登录”后点击“登录”，应该看到：
 
@@ -799,7 +856,7 @@ http://localhost:5173/
 ::: details 为什么输入错误验证码也还能发起登录
 这是当前阶段的预期行为。
 
-这一节先把验证码区域保留下来，对齐原型图和后续接口扩展位置，但前端不会先用它拦登录。真正的验证码校验会等后续接口准备好后再一起补齐。
+这一节先把验证码区域保留下来，对齐原型图，但前端不会先用它拦登录。
 :::
 
 ::: details 勾选“记住登录”后，Token 还是没有出现在 `Local Storage`
@@ -811,7 +868,7 @@ http://localhost:5173/
 ::: details 点击“忘记密码”没有跳转，是不是写漏了
 不是。这一节只保留原型里的入口位置，让页面完整度先和原型对齐。
 
-当前点击后只提示“后续接入”，这是本节的预期行为。
+当前点击后只提示未接入找回密码流程，这是本节的预期行为。
 :::
 
 下一节开始搭建后台整体骨架：[后台布局](./admin-layout)。

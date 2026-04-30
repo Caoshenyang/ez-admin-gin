@@ -178,9 +178,18 @@ sudo bash /opt/ez-admin/setup-server.sh
 
 ```bash
 # 粘贴 Origin Certificate 内容
-sudo nano /opt/ez-admin/ssl/cert.pem
+sudo tee /opt/ez-admin/ssl/cert.pem <<'EOF'
+-----BEGIN CERTIFICATE-----
+粘贴证书内容
+-----END CERTIFICATE-----
+EOF
+
 # 粘贴 Private Key 内容
-sudo nano /opt/ez-admin/ssl/key.pem
+sudo tee /opt/ez-admin/ssl/key.pem <<'EOF'
+-----BEGIN PRIVATE KEY-----
+粘贴私钥内容
+-----END PRIVATE KEY-----
+EOF
 ```
 
 4. 切换 Nginx 为 SSL 配置：将本地 `deploy/nginx/nginx-native-ssl.conf` 上传到 `/opt/ez-admin/nginx/nginx-native.conf`（覆盖原文件）
@@ -192,6 +201,10 @@ cd /opt/ez-admin && sudo docker compose -f compose.server.yml restart nginx
 ```
 
 5. DNS 记录开启代理（橙色云朵）
+
+::: warning 💡 为什么 HTTP 会自动跳转 HTTPS？
+这是 Cloudflare 的默认行为，不是你的配置问题。开启橙色云朵后，Cloudflare 默认启用了「Always Use HTTPS」（SSL/TLS → Edge Certificates 中可以看到）。所有 HTTP 请求会在 Cloudflare 边缘节点被自动 301 重定向到 HTTPS，不需要在 Nginx 里额外配置跳转。
+:::
 
 **验证**：`https://你的域名` 正常访问，浏览器显示锁头图标。
 

@@ -309,7 +309,7 @@ CREATE TABLE `sys_user_role` (
 | `title` | 展示名称 |
 | `path` | 前端路由路径 |
 | `component` | 前端组件路径 |
-| `icon` | 图标标识 |
+| `icon` | 菜单图标标识，供前端白名单映射真实图标组件 |
 | `sort` | 排序值，数字越小越靠前 |
 | `status` | 菜单状态：`1` 启用，`2` 禁用 |
 | `remark` | 备注 |
@@ -325,6 +325,12 @@ CREATE TABLE `sys_user_role` (
 `code` 是稳定权限标识，例如 `system:health:view`。前端可以用它判断按钮是否可见，后端也能用它做权限配置和排查。
 
 和 `username`、`role.code` 一样，菜单编码默认不允许逻辑删除后复用，避免历史权限和审计记录产生歧义。
+:::
+
+::: details 为什么 `icon` 存“标识”而不是前端组件名
+`icon` 字段用于保存稳定的图标标识，例如 `setting`、`notification`、`layout-dashboard`。前端会在 `admin/src/router/dynamic-menu.ts` 中把这些字符串映射到真实的图标组件，并对空值或未知值做默认回退。
+
+这样数据库层只关心“这个菜单想显示哪一类图标”，不直接耦合某个前端包里的组件名称。
 :::
 
 ### 建表语句
