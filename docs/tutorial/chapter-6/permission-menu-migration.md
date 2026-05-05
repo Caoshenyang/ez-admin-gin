@@ -1,375 +1,356 @@
 ---
 title: 权限、菜单与迁移接入
-description: "说明业务模块如何接入接口权限、菜单权限、按钮权限和数据库种子数据。"
+description: "对齐当前真实实现，讲清模块如何同时接入 Casbin、菜单树、超级管理员默认授权和前端动态路由。"
 ---
 
 # 权限、菜单与迁移接入
 
-写完 model、handler 和 router 之后，接口能跑通了，但登录后台你会发现：侧边栏看不到新菜单、新接口返回 403、按钮全部隐藏。这些"看不见的水管"就是权限、菜单和种子数据——它们不参与业务逻辑，却决定了一个模块能不能真正用起来。
+把模块代码写完后，最常见的错觉是：接口能调通，模块就算接完了。
+
+但对后台系统来说，真正决定一个模块能不能“被使用起来”的，往往是下面这些看不见的连接层：
+
+- Casbin 接口权限
+- 菜单树和按钮权限
+- 超级管理员默认授权
+- 前端动态路由与按钮消费
+- 迁移文件里的初始化种子
+
+如果这些地方没接上，就会出现一组很典型的问题：
+
+- 接口返回 `403`
+- 侧边栏看不到页面
+- 页面能进，但按钮全没了
+- 数据库里有表和接口，系统里却像这个模块不存在
 
 ::: tip 🎯 本节目标
-为一个业务模块同时补齐三件事：
+读完这一节，你应该能顺着当前真实实现走通一条完整接入链路：
 
-1. **接口权限**：角色能访问哪些后端接口（Casbin 策略）。
-2. **菜单权限**：侧边栏出现哪些目录、页面和按钮（菜单树）。
-3. **数据库结构**：新表怎么建、种子数据怎么写。
-
-验证标准：用 `super_admin` 登录后，侧边栏能看到新菜单，页面内按钮正常显示，接口请求返回 200 而不是 403。
+- 接口权限写进 `casbin_rule`
+- 菜单和按钮写进 `sys_menu`
+- 默认角色绑定写进 `sys_role_menu`
+- 前端通过 `dynamic-menu.ts` 把页面和按钮权限真正消费起来
 :::
 
-## 接口权限（Casbin）
+## 先看当前主线里的完整权限链路
 
-### 权限是怎么判断的
-
-后端所有需要权限的接口都挂在 `/api/v1/system` 路由分组下，这个分组在注册时挂了三层中间件：
-
-- `middleware.Auth`：从 Token 中解析出当前用户 ID。
-- `middleware.OperationLog`：记录请求信息，方便审计和排查。
-- `middleware.Permission`：根据用户角色和请求路径，查 Casbin 策略判断是否放行。
-
-判断逻辑很直接：取当前用户的启用角色编码，对每个角色执行一次 `enforcer.Enforce(roleCode, fullPath, method)`。只要有一个角色命中策略就放行，否则返回 403。
-
-Casbin 模型定义在 `server/configs/rbac_model.conf`：
-
-```ini
-[request_definition]
-r = sub, obj, act
-
-[policy_definition]
-p = sub, obj, act
-
-[policy_effect]
-e = some(where (p.eft == allow))
-
-[matchers]
-m = r.sub == p.sub && keyMatch2(r.obj, p.obj) && (r.act == p.act || p.act == "*")
-```
-
-策略匹配规则是 `sub == p.sub && keyMatch2(obj, p.obj) && (act == p.act || p.act == "*")`，其中：
-
-- `sub`：角色编码（如 `super_admin`）。
-- `obj`：请求路径模板（如 `/api/v1/system/users/:id/update`），支持 `keyMatch2` 路径参数匹配。
-- `act`：HTTP 方法（如 `GET`、`POST`），`*` 表示允许所有方法。
-
-所有策略存储在 `casbin_rule` 表，字段 `ptype="p"` 表示基础策略，`v0` 是角色编码，`v1` 是路径，`v2` 是方法。
-
-### 如何为新模块添加权限种子
-
-权限种子通过 SQL 迁移文件管理，位于 `server/migrations/{postgres,mysql}/` 目录下。系统初始权限写在 `000002_seed_data.up.sql` 中，新模块的权限应该写在新的迁移文件里（例如 `000003_blog_seed_data.up.sql`）。
-
-假设新模块的接口路径是 `/api/v1/blog/posts`，需要创建新的迁移文件来添加权限：
-
-::: code-group
-
-```sql [PostgreSQL — 000003_blog_seed_data.up.sql]
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET')
-ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST')
-ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST')
-ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
-INSERT INTO casbin_rule (ptype, v0, v1, v2) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST')
-ON CONFLICT (ptype, v0, v1, v2, v3, v4, v5) DO NOTHING;
-```
-
-```sql [MySQL — 000003_blog_seed_data.up.sql]
-INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'GET');
-INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts', 'POST');
-INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/update', 'POST');
-INSERT IGNORE INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`) VALUES ('p', 'super_admin', '/api/v1/blog/posts/:id/status', 'POST');
-```
-
-:::
-
-启动服务后，golang-migrate 会自动执行新的迁移文件，这些策略会被写入 `casbin_rule` 表。`super_admin` 角色会自动拥有这些接口的访问权限。
-
-::: warning ⚠️ 路径必须和路由注册一致
-迁移文件中的 `v1`（路径列）必须和 `router.go` 中 `system.GET(...)` / `system.POST(...)` 注册的路径完全一致，包括 `:id` 等参数占位符。如果不一致，中间件在 `c.FullPath()` 拿到的路径模板就和策略对不上，即使角色有权限也会返回 403。
-:::
-
-::: details 为什么权限数据用迁移文件管理
-权限策略通过 SQL 迁移文件管理，和表结构变更保持一致的版本化追踪。golang-migrate 通过 `schema_migrations` 表保证幂等——已执行的迁移不会重复运行。如果后续需要通过管理界面动态调整权限，Casbin 的 gorm-adapter 会直接读写 `casbin_rule` 表，和迁移文件互不冲突。
-:::
-
-## 菜单树
-
-### 三层结构：目录 → 菜单 → 按钮
-
-菜单权限是一棵树，存储在 `sys_menu` 表中，通过 `parent_id` 形成层级关系：
-
-| 层级 | type 值 | 作用 | 关键字段 |
-| --- | --- | --- | --- |
-| 目录（Directory） | `1` | 侧边栏分组标题 | `path`、`icon`、`sort` |
-| 菜单（Menu） | `2` | 可访问的页面 | `path`、`component`、`icon`、`sort` |
-| 按钮（Button） | `3` | 页面内的操作权限 | `code`、`sort` |
-
-以"系统管理"为例，完整的树形结构是：
+一个系统模块真正被接进来，当前主线一般会经过下面这条路径：
 
 ```text
-系统管理 (directory, code=system)
-├── 用户管理 (menu, code=system:user, component=system/UserView)
-│   ├── 查看用户 (button, code=system:user:list)
-│   ├── 创建用户 (button, code=system:user:create)
-│   ├── 编辑用户 (button, code=system:user:update)
-│   ├── 修改用户状态 (button, code=system:user:status)
-│   └── 分配用户角色 (button, code=system:user:assign-role)
-├── 角色管理 (menu, code=system:role, component=system/RoleView)
-│   └── ...
-└── ...
+module/*/policy.go
+  ↓
+migrations/*/000002_seed_data.up.sql
+  ├─ casbin_rule
+  ├─ sys_menu
+  └─ sys_role_menu
+  ↓
+/api/v1/auth/menus
+  ↓
+admin/src/router/dynamic-menu.ts
+  ↓
+前端页面 / 按钮权限消费
 ```
 
-### Component 字段与前端路由的映射
+这意味着模块接入不是只补后端接口，而是至少要把“接口能访问”和“前端知道它存在”这两层同时打通。
 
-菜单的 `component` 字段（如 `system/UserView`）决定了前端加载哪个页面组件。映射关系定义在 `admin/src/router/dynamic-menu.ts` 的 `routeComponentMap` 中：
+## 第一层：接口权限是怎么接进来的
 
-```ts
-// admin/src/router/dynamic-menu.ts
-const routeComponentMap: Record<string, RouteComponent> = {
-  'system/HealthView': () => import('../pages/system/HealthView.vue'),
-  'system/UserView': () => import('../pages/system/UserView.vue'),
-  'system/RoleView': () => import('../pages/system/RoleView.vue'),
-  // ...
-}
-```
-
-新增模块页面时，需要在这个 Map 中注册对应的组件路径。如果 `component` 值在 Map 中找不到，页面会回退到 `placeholderPage` 占位组件。
-
-### Icon 字段与前端图标白名单
-
-菜单的 `icon` 字段不是前端组件名，而是一个稳定的图标标识，例如 `setting`、`notification`、`layout-dashboard`。`admin/src/router/dynamic-menu.ts` 会先把这个字符串归一化，再去命中前端维护的 `menuIconMap`：
-
-```ts
-function resolveMenuIcon(icon: string) {
-  return renderMenuIcon(menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon)
-}
-```
-
-这条链路有两个好处：
-
-- 数据库只保存业务可读的图标标识，不和具体前端组件实现耦合。
-- 如果后端返回了空值或未知值，侧边栏会安全回退到默认图标，不会因为菜单配置错误把渲染打挂。
-
-### 按钮权限与 canUse
-
-按钮类型的菜单节点不会出现在侧边栏中，它的 `code` 字段用于前端按钮级权限控制。登录后，前端会从 `/api/v1/auth/menus` 接口拿到当前用户被授权的完整菜单树（包括按钮），`dynamic-menu.ts` 中的 `buttonPermissionCodes` 会递归收集所有按钮编码：
-
-```ts
-// admin/src/router/dynamic-menu.ts
-export const buttonPermissionCodes = computed(() => {
-  return collectButtonCodes(authMenus.value)
-})
-```
-
-在页面中，通过 `canUse(code)` 判断某个按钮是否应该显示：
-
-```vue
-<!-- 只有拥有 system:user:create 权限时才显示"创建用户"按钮 -->
-<NButton v-if="canUse('system:user:create')" type="primary" @click="openCreate">
-  创建用户
-</NButton>
-```
-
-每个页面组件中的 `canUse` 函数实现基本一致：
-
-```ts
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-```
-
-### 如何为新模块添加菜单种子
-
-菜单种子通过 SQL 迁移文件管理。新模块的菜单数据应该写在新的迁移文件中（与权限种子可以放在同一个迁移文件里）。
-
-假设新模块是"博客管理"，添加步骤如下：
-
-**第一步**：设计菜单编码和固定 ID。
+当前项目的接口权限由 Casbin 负责，核心模型是：
 
 ```text
-博客管理目录  — code=blog,     ID=300
-文章管理菜单  — code=blog:post, ID=301
-  查看文章    — code=blog:post:list,   ID=1100
-  创建文章    — code=blog:post:create, ID=1101
-  编辑文章    — code=blog:post:update, ID=1102
-  修改文章状态 — code=blog:post:status, ID=1103
+sub = 角色编码
+obj = 接口路径
+act = HTTP 方法
 ```
 
-**第二步**：在迁移文件中按 目录 → 菜单 → 按钮的顺序插入数据。
-
-::: details `000003_blog_seed_data.up.sql` 中新增博客管理模块的 SQL（PostgreSQL 版）
-```sql
--- 1. 创建目录（ON CONFLICT DO NOTHING 保证幂等）
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (300, 0, 1, 'blog', '博客管理', '/blog', '', 'edit', 20, 1, '博客业务目录', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
--- 2. 创建菜单页面
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (301, 300, 2, 'blog:post', '文章管理', '/blog/posts', 'blog/PostView', 'document', 10, 1, '博客文章管理菜单', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
--- 3. 创建按钮权限
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1100, 301, 3, 'blog:post:list', '查看文章', '', '', '', 10, 1, '博客文章按钮', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1101, 301, 3, 'blog:post:create', '创建文章', '', '', '', 20, 1, '博客文章按钮', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1102, 301, 3, 'blog:post:update', '编辑文章', '', '', '', 30, 1, '博客文章按钮', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
-VALUES (1103, 301, 3, 'blog:post:status', '修改文章状态', '', '', '', 40, 1, '博客文章按钮', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
-
--- 4. 绑定到 super_admin 角色
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 300, NOW(), NOW())
-ON CONFLICT (role_id, menu_id) DO NOTHING;
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 301, NOW(), NOW())
-ON CONFLICT (role_id, menu_id) DO NOTHING;
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1100, NOW(), NOW())
-ON CONFLICT (role_id, menu_id) DO NOTHING;
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1101, NOW(), NOW())
-ON CONFLICT (role_id, menu_id) DO NOTHING;
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1102, NOW(), NOW())
-ON CONFLICT (role_id, menu_id) DO NOTHING;
-INSERT INTO sys_role_menu (role_id, menu_id, created_at, updated_at) VALUES (1, 1103, NOW(), NOW())
-ON CONFLICT (role_id, menu_id) DO NOTHING;
-```
-
-MySQL 版本将 `ON CONFLICT (...) DO NOTHING` 替换为 `INSERT IGNORE INTO`，其余写法一致。
-:::
-
-**第三步**：前端注册组件映射。
-
-```ts
-// admin/src/router/dynamic-menu.ts
-const routeComponentMap: Record<string, RouteComponent> = {
-  // ... 已有映射 ...
-  'blog/PostView': () => import('../pages/blog/PostView.vue'), // [!code ++]
-}
-```
-
-### 角色菜单绑定
-
-新模块的菜单需要在迁移文件中显式绑定到 `super_admin` 角色（ID=1），通过 `sys_role_menu` 表的 `INSERT` 语句实现。这意味着只要新模块的菜单绑定写入迁移文件，`super_admin` 就会自动拥有这些菜单和按钮权限——不需要手动在角色管理页面勾选。
-
-对于非超管角色，需要通过"角色管理"页面的"分配菜单权限"功能手动授权。
-
-## 数据库迁移
-
-### golang-migrate 自动建表
-
-本项目使用 golang-migrate 管理数据库迁移。启动时，程序通过 `embed.FS` 嵌入 `server/migrations/{postgres,mysql}/` 目录下的 SQL 文件，并自动执行未应用的迁移。
-
-迁移文件按序号命名，格式为 `NNNNNN_name.up.sql` / `NNNNNN_name.down.sql`：
+一条典型策略像这样：
 
 ```text
-server/migrations/postgres/
-├── 000001_init_schema.up.sql        -- 建所有系统表
-├── 000001_init_schema.down.sql      -- 反向 DROP
-├── 000002_seed_data.up.sql          -- 角色、菜单、权限、绑定
-├── 000002_seed_data.down.sql        -- 反向清空
-└── 000003_blog_seed_data.up.sql     -- 新模块的种子数据（示例）
+p, super_admin, /api/v1/system/notices, GET
 ```
 
-::: tip 📌 迁移文件命名规范
-- 序号固定 6 位，新迁移递增（`000003`、`000004`...）
-- 名称用小写 + 短横线（`add_biz_post`、`blog_seed_data`）
-- PostgreSQL 和 MySQL 各维护一份，放在对应子目录
-- `_up.sql` 是正向操作，`_down.sql` 是反向回滚
-:::
+也就是说：
 
-### 新增业务模块时的迁移步骤
+- 主体是角色编码，例如 `super_admin`
+- 资源是 Gin 路由模板路径
+- 动作是 `GET` / `POST`
 
-新增业务模块时，需要在 `server/internal/model/` 下定义模型，同时创建迁移文件：
+当前这些策略都落在 `casbin_rule` 表中，并通过迁移种子写入。
 
-1. **定义模型** — 在 `model/` 下新增模型文件，确保有 `gorm` 标签和 `TableName()` 方法。
-2. **编写 DDL 迁移** — 创建 `00000X_add_xxx.up.sql`，包含 `CREATE TABLE` 和索引。
-3. **编写种子数据迁移** — 如果模块需要初始权限、菜单，创建对应的 `00000X_xxx_seed.up.sql`。
-4. **启动验证** — 重启服务，golang-migrate 会自动执行新迁移。
+## 为什么 `policy.go` 很适合先把权限点列清楚
 
-::: warning ⚠️ PostgreSQL 需要重置序列计数器
-如果在迁移文件中使用了固定 ID 的 `INSERT`，PostgreSQL 版本需要在末尾添加 `SELECT setval(...)` 语句，确保后续 INSERT 的自增 ID 不会和固定 ID 冲突。
-:::
+虽然当前 `casbin_rule` 的初始化最终写在 SQL 里，但模块本身最好先在 `policy.go` 里把权限点常量收住。
 
-### 新模块的模型示例
-
-假设博客模块需要一个 `Post` 模型：
-
-::: details `server/internal/model/post.go` — 文章模型
+以公告模块为例：
 
 ```go
-// server/internal/model/post.go
-package model
-
-import (
-    "time"
-
-    "gorm.io/gorm"
-)
-
-type PostStatus int
-
 const (
-    PostStatusDraft     PostStatus = 1 // 草稿
-    PostStatusPublished PostStatus = 2 // 已发布
+	PermissionList         = "system:notice:list"
+	PermissionCreate       = "system:notice:create"
+	PermissionUpdate       = "system:notice:update"
+	PermissionUpdateStatus = "system:notice:status"
 )
-
-// Post 是博客文章模型。
-type Post struct {
-    ID        uint           `gorm:"primaryKey" json:"id"`
-    Title     string         `gorm:"size:128;not null" json:"title"`
-    Content   string         `gorm:"type:text;not null" json:"content"`
-    Status    PostStatus     `gorm:"type:smallint;not null;default:1" json:"status"`
-    CreatedAt time.Time      `json:"created_at"`
-    UpdatedAt time.Time      `json:"updated_at"`
-    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-}
-
-// TableName 固定文章表名。
-func (Post) TableName() string {
-    return "biz_post"
-}
 ```
 
+注意这里有一个很重要的边界：
+
+- `policy.go` 里的权限码常量更像“按钮 / 菜单语义权限点”
+- `casbin_rule` 里的 `path + method` 更像“接口访问权限”
+
+两者不是同一字段，但通常应该保持稳定对应关系。这样前后端和迁移种子才能讲同一种语言。
+
+## 第二层：Casbin 种子到底写到哪里
+
+当前内置系统模块的默认权限，已经直接写在：
+
+- `server/migrations/postgres/000002_seed_data.up.sql`
+- `server/migrations/mysql/000002_seed_data.up.sql`
+
+例如公告模块已经有：
+
+```text
+/api/v1/system/notices                     GET
+/api/v1/system/notices                     POST
+/api/v1/system/notices/:id/update          POST
+/api/v1/system/notices/:id/status          POST
+```
+
+这说明当前主线并不是靠“启动后手动点一遍角色权限”来让系统可用，而是通过迁移种子把最小可管理状态直接固定下来。
+
+::: warning ⚠️ Casbin 路径要和 Gin 路由模板保持一致
+种子里的路径应该写成：
+
+- `/api/v1/system/notices/:id/update`
+
+而不是某次请求里的真实路径：
+
+- `/api/v1/system/notices/3/update`
+
+因为权限中间件优先拿的是 `c.FullPath()`，它返回的是 Gin 注册路由时的模板路径。
 :::
 
-定义好模型后，还需要在迁移文件中创建对应的表。在 `server/migrations/{postgres,mysql}/` 下新增迁移文件，写入 `biz_post` 的建表语句。重启服务后 golang-migrate 会自动执行，不需要手动建表。
+## 第三层：菜单和按钮为什么也要进迁移种子
 
-::: tip 📌 表名前缀约定
-系统模块的表名以 `sys_` 前缀（如 `sys_menu`、`sys_role`）。业务模块建议使用 `biz_` 前缀（如 `biz_post`），方便在数据库层面区分系统表和业务表。
+只有接口权限还不够。  
+因为后台页面并不是通过硬编码侧边栏出现的，而是由菜单树驱动。
+
+当前项目里：
+
+- 目录、页面、按钮都在 `sys_menu`
+- 角色和菜单的绑定关系在 `sys_role_menu`
+- `/api/v1/auth/menus` 会按当前登录用户返回完整权限树
+
+所以一个模块如果想在系统里“真正出现”，至少还要补两类菜单数据：
+
+1. 页面菜单节点
+2. 按钮权限节点
+
+## 当前菜单树里一共分几类节点
+
+当前菜单模型已经固定为三类：
+
+| `type` | 含义 | 作用 |
+| --- | --- | --- |
+| `1` | 目录 | 侧边栏分组 |
+| `2` | 页面菜单 | 动态路由和实际页面入口 |
+| `3` | 按钮 | 页面内权限点 |
+
+以公告模块为例，当前种子里已经有：
+
+```text
+system:notice                -> 页面菜单
+system:notice:list           -> 按钮
+system:notice:create         -> 按钮
+system:notice:update         -> 按钮
+system:notice:status         -> 按钮
+```
+
+这说明：
+
+- 菜单不是只管“侧边栏显示”
+- 按钮权限也统一挂在同一棵树里
+
+## 第四层：一个页面菜单节点至少要配哪些字段
+
+当前页面级菜单节点最关键的几个字段是：
+
+| 字段 | 作用 |
+| --- | --- |
+| `code` | 菜单稳定编码 |
+| `title` | 菜单标题 |
+| `path` | 前端页面路径 |
+| `component` | 前端组件映射键 |
+| `icon` | 图标标识 |
+| `sort` | 排序 |
+| `status` | 启用状态 |
+
+公告模块当前真实菜单节点就是：
+
+```text
+code      = system:notice
+title     = 公告管理
+path      = /system/notices
+component = system/NoticeView
+icon      = notification
+```
+
+这几项一旦定稳，后端菜单树、前端动态路由和图标映射才能真正对起来。
+
+## 第五层：`component` 字段为什么必须和前端映射表一致
+
+后端 `sys_menu.component` 并不是任意字符串，它必须能命中前端 `admin/src/router/dynamic-menu.ts` 里的 `routeComponentMap`。
+
+当前公告模块已经有：
+
+```ts
+'system/NoticeView': () => import('../pages/system/NoticeView.vue')
+```
+
+而种子里写的是：
+
+```text
+component = system/NoticeView
+```
+
+只要这两边对得上，前端就能把菜单节点转换成真实页面路由。
+
+如果对不上，前端虽然还能渲染菜单，但页面会回退到占位组件，读者就会看到“菜单能点开，但不是目标页面”。
+
+## 第六层：图标字段为什么也要按白名单来
+
+当前后端菜单种子里的 `icon` 值，也不是直接绑定前端组件名，而是命中前端维护的图标白名单。
+
+例如公告模块当前用的是：
+
+```text
+icon = notification
+```
+
+前端再在 `dynamic-menu.ts` 里把它归一化后命中：
+
+```ts
+notification -> NotificationsOutline
+```
+
+这条链路的好处是：
+
+- 数据库只存稳定标识
+- 前端图标实现可以替换
+- 未知图标会安全回退到默认图标
+
+## 第七层：为什么还要补 `sys_role_menu`
+
+把菜单节点写进 `sys_menu` 之后，还不能直接显示。  
+因为当前登录用户最终能看到什么，取决于角色菜单绑定。
+
+这就是 `sys_role_menu` 的作用：
+
+```text
+角色 ID
+  ↓
+sys_role_menu
+  ↓
+菜单 / 按钮节点 ID
+```
+
+当前主线里，初始化阶段会把这些系统内置节点直接绑定给 `super_admin`。
+
+这意味着只要系统启动后初始化成功，默认管理员就应该天然能看到这些页面和按钮，而不需要再手动去角色管理页里补一次授权。
+
+## 第八层：前端是怎么消费这棵权限树的
+
+当前前端会通过 `/api/v1/auth/menus` 拿到当前登录用户的完整权限树，然后在 `dynamic-menu.ts` 做两件事：
+
+1. 把页面菜单节点转成动态路由和侧边栏菜单
+2. 递归收集按钮节点的 `code`
+
+这就是为什么按钮权限控制现在可以在页面里写成：
+
+```ts
+buttonPermissionCodes.value.includes('system:notice:create')
+```
+
+而不用额外再请求一条“按钮权限列表”接口。
+
+## 第九层：迁移文件里为什么推荐“一次补全一组模块种子”
+
+当前这套主线最稳的做法，是在迁移文件里一次把同一模块相关的初始化数据补完整：
+
+- `casbin_rule`
+- `sys_menu`
+- `sys_role_menu`
+
+这样能避免一种常见混乱：
+
+- 接口权限先补了，菜单忘了
+- 菜单补了，角色菜单绑定忘了
+- 页面能打开，按钮权限没补
+
+对于系统内置模块来说，初始化阶段直接形成“接口可访问 + 页面可见 + 按钮可用”的最小闭环，会比让读者上线后手动补齐稳定得多。
+
+## 当前还有一个必须告诉读者的现状
+
+::: warning ⚠️ Casbin 策略当前仍然是启动时加载
+即使你通过接口或手工改了 `casbin_rule`，当前进程里的 Casbin 内存策略也不会自动热刷新。
+
+这意味着：
+
+- 菜单相关数据改完后，前端下一次请求 `/auth/menus` 通常就能看到变化
+- 但接口权限改完后，当前服务进程里的 Casbin 规则未必立刻生效
+
+现阶段最稳妥的验证方式，仍然是重启服务后再验证接口权限变化。
 :::
 
-## 验证清单
+这个现状在“模块接入”场景里尤其容易误导人，所以这里必须单独讲清楚。
 
-完成权限、菜单和模型的定义后，重启服务，按以下顺序逐一验证：
+## 用公告模块回看一遍这条链路
 
-| # | 检查项 | 验证方式 | 期望结果 |
-| --- | --- | --- | --- |
-| 1 | 数据库有表 | 重启服务执行迁移，再用 `\dt` 或查看表列表 | `biz_post` 表存在，字段与模型一致 |
-| 2 | 后端路由已注册 | 启动服务，查看控制台日志或直接 curl | 路由路径和方法与 `router.go` 注册一致 |
-| 3 | Casbin 策略已写入 | 查询 `casbin_rule` 表 | 新增的 `{role_code, path, method}` 记录存在 |
-| 4 | 菜单已写入 | 查询 `sys_menu` 表 | 目录、菜单、按钮节点齐全，`parent_id` 层级正确 |
-| 5 | 角色菜单已绑定 | 查询 `sys_role_menu` 表 | `super_admin` 角色绑定了所有新菜单 |
-| 6 | 前端侧边栏可见 | 用 `super_admin` 登录后台 | 侧边栏出现新目录和菜单项 |
-| 7 | 按钮权限生效 | 打开新模块页面 | 拥有权限的按钮正常显示 |
-| 8 | 接口权限生效 | 通过前端操作或 curl 调用新接口 | 返回 200 而不是 403 |
+当前公告模块已经把这几层全部串起来了：
 
-::: warning ⚠️ 权限编码和按钮编码必须前后端一致
-迁移文件中 `casbin_rule.v1` 的路径、前端 `routeComponentMap` 中的组件键名、按钮 `canUse()` 中的编码字符串——这三者分别和 `router.go` 注册的路径、`sys_menu.component`、`sys_menu.code` 对应。只要有一处拼写不一致（比如 `blog:post:create` vs `blog:posts:create`），就会出现"菜单能点但接口报 403"或"按钮不显示"的问题。
+### 接口权限
 
-建议在开发新模块时，先把编码设计写在纸上或注释里，统一确认后再写代码，而不是写到一半才发现前后端编码对不上。
-:::
+- `/api/v1/system/notices`
+- `/api/v1/system/notices/:id/update`
+- `/api/v1/system/notices/:id/status`
 
-## 小结
+### 菜单节点
 
-这一节补齐了让业务模块"从能调用到能用起来"的三个关键环节：
+- 页面：`system:notice`
+- 按钮：`system:notice:list`
+- 按钮：`system:notice:create`
+- 按钮：`system:notice:update`
+- 按钮：`system:notice:status`
 
-- **接口权限**：通过 SQL 迁移文件向 `casbin_rule` 表插入 `{ptype, v0, v1, v2}` 记录，启动时 golang-migrate 自动执行。
-- **菜单树**：按 目录 → 菜单 → 按钮三层结构在迁移文件中 `INSERT sys_menu`，`component` 字段对应前端组件映射，按钮 `code` 对应前端 `canUse()`。
-- **数据库结构**：在 `model/` 下定义模型结构体，并通过迁移文件创建对应的表和索引。
+### 角色绑定
 
-三件事全部完成后，用 `super_admin` 登录验证：侧边栏有菜单、页面有按钮、接口不报 403。
+- `super_admin` 默认绑定这些菜单与按钮节点
 
-下一节会把权限和菜单落地到前端页面层面：[前端页面接入流程](./frontend-page-flow)。
+### 前端映射
+
+- `component = system/NoticeView`
+- `dynamic-menu.ts` 里有对应页面映射
+- `NoticeView.vue` 已真实消费按钮权限码
+
+这说明公告模块不是只在“模块结构”层面成立，也已经把本页这一整套接入链路完整跑通了。
+
+## 接一个新模块时，最小接入检查表
+
+如果你后面要新增一个系统模块，推荐至少按下面顺序检查：
+
+- [ ] `policy.go` 已经列出稳定权限点
+- [ ] `casbin_rule` 种子已补接口路径和方法
+- [ ] `sys_menu` 已补页面菜单节点
+- [ ] `sys_menu` 已补按钮权限节点
+- [ ] `sys_role_menu` 已把这些节点绑定给 `super_admin`
+- [ ] 前端 `dynamic-menu.ts` 已补 `component` 映射
+- [ ] 页面里已按按钮权限码控制关键操作显隐
+- [ ] 已考虑 Casbin 当前不热刷新的验证方式
+
+## 本节最关键的结论
+
+这一节真正要建立的判断是：
+
+> 对后台模块来说，权限、菜单、角色绑定和迁移种子不是附属配置，而是模块真正进入系统的一部分。
+
+只要这一层没接完，哪怕模块代码写得再完整，它在后台里也还是“不存在”的。
+
+下一章会继续把这套后端能力对接到前端管理台：[第 7 章：前端企业级管理台](../chapter-7/)。

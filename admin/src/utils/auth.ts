@@ -3,6 +3,7 @@ import type { LoginResponse } from '../types/auth'
 const ACCESS_TOKEN_KEY = 'ez-admin-access-token'
 const TOKEN_TYPE_KEY = 'ez-admin-token-type'
 const USER_INFO_KEY = 'ez-admin-user-info'
+export const AUTH_USER_INFO_UPDATED_EVENT = 'ez-admin-auth-user-info-updated'
 
 type StorageMode = 'local' | 'session'
 
@@ -19,6 +20,21 @@ function getStorage(mode: StorageMode) {
 
 function readStorageValue(key: string) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? ''
+}
+
+function currentUserInfoStorage() {
+  if (localStorage.getItem(USER_INFO_KEY) !== null) {
+    return localStorage
+  }
+  if (sessionStorage.getItem(USER_INFO_KEY) !== null) {
+    return sessionStorage
+  }
+
+  return null
+}
+
+function notifyAuthUserInfoUpdated() {
+  window.dispatchEvent(new Event(AUTH_USER_INFO_UPDATED_EVENT))
 }
 
 // setAuthSession 在登录成功后保存本地登录态。
@@ -38,6 +54,8 @@ export function setAuthSession(payload: LoginResponse, rememberLogin: boolean) {
       expiresAt: payload.expires_at,
     } satisfies AuthUserInfo),
   )
+
+  notifyAuthUserInfoUpdated()
 }
 
 export function clearAuthSession() {
@@ -48,6 +66,8 @@ export function clearAuthSession() {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY)
   sessionStorage.removeItem(TOKEN_TYPE_KEY)
   sessionStorage.removeItem(USER_INFO_KEY)
+
+  notifyAuthUserInfoUpdated()
 }
 
 export function getAccessToken() {
@@ -74,6 +94,25 @@ export function getAuthUserInfo() {
     clearAuthSession()
     return null
   }
+}
+
+// updateAuthUserInfo 局部更新本地登录人摘要，用于昵称等自助资料修改后的同步。
+export function updateAuthUserInfo(patch: Partial<AuthUserInfo>) {
+  const storage = currentUserInfoStorage()
+  const current = getAuthUserInfo()
+  if (!storage || !current) {
+    return
+  }
+
+  storage.setItem(
+    USER_INFO_KEY,
+    JSON.stringify({
+      ...current,
+      ...patch,
+    } satisfies AuthUserInfo),
+  )
+
+  notifyAuthUserInfoUpdated()
 }
 
 // getAuthorizationHeader 统一拼接 Authorization 请求头。

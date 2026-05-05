@@ -1,232 +1,289 @@
 ---
 title: RBAC 角色权限模型
-description: "设计角色表和用户角色关系表，为后续接口权限与菜单权限打基础。"
+description: "把用户、角色、接口权限、菜单权限和数据权限串成一条企业级后台可复用的授权主线。"
 ---
 
 # RBAC 角色权限模型
 
-前面已经能识别“当前登录用户是谁”。这一节开始补权限模型的基础：用户可以绑定角色，角色再承接后续的接口权限和菜单权限。
+::: warning 历史页说明
+这页保留的是旧章节位置下的 RBAC 说明，用来兼容早期引用。
 
-::: tip 🎯 本节目标
-完成后，数据库中会新增 `sys_role` 和 `sys_user_role` 两张表；启动服务时会初始化 `super_admin` 角色，并把默认管理员绑定到这个角色。
+当前教程主线里的 canonical 位置已经切到 [第 4 章：RBAC 角色权限模型](../chapter-4/rbac-model)。
 :::
 
-## 本节会改什么
+前面几节已经把“当前登录用户是谁”这件事做出来了。接下来要补的，不再只是一个简单的 `role_id` 字段，而是一套能支撑企业级后台继续演进的角色模型。
 
-本节会新增或修改下面这些文件：
+::: tip 🎯 本节目标
+读完这一节，你应该能说清三件事：
+
+- 为什么用户和角色要用关系表做多对多绑定
+- 为什么角色既承接接口权限，也承接菜单权限和数据权限
+- 为什么当前项目把角色模型放进 `iam/role`，而不是继续留在零散的认证代码里
+:::
+
+## 先看最终版授权关系
+
+当前主线里的角色模型，已经不是“用户绑定一个角色名”这么简单，而是下面这条完整链路：
+
+```text
+当前登录用户
+  ↓
+sys_user_role
+  ↓
+sys_role
+  ├─ casbin_rule       → 决定接口能不能访问
+  ├─ sys_role_menu     → 决定菜单和按钮能不能看到
+  └─ sys_role_data_scope → 决定数据范围怎么过滤
+```
+
+这也是为什么当前仓库在第 3 章讲 RBAC 时，不能只停留在 `sys_role` 和 `sys_user_role` 两张表。
+
+## 当前代码落点
+
+这一节现在主要对应下面这些位置：
 
 ```text
 server/
-└─ internal/
-   └─ model/
-      ├─ role.go
-      └─ user_role.go
+├─ internal/
+│  ├─ middleware/
+│  │  └─ actor.go
+│  ├─ model/
+│  │  ├─ role.go
+│  │  ├─ user_role.go
+│  │  └─ role_data_scope.go
+│  ├─ module/
+│  │  ├─ auth/
+│  │  │  └─ dto.go
+│  │  └─ iam/
+│  │     └─ role/
+│  │        ├─ dto.go
+│  │        ├─ repository.go
+│  │        ├─ service.go
+│  │        ├─ handler.go
+│  │        └─ routes.go
+│  └─ platform/
+│     └─ datascope/
+│        └─ datascope.go
+└─ migrations/
+   ├─ mysql/
+   └─ postgres/
 ```
 
-| 位置 | 用途 |
+| 位置 | 职责 |
 | --- | --- |
-| `internal/model/role.go` | 定义角色表结构 |
-| `internal/model/user_role.go` | 定义用户与角色的绑定关系 |
+| `model/role.go` | 定义角色基础字段，包括 `data_scope` |
+| `model/user_role.go` | 定义用户与角色的多对多关系 |
+| `model/role_data_scope.go` | 定义角色与“自定义部门范围”的绑定关系 |
+| `middleware/actor.go` | 在请求期加载当前登录人的角色编码和数据范围摘要 |
+| `module/iam/role/*` | 提供角色管理、接口权限维护、菜单权限维护 |
+| `platform/datascope/datascope.go` | 把多角色数据范围合并成可复用的查询规则 |
 
-## 先看关系
-
-本节先落地下面这条关系：
-
-```text
-用户 sys_user
-  ↓
-用户角色关系 sys_user_role
-  ↓
-角色 sys_role
-```
-
-一个用户可以绑定多个角色，一个角色也可以绑定多个用户。后续：
-
-| 后续小节 | 继续完成什么 |
-| --- | --- |
-| 接口级权限控制 | 让角色拥有接口访问权限 |
-| 角色菜单权限 | 让角色拥有菜单和按钮权限 |
-
-::: warning ⚠️ 本项目不使用数据库外键约束
-`sys_user_role.user_id` 和 `sys_user_role.role_id` 只表达关联关系，并建立普通索引和联合唯一索引，不创建数据库级外键。
-
-用户是否存在、角色是否存在、删除前能不能删除，都由后续 service 层逻辑维护。
+::: info 这页怎么读
+这一节先帮你建立“角色在整个系统里承担什么职责”的整体判断。下一节再把其中一条分支单独展开，也就是接口级权限控制。
 :::
 
-## 先创建数据表
+## 角色模型为什么已经不是一张简单字典表
 
-本节新增 `sys_role` 和 `sys_user_role`，分别用于保存后台角色和用户角色绑定关系。
-
-`sys_role` 表保存后台角色编码、名称和状态；`sys_user_role` 表保存用户与角色的绑定关系。字段和索引详情见 [数据库建表语句 - `sys_role`](/reference/database-ddl#sys-role) 和 [数据库建表语句 - `sys_user_role`](/reference/database-ddl#sys-user-role)。
-
-## 🛠️ 创建角色模型
-
-创建 `server/internal/model/role.go`。这是新增文件，直接完整写入即可。
-
-::: details `server/internal/model/role.go` — 角色模型
+当前 `sys_role` 最关键的字段，不只是在 UI 上展示角色名称，而是要稳定承接后续三类授权能力：
 
 ```go
-package model
-
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
-
-// RoleStatus 表示角色状态。
-type RoleStatus int
-
-const (
-	// RoleStatusEnabled 表示角色可以正常使用。
-	RoleStatusEnabled RoleStatus = 1
-	// RoleStatusDisabled 表示角色已被禁用。
-	RoleStatusDisabled RoleStatus = 2
-)
-
-// Role 是后台角色表模型。
 type Role struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	Code      string         `gorm:"size:64;not null;uniqueIndex" json:"code"`
-	Name      string         `gorm:"size:64;not null" json:"name"`
-	Sort      int            `gorm:"not null;default:0" json:"sort"`
-	Status    RoleStatus     `gorm:"type:smallint;not null;default:1" json:"status"`
-	Remark    string         `gorm:"size:255;not null;default:''" json:"remark"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
-}
-
-// TableName 固定角色表名，避免后续调整命名策略时影响已有表。
-func (Role) TableName() string {
-	return "sys_role"
+	ID        uint
+	Code      string
+	Name      string
+	Sort      int
+	DataScope datascope.Scope
+	Status    RoleStatus
+	Remark    string
 }
 ```
 
-:::
+每个字段真正承担的职责是：
 
-## 🛠️ 创建用户角色关系模型
+| 字段 | 作用 |
+| --- | --- |
+| `code` | 角色稳定标识，Casbin 接口策略直接引用它 |
+| `name` | 给管理台和运营人员看的展示名 |
+| `sort` | 控制角色列表展示顺序 |
+| `data_scope` | 声明这个角色的数据范围类型 |
+| `status` | 决定角色是否仍然参与授权 |
 
-创建 `server/internal/model/user_role.go`。这是新增文件，直接完整写入即可。
+这里最值得注意的是 `data_scope`。
 
-```go
-package model
+这意味着当前项目里的角色，不只是“接口权限的容器”，也是“数据权限的入口”。后面第 5 章做部门、岗位和数据权限时，会继续沿用这套模型，而不是额外再造一套授权体系。
 
-import "time"
+## 为什么用户和角色一定要用关系表
 
-// UserRole 是用户与角色的绑定关系。
-type UserRole struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"not null;uniqueIndex:uk_sys_user_role_user_role;index:idx_sys_user_role_user_id" json:"user_id"`
-	RoleID    uint      `gorm:"not null;uniqueIndex:uk_sys_user_role_user_role;index:idx_sys_user_role_role_id" json:"role_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// TableName 固定用户角色关系表名。
-func (UserRole) TableName() string {
-	return "sys_user_role"
-}
-```
-
-::: tip 📌 超级管理员角色初始化
-超级管理员角色（`super_admin`）通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限。
-
-管理员账号需要通过 `/api/v1/setup/init` 接口创建，创建时会自动绑定到 `super_admin` 角色。
-:::
-
-::: details 为什么默认角色叫 `super_admin`
-`admin` 通常更像用户名，而 `super_admin` 更像角色编码。这样可以避免“账号名”和“角色名”混在一起。
-:::
-
-## ✅ 整理依赖并启动
-
-本节没有新增第三方依赖，整理一次依赖：
-
-```bash
-# 在 server/ 目录执行
-go mod tidy
-```
-
-确认数据库和 Redis 正在运行：
-
-```bash
-# 在项目根目录执行，确认本地依赖服务处于运行状态
-docker compose -f deploy/compose.local.yml ps
-```
-
-回到 `server/` 目录启动服务：
-
-```bash
-# 在 server/ 目录启动服务
-go run .
-```
-
-第一次启动后，控制台应该能看到类似日志：
+当前项目没有把 `role_id` 直接塞进 `sys_user`，而是使用 `sys_user_role`：
 
 ```text
-INFO	database migrations applied
-INFO	server started	{"addr": ":8080", "env": "dev"}
+sys_user
+  ↕
+sys_user_role
+  ↕
+sys_role
 ```
 
-## ✅ 创建管理员账号并验证角色和绑定关系
+原因很直接：
 
-服务启动后，先通过初始化接口创建管理员账号：
+- 一个后台用户可能同时拥有多个角色
+- 一个角色也会被多个用户复用
+- 多角色并集，是后续菜单权限和数据权限成立的前提
 
-```bash
-# 创建管理员账号
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
-```
+比如某个用户既是“部门管理员”，又是“内容运营”，那他的最终能力不该由单一角色决定，而应该是：
 
-然后验证角色和绑定关系：
+- 接口权限取并集
+- 菜单权限取并集
+- 数据范围按规则合并
 
-```bash
-# 查看默认角色
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select id, code, name, status, deleted_at from sys_role;"
-```
+这也是 `middleware.LoadActor` 在请求期要一次性加载 `RoleCodes` 和 `Grants` 的原因。
 
-应该看到类似结果：
+## 当前角色到底承接了哪三类权限
+
+### 1. 接口权限：角色编码 → `casbin_rule`
+
+接口权限是这样挂到角色上的：
 
 ```text
- id |    code     |    name    | status | deleted_at
-----+-------------+------------+--------+------------
-  1 | super_admin | 超级管理员 |      1 |
+角色 code
+  ↓
+casbin_rule.v0
+  ↓
+路径 + 方法
 ```
 
-继续查看管理员和角色的绑定关系：
+也就是说，Casbin 的主体不是用户 ID，而是角色编码。这样用户与角色关系调整时，只要重新绑定角色，就能复用既有接口策略。
 
-```bash
-# 查看管理员绑定了哪些角色
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ur.id, u.username, r.code from sys_user_role ur join sys_user u on u.id = ur.user_id join sys_role r on r.id = ur.role_id;"
-```
+### 2. 菜单权限：角色 ID → `sys_role_menu`
 
-应该看到类似结果：
+菜单权限使用角色 ID 与菜单 ID 建立绑定：
 
 ```text
- id | username |    code
-----+----------+-------------  1 | admin    | super_admin
+sys_role.id
+  ↓
+sys_role_menu
+  ↓
+sys_menu.id
 ```
 
-::: details 如果提示 `relation "sys_role" does not exist`
-说明角色表还没有创建。服务启动时会自动执行数据库迁移，创建表结构。如果迁移失败，查看服务启动日志获取详细信息。
-:::
+这条链路最终服务于 `/api/v1/auth/menus`，由认证模块返回“当前登录用户可见的完整菜单树”。
 
-::: details 如果绑定关系没有出现
-确认管理员账号已经通过 `/api/v1/setup/init` 接口创建成功，该接口会自动绑定 `super_admin` 角色。
-:::
+### 3. 数据权限：角色范围 → `sys_role_data_scope`
 
-## 常见问题
+当角色的 `data_scope = custom_dept` 时，还会额外挂接自定义部门列表：
 
-::: details 为什么不直接在 `sys_user` 表里放 `role_id`
-一个后台用户后续可能同时拥有多个角色，例如既是“内容管理员”，又是“运营管理员”。如果直接在用户表里放一个 `role_id`，很快就会不够用。
+```text
+sys_role.data_scope = custom_dept
+  ↓
+sys_role_data_scope
+  ↓
+可访问的部门 ID 列表
+```
 
-单独使用 `sys_user_role` 关系表，可以自然支持多角色。
-:::
+后续请求里，`LoadActor` 会把这些规则组装成 `datascope.Actor`，再由 `datascope.Merge(...)` 合成当前登录人的最终数据范围摘要。
 
-::: details 角色和权限现在是什么关系
-本节先让用户拥有角色。下一节会用 Casbin 表达“角色可以访问哪些接口”；再下一节会用菜单模型表达“角色能看到哪些菜单和按钮”。
-:::
+## 当前角色管理模块暴露了哪些真实能力
 
-下一节会把角色和接口权限连接起来：[接口级权限控制](./casbin-permission)。
+现在角色相关能力已经收进 `server/internal/module/iam/role/`，并且不再只是“查个角色列表”：
+
+| 接口 | 用途 |
+| --- | --- |
+| `GET /api/v1/system/roles` | 查询角色列表 |
+| `POST /api/v1/system/roles` | 创建角色 |
+| `POST /api/v1/system/roles/:id/update` | 更新角色基础信息和数据范围 |
+| `POST /api/v1/system/roles/:id/status` | 启停角色 |
+| `POST /api/v1/system/roles/:id/permissions` | 更新角色接口权限 |
+| `POST /api/v1/system/roles/:id/menus` | 更新角色菜单权限 |
+
+这几个接口一起说明了一件事：
+
+> 当前项目已经把“角色”当成统一授权入口，而不是把接口权限、菜单权限、数据权限拆成三个彼此孤立的模块。
+
+## 多角色在请求期是怎么合并的
+
+当请求进入受保护接口后，`middleware.LoadActor` 会做两件事：
+
+1. 查出当前用户拥有的启用角色编码。
+2. 查出这些角色对应的数据范围规则，并压成 `Actor`。
+
+最终 `/api/v1/auth/me` 会返回这份结果的一部分，例如：
+
+```json
+{
+  "user_id": 1,
+  "username": "admin",
+  "department_id": 1,
+  "role_codes": ["super_admin"],
+  "is_super_admin": true,
+  "data_scope": {
+    "allow_all": true,
+    "require_self": false,
+    "include_department": false,
+    "include_dept_tree": false,
+    "custom_department_ids": []
+  }
+}
+```
+
+这份响应很重要，因为它说明当前系统已经不只是“登录成功”，而是已经把认证结果压成后续权限判断可复用的用户上下文了。
+
+## 超级管理员有哪些硬约束
+
+当前角色模块对 `super_admin` 做了几条显式保护：
+
+- 不能禁用超级管理员角色
+- 不能修改超级管理员角色的数据范围
+- 超级管理员的接口权限不在普通角色编辑接口里修改
+- 超级管理员的菜单权限也不在普通角色编辑接口里修改
+
+这样做的目的，是把系统启动后的最小可用管理能力固定住，避免初始化完成后把自己彻底锁死。
+
+## 怎么验证这一节已经理解到位
+
+### 1. 看 `/auth/me` 是否已经返回角色与数据范围摘要
+
+登录后请求：
+
+```text
+GET /api/v1/auth/me
+```
+
+重点不是只看 `user_id`，而是确认响应里已经出现：
+
+- `role_codes`
+- `is_super_admin`
+- `data_scope`
+
+### 2. 看角色列表是否已经是“聚合视图”
+
+再请求：
+
+```text
+GET /api/v1/system/roles
+```
+
+当前返回项里，除了角色基础字段，还应该能看到：
+
+- `permissions`
+- `menu_ids`
+- `custom_department_ids`
+
+这说明角色管理页面对的已经不是一张孤立角色表，而是一个聚合后的授权视图。
+
+### 3. 看角色更新接口是否已经承担统一入口职责
+
+如果你后面准备接管理台角色编辑页，需要优先围绕下面三类更新接口组织前端交互：
+
+- 基础信息和数据范围：`/roles/:id/update`
+- 接口权限：`/roles/:id/permissions`
+- 菜单权限：`/roles/:id/menus`
+
+## 本节最关键的结论
+
+这一节真正要建立的判断是：
+
+> 在企业级后台里，角色不是一个展示概念，而是接口权限、菜单权限和数据权限的统一承接点。
+
+只要这个判断立住，后面再看 Casbin、菜单树和数据权限时，就不会把它们误以为是三套互不相关的能力。
+
+下一节继续把“角色如何承接接口权限”单独讲透：[接口级权限控制](./casbin-permission)。

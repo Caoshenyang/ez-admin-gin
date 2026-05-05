@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"ez-admin-gin/server/internal/config"
 	authModule "ez-admin-gin/server/internal/module/auth"
+	crmModule "ez-admin-gin/server/internal/module/crm"
 	setupModule "ez-admin-gin/server/internal/module/setup"
 	systemModule "ez-admin-gin/server/internal/module/system"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
@@ -51,6 +52,12 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		Log:        opts.Log,
 		DB:         opts.DB,
 		Redis:      opts.Redis,
+		Token:      opts.Token,
+		Permission: opts.Permission,
+	})
+	crmModule.RegisterRoutes(r, crmModule.RouteOptions{
+		DB:         opts.DB,
+		Log:        opts.Log,
 		Token:      opts.Token,
 		Permission: opts.Permission,
 	})

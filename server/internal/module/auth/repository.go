@@ -14,6 +14,16 @@ type Repository struct {
 	db *gorm.DB
 }
 
+type accountProfileRow struct {
+	ID             uint
+	Username       string
+	Nickname       string
+	DepartmentID   uint
+	DepartmentName string
+	Status         model.UserStatus
+	UpdatedAt      time.Time
+}
+
 // NewRepository 创建认证模块仓储。
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
@@ -44,6 +54,47 @@ func (r *Repository) FindUserProfileByID(userID uint) (DashboardCurrentUser, err
 		Username: user.Username,
 		Nickname: user.Nickname,
 	}, nil
+}
+
+// FindAccountProfileByID 查询当前登录人账户中心资料。
+func (r *Repository) FindAccountProfileByID(userID uint) (accountProfileRow, error) {
+	var row accountProfileRow
+	err := r.db.
+		Table("sys_user AS u").
+		Select(
+			"u.id, u.username, u.nickname, u.department_id, u.status, u.updated_at, COALESCE(d.name, '') AS department_name",
+		).
+		Joins("LEFT JOIN sys_department AS d ON d.id = u.department_id AND d.deleted_at IS NULL").
+		Where("u.id = ?", userID).
+		Where("u.deleted_at IS NULL").
+		Scan(&row).Error
+	if err != nil {
+		return accountProfileRow{}, err
+	}
+	if row.ID == 0 {
+		return accountProfileRow{}, gorm.ErrRecordNotFound
+	}
+
+	return row, nil
+}
+
+// FindUserByID 查询指定用户。
+func (r *Repository) FindUserByID(tx *gorm.DB, userID uint) (model.User, error) {
+	var user model.User
+	err := r.dbOr(tx).First(&user, userID).Error
+	return user, err
+}
+
+// UpdateAccountNickname 更新当前登录人昵称。
+func (r *Repository) UpdateAccountNickname(tx *gorm.DB, user *model.User, nickname string) error {
+	user.Nickname = nickname
+	return r.dbOr(tx).Model(user).Update("nickname", nickname).Error
+}
+
+// UpdateAccountPasswordHash 更新当前登录人密码哈希。
+func (r *Repository) UpdateAccountPasswordHash(tx *gorm.DB, user *model.User, passwordHash string) error {
+	user.PasswordHash = passwordHash
+	return r.dbOr(tx).Model(user).Update("password_hash", passwordHash).Error
 }
 
 // ListMenusByUserID 查询当前用户可见菜单。
@@ -172,4 +223,12 @@ func (r *Repository) ListLatestEnabledNotices(limit int) ([]model.Notice, error)
 // IsNotFound 判断错误是否为记录不存在。
 func (r *Repository) IsNotFound(err error) bool {
 	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
+func (r *Repository) dbOr(tx *gorm.DB) *gorm.DB {
+	if tx != nil {
+		return tx
+	}
+
+	return r.db
 }

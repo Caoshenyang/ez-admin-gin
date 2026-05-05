@@ -1,113 +1,129 @@
 ---
 title: 接口级权限控制
-description: "接入 Casbin，用角色编码判断接口访问权限。"
+description: "用 Casbin 把角色编码、接口路径和请求方法连接起来，并对齐当前最终版路由结构。"
 ---
 
 # 接口级权限控制
 
-前面已经完成登录、Token 认证和用户角色关系。这一节接入 Casbin，把“某个角色能不能访问某个接口”交给策略表维护。
+::: warning 历史页说明
+这页保留的是旧章节位置下的 Casbin 权限说明，用来兼容早期引用。
 
-::: tip 🎯 本节目标
-完成后，`/health` 仍然是公开探针接口；`/api/v1/system/health` 会变成受保护接口，需要登录，并且当前用户角色必须有对应权限策略。
+当前教程主线里的 canonical 位置已经切到 [第 4 章：接口级权限控制](../chapter-4/casbin-permission)。
 :::
 
-## 本节会改什么
+上一节已经把“用户拥有多个角色，角色再承接授权能力”这件事建立起来了。现在要把其中一条链路单独做实：角色到底怎么决定一个接口能不能访问。
 
-本节会新增或修改下面这些文件：
+::: tip 🎯 本节目标
+读完这一节，你应该能说清下面这条判断链路：
+
+- 当前请求先经过认证中间件
+- `LoadActor` 会把角色编码装进上下文
+- `Permission` 中间件把 `角色编码 + 路由路径 + HTTP 方法` 交给 Casbin
+- 只要任意一个角色命中允许策略，请求就会放行
+:::
+
+## 当前主线里的权限校验链路
+
+接口级权限控制现在已经收敛到下面这条路径：
+
+```text
+请求进入 /api/v1/system/*
+  ↓
+middleware.Auth
+  ↓
+middleware.LoadActor
+  ↓
+middleware.OperationLog
+  ↓
+middleware.Permission
+  ↓
+Casbin Enforcer
+  ↓
+允许 / 拒绝
+```
+
+它对应的真实代码入口，是 `server/internal/module/system/routes.go`：
+
+```go
+system := api.Group("/system")
+system.Use(middleware.Auth(opts.Token, opts.Log))
+system.Use(middleware.LoadActor(opts.DB, opts.Log))
+system.Use(middleware.OperationLog(opts.DB, opts.Log))
+system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
+```
+
+::: warning ⚠️ 当前 Casbin 主要保护的是 `/api/v1/system/*`
+认证模块下的 `/api/v1/auth/me`、`/api/v1/auth/menus`、`/api/v1/auth/dashboard` 目前要求“先登录”，但没有再额外挂 Casbin。
+
+这不是遗漏，而是职责划分：`auth/*` 更偏“登录后的身份消费接口”，`system/*` 才是后台管理操作入口。
+:::
+
+## 当前代码落点
+
+这一节现在主要对应下面这些文件：
 
 ```text
 server/
 ├─ configs/
 │  └─ rbac_model.conf
 ├─ internal/
+│  ├─ bootstrap/
+│  │  └─ run.go
 │  ├─ middleware/
 │  │  └─ permission.go
 │  ├─ model/
 │  │  └─ casbin_rule.go
 │  ├─ permission/
 │  │  └─ enforcer.go
-│  └─ router/
-│     └─ router.go
-├─ main.go
-├─ go.mod
-└─ go.sum
+│  └─ platform/
+│     └─ authz/
+│        └─ authz.go
+└─ migrations/
+   ├─ mysql/
+   │  └─ 000002_seed_data.up.sql
+   └─ postgres/
+      └─ 000002_seed_data.up.sql
 ```
 
-| 位置 | 用途 |
+| 位置 | 职责 |
 | --- | --- |
-| `configs/rbac_model.conf` | 定义 Casbin 的请求、策略和匹配规则 |
-| `internal/model/casbin_rule.go` | 定义 Casbin 策略表结构，供初始化使用 |
-| `internal/permission/enforcer.go` | 创建 Casbin Enforcer，并关闭自动建表 |
-| `internal/middleware/permission.go` | 根据当前用户角色判断接口权限 |
-| `internal/router/router.go` | 给受保护接口挂载权限中间件 |
-| `main.go` | 创建权限 Enforcer 并传给路由 |
+| `configs/rbac_model.conf` | 定义 Casbin 模型 |
+| `internal/model/casbin_rule.go` | 映射策略表 `casbin_rule` |
+| `internal/permission/enforcer.go` | 创建 Enforcer 并加载数据库策略 |
+| `internal/platform/authz/authz.go` | 对外暴露统一的授权命名空间 |
+| `internal/middleware/permission.go` | 在请求期执行权限判断 |
+| `migrations/*/000002_seed_data.up.sql` | 初始化 `super_admin` 的默认接口权限策略 |
 
-## 权限判断方式
+## Casbin 在当前项目里到底判断什么
 
-本节先使用角色编码作为 Casbin 的主体：
+当前模型只关注三个维度：
 
 ```text
-sub = 角色编码，例如 super_admin
-obj = 接口路径，例如 /api/v1/system/health
-act = 请求方法，例如 GET
+sub = 角色编码
+obj = 接口路径
+act = HTTP 方法
 ```
 
-默认策略会长这样：
+一条典型策略长这样：
 
 ```text
 p, super_admin, /api/v1/system/health, GET
 ```
 
-含义是：`super_admin` 角色可以用 `GET` 访问 `/api/v1/system/health`。
+含义是：
 
-::: warning ⚠️ Casbin 只做判断，不替代业务校验
-Casbin 负责回答“这个角色能不能访问这个接口”。用户是否存在、角色是否启用、角色是否绑定到用户，仍然由数据库和业务逻辑处理。
-:::
-
-## 🛠️ 安装 Casbin 依赖
-
-进入 `server/` 目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 进入服务端目录
-Set-Location .\server
+```text
+角色 super_admin 可以用 GET 访问 /api/v1/system/health
 ```
 
-```bash [macOS / Linux]
-# 进入服务端目录
-cd server
-```
+这里最关键的判断有两个：
 
-:::
+- 主体不是用户 ID，而是角色编码
+- 接口权限不是菜单权限，它只回答“这个请求能不能进”
 
-安装 Casbin 和 GORM 适配器：
+## 当前 Casbin 模型文件
 
-```bash
-# 安装 Casbin 与 GORM 策略存储适配器
-go get github.com/casbin/casbin/v3@latest
-go get github.com/casbin/gorm-adapter/v3@latest
-```
-
-依赖资料入口：
-
-| 依赖 | 用途 | 资料 |
-| --- | --- | --- |
-| `github.com/casbin/casbin/v3` | 权限模型和策略判断 | [Go 包文档](https://pkg.go.dev/github.com/casbin/casbin/v3) |
-| `github.com/casbin/gorm-adapter/v3` | 从数据库加载 Casbin 策略 | [Go 包文档](https://pkg.go.dev/github.com/casbin/gorm-adapter/v3) |
-
-::: warning ⚠️ 关闭 gorm-adapter 自动建表
-`gorm-adapter` 默认会尝试自动建表。本节会在代码中关闭它的自动迁移能力，表结构由迁移文件统一管理。
-:::
-
-## 先创建数据表
-
-本节新增 `casbin_rule`，用于保存 Casbin 接口权限策略。`casbin_rule` 表已在迁移文件中创建，启动时自动执行。字段和索引详情见 [数据库建表语句 - `casbin_rule`](/reference/database-ddl#casbin-rule)。
-
-## 🛠️ 创建 Casbin 模型文件
-
-创建 `server/configs/rbac_model.conf`。这是新增文件，直接完整写入即可。
+`server/configs/rbac_model.conf` 的核心内容如下：
 
 ```ini
 [request_definition]
@@ -123,476 +139,194 @@ e = some(where (p.eft == allow))
 m = r.sub == p.sub && keyMatch2(r.obj, p.obj) && (r.act == p.act || p.act == "*")
 ```
 
-配置含义：
+你可以把最后一行拆成三条规则理解：
 
-| 配置 | 说明 |
+| 条件 | 作用 |
 | --- | --- |
-| `r = sub, obj, act` | 请求由角色编码、接口路径、请求方法组成 |
-| `p = sub, obj, act` | 策略也由角色编码、接口路径、请求方法组成 |
-| `keyMatch2` | 支持路径匹配，后续可以匹配 `/api/v1/users/:id` |
-| `act == "*"` | 允许某条策略匹配全部 HTTP 方法 |
+| `r.sub == p.sub` | 当前角色必须与策略主体一致 |
+| `keyMatch2(r.obj, p.obj)` | 路径支持参数匹配 |
+| `r.act == p.act || p.act == "*"` | 方法相同，或者策略允许全部方法 |
 
-::: details 为什么没有在 Casbin 里写用户和角色关系
-用户和角色关系已经放在 `sys_user_role` 里。权限判断时，中间件先根据当前用户查出角色编码，再把角色编码交给 Casbin 判断。
+::: info 为什么这里强调 `keyMatch2`
+因为当前系统路由里有大量 `:id` 形式的路径，例如：
 
-这样可以避免在 `sys_user_role` 和 Casbin `g` 策略里重复维护同一份用户角色关系。
+- `/api/v1/system/users/:id/update`
+- `/api/v1/system/roles/:id/permissions`
+
+如果不用模式匹配，而是拿某次请求里的真实路径去做字符串全等判断，权限策略会很快失控。
 :::
 
-## 🛠️ 创建 Casbin 策略模型
+## 请求期是怎么把角色交给 Casbin 的
 
-创建 `server/internal/model/casbin_rule.go`。这是新增文件，直接完整写入即可。
+`middleware.Permission` 的逻辑并不复杂，但非常关键：
 
-```go
-package model
+1. 先从 `CurrentActor` 里取当前用户的 `RoleCodes`。
+2. 如果上下文里没有 `Actor`，再退回到数据库查询当前用户启用角色。
+3. 取当前请求的路径和方法。
+4. 逐个角色调用 `enforcer.Enforce(...)`。
+5. 只要任意一个角色通过，就放行。
 
-// CasbinRule 是 Casbin gorm-adapter 使用的策略表模型。
-type CasbinRule struct {
-	ID    uint   `gorm:"primaryKey" json:"id"`
-	Ptype string `gorm:"size:100;not null;default:''" json:"ptype"`
-	V0    string `gorm:"size:100;not null;default:''" json:"v0"`
-	V1    string `gorm:"size:100;not null;default:''" json:"v1"`
-	V2    string `gorm:"size:100;not null;default:''" json:"v2"`
-	V3    string `gorm:"size:100;not null;default:''" json:"v3"`
-	V4    string `gorm:"size:100;not null;default:''" json:"v4"`
-	V5    string `gorm:"size:100;not null;default:''" json:"v5"`
-}
-
-// TableName 固定 Casbin 策略表名。
-func (CasbinRule) TableName() string {
-	return "casbin_rule"
-}
-```
-
-## 🛠️ 创建 Enforcer
-
-::: details `server/internal/permission/enforcer.go` — Casbin Enforcer
+核心判断大致可以理解成：
 
 ```go
-package permission
-
-import (
-	"fmt"
-
-	"github.com/casbin/casbin/v3"
-	gormadapter "github.com/casbin/gorm-adapter/v3"
-	"gorm.io/gorm"
-)
-
-// Enforcer 包装 Casbin 权限判断能力。
-type Enforcer struct {
-	inner *casbin.Enforcer
-}
-
-// NewEnforcer 创建权限判断器，并从数据库加载策略。
-func NewEnforcer(db *gorm.DB, modelPath string) (*Enforcer, error) {
-	// 本项目统一使用 SQL 建表，不让 gorm-adapter 自动迁移表结构。
-	gormadapter.TurnOffAutoMigrate(db)
-
-	adapter, err := gormadapter.NewAdapterByDB(db)
+for _, roleCode := range roleCodes {
+	allowed, err := enforcer.Enforce(roleCode, obj, act)
 	if err != nil {
-		return nil, fmt.Errorf("create casbin adapter: %w", err)
+		return err
 	}
 
-	enforcer, err := casbin.NewEnforcer(modelPath, adapter)
-	if err != nil {
-		return nil, fmt.Errorf("create casbin enforcer: %w", err)
+	if allowed {
+		c.Next()
+		return
 	}
-
-	if err := enforcer.LoadPolicy(); err != nil {
-		return nil, fmt.Errorf("load casbin policy: %w", err)
-	}
-
-	return &Enforcer{
-		inner: enforcer,
-	}, nil
 }
+```
 
-// Enforce 判断角色是否允许访问某个接口。
-func (e *Enforcer) Enforce(sub string, obj string, act string) (bool, error) {
-	allowed, err := e.inner.Enforce(sub, obj, act)
-	if err != nil {
-		return false, fmt.Errorf("enforce permission: %w", err)
-	}
+这意味着：
 
-	return allowed, nil
+- 多角色接口权限按并集处理
+- 角色被禁用后，不会再参与当前用户权限判断
+
+## 为什么路径优先取 `c.FullPath()`
+
+当前中间件里有一段容易被忽略，但很重要：
+
+```go
+obj := c.FullPath()
+if obj == "" {
+	obj = c.Request.URL.Path
 }
 ```
 
-:::
+这样做是为了优先拿到 Gin 的“路由模式路径”，例如：
 
-::: details 为什么这里还要包装一层
-业务代码只需要知道“能不能访问”，不需要到处直接依赖 Casbin 的具体类型。后续如果要加缓存、重新加载策略、日志统计，也可以放在这个包里。
-:::
+| 实际请求 | `c.FullPath()` |
+| --- | --- |
+| `/api/v1/system/users/12/update` | `/api/v1/system/users/:id/update` |
+| `/api/v1/system/roles/5/permissions` | `/api/v1/system/roles/:id/permissions` |
 
-## 🛠️ 创建权限中间件
+这可以确保 Casbin 策略写的是稳定路由模式，而不是某一次请求里的具体主键值。
 
-::: details `server/internal/middleware/permission.go` — 权限中间件
+## Enforcer 是在哪里初始化的
+
+当前最终版启动入口已经收进 `server/internal/bootstrap/run.go`。启动时会直接初始化授权判断器：
 
 ```go
-package middleware
-
-import (
-	"ez-admin-gin/server/internal/apperror"
-	"ez-admin-gin/server/internal/model"
-	"ez-admin-gin/server/internal/permission"
-	"ez-admin-gin/server/internal/response"
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-)
-
-// Permission 根据当前用户角色判断接口访问权限。
-func Permission(db *gorm.DB, enforcer *permission.Enforcer, log *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userID, ok := CurrentUserID(c)
-		if !ok {
-			response.Error(c, apperror.Unauthorized("请先登录"), log)
-			c.Abort()
-			return
-		}
-
-		roleCodes, err := currentRoleCodes(db, userID)
-		if err != nil {
-			response.Error(c, apperror.Internal("权限校验失败", err), log)
-			c.Abort()
-			return
-		}
-
-		if len(roleCodes) == 0 {
-			response.Error(c, apperror.Forbidden("没有权限访问"), log)
-			c.Abort()
-			return
-		}
-
-		obj := c.FullPath()
-		if obj == "" {
-			obj = c.Request.URL.Path
-		}
-		act := c.Request.Method
-
-		for _, roleCode := range roleCodes {
-			allowed, err := enforcer.Enforce(roleCode, obj, act)
-			if err != nil {
-				response.Error(c, apperror.Internal("权限校验失败", err), log)
-				c.Abort()
-				return
-			}
-
-			if allowed {
-				c.Next()
-				return
-			}
-		}
-
-		response.Error(c, apperror.Forbidden("没有权限访问"), log)
-		c.Abort()
-	}
-}
-
-// currentRoleCodes 查询当前用户拥有的启用角色编码。
-func currentRoleCodes(db *gorm.DB, userID uint) ([]string, error) {
-	var roleCodes []string
-	err := db.
-		Table("sys_role AS r").
-		Select("r.code").
-		Joins("JOIN sys_user_role AS ur ON ur.role_id = r.id").
-		Where("ur.user_id = ?", userID).
-		Where("r.status = ?", model.RoleStatusEnabled).
-		Where("r.deleted_at IS NULL").
-		Pluck("r.code", &roleCodes).Error
-	if err != nil {
-		return nil, err
-	}
-
-	return roleCodes, nil
+permissionEnforcer, err := authzPlatform.NewEnforcer(db, rbacModelPath)
+if err != nil {
+	log.Fatal("create permission enforcer", zap.Error(err))
 }
 ```
 
-:::
+`internal/platform/authz/authz.go` 又对旧的 `internal/permission` 做了一层平滑包装，所以现在对外应优先把它理解成平台级授权能力，而不是零散的工具函数。
 
-::: details 为什么用 `c.FullPath()`
-`c.FullPath()` 返回路由注册时的路径。例如后续有 `/api/v1/users/:id`，它会返回带 `:id` 的模板路径，而不是某个具体 ID。
+## 默认策略从哪里来
 
-这样策略可以写成一条规则匹配一类接口。
-:::
+当前项目的默认接口权限不是在代码里硬编码写入，而是通过迁移初始化：
 
-::: tip 📌 默认接口权限初始化
-默认接口权限策略通过数据库迁移文件自动创建，不需要在代码中手动初始化。当服务启动时，会执行 `server/migrations/{postgres,mysql}/000002_seed_data.up.sql` 迁移文件，创建超级管理员角色、系统菜单和权限策略。
+- `server/migrations/mysql/000002_seed_data.up.sql`
+- `server/migrations/postgres/000002_seed_data.up.sql`
 
-这样可以确保权限策略在服务启动时就已经准备就绪，不需要通过代码手动写入。
-:::
-
-::: warning ⚠️ 策略初始化后需要重新加载
-本节的 Enforcer 在服务启动时加载策略。所以新增或修改 `casbin_rule` 后，当前服务进程不会自动感知。
-
-现在先通过重启服务重新加载策略。后续做权限管理接口时，再补“保存策略后重新加载”的流程。
-:::
-
-## 🛠️ 在启动入口创建 Enforcer
-
-修改 `server/main.go`。这一处重点看两个变化：
-
-- 引入 `internal/permission`。
-- 创建 Enforcer，并传给路由。
-
-先调整 import：
-
-```go
-import (
-	"ez-admin-gin/server/internal/bootstrap"
-	// stdlog 只用于日志系统初始化失败前的兜底输出。
-	stdlog "log"
-
-	"ez-admin-gin/server/internal/config"
-	"ez-admin-gin/server/internal/database"
-	appLogger "ez-admin-gin/server/internal/logger"
-	"ez-admin-gin/server/internal/permission" // [!code ++]
-	appRedis "ez-admin-gin/server/internal/redis"
-	"ez-admin-gin/server/internal/router"
-	"ez-admin-gin/server/internal/token"
-
-	"go.uber.org/zap"
-)
-```
-
-在创建路由前，增加权限 Enforcer：
-
-```go
-	// 权限判断器负责根据角色策略判断接口访问权限。
-	permissionEnforcer, err := permission.NewEnforcer(db, "configs/rbac_model.conf") // [!code ++]
-	if err != nil { // [!code ++]
-		log.Fatal("create permission enforcer", zap.Error(err)) // [!code ++]
-	} // [!code ++]
-
-	// 路由注册交给 internal/router，main.go 只保留启动流程。
-	r := router.New(router.Options{
-		Config:     cfg,
-		Log:        log,
-		DB:         db,
-		Redis:      redisClient,
-		Token:      tokenManager,
-		Permission: permissionEnforcer, // [!code ++]
-	})
-```
-
-## 🛠️ 给接口挂载权限中间件
-
-修改 `server/internal/router/router.go`。这一处重点看两个变化：
-
-- `Options` 增加 `Permission` 字段。
-- `/api/v1/system/health` 增加认证和权限校验。
-
-先调整 import：
-
-```go
-import (
-	"ez-admin-gin/server/internal/config"
-	authHandler "ez-admin-gin/server/internal/handler/auth"
-	systemHandler "ez-admin-gin/server/internal/handler/system"
-	appLogger "ez-admin-gin/server/internal/logger"
-	"ez-admin-gin/server/internal/middleware"
-	"ez-admin-gin/server/internal/permission" // [!code ++]
-	"ez-admin-gin/server/internal/token"
-
-	"github.com/gin-gonic/gin"
-	goredis "github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
-)
-```
-
-更新 `Options`：
-
-```go
-type Options struct {
-	Config     *config.Config
-	Log        *zap.Logger
-	DB         *gorm.DB
-	Redis      *goredis.Client
-	Token      *token.Manager
-	Permission *permission.Enforcer // [!code ++]
-}
-```
-
-更新 `registerSystemRoutes`：
-
-```go
-// registerSystemRoutes 注册系统级路由。
-func registerSystemRoutes(r *gin.Engine, opts Options) {
-	health := systemHandler.NewHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
-
-	// /health 通常给部署探针和本地快速验证使用，保持公开访问。
-	r.GET("/health", health.Check)
-
-	// /api/v1/system/health 作为后台接口，需要登录并通过权限校验。
-	api := r.Group("/api/v1")
-	system := api.Group("/system")
-	system.Use(middleware.Auth(opts.Token, opts.Log)) // [!code ++]
-	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log)) // [!code ++]
-	system.GET("/health", health.Check)
-}
-```
-
-::: details 为什么 `/health` 仍然公开
-部署探针和本地快速检查通常不应该依赖登录状态，所以根路径 `/health` 保持公开。
-
-`/api/v1/system/health` 属于后台接口分组，用它来验证认证和权限链路更合适。
-:::
-
-## ✅ 整理依赖并启动
-
-整理依赖：
-
-```bash
-# 在 server/ 目录执行
-go mod tidy
-```
-
-确认数据库和 Redis 正在运行：
-
-```bash
-# 在项目根目录执行，确认本地依赖服务处于运行状态
-docker compose -f deploy/compose.local.yml ps
-```
-
-回到 `server/` 目录启动服务：
-
-```bash
-# 在 server/ 目录启动服务
-go run .
-```
-
-第一次启动后，控制台应该能看到类似日志：
+里面会为 `super_admin` 插入一组 `casbin_rule` 记录，例如：
 
 ```text
-INFO	database migrations applied
-INFO	server started	{"addr": ":8080", "env": "dev"}
+p, super_admin, /api/v1/system/health, GET
+p, super_admin, /api/v1/system/users, GET
+p, super_admin, /api/v1/system/roles/:id/permissions, POST
 ```
 
-## ✅ 创建管理员账号
+这说明当前主线已经把“系统初始可管理状态”放进迁移，而不是要求你第一次启动后再手工点一堆权限。
 
-服务启动后，先通过初始化接口创建管理员账号：
+## 后台是怎么维护角色接口权限的
 
-```bash
-# 创建管理员账号
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
-```
-
-## ✅ 验证策略已经写入
-
-打开另一个终端，在项目根目录执行：
-
-```bash
-# 查看默认接口权限策略
-docker compose -f deploy/compose.local.yml exec postgres psql -U ez_admin -d ez_admin -c "select ptype, v0, v1, v2 from casbin_rule;"
-```
-
-应该看到类似结果，包含系统默认的权限策略：
+角色接口权限现在走的是：
 
 ```text
- ptype |     v0      |           v1            | v2
--------+-------------+-------------------------+-----
- p     | super_admin | /api/v1/system/health   | GET
- p     | super_admin | /api/v1/auth/login      | POST
- p     | super_admin | /api/v1/setup/init      | POST
+POST /api/v1/system/roles/:id/permissions
 ```
 
-## ✅ 验证公开健康检查仍然可访问
-
-```bash
-# 不需要 Token，仍然可以访问
-curl -i http://localhost:8080/health
-```
-
-应该看到 HTTP 状态码为 `200`。
-
-## ✅ 验证后台健康检查需要 Token 和权限
-
-先不带 Token 请求：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-try {
-  Invoke-RestMethod `
-    -Method Get `
-    -Uri http://localhost:8080/api/v1/system/health
-} catch {
-  $_.ErrorDetails.Message
-}
-```
-
-```bash [macOS / Linux]
-curl -i http://localhost:8080/api/v1/system/health
-```
-
-:::
-
-应该看到 HTTP 状态码为 `401`，响应体类似：
+请求体结构很直接：
 
 ```json
 {
-  "code": 40100,
-  "message": "请先登录"
+  "permissions": [
+    { "path": "/api/v1/system/users", "method": "GET" },
+    { "path": "/api/v1/system/users", "method": "POST" }
+  ]
 }
 ```
 
-再登录获取 Token，并携带 Token 访问：
+服务端会做两件事：
 
-::: code-group
+1. 先把这组 `path + method` 规范化去重。
+2. 再替换 `casbin_rule` 里该角色编码对应的全部 `p` 策略。
 
-```powershell [Windows PowerShell]
-$body = @{
-  username = "admin"
-  password = "YourPassword123"
-} | ConvertTo-Json
+也就是说，当前接口不是“增量补一条权限”，而是“用一份完整权限集覆盖当前角色接口权限”。
 
-$login = Invoke-RestMethod `
-  -Method Post `
-  -Uri http://localhost:8080/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body $body
+## 一个需要明确告诉读者的当前现状
 
-$token = $login.data.access_token
+::: warning ⚠️ 当前实现还没有做 Casbin 策略热刷新
+`Enforcer` 现在只会在服务启动时执行一次 `LoadPolicy()`。
 
-Invoke-RestMethod `
-  -Method Get `
-  -Uri http://localhost:8080/api/v1/system/health `
-  -Headers @{ Authorization = "Bearer $token" }
+这意味着：
+
+- 修改 `sys_user_role`、`sys_role_menu`、`sys_role_data_scope` 这类直接走数据库读取的关系，通常可以在后续请求里立即体现
+- 修改 `casbin_rule` 后，当前进程里的 Casbin 内存策略不会自动刷新
+
+如果你通过 `/api/v1/system/roles/:id/permissions` 改了接口权限，想让结果立刻生效，目前最稳妥的做法仍然是重启服务；后续如果要做在线权限管理，这里还需要补“策略重载”能力
+:::
+
+这一点在文档里一定要讲清楚。否则读者会误以为“接口返回成功了，权限就已经实时切换”，然后卡在一个很难定位的问题上。
+
+## 新增一个受保护接口时，应该怎么接
+
+如果你后面继续扩模块，建议按下面顺序接入接口权限：
+
+1. 把新接口挂到需要保护的路由组下，或者显式挂上 `middleware.Permission(...)`。
+2. 确认策略里的路径使用 Gin 路由模式，而不是具体请求路径。
+3. 给初始化角色补默认策略，或者通过角色权限接口写入策略。
+4. 如果你刚改的是 `casbin_rule`，记得当前版本需要重启服务才能稳定验证。
+
+一个最小判断标准是：
+
+> 接口是否受保护，不是看“你有没有写 Handler”，而是看“这个请求有没有进入统一的认证与授权链路”。
+
+## 怎么验证这一节已经做成
+
+### 1. 管理员访问受保护系统接口应当成功
+
+登录拿到 Token 后，请求：
+
+```text
+GET /api/v1/system/health
 ```
 
-```bash [macOS / Linux]
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123"}' | jq -r '.data.access_token')
+默认管理员拥有 `super_admin` 角色，应该可以正常访问。
 
-curl -X GET http://localhost:8080/api/v1/system/health \
-  -H "Authorization: Bearer ${TOKEN}"
+### 2. 没有 Token 时应当直接被拒绝
+
+同样的接口如果不带 Token，请求会先被 `middleware.Auth` 拦住，而不会进入后续 Casbin 判断。
+
+### 3. 权限不足时应当返回统一拒绝
+
+如果某个角色没有对应 `casbin_rule` 策略，请求应当返回“没有权限访问”，而不是 404，也不应该绕过中间件直接执行 Handler。
+
+### 4. 修改角色接口权限后，要按当前实现方式验证
+
+如果你刚调用过：
+
+```text
+POST /api/v1/system/roles/:id/permissions
 ```
 
-:::
+那验证时要额外确认一件事：当前服务进程是否已经重新加载策略。就现阶段实现来说，最直接的验证方式仍然是重启服务后再测一次。
 
-应该看到统一成功响应。
+## 本节最关键的结论
 
-::: details 怎么验证权限不足
-本节默认管理员拥有 `super_admin` 角色，并且已经给这个角色写入健康检查权限，所以正常访问会成功。
+这一节真正要记住的是：
 
-如果要验证 `403`，可以临时把 `casbin_rule` 中这条策略删除或改成其他路径，然后重启服务，再携带同一个 Token 请求 `/api/v1/system/health`。验证后记得恢复策略。
-:::
+> 当前项目的接口权限，不是“用户直接拥有接口访问能力”，而是“用户通过角色编码命中 Casbin 策略后，才拥有接口访问能力”。
 
-## 常见问题
+只要这条主线保持稳定，后续再扩系统模块、业务模块或者角色管理页，权限体系就不会散掉。
 
-::: details 启动时报 `relation "casbin_rule" does not exist`
-说明数据库迁移还没有执行。检查服务启动日志中是否有 `database migration` 相关错误，确认 PostgreSQL 连接正常后重启服务。
-:::
-
-::: details 修改了 `casbin_rule`，权限没有立即变化
-本节启动时会执行 `LoadPolicy`。服务运行期间直接改数据库，内存中的 Enforcer 不会自动刷新。
-
-现在先重启服务让策略重新加载。后续做权限管理接口时，再补重新加载策略的代码路径。
-:::
-
-下一节会继续设计菜单和按钮权限：[角色菜单权限](./menu-permission)。
+下一节继续看角色如何承接菜单和按钮权限：[角色菜单权限](./menu-permission)。

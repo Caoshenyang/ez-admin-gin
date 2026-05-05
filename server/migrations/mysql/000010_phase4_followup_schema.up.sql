@@ -1,0 +1,23 @@
+CREATE TABLE `sys_customer_followup` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '客户跟进记录主键，数据库自增生成',
+  `customer_id` BIGINT UNSIGNED NOT NULL COMMENT '关联客户 ID，对应 sys_customer.id',
+  `department_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '继承客户归属部门 ID，对应 sys_department.id',
+  `owner_user_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '继承客户负责人 ID，对应 sys_user.id',
+  `follow_type` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '跟进方式，例如 phone、wechat、visit',
+  `subject` VARCHAR(128) NOT NULL COMMENT '跟进主题',
+  `content` VARCHAR(1000) NOT NULL COMMENT '跟进内容',
+  `result` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '跟进结果摘要',
+  `next_follow_at` DATETIME(3) NULL DEFAULT NULL COMMENT '下次计划跟进时间',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '客户跟进状态：1 待跟进，2 已完成，3 已关闭',
+  `created_at` DATETIME(3) NOT NULL COMMENT '创建时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  `deleted_at` DATETIME(3) NULL DEFAULT NULL COMMENT '逻辑删除时间，NULL 表示未删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_sys_customer_followup_customer_id` (`customer_id`),
+  KEY `idx_sys_customer_followup_department_id` (`department_id`),
+  KEY `idx_sys_customer_followup_owner_user_id` (`owner_user_id`),
+  KEY `idx_sys_customer_followup_follow_type` (`follow_type`),
+  KEY `idx_sys_customer_followup_status` (`status`),
+  KEY `idx_sys_customer_followup_next_follow_at` (`next_follow_at`),
+  KEY `idx_sys_customer_followup_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='CRM 客户跟进记录表';

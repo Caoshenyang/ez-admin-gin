@@ -40,60 +40,74 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 ## 第 4 章：接口权限体系
 
 - [章节导读](./chapter-4/)
-- [RBAC 角色权限模型](./chapter-3/rbac-model)
-- [接口级权限控制](./chapter-3/casbin-permission)
-- [角色菜单权限](./chapter-3/menu-permission)
+- [RBAC 角色权限模型](./chapter-4/rbac-model)
+- [接口级权限控制](./chapter-4/casbin-permission)
+- [角色菜单权限](./chapter-4/menu-permission)
 
 ## 第 5 章：组织体系与数据权限
 
 - [章节导读](./chapter-5/)
 - [组织模型设计](./chapter-5/organization-model-design)
 - [角色数据范围与查询作用域](./chapter-5/role-data-scope-and-query-scopes)
+- [Actor 上下文与多角色并集](./chapter-5/actor-and-grant-merge)
+- [资源级数据权限接入模式](./chapter-5/module-datascope-patterns)
+- [共享数据权限接入规范](./chapter-5/shared-datascope-integration-conventions)
+- [datascope.go 与 Repository 边界](./chapter-5/datascope-and-repository-boundary)
+- [一次完整请求的权限过滤走读](./chapter-5/request-flow-walkthrough)
+- [数据权限落地检查清单](./chapter-5/data-scope-implementation-checklist)
 - [部门树与部门管理](./chapter-5/department-tree-and-management)
 - [岗位管理与用户归属](./chapter-5/post-management-and-user-affiliation)
-- 角色数据范围模型
-- Actor 上下文
-- GORM Scope 数据过滤
-- 超级管理员与多角色并集规则
+- [真实业务模块的数据权限边界](./chapter-5/business-module-datascope-boundaries)
+- [岗位资源的数据权限收紧时机](./chapter-5/post-datascope-tightening)
 
 ## 第 6 章：核心系统模块
 
 - [章节导读](./chapter-6/)
-- 用户管理
-- 角色管理
-- 菜单管理
-- 系统配置
-- 文件中心
-- 操作日志
-- 登录日志
-- 公告管理
+- [模块固定结构](./chapter-6/module-structure)
+- [后端模块接入流程](./chapter-6/backend-module-flow)
+- [示例业务模块](./chapter-6/sample-module)
+- [权限、菜单与迁移接入](./chapter-6/permission-menu-migration)
 
 ## 第 7 章：前端企业级管理台
 
 - [章节导读](./chapter-7/)
-- [Vue 3 管理台初始化](./chapter-5/vue-project-init)
-- [登录页](./chapter-5/login-page)
-- [后台布局](./chapter-5/admin-layout)
-- [动态菜单](./chapter-5/dynamic-menu)
-- [用户管理页面](./chapter-5/user-pages)
-- [角色与菜单页面](./chapter-5/role-menu-pages)
-- [配置与文件页面](./chapter-5/config-file-pages)
-- [日志页面](./chapter-5/log-pages)
+- [前端运行时结构](./chapter-7/frontend-runtime-structure)
+- [管理台工程起步结构](./chapter-7/admin-project-bootstrap)
+- [登录态与会话流转](./chapter-7/login-and-session-flow)
+- [登录页实现细节](./chapter-7/login-page-implementation)
+- [后台壳子、动态菜单与按钮权限](./chapter-7/admin-shell-and-dynamic-menu)
+- [后台布局与工作标签](./chapter-7/admin-layout-and-worktabs)
+- [动态菜单注册与按钮权限](./chapter-7/dynamic-route-registration)
+- [系统模块页面模式](./chapter-7/system-module-pages)
+- [用户管理页实现要点](./chapter-7/user-management-page-detail)
+- [角色与菜单页实现要点](./chapter-7/role-and-menu-page-detail)
+- [配置与文件页实现要点](./chapter-7/config-and-file-page-detail)
+- [日志查询页实现要点](./chapter-7/audit-log-pages)
 
 ## 第 8 章：模块化接入规范
 
 - [章节导读](./chapter-8/)
-- [模块固定结构](./chapter-6/module-structure)
-- [后端模块接入流程](./chapter-6/backend-module-flow)
-- [权限、菜单与迁移接入](./chapter-6/permission-menu-migration)
-- [前端页面接入流程](./chapter-6/frontend-page-flow)
-- [示例业务模块](./chapter-6/sample-module)
+- [后端模块固定结构](./chapter-8/backend-module-structure)
+- [后端模块接入流程](./chapter-8/backend-module-integration)
+- [权限、菜单与迁移接入](./chapter-8/permission-menu-integration)
+- [前端页面接入流程](./chapter-8/frontend-page-flow)
+- [数据字典模块落地](./chapter-8/dict-module)
+- [账户中心落地](./chapter-8/account-center-module)
+- [附件中心落地](./chapter-8/attachment-center-module)
+- [CRM 客户模块示例](./chapter-8/business-module-example)
+- [CRM 客户跟进模块落地](./chapter-8/customer-followup-module)
+- [模块接入验收清单](./chapter-8/module-integration-checklist)
 
 ## 第 9 章：部署、升级与复用
 
 - [章节导读](./chapter-9/)
-- [后端与前端 Dockerfile](./chapter-7/dockerfile)
-- [Docker Compose 编排](./chapter-7/docker-compose)
-- [Nginx 配置](./chapter-7/nginx-config)
-- [环境变量与初始化数据](./chapter-7/env-and-init-data)
-- [部署验证与复用说明](./chapter-7/deployment-and-reuse)
+- [环境变量与初始化数据](./chapter-9/env-and-init-data)
+- [部署验证与复用说明](./chapter-9/deployment-and-reuse)
+- [Compose 与服务运行结构](./chapter-9/compose-and-service-layout)
+- [Nginx 与 HTTPS 入口层](./chapter-9/nginx-and-https)
+- [部署变体说明](./chapter-9/deployment-variants)
+- [更新与回滚策略](./chapter-9/update-and-rollback)
+- [回滚分级策略](./chapter-9/rollback-strategy-levels)
+- [部署排障 FAQ](./chapter-9/deployment-troubleshooting-faq)
+- [长期运维 FAQ](./chapter-9/operations-maintenance-faq)
+- [新项目复用清单](./chapter-9/project-reuse-checklist)

@@ -33,7 +33,12 @@ description: "集中记录后台底座中系统表的 PostgreSQL 与 MySQL 建�
 | `sys_menu` | 后台菜单和按钮表 |
 | `sys_role_menu` | 角色菜单关系表 |
 | `sys_config` | 系统配置表 |
+| `sys_dict_type` | 系统字典类型表 |
+| `sys_dict_item` | 系统字典项表 |
 | `sys_file` | 文件上传记录表 |
+| `sys_attachment` | 附件中心表 |
+| `sys_customer` | CRM 客户档案表 |
+| `sys_customer_followup` | CRM 客户跟进记录表 |
 | `sys_operation_log` | 操作日志表 |
 | `sys_login_log` | 登录日志表 |
 | `sys_notice` | 公告表 |
@@ -44,8 +49,70 @@ description: "集中记录后台底座中系统表的 PostgreSQL 与 MySQL 建�
 | `casbin_rule` | Casbin 权限策略表 |
 
 ::: info v2 结构升级说明
-`v2` 第一阶段新增了组织体系和数据权限相关结构，同时为 `sys_user` 增加了 `department_id`，为 `sys_role` 增加了 `data_scope`。这部分模型说明和字段语义先集中写在 [数据权限模型](./data-scope-model)；后续教程升级时，会继续把完整 PostgreSQL / MySQL 建表说明补到这一页。
+`v2` 主线已经把组织体系、数据权限和首批业务模块一起补齐了。像 `sys_user.department_id`、`sys_role.data_scope`、`sys_attachment`、`sys_customer` 这些结构，都应该和 [数据权限模型](./data-scope-model) 以及第 8 章模块接入主线一起理解。
 :::
+
+<a id="sys-customer"></a>
+
+## `sys_customer` CRM 客户档案表
+
+`sys_customer` 用来承接第一个非 `system` 分组的真实业务模块。它的设计目标不是做一套复杂 CRM，而是用最小但完整的业务资源，证明当前底座的模块接入、菜单权限和数据权限链路都已经可以稳定落地。
+
+字段含义：
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 客户记录主键，数据库自增生成 |
+| `name` | 客户名称 |
+| `contact_name` | 联系人姓名 |
+| `phone` | 联系电话 |
+| `level` | 客户等级，例如 `a`、`b`、`vip` |
+| `source` | 客户来源，例如 `referral`、`ads`、`offline` |
+| `department_id` | 归属部门 ID，对应 `sys_department.id` |
+| `owner_user_id` | 负责人用户 ID，对应 `sys_user.id` |
+| `status` | 客户状态：`1` 启用，`2` 停用 |
+| `remark` | 备注 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
+| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+这个表最关键的不是字段数量，而是它同时具有：
+
+- 部门归属字段 `department_id`
+- 负责人字段 `owner_user_id`
+
+这样模块就能直接复用统一的 `datascope.UserQueryScope(...)`，让 `all / dept / self / custom_dept` 这套平台数据权限语义真正进入业务资源。
+
+<a id="sys-customer-followup"></a>
+
+## `sys_customer_followup` CRM 客户跟进记录表
+
+`sys_customer_followup` 是客户档案之上的动作层业务表。它不是第二套孤立 CRM 结构，而是沿当前业务模块骨架继续扩出来的一张记录表，用来承接销售跟进、方案推进和下一次行动安排。
+
+字段含义：
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 跟进记录主键，数据库自增生成 |
+| `customer_id` | 关联客户 ID，对应 `sys_customer.id` |
+| `department_id` | 继承客户归属部门 ID，对应 `sys_department.id` |
+| `owner_user_id` | 继承客户负责人 ID，对应 `sys_user.id` |
+| `follow_type` | 跟进方式，例如 `phone`、`wechat`、`visit`、`meeting` |
+| `subject` | 跟进主题 |
+| `content` | 跟进内容 |
+| `result` | 跟进结果摘要 |
+| `next_follow_at` | 下次计划跟进时间 |
+| `status` | 跟进状态：`1` 待跟进，`2` 已完成，`3` 已关闭 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
+| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+这张表最关键的设计点不是“多了一条客户动作记录”，而是它继续保留了：
+
+- `department_id`
+- `owner_user_id`
+
+这样 `crm/followup` 依然可以直接复用统一的 `datascope.UserQueryScope(...)`，不需要因为进入业务动作层就发明第二套数据权限规则。
 
 <a id="sys-user"></a>
 
@@ -627,6 +694,116 @@ CREATE TABLE `sys_file` (
 数据库保存文件元数据，文件内容保存在磁盘或对象存储中。这样数据库体积更可控，文件访问和迁移也更灵活。
 :::
 
+<a id="sys-attachment"></a>
+
+## `sys_attachment` 附件中心表
+
+`sys_attachment` 建立在 `sys_file` 之上，用来补齐后台真正需要的附件管理语义。`sys_file` 负责记录底层上传事实，`sys_attachment` 负责记录：
+
+- 这份文件在后台要以什么名称展示
+- 它属于什么分类
+- 它来自什么业务类型
+- 它当前是否仍然可用
+
+字段含义：
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 附件记录主键，数据库自增生成 |
+| `file_id` | 底层文件记录 ID，对应 `sys_file.id` |
+| `display_name` | 附件展示名 |
+| `category` | 附件分类 |
+| `biz_type` | 业务类型 |
+| `uploader_id` | 上传用户 ID，对应 `sys_user.id` |
+| `status` | 附件状态：`1` 启用，`2` 停用 |
+| `remark` | 备注 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
+| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+::: details 为什么附件中心不直接扩写 `sys_file`
+`sys_file` 保存的是底层上传事实，不适合继续承载“分类、业务类型、展示名”这类业务管理语义。把这两层显式拆开后，底层上传能力才能继续被别的模块复用，而不会被单个附件场景绑死。
+:::
+
+### 建表语句
+
+::: code-group
+
+```sql [PostgreSQL]
+CREATE TABLE sys_attachment (
+  id BIGSERIAL PRIMARY KEY,
+  file_id BIGINT NOT NULL,
+  display_name VARCHAR(255) NOT NULL,
+  category VARCHAR(64) NOT NULL DEFAULT '',
+  biz_type VARCHAR(64) NOT NULL DEFAULT '',
+  uploader_id BIGINT NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_attachment_file_id
+ON sys_attachment (file_id);
+
+CREATE INDEX idx_sys_attachment_category
+ON sys_attachment (category);
+
+CREATE INDEX idx_sys_attachment_biz_type
+ON sys_attachment (biz_type);
+
+CREATE INDEX idx_sys_attachment_uploader_id
+ON sys_attachment (uploader_id);
+
+CREATE INDEX idx_sys_attachment_status
+ON sys_attachment (status);
+
+CREATE INDEX idx_sys_attachment_deleted_at
+ON sys_attachment (deleted_at);
+
+COMMENT ON TABLE sys_attachment IS '附件中心表';
+COMMENT ON COLUMN sys_attachment.id IS '附件记录主键，数据库自增生成';
+COMMENT ON COLUMN sys_attachment.file_id IS '底层文件记录 ID，对应 sys_file.id';
+COMMENT ON COLUMN sys_attachment.display_name IS '附件展示名，默认使用原始文件名';
+COMMENT ON COLUMN sys_attachment.category IS '附件分类，例如 invoice、contract、avatar';
+COMMENT ON COLUMN sys_attachment.biz_type IS '业务类型，用于区分模块接入来源';
+COMMENT ON COLUMN sys_attachment.uploader_id IS '上传用户 ID，对应 sys_user.id';
+COMMENT ON COLUMN sys_attachment.status IS '附件状态：1 启用，2 停用';
+COMMENT ON COLUMN sys_attachment.remark IS '备注';
+COMMENT ON COLUMN sys_attachment.created_at IS '创建时间';
+COMMENT ON COLUMN sys_attachment.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_attachment.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+```
+
+```sql [MySQL]
+CREATE TABLE `sys_attachment` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '附件记录主键，数据库自增生成',
+  `file_id` BIGINT UNSIGNED NOT NULL COMMENT '底层文件记录 ID，对应 sys_file.id',
+  `display_name` VARCHAR(255) NOT NULL COMMENT '附件展示名，默认使用原始文件名',
+  `category` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '附件分类，例如 invoice、contract、avatar',
+  `biz_type` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '业务类型，用于区分模块接入来源',
+  `uploader_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '上传用户 ID，对应 sys_user.id',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '附件状态：1 启用，2 停用',
+  `remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `created_at` DATETIME(3) NOT NULL COMMENT '创建时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  `deleted_at` DATETIME(3) NULL DEFAULT NULL COMMENT '逻辑删除时间，NULL 表示未删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_attachment_file_id` (`file_id`),
+  KEY `idx_sys_attachment_category` (`category`),
+  KEY `idx_sys_attachment_biz_type` (`biz_type`),
+  KEY `idx_sys_attachment_uploader_id` (`uploader_id`),
+  KEY `idx_sys_attachment_status` (`status`),
+  KEY `idx_sys_attachment_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='附件中心表';
+```
+
+:::
+
 <a id="sys-operation-log"></a>
 
 ## `sys_operation_log` 操作日志表
@@ -1033,6 +1210,212 @@ CREATE TABLE `sys_config` (
 
 ::: details 为什么 `value` 使用 `TEXT`
 配置值统一按字符串存储时，最容易遇到的情况就是“短值为主，但偶尔会放一段 JSON 字符串或较长文本”。`TEXT` 更省心，也避免后续因为长度限制再改表。
+:::
+
+<a id="sys-dict-type"></a>
+
+## `sys_dict_type` 系统字典类型表
+
+`sys_dict_type` 保存字典类型，例如“是否字典”“公告级别”。它是字典模块的父表，负责稳定定义：
+
+- 这个字典的编码是什么
+- 这个字典对外叫什么
+- 这个字典当前是否启用
+
+字段含义：
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 字典类型主键，数据库自增生成 |
+| `code` | 字典编码，系统内唯一 |
+| `name` | 字典名称 |
+| `sort` | 排序值，数字越小越靠前 |
+| `status` | 字典状态：`1` 启用，`2` 禁用 |
+| `remark` | 备注 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
+| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+::: details 为什么字典类型单独成表
+如果把字典类型和字典项都塞进一张表，很快就会失去“先定义类型，再挂字典项”的清晰边界。
+
+当前实现明确保留父子两张表：
+
+- `sys_dict_type`
+- `sys_dict_item`
+
+这样既能把字典编码保持稳定，也更适合后续在前端一页里联动维护。
+:::
+
+### 建表语句
+
+::: code-group
+
+```sql [PostgreSQL]
+CREATE TABLE sys_dict_type (
+  id BIGSERIAL PRIMARY KEY,
+  code VARCHAR(64) NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_dict_type_code
+ON sys_dict_type (code);
+
+CREATE INDEX idx_sys_dict_type_status
+ON sys_dict_type (status);
+
+CREATE INDEX idx_sys_dict_type_deleted_at
+ON sys_dict_type (deleted_at);
+
+COMMENT ON TABLE sys_dict_type IS '系统字典类型表';
+COMMENT ON COLUMN sys_dict_type.id IS '字典类型主键，数据库自增生成';
+COMMENT ON COLUMN sys_dict_type.code IS '字典编码，系统内唯一';
+COMMENT ON COLUMN sys_dict_type.name IS '字典名称';
+COMMENT ON COLUMN sys_dict_type.sort IS '排序值，数字越小越靠前';
+COMMENT ON COLUMN sys_dict_type.status IS '字典状态：1 启用，2 禁用';
+COMMENT ON COLUMN sys_dict_type.remark IS '备注';
+COMMENT ON COLUMN sys_dict_type.created_at IS '创建时间';
+COMMENT ON COLUMN sys_dict_type.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_dict_type.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+```
+
+```sql [MySQL]
+CREATE TABLE `sys_dict_type` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '字典类型主键，数据库自增生成',
+  `code` VARCHAR(64) NOT NULL COMMENT '字典编码，系统内唯一',
+  `name` VARCHAR(64) NOT NULL COMMENT '字典名称',
+  `sort` INT NOT NULL DEFAULT 0 COMMENT '排序值，数字越小越靠前',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '字典状态：1 启用，2 禁用',
+  `remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `created_at` DATETIME(3) NOT NULL COMMENT '创建时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  `deleted_at` DATETIME(3) NULL DEFAULT NULL COMMENT '逻辑删除时间，NULL 表示未删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_dict_type_code` (`code`),
+  KEY `idx_sys_dict_type_status` (`status`),
+  KEY `idx_sys_dict_type_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='系统字典类型表';
+```
+
+:::
+
+<a id="sys-dict-item"></a>
+
+## `sys_dict_item` 系统字典项表
+
+`sys_dict_item` 保存字典类型下面的具体可选项，例如：
+
+- `common:yes-no` 下面的 `yes / no`
+- `notice:level` 下面的 `info / warning`
+
+字段含义：
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` | 字典项主键，数据库自增生成 |
+| `type_id` | 字典类型 ID，对应 `sys_dict_type.id` |
+| `item_key` | 字典项编码，同一类型内唯一 |
+| `label` | 字典项名称 |
+| `value` | 字典项值 |
+| `tag_type` | 前端标签样式提示 |
+| `sort` | 排序值，数字越小越靠前 |
+| `status` | 字典项状态：`1` 启用，`2` 禁用 |
+| `remark` | 备注 |
+| `created_at` | 创建时间 |
+| `updated_at` | 更新时间 |
+| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+
+::: warning 这里不建数据库外键
+当前后台底座默认不使用数据库级外键约束，所以 `type_id` 只通过：
+
+- 普通索引
+- 联合唯一索引 `(type_id, item_key)`
+- service 层存在性校验
+
+来维护和 `sys_dict_type` 的关系。
+:::
+
+### 建表语句
+
+::: code-group
+
+```sql [PostgreSQL]
+CREATE TABLE sys_dict_item (
+  id BIGSERIAL PRIMARY KEY,
+  type_id BIGINT NOT NULL,
+  item_key VARCHAR(64) NOT NULL,
+  label VARCHAR(64) NOT NULL,
+  value VARCHAR(255) NOT NULL,
+  tag_type VARCHAR(32) NOT NULL DEFAULT '',
+  sort INTEGER NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_dict_item_type_key
+ON sys_dict_item (type_id, item_key);
+
+CREATE INDEX idx_sys_dict_item_type_id
+ON sys_dict_item (type_id);
+
+CREATE INDEX idx_sys_dict_item_status
+ON sys_dict_item (status);
+
+CREATE INDEX idx_sys_dict_item_deleted_at
+ON sys_dict_item (deleted_at);
+
+COMMENT ON TABLE sys_dict_item IS '系统字典项表';
+COMMENT ON COLUMN sys_dict_item.id IS '字典项主键，数据库自增生成';
+COMMENT ON COLUMN sys_dict_item.type_id IS '字典类型 ID，对应 sys_dict_type.id';
+COMMENT ON COLUMN sys_dict_item.item_key IS '字典项编码，同一类型内唯一';
+COMMENT ON COLUMN sys_dict_item.label IS '字典项名称';
+COMMENT ON COLUMN sys_dict_item.value IS '字典项值';
+COMMENT ON COLUMN sys_dict_item.tag_type IS '前端标签样式提示';
+COMMENT ON COLUMN sys_dict_item.sort IS '排序值，数字越小越靠前';
+COMMENT ON COLUMN sys_dict_item.status IS '字典项状态：1 启用，2 禁用';
+COMMENT ON COLUMN sys_dict_item.remark IS '备注';
+COMMENT ON COLUMN sys_dict_item.created_at IS '创建时间';
+COMMENT ON COLUMN sys_dict_item.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_dict_item.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+```
+
+```sql [MySQL]
+CREATE TABLE `sys_dict_item` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '字典项主键，数据库自增生成',
+  `type_id` BIGINT UNSIGNED NOT NULL COMMENT '字典类型 ID，对应 sys_dict_type.id',
+  `item_key` VARCHAR(64) NOT NULL COMMENT '字典项编码，同一类型内唯一',
+  `label` VARCHAR(64) NOT NULL COMMENT '字典项名称',
+  `value` VARCHAR(255) NOT NULL COMMENT '字典项值',
+  `tag_type` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '前端标签样式提示',
+  `sort` INT NOT NULL DEFAULT 0 COMMENT '排序值，数字越小越靠前',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '字典项状态：1 启用，2 禁用',
+  `remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `created_at` DATETIME(3) NOT NULL COMMENT '创建时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  `deleted_at` DATETIME(3) NULL DEFAULT NULL COMMENT '逻辑删除时间，NULL 表示未删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_dict_item_type_key` (`type_id`, `item_key`),
+  KEY `idx_sys_dict_item_type_id` (`type_id`),
+  KEY `idx_sys_dict_item_status` (`status`),
+  KEY `idx_sys_dict_item_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='系统字典项表';
+```
+
 :::
 
 <a id="casbin-rule"></a>

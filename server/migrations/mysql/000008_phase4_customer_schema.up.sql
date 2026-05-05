@@ -1,0 +1,22 @@
+CREATE TABLE `sys_customer` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '客户记录主键，数据库自增生成',
+  `name` VARCHAR(128) NOT NULL COMMENT '客户名称',
+  `contact_name` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '联系人姓名',
+  `phone` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '联系电话',
+  `level` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '客户等级，例如 a、b、vip',
+  `source` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '客户来源，例如 referral、ads、offline',
+  `department_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '归属部门 ID，对应 sys_department.id',
+  `owner_user_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '负责人用户 ID，对应 sys_user.id',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '客户状态：1 启用，2 停用',
+  `remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `created_at` DATETIME(3) NOT NULL COMMENT '创建时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  `deleted_at` DATETIME(3) NULL DEFAULT NULL COMMENT '逻辑删除时间，NULL 表示未删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_sys_customer_level` (`level`),
+  KEY `idx_sys_customer_source` (`source`),
+  KEY `idx_sys_customer_department_id` (`department_id`),
+  KEY `idx_sys_customer_owner_user_id` (`owner_user_id`),
+  KEY `idx_sys_customer_status` (`status`),
+  KEY `idx_sys_customer_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='CRM 客户档案表';

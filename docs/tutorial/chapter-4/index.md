@@ -20,14 +20,9 @@ description: "讲清企业级完整版主线中的 RBAC、Casbin、菜单权限�
 
 ## 本章小节
 
-- [用户管理](./user-management)
-- [角色管理](./role-management)
-- [菜单管理](./menu-management)
-- [系统配置](./system-config)
-- [文件上传](./file-upload)
-- [操作日志](./operation-logs)
-- [登录日志](./login-logs)
-- [公告管理](./notice-management)
+- [RBAC 角色权限模型](./rbac-model)
+- [接口级权限控制](./casbin-permission)
+- [角色菜单权限](./menu-permission)
 
 ## 下一步
 

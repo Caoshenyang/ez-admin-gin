@@ -29,6 +29,10 @@ const (
 	localFileStorage        = "local"
 )
 
+var defaultUploadAllowedExts = []string{
+	".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".docx", ".xlsx",
+}
+
 // Service 负责文件模块的业务规则、落盘流程和事务边界。
 type Service struct {
 	db   *gorm.DB
@@ -70,13 +74,23 @@ func (s *Service) List(query ListQuery) (ListResponse, error) {
 
 // Upload 上传文件到本地目录，并写入文件记录。
 func (s *Service) Upload(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader) (Response, error) {
-	if err := s.validateUploadFile(fileHeader); err != nil {
+	item, err := s.UploadEntity(ctx, uploaderID, fileHeader)
+	if err != nil {
 		return Response{}, err
+	}
+
+	return BuildResponse(item), nil
+}
+
+// UploadEntity 上传文件并返回已持久化的文件实体，供上层业务模块复用底层上传链路。
+func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader) (model.SystemFile, error) {
+	if err := s.validateUploadFile(fileHeader); err != nil {
+		return model.SystemFile{}, err
 	}
 
 	saved, err := s.saveUploadedFile(fileHeader)
 	if err != nil {
-		return Response{}, apperror.Internal("保存文件失败", err)
+		return model.SystemFile{}, apperror.Internal("保存文件失败", err)
 	}
 
 	item := model.SystemFile{
@@ -98,10 +112,10 @@ func (s *Service) Upload(ctx context.Context, uploaderID uint, fileHeader *multi
 		return s.repo.Create(tx, &item)
 	}); err != nil {
 		_ = os.Remove(saved.AbsolutePath)
-		return Response{}, apperror.Internal("保存文件记录失败", err)
+		return model.SystemFile{}, apperror.Internal("保存文件记录失败", err)
 	}
 
-	return BuildResponse(item), nil
+	return item, nil
 }
 
 func (s *Service) validateUploadFile(fileHeader *multipart.FileHeader) error {
@@ -189,6 +203,9 @@ func normalizeUploadConfig(cfg config.UploadConfig) config.UploadConfig {
 		cfg.MaxSizeMB = defaultUploadMaxSizeMB
 	}
 
+	if len(cfg.AllowedExts) == 0 {
+		cfg.AllowedExts = append([]string(nil), defaultUploadAllowedExts...)
+	}
 	cfg.AllowedExts = NormalizeAllowedExts(cfg.AllowedExts)
 	return cfg
 }

@@ -29,11 +29,15 @@ type MenuIconComponent = Component
 const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
 
 const routeComponentMap: Record<string, RouteComponent> = {
+  'crm/CustomerView': () => import('../pages/crm/CustomerView.vue'),
+  'crm/CustomerFollowUpView': () => import('../pages/crm/CustomerFollowUpView.vue'),
   'system/HealthView': () => import('../pages/system/HealthView.vue'),
+  'system/AttachmentView': () => import('../pages/system/AttachmentView.vue'),
   'system/UserView': () => import('../pages/system/UserView.vue'),
   'system/RoleView': () => import('../pages/system/RoleView.vue'),
   'system/MenuView': () => import('../pages/system/MenuView.vue'),
   'system/ConfigView': () => import('../pages/system/ConfigView.vue'),
+  'system/DictView': () => import('../pages/system/DictView.vue'),
   'system/FileView': () => import('../pages/system/FileView.vue'),
   'system/OperationLogView': () => import('../pages/system/OperationLogView.vue'),
   'system/LoginLogView': () => import('../pages/system/LoginLogView.vue'),

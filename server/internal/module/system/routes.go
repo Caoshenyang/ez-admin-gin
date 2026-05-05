@@ -9,7 +9,9 @@ import (
 	iamPostModule "ez-admin-gin/server/internal/module/iam/post"
 	iamRoleModule "ez-admin-gin/server/internal/module/iam/role"
 	iamUserModule "ez-admin-gin/server/internal/module/iam/user"
+	systemAttachmentModule "ez-admin-gin/server/internal/module/system/attachment"
 	systemConfigModule "ez-admin-gin/server/internal/module/system/config"
+	systemDictModule "ez-admin-gin/server/internal/module/system/dict"
 	systemFileModule "ez-admin-gin/server/internal/module/system/file"
 	systemLoginLogModule "ez-admin-gin/server/internal/module/system/loginlog"
 	systemNoticeModule "ez-admin-gin/server/internal/module/system/notice"
@@ -71,6 +73,15 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		DB:    opts.DB,
 		Redis: opts.Redis,
 		Log:   opts.Log,
+	})
+	systemDictModule.RegisterRoutes(system, systemDictModule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	systemAttachmentModule.RegisterRoutes(system, systemAttachmentModule.RouteOptions{
+		DB:     opts.DB,
+		Upload: opts.Config.Upload,
+		Log:    opts.Log,
 	})
 	systemFileModule.RegisterRoutes(system, systemFileModule.RouteOptions{
 		DB:     opts.DB,

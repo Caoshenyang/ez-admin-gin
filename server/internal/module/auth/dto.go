@@ -35,6 +35,31 @@ type MeResponse struct {
 	DataScope    MeDataScopeResult `json:"data_scope"`
 }
 
+// AccountProfileResponse 表示账户中心资料页返回结构。
+type AccountProfileResponse struct {
+	UserID         uint              `json:"user_id"`
+	Username       string            `json:"username"`
+	Nickname       string            `json:"nickname"`
+	DepartmentID   uint              `json:"department_id"`
+	DepartmentName string            `json:"department_name"`
+	Status         model.UserStatus  `json:"status"`
+	RoleCodes      []string          `json:"role_codes"`
+	IsSuperAdmin   bool              `json:"is_super_admin"`
+	DataScope      MeDataScopeResult `json:"data_scope"`
+	UpdatedAt      time.Time         `json:"updated_at"`
+}
+
+// UpdateAccountProfileRequest 表示当前登录人修改资料请求体。
+type UpdateAccountProfileRequest struct {
+	Nickname string `json:"nickname"`
+}
+
+// UpdateAccountPasswordRequest 表示当前登录人修改密码请求体。
+type UpdateAccountPasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 // MeDataScopeResult 表示当前登录人的聚合数据范围摘要。
 type MeDataScopeResult struct {
 	AllowAll            bool   `json:"allow_all"`
@@ -151,5 +176,56 @@ func BuildMeResponse(actor datascope.Actor) MeResponse {
 			IncludeDeptTree:     summary.IncludeDeptTree,
 			CustomDepartmentIDs: summary.CustomDepartmentIDs,
 		},
+	}
+}
+
+// NormalizeUpdateAccountProfileRequest 收口账户资料更新参数。
+func NormalizeUpdateAccountProfileRequest(req UpdateAccountProfileRequest) (UpdateAccountProfileRequest, error) {
+	req.Nickname = strings.TrimSpace(req.Nickname)
+	if req.Nickname == "" {
+		return UpdateAccountProfileRequest{}, apperror.BadRequest("昵称不能为空")
+	}
+	if len(req.Nickname) > 64 {
+		return UpdateAccountProfileRequest{}, apperror.BadRequest("昵称不能超过 64 个字符")
+	}
+
+	return req, nil
+}
+
+// NormalizeUpdateAccountPasswordRequest 收口账户密码更新参数。
+func NormalizeUpdateAccountPasswordRequest(req UpdateAccountPasswordRequest) (UpdateAccountPasswordRequest, error) {
+	if strings.TrimSpace(req.OldPassword) == "" {
+		return UpdateAccountPasswordRequest{}, apperror.BadRequest("当前密码不能为空")
+	}
+	if len(req.NewPassword) < 8 || len(req.NewPassword) > 72 {
+		return UpdateAccountPasswordRequest{}, apperror.BadRequest("新密码长度需要在 8 到 72 个字符之间")
+	}
+	if req.OldPassword == req.NewPassword {
+		return UpdateAccountPasswordRequest{}, apperror.BadRequest("新密码不能与当前密码相同")
+	}
+
+	return req, nil
+}
+
+// BuildAccountProfileResponse 组装账户中心资料返回结构。
+func BuildAccountProfileResponse(actor datascope.Actor, user model.User, departmentName string) AccountProfileResponse {
+	summary := datascope.Merge(actor.Grants, actor.IsSuperAdmin)
+	return AccountProfileResponse{
+		UserID:         user.ID,
+		Username:       user.Username,
+		Nickname:       user.Nickname,
+		DepartmentID:   user.DepartmentID,
+		DepartmentName: departmentName,
+		Status:         user.Status,
+		RoleCodes:      actor.RoleCodes,
+		IsSuperAdmin:   actor.IsSuperAdmin,
+		DataScope: MeDataScopeResult{
+			AllowAll:            summary.AllowAll,
+			RequireSelf:         summary.RequireSelf,
+			IncludeDepartment:   summary.IncludeDepartment,
+			IncludeDeptTree:     summary.IncludeDeptTree,
+			CustomDepartmentIDs: summary.CustomDepartmentIDs,
+		},
+		UpdatedAt: user.UpdatedAt,
 	}
 }

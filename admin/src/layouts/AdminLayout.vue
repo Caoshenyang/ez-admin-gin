@@ -8,6 +8,7 @@ import {
   LogOutOutline,
   MoonOutline,
   NotificationsOutline,
+  PersonCircleOutline,
   SearchOutline,
 } from '@vicons/ionicons5'
 import type { DropdownOption } from 'naive-ui'
@@ -23,13 +24,17 @@ import {
   NMenu,
   useMessage,
 } from 'naive-ui'
-import { computed, h, ref, watch } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import BrandLogo from '../components/BrandLogo.vue'
 import { resetDynamicRoutes } from '../router'
 import { findMenuTitleByPath, sideMenuOptions } from '../router/dynamic-menu'
-import { clearAuthSession, getAuthUserInfo } from '../utils/auth'
+import {
+  AUTH_USER_INFO_UPDATED_EVENT,
+  clearAuthSession,
+  getAuthUserInfo,
+} from '../utils/auth'
 
 interface WorkTab {
   title: string
@@ -44,7 +49,7 @@ const message = useMessage()
 const openTabs = ref<WorkTab[]>([{ title: '工作台', to: '/dashboard', closable: false }])
 const sidebarCollapsed = ref(false)
 
-const currentUser = computed(() => getAuthUserInfo())
+const currentUser = ref(getAuthUserInfo())
 const displayName = computed(() => {
   return currentUser.value?.nickname || currentUser.value?.username || '管理员'
 })
@@ -73,6 +78,14 @@ const siderContentStyle = computed(() => {
 })
 
 const dropdownOptions: DropdownOption[] = [
+  {
+    label: '账户中心',
+    key: 'account-profile',
+    icon: () =>
+      h(NIcon, null, {
+        default: () => h(PersonCircleOutline),
+      }),
+  },
   {
     label: '退出登录',
     key: 'logout',
@@ -144,6 +157,11 @@ function toggleSidebar() {
 }
 
 function handleUserAction(key: string | number) {
+  if (key === 'account-profile') {
+    void router.push('/account/profile')
+    return
+  }
+
   if (key !== 'logout') {
     return
   }
@@ -154,6 +172,10 @@ function handleUserAction(key: string | number) {
   void router.replace('/login')
 }
 
+function syncCurrentUser() {
+  currentUser.value = getAuthUserInfo()
+}
+
 watch(
   () => route.fullPath,
   () => {
@@ -161,6 +183,14 @@ watch(
   },
   { immediate: true },
 )
+
+onMounted(() => {
+  window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, syncCurrentUser)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(AUTH_USER_INFO_UPDATED_EVENT, syncCurrentUser)
+})
 </script>
 <template>
   <NLayout class="h-screen overflow-hidden bg-[#F5F7FA]" has-sider :native-scrollbar="false">

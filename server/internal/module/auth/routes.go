@@ -25,11 +25,13 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	repo := NewRepository(opts.DB)
 	loginService := NewLoginService(repo, opts.Token, opts.Log)
 	meService := NewMeService()
+	accountService := NewAccountService(opts.DB, repo)
 	menuService := NewMenuService(repo)
 	dashboardService := NewDashboardService(opts.Config, opts.DB, repo, opts.Redis, opts.Log)
 
 	login := NewLoginHandler(loginService, opts.Log)
 	me := NewMeHandler(meService, opts.Log)
+	account := NewAccountHandler(accountService, opts.Log)
 	menus := NewMenuHandler(menuService, opts.Log)
 	dashboard := NewDashboardHandler(dashboardService, opts.Log)
 
@@ -41,6 +43,9 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	protectedAuth.Use(middleware.Auth(opts.Token, opts.Log))
 	protectedAuth.Use(middleware.LoadActor(opts.DB, opts.Log))
 	protectedAuth.GET("/me", me.Me)
+	protectedAuth.GET("/account", account.Profile)
+	protectedAuth.POST("/account/profile", account.UpdateProfile)
+	protectedAuth.POST("/account/password", account.UpdatePassword)
 	protectedAuth.GET("/menus", menus.Menus)
 	protectedAuth.GET("/dashboard", dashboard.Dashboard)
 }

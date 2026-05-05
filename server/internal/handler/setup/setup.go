@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"ez-admin-gin/server/internal/model"
@@ -32,18 +33,6 @@ type InitRequest struct {
 // Init 创建第一个管理员账号并绑定到 super_admin 角色。
 // POST /api/v1/setup/init
 func (h *SetupHandler) Init(c *gin.Context) {
-	// 检查是否已初始化（sys_user 是否有记录）
-	var count int64
-	if err := h.db.Model(&model.User{}).Count(&count).Error; err != nil {
-		h.log.Error("check init status", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "检查初始化状态失败"})
-		return
-	}
-	if count > 0 {
-		c.JSON(http.StatusConflict, gin.H{"error": "系统已初始化，不能重复执行"})
-		return
-	}
-
 	var req InitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
@@ -58,27 +47,50 @@ func (h *SetupHandler) Init(c *gin.Context) {
 		return
 	}
 
-	// 创建管理员用户
-	user := model.User{
-		Username:     req.Username,
-		PasswordHash: string(passwordHash),
-		Nickname:     req.Nickname,
-		Status:       model.UserStatusEnabled,
-	}
-	if err := h.db.Create(&user).Error; err != nil {
-		h.log.Error("create admin user", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建管理员失败"})
-		return
-	}
+	// 首次初始化必须在一个事务里完成，避免出现“用户已创建但未绑定管理员角色”的半成品状态。
+	var user model.User
+	if err := h.db.Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := tx.Model(&model.User{}).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return errAlreadyInitialized
+		}
 
-	// 绑定到 super_admin 角色（ID=1）
-	userRole := model.UserRole{
-		UserID: user.ID,
-		RoleID: 1,
-	}
-	if err := h.db.Create(&userRole).Error; err != nil {
-		h.log.Error("bind admin role", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "绑定管理员角色失败"})
+		var role model.Role
+		if err := tx.
+			Where("code = ?", "super_admin").
+			Where("status = ?", model.RoleStatusEnabled).
+			First(&role).Error; err != nil {
+			return err
+		}
+
+		user = model.User{
+			Username:     req.Username,
+			PasswordHash: string(passwordHash),
+			Nickname:     req.Nickname,
+			Status:       model.UserStatusEnabled,
+		}
+		if err := tx.Create(&user).Error; err != nil {
+			return err
+		}
+
+		return tx.Create(&model.UserRole{
+			UserID: user.ID,
+			RoleID: role.ID,
+		}).Error
+	}); err != nil {
+		switch {
+		case errors.Is(err, errAlreadyInitialized):
+			c.JSON(http.StatusConflict, gin.H{"error": "系统已初始化，不能重复执行"})
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			h.log.Error("super admin role missing for setup init")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "初始化角色不存在，请先检查种子数据"})
+		default:
+			h.log.Error("initialize admin user", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "初始化管理员失败"})
+		}
 		return
 	}
 
@@ -90,3 +102,5 @@ func (h *SetupHandler) Init(c *gin.Context) {
 		"username": user.Username,
 	})
 }
+
+var errAlreadyInitialized = errors.New("system already initialized")

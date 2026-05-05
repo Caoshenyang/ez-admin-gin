@@ -34,6 +34,12 @@ const router = createRouter({
           component: () => import('../pages/dashboard/DashboardHome.vue'),
           meta: { title: '工作台' },
         },
+        {
+          path: 'account/profile',
+          name: 'account-profile',
+          component: () => import('../pages/account/AccountCenterPage.vue'),
+          meta: { title: '账户中心' },
+        },
       ],
     },
   ],

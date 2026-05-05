@@ -164,9 +164,9 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-4/' },
-            { text: 'RBAC 角色权限模型', link: '/tutorial/chapter-3/rbac-model' },
-            { text: '接口级权限控制', link: '/tutorial/chapter-3/casbin-permission' },
-            { text: '角色菜单权限', link: '/tutorial/chapter-3/menu-permission' }
+            { text: 'RBAC 角色权限模型', link: '/tutorial/chapter-4/rbac-model' },
+            { text: '接口级权限控制', link: '/tutorial/chapter-4/casbin-permission' },
+            { text: '角色菜单权限', link: '/tutorial/chapter-4/menu-permission' }
           ]
         },
         {
@@ -176,8 +176,16 @@ export default defineConfig({
             { text: '章节导读', link: '/tutorial/chapter-5/' },
             { text: '组织模型设计', link: '/tutorial/chapter-5/organization-model-design' },
             { text: '角色数据范围与查询作用域', link: '/tutorial/chapter-5/role-data-scope-and-query-scopes' },
+            { text: 'Actor 上下文与多角色并集', link: '/tutorial/chapter-5/actor-and-grant-merge' },
+            { text: '资源级数据权限接入模式', link: '/tutorial/chapter-5/module-datascope-patterns' },
+            { text: '共享数据权限接入规范', link: '/tutorial/chapter-5/shared-datascope-integration-conventions' },
+            { text: 'datascope.go 与 Repository 边界', link: '/tutorial/chapter-5/datascope-and-repository-boundary' },
+            { text: '一次完整请求的权限过滤走读', link: '/tutorial/chapter-5/request-flow-walkthrough' },
+            { text: '数据权限落地检查清单', link: '/tutorial/chapter-5/data-scope-implementation-checklist' },
             { text: '部门树与部门管理', link: '/tutorial/chapter-5/department-tree-and-management' },
-            { text: '岗位管理与用户归属', link: '/tutorial/chapter-5/post-management-and-user-affiliation' }
+            { text: '岗位管理与用户归属', link: '/tutorial/chapter-5/post-management-and-user-affiliation' },
+            { text: '真实业务模块的数据权限边界', link: '/tutorial/chapter-5/business-module-datascope-boundaries' },
+            { text: '岗位资源的数据权限收紧时机', link: '/tutorial/chapter-5/post-datascope-tightening' }
           ]
         },
         {
@@ -185,13 +193,10 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-6/' },
-            { text: '用户管理', link: '/tutorial/chapter-4/user-management' },
-            { text: '角色管理', link: '/tutorial/chapter-4/role-management' },
-            { text: '菜单管理', link: '/tutorial/chapter-4/menu-management' },
-            { text: '系统配置', link: '/tutorial/chapter-4/system-config' },
-            { text: '文件上传', link: '/tutorial/chapter-4/file-upload' },
-            { text: '操作日志', link: '/tutorial/chapter-4/operation-logs' },
-            { text: '登录日志', link: '/tutorial/chapter-4/login-logs' }
+            { text: '模块固定结构', link: '/tutorial/chapter-6/module-structure' },
+            { text: '后端模块接入流程', link: '/tutorial/chapter-6/backend-module-flow' },
+            { text: '示例业务模块', link: '/tutorial/chapter-6/sample-module' },
+            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' }
           ]
         },
         {
@@ -199,14 +204,18 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-7/' },
-            { text: 'Vue 3 管理台初始化', link: '/tutorial/chapter-5/vue-project-init' },
-            { text: '登录页', link: '/tutorial/chapter-5/login-page' },
-            { text: '后台布局', link: '/tutorial/chapter-5/admin-layout' },
-            { text: '动态菜单', link: '/tutorial/chapter-5/dynamic-menu' },
-            { text: '用户管理页面', link: '/tutorial/chapter-5/user-pages' },
-            { text: '角色与菜单页面', link: '/tutorial/chapter-5/role-menu-pages' },
-            { text: '配置与文件页面', link: '/tutorial/chapter-5/config-file-pages' },
-            { text: '日志页面', link: '/tutorial/chapter-5/log-pages' }
+            { text: '前端运行时结构', link: '/tutorial/chapter-7/frontend-runtime-structure' },
+            { text: '管理台工程起步结构', link: '/tutorial/chapter-7/admin-project-bootstrap' },
+            { text: '登录态与会话流转', link: '/tutorial/chapter-7/login-and-session-flow' },
+            { text: '登录页实现细节', link: '/tutorial/chapter-7/login-page-implementation' },
+            { text: '后台壳子、动态菜单与按钮权限', link: '/tutorial/chapter-7/admin-shell-and-dynamic-menu' },
+            { text: '后台布局与工作标签', link: '/tutorial/chapter-7/admin-layout-and-worktabs' },
+            { text: '动态菜单注册与按钮权限', link: '/tutorial/chapter-7/dynamic-route-registration' },
+            { text: '系统模块页面模式', link: '/tutorial/chapter-7/system-module-pages' },
+            { text: '用户管理页实现要点', link: '/tutorial/chapter-7/user-management-page-detail' },
+            { text: '角色与菜单页实现要点', link: '/tutorial/chapter-7/role-and-menu-page-detail' },
+            { text: '配置与文件页实现要点', link: '/tutorial/chapter-7/config-and-file-page-detail' },
+            { text: '日志查询页实现要点', link: '/tutorial/chapter-7/audit-log-pages' }
           ]
         },
         {
@@ -214,11 +223,16 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-8/' },
-            { text: '模块固定结构', link: '/tutorial/chapter-6/module-structure' },
-            { text: '后端模块接入流程', link: '/tutorial/chapter-6/backend-module-flow' },
-            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' },
-            { text: '前端页面接入流程', link: '/tutorial/chapter-6/frontend-page-flow' },
-            { text: '示例业务模块', link: '/tutorial/chapter-6/sample-module' }
+            { text: '后端模块固定结构', link: '/tutorial/chapter-8/backend-module-structure' },
+            { text: '后端模块接入流程', link: '/tutorial/chapter-8/backend-module-integration' },
+            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-8/permission-menu-integration' },
+            { text: '前端页面接入流程', link: '/tutorial/chapter-8/frontend-page-flow' },
+            { text: '数据字典模块落地', link: '/tutorial/chapter-8/dict-module' },
+            { text: '账户中心落地', link: '/tutorial/chapter-8/account-center-module' },
+            { text: '附件中心落地', link: '/tutorial/chapter-8/attachment-center-module' },
+            { text: 'CRM 客户模块示例', link: '/tutorial/chapter-8/business-module-example' },
+            { text: 'CRM 客户跟进模块落地', link: '/tutorial/chapter-8/customer-followup-module' },
+            { text: '模块接入验收清单', link: '/tutorial/chapter-8/module-integration-checklist' }
           ]
         },
         {
@@ -226,8 +240,16 @@ export default defineConfig({
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-9/' },
-            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' },
-            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' }
+            { text: '环境变量与初始化数据', link: '/tutorial/chapter-9/env-and-init-data' },
+            { text: '部署验证与复用说明', link: '/tutorial/chapter-9/deployment-and-reuse' },
+            { text: 'Compose 与服务运行结构', link: '/tutorial/chapter-9/compose-and-service-layout' },
+            { text: 'Nginx 与 HTTPS 入口层', link: '/tutorial/chapter-9/nginx-and-https' },
+            { text: '部署变体说明', link: '/tutorial/chapter-9/deployment-variants' },
+            { text: '更新与回滚策略', link: '/tutorial/chapter-9/update-and-rollback' },
+            { text: '回滚分级策略', link: '/tutorial/chapter-9/rollback-strategy-levels' },
+            { text: '部署排障 FAQ', link: '/tutorial/chapter-9/deployment-troubleshooting-faq' },
+            { text: '长期运维 FAQ', link: '/tutorial/chapter-9/operations-maintenance-faq' },
+            { text: '新项目复用清单', link: '/tutorial/chapter-9/project-reuse-checklist' }
           ]
         }
       ],
@@ -240,6 +262,17 @@ export default defineConfig({
             { text: 'Casbin 快速入门', link: '/reference/casbin-quick-start' },
             { text: '接口风格决策', link: '/reference/api-style-decision' },
             { text: '数据权限模型', link: '/reference/data-scope-model' },
+            { text: '环境变量参考', link: '/reference/environment-variables-reference' },
+            { text: '权限码约定', link: '/reference/permission-code-conventions' },
+            { text: '错误码参考', link: '/reference/error-code-reference' },
+            { text: '目录约定', link: '/reference/directory-conventions' },
+            { text: '模块规范', link: '/reference/module-conventions' },
+            { text: '初始化数据参考', link: '/reference/init-data-reference' },
+            { text: '动态菜单组件白名单', link: '/reference/dynamic-menu-component-reference' },
+            { text: '按钮权限消费示例', link: '/reference/button-permission-consumption-example' },
+            { text: '上传与公开路径参考', link: '/reference/upload-public-path-reference' },
+            { text: '模块初始化模板', link: '/reference/module-init-template' },
+            { text: '查询与分页约定', link: '/reference/query-and-pagination-conventions' },
             { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },
