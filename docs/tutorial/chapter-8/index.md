@@ -1,26 +1,31 @@
 ---
 title: 第 8 章：模块化接入规范
-description: "围绕当前最终版结构，讲清一个真实业务模块如何把后端、前端、菜单、权限和数据权限一起接进底座。"
+description: "围绕当前最终版结构，用 `crm/customer` 主案例和扩展实现参考讲清后端、前端、菜单、权限和数据权限如何一起接进底座。"
 ---
 
 # 第 8 章：模块化接入规范
 
 ::: tip 🎯 这一章会做成什么
-这一章会把最终版后台底座的模块接入方式讲透：不是只新增几个文件，而是把后端模块、前端页面、菜单权限、按钮权限和数据权限一次串起来。
+这一章会用 `crm/customer` 这条真实业务主案例，把最终版后台底座的模块接入方式讲透：不是只新增几个文件，而是把后端模块、前端页面、菜单权限、按钮权限和数据权限一次串起来。
 :::
 
 ## 本章聚焦什么
 
 走到这一章时，前面的平台基础设施、认证链路、接口权限、数据权限、系统模块和前端管理台都已经具备。接下来要解决的是：
 
-> 一个新的真实业务模块，应该怎样按当前最终结构稳定落地，而不是继续把代码散落在全局目录里。
+> 一个新的业务模块，应该怎样按当前最终结构稳定落地，而不是继续把代码散落在全局目录里。
+
+这里和第 6 章的边界也很明确：
+
+- 第 6 章更偏平台内置系统模块本身怎么落稳
+- 第 8 章更偏新增业务模块怎么沿既有骨架接进来
 
 ## 当前这一章的真实主线
 
 第 8 章现在更像前面几章的“收口章”，会把已经讲过的后端模块结构和前端运行时能力，整合成一条完整接入路径：
 
 ```text
-后端模型与模块边界
+crm/customer 模型与模块边界
   ↓
 后端路由与系统聚合
   ↓
@@ -30,7 +35,7 @@ description: "围绕当前最终版结构，讲清一个真实业务模块如何
   ↓
 dynamic-menu.ts
   ↓
-最终业务页面进入后台
+最终内容页面进入后台
 ```
 
 也就是说，这一章不再单独发明新结构，而是把：
@@ -48,14 +53,10 @@ dynamic-menu.ts
 2. [后端模块接入流程](./backend-module-integration)
 3. [权限、菜单与迁移接入](./permission-menu-integration)
 4. [前端页面接入流程](./frontend-page-flow)
-5. [数据字典模块落地](./dict-module)
-6. [账户中心落地](./account-center-module)
-7. [附件中心落地](./attachment-center-module)
-8. [CRM 客户模块示例](./business-module-example)
-9. [CRM 客户跟进模块落地](./customer-followup-module)
-10. [模块接入验收清单](./module-integration-checklist)
+5. [CRM 客户模块示例](./business-module-example)
+6. [模块接入验收清单](./module-integration-checklist)
 
-这样顺下来，刚好就是“后端怎么接 → 权限菜单怎么接 → 前端怎么接 → 整体怎么跑通”。
+这样顺下来，刚好就是“后端怎么接 → 权限菜单怎么接 → 前端怎么接 → 用一个真实业务主案例整体验证”。
 
 ## 为什么这里会复用前面几章的正文
 
@@ -66,7 +67,7 @@ dynamic-menu.ts
 
 第 8 章的任务不是重复讲一遍，而是把这些能力收敛成“新增模块时到底该按什么顺序落”的规范。
 
-所以第 8 章现在要做的，不是继续借路径，而是把这些能力重新组织成“模块接入顺序本身”。
+所以第 8 章现在要做的，不是继续堆多个并列主案例，而是先用一个仓库里真实存在的 `crm/customer` 主案例，把“模块接入顺序本身”讲清楚。
 
 ## 本章完成后的判断标准
 
@@ -89,9 +90,12 @@ dynamic-menu.ts
 - [后端模块接入流程](./backend-module-integration)
 - [权限、菜单与迁移接入](./permission-menu-integration)
 - [前端页面接入流程](./frontend-page-flow)
+- [CRM 客户模块示例](./business-module-example)
+- [模块接入验收清单](./module-integration-checklist)
+
+## 扩展阅读
+
 - [数据字典模块落地](./dict-module)
 - [账户中心落地](./account-center-module)
 - [附件中心落地](./attachment-center-module)
-- [CRM 客户模块示例](./business-module-example)
 - [CRM 客户跟进模块落地](./customer-followup-module)
-- [模块接入验收清单](./module-integration-checklist)

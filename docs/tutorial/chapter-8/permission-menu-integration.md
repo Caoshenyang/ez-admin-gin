@@ -54,9 +54,10 @@ admin/src/router/dynamic-menu.ts
 
 ```go
 const (
-	PermissionList   = "crm:customer:list"
-	PermissionCreate = "crm:customer:create"
-	PermissionUpdate = "crm:customer:update"
+	PermissionList    = "cms:article:list"
+	PermissionCreate  = "cms:article:create"
+	PermissionUpdate  = "cms:article:update"
+	PermissionPublish = "cms:article:publish"
 )
 ```
 
@@ -161,4 +162,4 @@ const (
 
 一起成立时，它才算真的进入当前后台底座。
 
-下一页继续用一个真实样本把整条链跑完：[示例业务模块](./business-module-example)。
+下一页继续用一个真实业务主案例把整条链跑完：[CRM 客户模块示例](./business-module-example)。

@@ -11,7 +11,7 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 教程主线固定为 9 章，目标读者是 Java 转 Go 工程师。每一章都要兼顾“能做成什么”“为什么这样设计”“Go vs Java 怎么理解”“执行后该看到什么”。
 :::
 
-## 第 1 章：项目定位与仓库初始化
+## 第 1 章：项目初始化
 
 - [章节导读](./chapter-1/)
 - [项目仓库初始化](./chapter-1/project-repository-init)
@@ -20,7 +20,7 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 - [VitePress 文档项目初始化](./chapter-1/docs-init)
 - [Docker Compose 基础环境](./chapter-1/docker-compose-env)
 
-## 第 2 章：平台基础设施
+## 第 2 章：后端基础设施
 
 - [章节导读](./chapter-2/)
 - [配置管理](./chapter-2/config-management)
@@ -65,7 +65,7 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 - [章节导读](./chapter-6/)
 - [模块固定结构](./chapter-6/module-structure)
 - [后端模块接入流程](./chapter-6/backend-module-flow)
-- [示例业务模块](./chapter-6/sample-module)
+- [系统模块示例](./chapter-6/sample-module)
 - [权限、菜单与迁移接入](./chapter-6/permission-menu-migration)
 
 ## 第 7 章：前端企业级管理台
@@ -91,11 +91,7 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 - [后端模块接入流程](./chapter-8/backend-module-integration)
 - [权限、菜单与迁移接入](./chapter-8/permission-menu-integration)
 - [前端页面接入流程](./chapter-8/frontend-page-flow)
-- [数据字典模块落地](./chapter-8/dict-module)
-- [账户中心落地](./chapter-8/account-center-module)
-- [附件中心落地](./chapter-8/attachment-center-module)
 - [CRM 客户模块示例](./chapter-8/business-module-example)
-- [CRM 客户跟进模块落地](./chapter-8/customer-followup-module)
 - [模块接入验收清单](./chapter-8/module-integration-checklist)
 
 ## 第 9 章：部署、升级与复用

@@ -1,9 +1,14 @@
 ---
-title: 文档基线清单
-description: "记录当前文档主线中的 canonical 页面、保留但不再作为主线入口的残留页，以及已经退出主线的历史页。"
+title: 文档治理说明与基线清单
+description: "记录当前文档主线中的 canonical 页面、归档策略和后续维护规则。"
+search: false
 ---
 
-# 文档基线清单
+# 文档治理说明与基线清单
+
+::: warning 维护页说明
+这是一张偏维护者视角的治理页，不是新读者的默认入口。第一次进入项目时，请优先从 [快速启动](/guide/) 或 [从零搭建教程](/tutorial/) 开始。
+:::
 
 这页只做一件事：固定当前文档主线里的页面边界，避免后续继续一边补正文、一边重新判断“这页到底算不算主线”。
 
@@ -57,35 +62,39 @@ description: "记录当前文档主线中的 canonical 页面、保留但不再�
 
 ### 旧的权限页
 
-- `tutorial/chapter-3/rbac-model.md`
-- `tutorial/chapter-3/casbin-permission.md`
-- `tutorial/chapter-3/menu-permission.md`
+- `tutorial/chapter-3/rbac-model.md` → stub
+- `tutorial/chapter-3/casbin-permission.md` → stub
+- `tutorial/chapter-3/menu-permission.md` → stub
+- `tutorial/archive/chapter-3/*` → 归档正文
 
 当前 canonical 位置已经切到第 4 章。
 
 ### 旧的前端页
 
-- `tutorial/chapter-5/vue-project-init.md`
-- `tutorial/chapter-5/login-page.md`
-- `tutorial/chapter-5/admin-layout.md`
-- `tutorial/chapter-5/dynamic-menu.md`
-- `tutorial/chapter-5/user-pages.md`
-- `tutorial/chapter-5/role-menu-pages.md`
-- `tutorial/chapter-5/config-file-pages.md`
-- `tutorial/chapter-5/log-pages.md`
+- `tutorial/chapter-5/vue-project-init.md` → stub
+- `tutorial/chapter-5/login-page.md` → stub
+- `tutorial/chapter-5/admin-layout.md` → stub
+- `tutorial/chapter-5/dynamic-menu.md` → stub
+- `tutorial/chapter-5/user-pages.md` → stub
+- `tutorial/chapter-5/role-menu-pages.md` → stub
+- `tutorial/chapter-5/config-file-pages.md` → stub
+- `tutorial/chapter-5/log-pages.md` → stub
+- `tutorial/archive/chapter-5/*` → 归档正文
 
 当前 canonical 位置已经切到第 7 章。
 
 ### 旧的模块接入页
 
-- `tutorial/chapter-6/frontend-page-flow.md`
+- `tutorial/chapter-6/frontend-page-flow.md` → stub
+- `tutorial/archive/chapter-6/frontend-page-flow.md` → 归档正文
 
 当前 canonical 位置已经切到第 8 章。
 
 ### 旧的部署页
 
-- `tutorial/chapter-7/env-and-init-data.md`
-- `tutorial/chapter-7/deployment-and-reuse.md`
+- `tutorial/chapter-7/env-and-init-data.md` → stub
+- `tutorial/chapter-7/deployment-and-reuse.md` → stub
+- `tutorial/archive/chapter-7/*` → 归档正文
 
 当前 canonical 位置已经切到第 9 章。
 
@@ -94,6 +103,7 @@ description: "记录当前文档主线中的 canonical 页面、保留但不再�
 后续继续写文档时，固定遵守下面 4 条规则：
 
 1. 新内容优先进入 canonical 页面，不再平行新增一套旧章节版本。
-2. 残留页可以保留，但不能重新挂回教程首页、大纲或侧边栏。
-3. 历史页如果继续存在，必须明确指出 canonical 页面在哪里。
-4. 状态页只在阶段完成或阶段切换时更新一次，不再随着单页改动频繁改写。
+2. 旧链接可以保留 stub，但旧正文统一进入 `tutorial/archive/`。
+3. 任何页面迁移，都要同步检查 `README`、站点首页、VitePress 侧边栏和站内 canonical 链接。
+4. 同主题只允许一个 canonical 页面；旧页面不能继续承载完整主线正文。
+5. 状态页只在阶段完成或阶段切换时更新一次，不再随着单页改动频繁改写。

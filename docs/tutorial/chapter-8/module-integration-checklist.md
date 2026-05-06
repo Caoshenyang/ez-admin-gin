@@ -206,4 +206,4 @@ description: "用一份全链路清单判断一个新模块是否真的进入了
 ## 下一步
 
 - 想继续按流程补代码，可以回到 [前端页面接入流程](./frontend-page-flow)
-- 想看这条链路在真实模块里的落地方式，继续读 [示例业务模块](./business-module-example)
+- 想看这条链路在真实业务主案例里的落地方式，继续读 [CRM 客户模块示例](./business-module-example)

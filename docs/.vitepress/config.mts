@@ -103,7 +103,6 @@ export default defineConfig({
           items: [
             { text: '快速启动', link: '/guide/' },
             { text: '项目结构', link: '/guide/project-structure' },
-            { text: '执行计划与状态', link: '/guide/execution-plan' },
             { text: '企业级架构升级', link: '/guide/enterprise-architecture' },
             { text: 'Go vs Java 工程结构', link: '/guide/java-to-go-structure' }
           ]
@@ -227,12 +226,18 @@ export default defineConfig({
             { text: '后端模块接入流程', link: '/tutorial/chapter-8/backend-module-integration' },
             { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-8/permission-menu-integration' },
             { text: '前端页面接入流程', link: '/tutorial/chapter-8/frontend-page-flow' },
+            { text: 'CRM 客户模块示例', link: '/tutorial/chapter-8/business-module-example' },
+            { text: '模块接入验收清单', link: '/tutorial/chapter-8/module-integration-checklist' }
+          ]
+        },
+        {
+          text: '第 8 章扩展实现参考',
+          collapsible: true,
+          items: [
             { text: '数据字典模块落地', link: '/tutorial/chapter-8/dict-module' },
             { text: '账户中心落地', link: '/tutorial/chapter-8/account-center-module' },
             { text: '附件中心落地', link: '/tutorial/chapter-8/attachment-center-module' },
-            { text: 'CRM 客户模块示例', link: '/tutorial/chapter-8/business-module-example' },
-            { text: 'CRM 客户跟进模块落地', link: '/tutorial/chapter-8/customer-followup-module' },
-            { text: '模块接入验收清单', link: '/tutorial/chapter-8/module-integration-checklist' }
+            { text: 'CRM 客户跟进模块落地', link: '/tutorial/chapter-8/customer-followup-module' }
           ]
         },
         {

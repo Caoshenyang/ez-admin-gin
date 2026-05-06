@@ -6,7 +6,7 @@ layout: home
 hero:
   name: EZ Admin
   text: 通用后台管理系统底座
-  tagline: 面向个人项目快速上线，沉淀可长期复用的后台基础能力。
+  tagline: 面向个人项目快速上线，沉淀可长期复用的后台基础能力。当前稳定版为 v1.1.0。
   image:
     src: /images/hero-admin-preview.svg
     alt: EZ Admin 后台底座示意图
@@ -27,7 +27,7 @@ features:
   - title: 开箱即用的部署方案
     details: Docker Compose 多阶段构建、Nginx 反向代理、环境变量配置、自动初始化数据，一条命令上线。
   - title: 从零搭建教程
-    details: 9 章企业级完整版教程，从空仓库到可部署、可复用的后台底座，每一步都可验证、可复现。
+    details: 已稳定为 9 章主线教程，从空仓库到可部署、可复用的后台底座，每一步都可验证、可复现。
   - title: 单仓库全栈结构
     details: 后端、前端、文档、部署配置统一在一个仓库，克隆即开发，结构清晰易维护。
 ---

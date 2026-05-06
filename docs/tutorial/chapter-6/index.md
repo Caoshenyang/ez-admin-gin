@@ -40,17 +40,9 @@ bootstrap/router.go
   ↓
 module/auth
 module/setup
-module/system
-  ├─ iam/user
-  ├─ iam/role
-  ├─ iam/department
-  ├─ iam/post
-  ├─ iam/menu
-  ├─ system/config
-  ├─ system/file
-  ├─ system/operationlog
-  ├─ system/loginlog
-  └─ system/notice
+module/iam/*
+module/system/*
+module/crm/*
 ```
 
 这意味着第 6 章现在讲的，不应该再是“怎么在 `internal/router/router.go` 多挂一个 handler”，而应该是：
@@ -77,11 +69,11 @@ module/system
 
 这一页会按当前真实结构，把一个新模块从“准备接入”讲到“能被系统路由聚合并对外提供接口”。
 
-### 3. 最后再看示例模块和权限菜单接入
+### 3. 最后再看系统模块示例和权限菜单接入
 
 后面再继续看：
 
-- [示例业务模块](./sample-module)
+- [系统模块示例](./sample-module)
 - [权限、菜单与迁移接入](./permission-menu-migration)
 
 这样顺序会更自然，因为你会先知道“模块骨架长什么样”，再去看“示例怎么套这套骨架”。
@@ -102,11 +94,15 @@ module/system
 从这一章开始，新增或重写模块时，教程一律优先沿当前最终版结构继续推进，不再把旧目录当成推荐落点。
 :::
 
+::: info 边界提醒
+第 6 章只负责把后端内置模块边界收稳。前端页面承接放在 [第 7 章](../chapter-7/)，新增业务模块如何接入放在 [第 8 章](../chapter-8/)。
+:::
+
 ## 本章小节
 
 - [模块固定结构](./module-structure)
 - [后端模块接入流程](./backend-module-flow)
-- [示例业务模块](./sample-module)
+- [系统模块示例](./sample-module)
 - [权限、菜单与迁移接入](./permission-menu-migration)
 
 ## 这一章结束后会走到哪里

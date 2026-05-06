@@ -118,7 +118,7 @@ server/
 
 ## 怎么继续读
 
-- 想先看当前整体推进到哪一步：看 [执行计划与状态](/guide/execution-plan)
+- 想继续沿当前稳定主线往下读：进入 [从零搭建教程](/tutorial/)
 - 想先看当前目录为什么这样分：看 [项目结构](/guide/project-structure)
 - 想从工程结构角度理解 Go 的组织方式：看 [Go vs Java 工程结构](/guide/java-to-go-structure)
 - 想先查数据权限模型的具体定义：看 [数据权限模型](/reference/data-scope-model)
