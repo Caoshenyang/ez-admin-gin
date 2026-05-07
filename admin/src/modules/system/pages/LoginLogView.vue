@@ -8,23 +8,14 @@ import {
   NPagination,
   NSelect,
   NSpace,
+  NTag,
 } from 'naive-ui'
-import { h, onMounted, reactive, ref } from 'vue'
+import { h } from 'vue'
 
+import { useRemotePagination } from '@/composables/useRemotePagination'
+import { formatTime } from '@/utils/format'
 import { getLoginLogs } from '../api/login-log'
 import { LoginLogStatus, type LoginLogItem, type LoginLogListQuery } from '../types/login-log'
-
-const loading = ref(false)
-const logs = ref<LoginLogItem[]>([])
-const total = ref(0)
-
-const query = reactive<LoginLogListQuery>({
-  page: 1,
-  page_size: 10,
-  username: '',
-  ip: '',
-  status: 0,
-})
 
 const statusOptions = [
   { label: '状态：全部', value: 0 },
@@ -32,58 +23,84 @@ const statusOptions = [
   { label: '失败', value: LoginLogStatus.Failed },
 ]
 
+const {
+  items: logs,
+  total,
+  loading,
+  query,
+  load,
+  handleSearch,
+  handleReset,
+  handlePageChange,
+  handlePageSizeChange,
+} = useRemotePagination<LoginLogItem, LoginLogListQuery>(
+  (params) =>
+    getLoginLogs({
+      ...params,
+      username: params.username?.trim() || undefined,
+      ip: params.ip?.trim() || undefined,
+      status: params.status === 0 ? undefined : params.status,
+    }),
+  {
+    page: 1,
+    page_size: 10,
+    username: '',
+    ip: '',
+    status: 0,
+  },
+)
+
 const columns: DataTableColumns<LoginLogItem> = [
   {
-    title: '时间',
-    key: 'created_at',
-    width: 140,
+    title: '登录结果',
+    key: 'status',
+    width: 120,
     render(row) {
-      return h('span', { class: 'tabular-nums text-[#374151]' }, formatTime(row.created_at))
+      const ok = row.status === LoginLogStatus.Success
+      return h(
+        NTag,
+        { bordered: false, type: ok ? 'success' : 'error' },
+        { default: () => (ok ? '成功' : '失败') },
+      )
     },
   },
   {
     title: '用户',
     key: 'username',
-    width: 100,
+    width: 140,
     render(row) {
       return h('span', { class: 'font-semibold text-[#111827]' }, row.username || '-')
     },
   },
   {
-    title: '结果',
-    key: 'status',
-    width: 56,
-    align: 'center',
+    title: '登录时间',
+    key: 'created_at',
+    width: 180,
     render(row) {
-      const ok = row.status === LoginLogStatus.Success
-      return h(
-        'span',
-        { style: `color:${ok ? '#18A058' : '#D03050'};font-weight:600;font-size:13px` },
-        ok ? '成功' : '失败',
-      )
+      return h('span', { class: 'text-[#374151]' }, formatTime(row.created_at))
     },
   },
   {
     title: '消息',
     key: 'message',
-    width: 180,
+    minWidth: 200,
     ellipsis: { tooltip: true },
     render(row) {
       return h('span', { class: 'text-[#374151]' }, row.message || '-')
     },
   },
   {
-    title: 'IP',
+    title: 'IP 地址',
     key: 'ip',
-    width: 120,
+    width: 150,
     render(row) {
-      return h('span', { class: 'text-[#6B7280]' }, row.ip || '-')
+      return h('span', { class: 'font-mono text-[13px] text-[#6B7280]' }, row.ip || '-')
     },
   },
   {
     title: 'User-Agent',
     key: 'user_agent',
-    minWidth: 180,
+    minWidth: 220,
     ellipsis: { tooltip: true },
     render(row) {
       return h('span', { class: 'text-[#9CA3AF]' }, row.user_agent || '-')
@@ -93,62 +110,11 @@ const columns: DataTableColumns<LoginLogItem> = [
 
 function rowProps(row: LoginLogItem) {
   if (row.status === LoginLogStatus.Failed) {
-    return { style: 'background: #FDECEF' }
+    return { class: 'log-table-row log-table-row--failed' }
   }
-  return {}
-}
 
-function formatTime(value: string) {
-  if (!value) return '-'
-  const d = new Date(value)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return { class: 'log-table-row' }
 }
-
-function handleSearch() {
-  query.page = 1
-  void loadLogs()
-}
-
-function handleReset() {
-  query.page = 1
-  query.page_size = 10
-  query.username = ''
-  query.ip = ''
-  query.status = 0
-  void loadLogs()
-}
-
-function handlePageChange(page: number) {
-  query.page = page
-  void loadLogs()
-}
-
-function handlePageSizeChange(pageSize: number) {
-  query.page = 1
-  query.page_size = pageSize
-  void loadLogs()
-}
-
-async function loadLogs() {
-  loading.value = true
-  try {
-    const data = await getLoginLogs({
-      ...query,
-      username: query.username?.trim() || undefined,
-      ip: query.ip?.trim() || undefined,
-      status: query.status === 0 ? undefined : query.status,
-    })
-    logs.value = data.items
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  void loadLogs()
-})
 </script>
 
 <template>
@@ -156,7 +122,7 @@ onMounted(() => {
     <section class="admin-page-section">
       <div>
         <h1 class="text-[26px] font-bold text-[#111827]">登录日志</h1>
-        <p class="mt-1 text-sm text-[#6B7280]">查看账号登录记录，按用户名、IP 和状态筛选。</p>
+        <p class="mt-1 text-sm text-[#6B7280]">按用户名、IP 和登录状态回看账号登录轨迹，快速识别异常登录或失败重试。</p>
       </div>
 
       <NCard :bordered="false" class="rounded-lg">
@@ -188,7 +154,7 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
           <span class="text-sm text-[#6B7280]">共 {{ total }} 条</span>
-          <NButton text type="primary" @click="loadLogs">刷新</NButton>
+          <NButton text type="primary" @click="load">刷新</NButton>
         </div>
 
         <NDataTable
@@ -200,14 +166,12 @@ onMounted(() => {
           :loading="loading"
           :pagination="false"
           :row-key="(row: LoginLogItem) => row.id"
-          :bordered="false"
           :row-props="rowProps"
+          :bordered="false"
           flex-height
         />
 
-        <div
-          class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3 text-sm text-[#6B7280]"
-        >
+        <div class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3 text-sm text-[#6B7280]">
           <span>共 {{ total }} 条</span>
           <NPagination
             :page="query.page"
@@ -227,8 +191,8 @@ onMounted(() => {
 <style scoped>
 .log-table :deep(.n-data-table-th) {
   font-weight: 700;
-  color: #4B5563;
-  background: #F9FAFB;
+  color: #4b5563;
+  background: #f9fafb;
   font-size: 13px;
 }
 
@@ -238,15 +202,11 @@ onMounted(() => {
   padding: 10px 16px;
 }
 
+.log-table :deep(.log-table-row--failed .n-data-table-td) {
+  background: #fef2f2;
+}
+
 .log-table :deep(.n-data-table-tr:hover .n-data-table-td) {
-  background: unset !important;
-}
-
-.log-table :deep(.n-data-table-tr) {
-  transition: none;
-}
-
-.log-table :deep(.n-data-table-tr:hover) {
-  filter: brightness(0.97);
+  background: #f8fbff;
 }
 </style>

@@ -18,6 +18,17 @@ func NewHandler(service *postapp.Service, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
+// List godoc
+// @Summary      查询岗位列表
+// @Tags         IAM / 岗位管理
+// @Accept       json
+// @Produce      json
+// @Param        keyword    query     string  false  "关键词"
+// @Param        status     query     int     false  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/posts [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -34,6 +45,16 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Create godoc
+// @Summary      创建岗位
+// @Tags         IAM / 岗位管理
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreateRequest  true  "岗位信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/posts [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,6 +71,17 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Update godoc
+// @Summary      更新岗位
+// @Tags         IAM / 岗位管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint            true  "岗位 ID"
+// @Param        body  body      UpdateRequest   true  "岗位信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/posts/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	postID, ok := httpx.UintIDParam(c, "id", "岗位 ID", h.log)
 	if !ok {
@@ -71,6 +103,17 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateStatus godoc
+// @Summary      更新岗位状态
+// @Tags         IAM / 岗位管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                  true  "岗位 ID"
+// @Param        body  body      UpdateStatusRequest   true  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/posts/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	postID, ok := httpx.UintIDParam(c, "id", "岗位 ID", h.log)
 	if !ok {

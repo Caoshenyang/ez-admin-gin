@@ -16,32 +16,37 @@ import {
   NUpload,
   useMessage,
 } from 'naive-ui'
-import { h, onMounted, reactive, ref } from 'vue'
+import { h, ref } from 'vue'
 
+import { usePermission } from '@/composables/usePermission'
+import { useRemotePagination } from '@/composables/useRemotePagination'
+import { STATUS_FILTER_OPTIONS } from '@/constants/status'
+import { formatSize, formatTime } from '@/utils/format'
 import { getFiles, uploadFile } from '../api/file'
-import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import { FileStatus, type FileItem, type FileListQuery } from '../types/file'
 
 const message = useMessage()
-const loading = ref(false)
-const files = ref<FileItem[]>([])
-const total = ref(0)
+const { canUse } = usePermission()
 const successText = ref('')
 const uploading = ref(false)
 
-const query = reactive<FileListQuery>({
+const {
+  items: files,
+  total,
+  loading,
+  query,
+  load,
+  handleSearch,
+  handleReset,
+  handlePageChange,
+  handlePageSizeChange,
+} = useRemotePagination<FileItem, FileListQuery>(getFiles, {
   page: 1,
   page_size: 10,
   keyword: '',
   ext: '',
   status: 0,
 })
-
-const statusFilterOptions = [
-  { label: '状态：全部', value: 0 },
-  { label: '启用', value: FileStatus.Enabled },
-  { label: '禁用', value: FileStatus.Disabled },
-]
 
 const extFilterOptions = [
   { label: '类型：全部', value: '' },
@@ -65,8 +70,7 @@ const columns: DataTableColumns<FileItem> = [
         h(
           'div',
           {
-            class:
-              'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg',
+            class: 'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg',
             style: isImage ? 'background:#f0f7ff;color:#3b82f6' : 'background:#f3f4f6;color:#6b7280',
           },
           [
@@ -131,66 +135,11 @@ const columns: DataTableColumns<FileItem> = [
   },
 ]
 
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-
-function formatTime(value: string) {
-  return value ? new Date(value).toLocaleString() : '-'
-}
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 function copyURL(row: FileItem) {
   navigator.clipboard.writeText(row.url).then(
     () => message.success('链接已复制'),
     () => message.error('复制失败'),
   )
-}
-
-function handleSearch() {
-  query.page = 1
-  void loadFiles()
-}
-
-function handleReset() {
-  query.page = 1
-  query.page_size = 10
-  query.keyword = ''
-  query.ext = ''
-  query.status = 0
-  void loadFiles()
-}
-
-function handlePageChange(page: number) {
-  query.page = page
-  void loadFiles()
-}
-
-function handlePageSizeChange(pageSize: number) {
-  query.page = 1
-  query.page_size = pageSize
-  void loadFiles()
-}
-
-async function loadFiles() {
-  loading.value = true
-  try {
-    const data = await getFiles({
-      ...query,
-      keyword: query.keyword?.trim() || undefined,
-      ext: query.ext || undefined,
-      status: query.status === 0 ? undefined : query.status,
-    })
-    files.value = data.items
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
 }
 
 async function handleUpload({ file }: { file: UploadFileInfo }) {
@@ -203,17 +152,13 @@ async function handleUpload({ file }: { file: UploadFileInfo }) {
     await uploadFile(formData)
     successText.value = `文件 ${file.name} 上传成功`
     message.success('文件上传成功')
-    await loadFiles()
+    await load()
   } catch {
     message.error('文件上传失败')
   } finally {
     uploading.value = false
   }
 }
-
-onMounted(() => {
-  void loadFiles()
-})
 </script>
 
 <template>
@@ -261,7 +206,7 @@ onMounted(() => {
             @keyup.enter="handleSearch"
           />
           <NSelect v-model:value="query.ext" :options="extFilterOptions" class="w-36" />
-          <NSelect v-model:value="query.status" :options="statusFilterOptions" class="w-36" />
+          <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-36" />
           <NButton type="primary" @click="handleSearch">查询</NButton>
           <NButton @click="handleReset">重置</NButton>
         </NSpace>
@@ -274,7 +219,7 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
           <span class="text-sm text-[#6B7280]">共 {{ total }} 个文件</span>
-          <NButton text type="primary" @click="loadFiles">刷新</NButton>
+          <NButton text type="primary" @click="load">刷新</NButton>
         </div>
 
         <NDataTable

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CloseOutline } from '@vicons/ionicons5'
-import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
+import type { DataTableColumns, FormRules } from 'naive-ui'
 import {
   NButton,
   NCard,
@@ -18,15 +18,16 @@ import {
   NTag,
   useMessage,
 } from 'naive-ui'
-import { h, onMounted, reactive, ref } from 'vue'
+import { h } from 'vue'
 
+import { useModalForm } from '@/composables/useModalForm'
+import { usePermission } from '@/composables/usePermission'
+import { useRemotePagination } from '@/composables/useRemotePagination'
+import { useStatusToggle } from '@/composables/useStatusToggle'
+import { STATUS_FILTER_OPTIONS, STATUS_FORM_OPTIONS } from '@/constants/status'
+import { formatTime } from '@/utils/format'
 import { createNotice, getNotices, updateNotice, updateNoticeStatus } from '../api/notice'
-import { buttonPermissionCodes } from '@/router/dynamic-menu'
-import {
-  NoticeStatus,
-  type NoticeItem,
-  type NoticeListQuery,
-} from '../types/notice'
+import { NoticeStatus, type NoticeItem, type NoticeListQuery } from '../types/notice'
 
 interface NoticeFormModel {
   id: number
@@ -38,44 +39,35 @@ interface NoticeFormModel {
 }
 
 const message = useMessage()
-const loading = ref(false)
-const saving = ref(false)
-const notices = ref<NoticeItem[]>([])
-const total = ref(0)
+const { canUse } = usePermission()
 
-const query = reactive<NoticeListQuery>({
+const {
+  items: notices,
+  total,
+  loading,
+  query,
+  load,
+  handleSearch,
+  handleReset,
+  handlePageChange,
+  handlePageSizeChange,
+} = useRemotePagination<NoticeItem, NoticeListQuery>(getNotices, {
   page: 1,
   page_size: 10,
   keyword: '',
   status: 0,
 })
 
-const formRef = ref<FormInst | null>(null)
-const formVisible = ref(false)
-const formMode = ref<'create' | 'edit'>('create')
-const formModel = reactive<NoticeFormModel>({
-  id: 0,
-  title: '',
-  content: '',
-  sort: 0,
-  status: NoticeStatus.Enabled,
-  remark: '',
-})
-
-const statusFilterOptions = [
-  { label: '状态：全部', value: 0 },
-  { label: '启用', value: NoticeStatus.Enabled },
-  { label: '禁用', value: NoticeStatus.Disabled },
-]
-
-const statusFormOptions = [
-  { label: '启用', value: NoticeStatus.Enabled },
-  { label: '禁用', value: NoticeStatus.Disabled },
-]
-
-const rules: FormRules = {
-  title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }],
+function defaultFormModel(): NoticeFormModel {
+  return { id: 0, title: '', content: '', sort: 0, status: NoticeStatus.Enabled, remark: '' }
 }
+
+const { formRef, formVisible, formMode, formModel, saving, openCreate, openEdit, handleSubmit } =
+  useModalForm<NoticeFormModel>(defaultFormModel, {
+    rules: { title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }] } as FormRules,
+  })
+
+const { handleToggleStatus } = useStatusToggle<NoticeItem>(updateNoticeStatus, { onSuccess: load })
 
 const columns: DataTableColumns<NoticeItem> = [
   {
@@ -170,126 +162,28 @@ const columns: DataTableColumns<NoticeItem> = [
   },
 ]
 
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-
-function formatTime(value: string) {
-  if (!value) return '-'
-  const d = new Date(value)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function resetForm() {
-  Object.assign(formModel, {
-    id: 0,
-    title: '',
-    content: '',
-    sort: 0,
-    status: NoticeStatus.Enabled,
-    remark: '',
-  })
-}
-
-function handleSearch() {
-  query.page = 1
-  void loadNotices()
-}
-
-function handleReset() {
-  query.page = 1
-  query.page_size = 10
-  query.keyword = ''
-  query.status = 0
-  void loadNotices()
-}
-
-function handlePageChange(page: number) {
-  query.page = page
-  void loadNotices()
-}
-
-function handlePageSizeChange(pageSize: number) {
-  query.page = 1
-  query.page_size = pageSize
-  void loadNotices()
-}
-
-function openCreate() {
-  formMode.value = 'create'
-  resetForm()
-  formVisible.value = true
-}
-
-function openEdit(row: NoticeItem) {
-  formMode.value = 'edit'
-  Object.assign(formModel, {
-    id: row.id,
-    title: row.title,
-    content: row.content,
-    sort: row.sort,
-    status: row.status,
-    remark: row.remark,
-  })
-  formVisible.value = true
-}
-
-async function loadNotices() {
-  loading.value = true
-  try {
-    const data = await getNotices({
-      ...query,
-      keyword: query.keyword?.trim() || undefined,
-      status: query.status === 0 ? undefined : query.status,
+async function onSubmit() {
+  if (formMode.value === 'create') {
+    await createNotice({
+      title: formModel.title,
+      content: formModel.content,
+      sort: formModel.sort,
+      status: formModel.status,
+      remark: formModel.remark,
     })
-    notices.value = data.items
-    total.value = data.total
-  } finally {
-    loading.value = false
+    message.success('公告创建成功')
+  } else {
+    await updateNotice(formModel.id, {
+      title: formModel.title,
+      content: formModel.content,
+      sort: formModel.sort,
+      status: formModel.status,
+      remark: formModel.remark,
+    })
+    message.success('公告更新成功')
   }
+  await load()
 }
-
-async function handleSubmit() {
-  await formRef.value?.validate()
-  saving.value = true
-  try {
-    if (formMode.value === 'create') {
-      await createNotice({
-        title: formModel.title,
-        content: formModel.content,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      message.success('公告创建成功')
-    } else {
-      await updateNotice(formModel.id, {
-        title: formModel.title,
-        content: formModel.content,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      message.success('公告更新成功')
-    }
-
-    formVisible.value = false
-    await loadNotices()
-  } finally {
-    saving.value = false
-  }
-}
-
-async function handleToggleStatus(row: NoticeItem, status: NoticeStatus) {
-  await updateNoticeStatus(row.id, { status })
-  message.success('公告状态已更新')
-  await loadNotices()
-}
-
-onMounted(() => {
-  void loadNotices()
-})
 </script>
 
 <template>
@@ -315,7 +209,7 @@ onMounted(() => {
             class="w-56"
             @keyup.enter="handleSearch"
           />
-          <NSelect v-model:value="query.status" :options="statusFilterOptions" class="w-36" />
+          <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-36" />
           <NButton type="primary" @click="handleSearch">查询</NButton>
           <NButton @click="handleReset">重置</NButton>
         </NSpace>
@@ -328,7 +222,7 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
           <span class="text-sm text-[#6B7280]">共 {{ total }} 条</span>
-          <NButton text type="primary" @click="loadNotices">刷新</NButton>
+          <NButton text type="primary" @click="load">刷新</NButton>
         </div>
 
         <NDataTable
@@ -432,7 +326,7 @@ onMounted(() => {
           <section class="form-section form-section--muted">
             <div class="form-section-grid">
               <NFormItem label="状态">
-                <NSelect v-model:value="formModel.status" :options="statusFormOptions" />
+                <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
               </NFormItem>
 
               <NFormItem label="备注">
@@ -452,7 +346,7 @@ onMounted(() => {
             type="primary"
             class="modal-footer-button modal-footer-button--primary"
             :loading="saving"
-            @click="handleSubmit"
+            @click="handleSubmit(onSubmit)"
           >
             保存
           </NButton>

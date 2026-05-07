@@ -18,6 +18,17 @@ func NewHandler(service *roleapp.Service, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
+// List godoc
+// @Summary      查询角色列表
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        keyword    query     string  false  "关键词"
+// @Param        status     query     int     false  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/roles [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -34,6 +45,16 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Create godoc
+// @Summary      创建角色
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreateRequest  true  "角色信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/roles [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,6 +71,17 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Update godoc
+// @Summary      更新角色
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint            true  "角色 ID"
+// @Param        body  body      UpdateRequest   true  "角色信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/roles/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {
@@ -71,6 +103,17 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateStatus godoc
+// @Summary      更新角色状态
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                  true  "角色 ID"
+// @Param        body  body      UpdateStatusRequest   true  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/roles/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {
@@ -91,6 +134,17 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 	httpx.Success(c, gin.H{"id": roleID, "status": req.Status})
 }
 
+// UpdatePermissions godoc
+// @Summary      更新角色接口权限
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                      true  "角色 ID"
+// @Param        body  body      UpdatePermissionsRequest  true  "权限列表"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/roles/{id}/permissions [post]
 func (h *Handler) UpdatePermissions(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {
@@ -112,6 +166,17 @@ func (h *Handler) UpdatePermissions(c *gin.Context) {
 	httpx.Success(c, gin.H{"id": roleID, "code": roleCode, "permissions": permissions})
 }
 
+// UpdateMenus godoc
+// @Summary      更新角色菜单权限
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                  true  "角色 ID"
+// @Param        body  body      UpdateMenusRequest    true  "菜单 ID 列表"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/roles/{id}/menus [post]
 func (h *Handler) UpdateMenus(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {

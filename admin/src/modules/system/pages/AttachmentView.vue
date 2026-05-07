@@ -12,7 +12,6 @@ import {
   NIcon,
   NInput,
   NModal,
-  NPagination,
   NPopconfirm,
   NSelect,
   NSpace,
@@ -21,15 +20,20 @@ import {
   NUpload,
   useMessage,
 } from 'naive-ui'
-import { computed, h, onMounted, reactive, ref } from 'vue'
+import { computed, h, ref } from 'vue'
 
+import { useModalForm } from '@/composables/useModalForm'
+import { usePermission } from '@/composables/usePermission'
+import { useRemotePagination } from '@/composables/useRemotePagination'
+import { useStatusToggle } from '@/composables/useStatusToggle'
+import { STATUS_FILTER_OPTIONS, STATUS_FORM_OPTIONS } from '@/constants/status'
+import { formatSize, formatTime } from '@/utils/format'
 import {
   createAttachment,
   getAttachments,
   updateAttachment,
   updateAttachmentStatus,
 } from '../api/attachment'
-import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import {
   AttachmentStatus,
   type AttachmentItem,
@@ -50,18 +54,61 @@ interface EditFormModel extends UpdateAttachmentPayload {
 }
 
 const message = useMessage()
-const loading = ref(false)
-const saving = ref(false)
-const attachments = ref<AttachmentItem[]>([])
-const total = ref(0)
+const { canUse } = usePermission()
+
 const uploadModalVisible = ref(false)
-const editModalVisible = ref(false)
 const selectedUploadFile = ref<File | null>(null)
 const uploadFileList = ref<UploadFileInfo[]>([])
 const uploadFormRef = ref<FormInst | null>(null)
-const editFormRef = ref<FormInst | null>(null)
+const saving = ref(false)
 
-const query = reactive<AttachmentListQuery>({
+const uploadFormModel = ref<UploadFormModel>({
+  display_name: '',
+  category: '',
+  biz_type: '',
+  status: AttachmentStatus.Enabled,
+  remark: '',
+})
+
+const uploadRules: FormRules = {
+  display_name: [{ max: 255, message: '附件名称不能超过 255 个字符', trigger: ['blur', 'input'] }],
+  category: [{ max: 64, message: '附件分类不能超过 64 个字符', trigger: ['blur', 'input'] }],
+  biz_type: [{ max: 64, message: '业务类型不能超过 64 个字符', trigger: ['blur', 'input'] }],
+  remark: [{ max: 255, message: '备注不能超过 255 个字符', trigger: ['blur', 'input'] }],
+}
+
+function defaultEditForm(): EditFormModel {
+  return { id: 0, display_name: '', category: '', biz_type: '', status: AttachmentStatus.Enabled, remark: '' }
+}
+
+const {
+  formRef: editFormRef,
+  formVisible: editModalVisible,
+  formMode,
+  formModel: editFormModel,
+  saving: editSaving,
+  openEdit: openEditModal,
+  handleSubmit: handleEditSubmit,
+} = useModalForm<EditFormModel>(defaultEditForm, {
+  rules: {
+    display_name: [{ required: true, message: '请输入附件名称', trigger: ['blur', 'input'] }],
+    category: [{ max: 64, message: '附件分类不能超过 64 个字符', trigger: ['blur', 'input'] }],
+    biz_type: [{ max: 64, message: '业务类型不能超过 64 个字符', trigger: ['blur', 'input'] }],
+    remark: [{ max: 255, message: '备注不能超过 255 个字符', trigger: ['blur', 'input'] }],
+  } as FormRules,
+})
+
+const {
+  items: attachments,
+  total,
+  loading,
+  query,
+  load,
+  handleSearch,
+  handleReset,
+  handlePageChange,
+  handlePageSizeChange,
+} = useRemotePagination<AttachmentItem, AttachmentListQuery>(getAttachments, {
   page: 1,
   page_size: 10,
   keyword: '',
@@ -71,33 +118,10 @@ const query = reactive<AttachmentListQuery>({
   status: 0,
 })
 
-const uploadFormModel = reactive<UploadFormModel>({
-  display_name: '',
-  category: '',
-  biz_type: '',
-  status: AttachmentStatus.Enabled,
-  remark: '',
-})
-
-const editFormModel = reactive<EditFormModel>({
-  id: 0,
-  display_name: '',
-  category: '',
-  biz_type: '',
-  status: AttachmentStatus.Enabled,
-  remark: '',
-})
-
-const statusOptions = [
-  { label: '状态：全部', value: 0 },
-  { label: '启用', value: AttachmentStatus.Enabled },
-  { label: '禁用', value: AttachmentStatus.Disabled },
-]
-
-const statusFormOptions = [
-  { label: '启用', value: AttachmentStatus.Enabled },
-  { label: '禁用', value: AttachmentStatus.Disabled },
-]
+const { handleToggleStatus } = useStatusToggle<AttachmentItem>(
+  async (id, payload) => updateAttachmentStatus(id, payload.status as AttachmentStatus),
+  { onSuccess: load },
+)
 
 const extFilterOptions = [
   { label: '类型：全部', value: '' },
@@ -107,19 +131,7 @@ const extFilterOptions = [
   { label: 'Word', value: '.docx' },
 ]
 
-const uploadRules: FormRules = {
-  display_name: [{ max: 255, message: '附件名称不能超过 255 个字符', trigger: ['blur', 'input'] }],
-  category: [{ max: 64, message: '附件分类不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  biz_type: [{ max: 64, message: '业务类型不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  remark: [{ max: 255, message: '备注不能超过 255 个字符', trigger: ['blur', 'input'] }],
-}
-
-const editRules: FormRules = {
-  display_name: [{ required: true, message: '请输入附件名称', trigger: ['blur', 'input'] }],
-  category: [{ max: 64, message: '附件分类不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  biz_type: [{ max: 64, message: '业务类型不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  remark: [{ max: 255, message: '备注不能超过 255 个字符', trigger: ['blur', 'input'] }],
-}
+const hasRows = computed(() => attachments.value.length > 0)
 
 const columns: DataTableColumns<AttachmentItem> = [
   {
@@ -248,22 +260,6 @@ const columns: DataTableColumns<AttachmentItem> = [
   },
 ]
 
-const hasRows = computed(() => attachments.value.length > 0)
-
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-
-function formatTime(value: string) {
-  return value ? new Date(value).toLocaleString() : '-'
-}
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 function copyURL(url: string) {
   navigator.clipboard.writeText(url).then(
     () => message.success('链接已复制'),
@@ -276,73 +272,14 @@ function openUploadModal() {
 }
 
 function resetUploadModal() {
-  uploadFormModel.display_name = ''
-  uploadFormModel.category = ''
-  uploadFormModel.biz_type = ''
-  uploadFormModel.status = AttachmentStatus.Enabled
-  uploadFormModel.remark = ''
+  uploadFormModel.value = { display_name: '', category: '', biz_type: '', status: AttachmentStatus.Enabled, remark: '' }
   uploadFileList.value = []
   selectedUploadFile.value = null
-}
-
-function openEditModal(row: AttachmentItem) {
-  editFormModel.id = row.id
-  editFormModel.display_name = row.display_name
-  editFormModel.category = row.category
-  editFormModel.biz_type = row.biz_type
-  editFormModel.status = row.status
-  editFormModel.remark = row.remark
-  editModalVisible.value = true
-}
-
-function handleSearch() {
-  query.page = 1
-  void loadAttachments()
-}
-
-function handleReset() {
-  query.page = 1
-  query.page_size = 10
-  query.keyword = ''
-  query.category = ''
-  query.biz_type = ''
-  query.ext = ''
-  query.status = 0
-  void loadAttachments()
-}
-
-function handlePageChange(page: number) {
-  query.page = page
-  void loadAttachments()
-}
-
-function handlePageSizeChange(pageSize: number) {
-  query.page = 1
-  query.page_size = pageSize
-  void loadAttachments()
 }
 
 function handleUpdateFileList(fileList: UploadFileInfo[]) {
   uploadFileList.value = fileList.slice(-1)
   selectedUploadFile.value = uploadFileList.value[0]?.file ?? null
-}
-
-async function loadAttachments() {
-  loading.value = true
-  try {
-    const data = await getAttachments({
-      ...query,
-      keyword: query.keyword?.trim() || undefined,
-      category: query.category?.trim() || undefined,
-      biz_type: query.biz_type?.trim() || undefined,
-      ext: query.ext || undefined,
-      status: query.status === 0 ? undefined : query.status,
-    })
-    attachments.value = data.items
-    total.value = data.total
-  } finally {
-    loading.value = false
-  }
 }
 
 async function handleSubmitUpload() {
@@ -360,16 +297,16 @@ async function handleSubmitUpload() {
   saving.value = true
   try {
     await createAttachment(selectedUploadFile.value, {
-      display_name: uploadFormModel.display_name.trim() || undefined,
-      category: uploadFormModel.category.trim() || undefined,
-      biz_type: uploadFormModel.biz_type.trim() || undefined,
-      status: uploadFormModel.status,
-      remark: uploadFormModel.remark.trim() || undefined,
+      display_name: uploadFormModel.value.display_name.trim() || undefined,
+      category: uploadFormModel.value.category.trim() || undefined,
+      biz_type: uploadFormModel.value.biz_type.trim() || undefined,
+      status: uploadFormModel.value.status,
+      remark: uploadFormModel.value.remark.trim() || undefined,
     })
     message.success('附件上传成功')
     uploadModalVisible.value = false
     resetUploadModal()
-    await loadAttachments()
+    await load()
   } catch (error) {
     const errorMessage = axios.isAxiosError<{ message?: string }>(error)
       ? error.response?.data?.message ?? '附件上传失败'
@@ -380,51 +317,17 @@ async function handleSubmitUpload() {
   }
 }
 
-async function handleSubmitEdit() {
-  try {
-    await editFormRef.value?.validate()
-  } catch {
-    return
-  }
-
-  saving.value = true
-  try {
-    await updateAttachment(editFormModel.id, {
-      display_name: editFormModel.display_name.trim(),
-      category: editFormModel.category.trim(),
-      biz_type: editFormModel.biz_type.trim(),
-      status: editFormModel.status,
-      remark: editFormModel.remark.trim(),
-    })
-    message.success('附件信息已更新')
-    editModalVisible.value = false
-    await loadAttachments()
-  } catch (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '更新附件失败'
-      : '更新附件失败'
-    message.error(errorMessage)
-  } finally {
-    saving.value = false
-  }
+async function onEditSubmit() {
+  await updateAttachment(editFormModel.id, {
+    display_name: editFormModel.display_name.trim(),
+    category: editFormModel.category.trim(),
+    biz_type: editFormModel.biz_type.trim(),
+    status: editFormModel.status,
+    remark: editFormModel.remark.trim(),
+  })
+  message.success('附件信息已更新')
+  await load()
 }
-
-async function handleToggleStatus(row: AttachmentItem, status: AttachmentStatus) {
-  try {
-    await updateAttachmentStatus(row.id, status)
-    message.success(status === AttachmentStatus.Enabled ? '附件已启用' : '附件已禁用')
-    await loadAttachments()
-  } catch (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '更新附件状态失败'
-      : '更新附件状态失败'
-    message.error(errorMessage)
-  }
-}
-
-onMounted(() => {
-  void loadAttachments()
-})
 </script>
 
 <template>
@@ -467,7 +370,7 @@ onMounted(() => {
             @keyup.enter="handleSearch"
           />
           <NSelect v-model:value="query.ext" :options="extFilterOptions" class="w-36" />
-          <NSelect v-model:value="query.status" :options="statusOptions" class="w-32" />
+          <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-32" />
           <NButton type="primary" @click="handleSearch">查询</NButton>
           <NButton quaternary @click="handleReset">重置</NButton>
         </NSpace>
@@ -532,7 +435,7 @@ onMounted(() => {
         </div>
 
         <NFormItem label="状态" path="status">
-          <NSelect v-model:value="uploadFormModel.status" :options="statusFormOptions" />
+          <NSelect v-model:value="uploadFormModel.status" :options="STATUS_FORM_OPTIONS" />
         </NFormItem>
 
         <NFormItem label="备注" path="remark">
@@ -569,7 +472,7 @@ onMounted(() => {
       class="max-w-[620px] rounded-2xl"
       :bordered="false"
     >
-      <NForm ref="editFormRef" :model="editFormModel" :rules="editRules" label-placement="top">
+      <NForm ref="editFormRef" :model="editFormModel" :rules="rules" label-placement="top">
         <NFormItem label="附件名称" path="display_name">
           <NInput v-model:value="editFormModel.display_name" placeholder="请输入附件名称" />
         </NFormItem>
@@ -584,7 +487,7 @@ onMounted(() => {
         </div>
 
         <NFormItem label="状态" path="status">
-          <NSelect v-model:value="editFormModel.status" :options="statusFormOptions" />
+          <NSelect v-model:value="editFormModel.status" :options="STATUS_FORM_OPTIONS" />
         </NFormItem>
 
         <NFormItem label="备注" path="remark">
@@ -593,7 +496,7 @@ onMounted(() => {
 
         <div class="flex justify-end gap-3">
           <NButton @click="editModalVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="handleSubmitEdit">保存</NButton>
+          <NButton type="primary" :loading="editSaving" @click="handleEditSubmit(onEditSubmit)">保存</NButton>
         </div>
       </NForm>
     </NModal>

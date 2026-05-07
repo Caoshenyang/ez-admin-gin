@@ -22,6 +22,20 @@ func NewHandler(service *userapp.Service, log *zap.Logger) *Handler {
 	}
 }
 
+// List godoc
+// @Summary      查询用户列表
+// @Tags         IAM / 用户管理
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int     false  "页码"
+// @Param        page_size  query     int     false  "每页条数"
+// @Param        keyword    query     string  false  "关键词"
+// @Param        status     query     int     false  "状态"
+// @Param        department_id  query  int    false  "部门 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/users [get]
 func (h *Handler) List(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -43,6 +57,17 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Create godoc
+// @Summary      创建用户
+// @Tags         IAM / 用户管理
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreateRequest  true  "用户信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/users [post]
 func (h *Handler) Create(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -64,6 +89,18 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Update godoc
+// @Summary      更新用户
+// @Tags         IAM / 用户管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint            true  "用户 ID"
+// @Param        body  body      UpdateRequest   true  "用户信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/users/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -91,6 +128,18 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateStatus godoc
+// @Summary      更新用户状态
+// @Tags         IAM / 用户管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                  true  "用户 ID"
+// @Param        body  body      UpdateStatusRequest   true  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/users/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -120,6 +169,18 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 	})
 }
 
+// UpdateRoles godoc
+// @Summary      更新用户角色
+// @Tags         IAM / 用户管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                  true  "用户 ID"
+// @Param        body  body      UpdateRolesRequest    true  "角色 ID 列表"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/users/{id}/roles [post]
 func (h *Handler) UpdateRoles(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {

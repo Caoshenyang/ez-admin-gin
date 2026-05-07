@@ -18,6 +18,17 @@ func NewHandler(service *departmentapp.Service, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
+// List godoc
+// @Summary      查询部门列表
+// @Tags         IAM / 部门管理
+// @Accept       json
+// @Produce      json
+// @Param        keyword    query     string  false  "关键词"
+// @Param        status     query     int     false  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/departments [get]
 func (h *Handler) List(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -39,6 +50,16 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Create godoc
+// @Summary      创建部门
+// @Tags         IAM / 部门管理
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreateRequest  true  "部门信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/departments [post]
 func (h *Handler) Create(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -60,6 +81,17 @@ func (h *Handler) Create(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Update godoc
+// @Summary      更新部门
+// @Tags         IAM / 部门管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint            true  "部门 ID"
+// @Param        body  body      UpdateRequest   true  "部门信息"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/departments/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -86,6 +118,17 @@ func (h *Handler) Update(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateStatus godoc
+// @Summary      更新部门状态
+// @Tags         IAM / 部门管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint                  true  "部门 ID"
+// @Param        body  body      UpdateStatusRequest   true  "状态"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/departments/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {

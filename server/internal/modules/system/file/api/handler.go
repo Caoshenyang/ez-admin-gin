@@ -19,6 +19,21 @@ func NewHandler(service *fileapp.Service, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
+// List godoc
+// @Summary      查询文件列表
+// @Tags         System / 文件管理
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int     false  "页码"
+// @Param        page_size  query     int     false  "每页条数"
+// @Param        keyword    query     string  false  "关键词"
+// @Param        ext        query     string  false  "文件后缀"
+// @Param        status     query     int     false  "状态"
+// @Success      200  {object}  httpx.Body{data=ListResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/files [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -35,6 +50,17 @@ func (h *Handler) List(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// Upload godoc
+// @Summary      上传文件
+// @Tags         System / 文件管理
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        file  formData  file  true  "文件"
+// @Success      200  {object}  httpx.Body{data=Response}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/files [post]
 func (h *Handler) Upload(c *gin.Context) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {

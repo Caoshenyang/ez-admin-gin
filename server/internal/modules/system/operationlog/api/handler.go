@@ -18,6 +18,22 @@ func NewHandler(service *operationlogapp.Service, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
+// List godoc
+// @Summary      查询操作日志列表
+// @Tags         System / 操作日志
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int     false  "页码"
+// @Param        page_size  query     int     false  "每页条数"
+// @Param        username   query     string  false  "用户名"
+// @Param        method     query     string  false  "请求方法"
+// @Param        path       query     string  false  "请求路径"
+// @Param        success    query     string  false  "是否成功，支持 true/false/1/0"
+// @Success      200  {object}  httpx.Body{data=ListResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/operation-logs [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

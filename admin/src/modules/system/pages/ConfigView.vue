@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CloseOutline } from '@vicons/ionicons5'
-import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
+import type { DataTableColumns, FormRules } from 'naive-ui'
 import {
   NAlert,
   NButton,
@@ -19,15 +19,15 @@ import {
   NTag,
   useMessage,
 } from 'naive-ui'
-import { h, onMounted, reactive, ref } from 'vue'
+import { h, ref } from 'vue'
 
+import { useModalForm } from '@/composables/useModalForm'
+import { usePermission } from '@/composables/usePermission'
+import { useRemotePagination } from '@/composables/useRemotePagination'
+import { useStatusToggle } from '@/composables/useStatusToggle'
+import { STATUS_FILTER_OPTIONS, STATUS_FORM_OPTIONS } from '@/constants/status'
 import { createConfig, getConfigs, updateConfig, updateConfigStatus } from '../api/config'
-import { buttonPermissionCodes } from '@/router/dynamic-menu'
-import {
-  ConfigStatus,
-  type ConfigItem,
-  type ConfigListQuery,
-} from '../types/config'
+import { ConfigStatus, type ConfigItem, type ConfigListQuery } from '../types/config'
 
 interface ConfigFormModel {
   id: number
@@ -41,13 +41,20 @@ interface ConfigFormModel {
 }
 
 const message = useMessage()
-const loading = ref(false)
-const saving = ref(false)
-const configs = ref<ConfigItem[]>([])
-const total = ref(0)
+const { canUse } = usePermission()
 const successText = ref('')
 
-const query = reactive<ConfigListQuery>({
+const {
+  items: configs,
+  total,
+  loading,
+  query,
+  load,
+  handleSearch,
+  handleReset,
+  handlePageChange,
+  handlePageSizeChange,
+} = useRemotePagination<ConfigItem, ConfigListQuery>(getConfigs, {
   page: 1,
   page_size: 10,
   keyword: '',
@@ -55,37 +62,26 @@ const query = reactive<ConfigListQuery>({
   status: 0,
 })
 
-const formRef = ref<FormInst | null>(null)
-const formVisible = ref(false)
-const formMode = ref<'create' | 'edit'>('create')
-const formModel = reactive<ConfigFormModel>({
-  id: 0,
-  group_code: '',
-  key: '',
-  name: '',
-  value: '',
-  sort: 0,
-  status: ConfigStatus.Enabled,
-  remark: '',
-})
-
-const statusFilterOptions = [
-  { label: '状态：全部', value: 0 },
-  { label: '启用', value: ConfigStatus.Enabled },
-  { label: '禁用', value: ConfigStatus.Disabled },
-]
-
-const statusFormOptions = [
-  { label: '启用', value: ConfigStatus.Enabled },
-  { label: '禁用', value: ConfigStatus.Disabled },
-]
-
-const rules: FormRules = {
-  group_code: [{ required: true, message: '请输入配置分组', trigger: 'blur' }],
-  key: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
-  value: [{ required: true, message: '请输入配置值', trigger: 'blur' }],
+function defaultFormModel(): ConfigFormModel {
+  return { id: 0, group_code: '', key: '', name: '', value: '', sort: 0, status: ConfigStatus.Enabled, remark: '' }
 }
+
+const { formRef, formVisible, formMode, formModel, saving, rules, openCreate, openEdit, handleSubmit } =
+  useModalForm<ConfigFormModel>(defaultFormModel, {
+    rules: {
+      group_code: [{ required: true, message: '请输入配置分组', trigger: 'blur' }],
+      key: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
+      name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
+      value: [{ required: true, message: '请输入配置值', trigger: 'blur' }],
+    } as FormRules,
+  })
+
+const { handleToggleStatus } = useStatusToggle<ConfigItem>(updateConfigStatus, {
+  onSuccess: async () => {
+    successText.value = '配置状态已更新'
+    await load()
+  },
+})
 
 const columns: DataTableColumns<ConfigItem> = [
   {
@@ -177,135 +173,26 @@ const columns: DataTableColumns<ConfigItem> = [
   },
 ]
 
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-
-function formatTime(value: string) {
-  return value ? new Date(value).toLocaleString() : '-'
-}
-
-function resetForm() {
-  Object.assign(formModel, {
-    id: 0,
-    group_code: '',
-    key: '',
-    name: '',
-    value: '',
-    sort: 0,
-    status: ConfigStatus.Enabled,
-    remark: '',
-  })
-}
-
-function handleSearch() {
-  query.page = 1
-  void loadConfigs()
-}
-
-function handleReset() {
-  query.page = 1
-  query.page_size = 10
-  query.keyword = ''
-  query.group_code = ''
-  query.status = 0
-  void loadConfigs()
-}
-
-function handlePageChange(page: number) {
-  query.page = page
-  void loadConfigs()
-}
-
-function handlePageSizeChange(pageSize: number) {
-  query.page = 1
-  query.page_size = pageSize
-  void loadConfigs()
-}
-
-function openCreate() {
-  formMode.value = 'create'
-  resetForm()
-  formVisible.value = true
-}
-
-function openEdit(row: ConfigItem) {
-  formMode.value = 'edit'
-  Object.assign(formModel, {
-    id: row.id,
-    group_code: row.group_code,
-    key: row.key,
-    name: row.name,
-    value: row.value,
-    sort: row.sort,
-    status: row.status,
-    remark: row.remark,
-  })
-  formVisible.value = true
-}
-
-async function loadConfigs() {
-  loading.value = true
-  try {
-    const data = await getConfigs({
-      ...query,
-      keyword: query.keyword?.trim() || undefined,
-      group_code: query.group_code?.trim() || undefined,
-      status: query.status === 0 ? undefined : query.status,
-    })
-    configs.value = data.items
-    total.value = data.total
-  } finally {
-    loading.value = false
+async function onSubmit() {
+  const payload = {
+    group_code: formModel.group_code,
+    name: formModel.name,
+    value: formModel.value,
+    sort: formModel.sort,
+    status: formModel.status,
+    remark: formModel.remark,
   }
-}
-
-async function handleSubmit() {
-  await formRef.value?.validate()
-  saving.value = true
-  try {
-    if (formMode.value === 'create') {
-      await createConfig({
-        group_code: formModel.group_code,
-        key: formModel.key,
-        name: formModel.name,
-        value: formModel.value,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      successText.value = '配置创建成功'
-      message.success('配置创建成功')
-    } else {
-      await updateConfig(formModel.id, {
-        group_code: formModel.group_code,
-        name: formModel.name,
-        value: formModel.value,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      successText.value = '配置已更新'
-      message.success('配置更新成功')
-    }
-
-    formVisible.value = false
-    await loadConfigs()
-  } finally {
-    saving.value = false
+  if (formMode.value === 'create') {
+    await createConfig({ ...payload, key: formModel.key })
+    successText.value = '配置创建成功'
+    message.success('配置创建成功')
+  } else {
+    await updateConfig(formModel.id, payload)
+    successText.value = '配置已更新'
+    message.success('配置更新成功')
   }
+  await load()
 }
-
-async function handleToggleStatus(row: ConfigItem, status: ConfigStatus) {
-  await updateConfigStatus(row.id, { status })
-  successText.value = `配置已${status === ConfigStatus.Enabled ? '启用' : '禁用'}`
-  message.success('配置状态已更新')
-  await loadConfigs()
-}
-
-onMounted(() => {
-  void loadConfigs()
-})
 </script>
 
 <template>
@@ -349,7 +236,7 @@ onMounted(() => {
             class="w-44"
             @keyup.enter="handleSearch"
           />
-          <NSelect v-model:value="query.status" :options="statusFilterOptions" class="w-36" />
+          <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-36" />
           <NButton type="primary" @click="handleSearch">查询</NButton>
           <NButton @click="handleReset">重置</NButton>
         </NSpace>
@@ -362,7 +249,7 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
           <span class="text-sm text-[#6B7280]">共 {{ total }} 条</span>
-          <NButton text type="primary" @click="loadConfigs">刷新</NButton>
+          <NButton text type="primary" @click="load">刷新</NButton>
         </div>
 
         <NDataTable
@@ -479,7 +366,7 @@ onMounted(() => {
           <section class="form-section form-section--muted">
             <div class="form-section-grid">
               <NFormItem label="状态">
-                <NSelect v-model:value="formModel.status" :options="statusFormOptions" />
+                <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
               </NFormItem>
 
               <NFormItem label="备注">
@@ -499,7 +386,7 @@ onMounted(() => {
             type="primary"
             class="modal-footer-button modal-footer-button--primary"
             :loading="saving"
-            @click="handleSubmit"
+            @click="handleSubmit(onSubmit)"
           >
             保存
           </NButton>

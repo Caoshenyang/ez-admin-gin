@@ -36,6 +36,10 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 	}
 	r.Static(opts.Config.Upload.PublicPath, opts.Config.Upload.Dir)
 
+	if opts.Config.Swagger.Enabled {
+		RegisterSwagger(r)
+	}
+
 	authModule.RegisterRoutes(r, authModule.RouteOptions{
 		Config: opts.Config,
 		Log:    opts.Log,

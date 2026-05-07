@@ -18,6 +18,20 @@ func NewHandler(service *dictapp.Service, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
+// ListTypes godoc
+// @Summary      查询字典类型列表
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int     false  "页码"
+// @Param        page_size  query     int     false  "每页条数"
+// @Param        keyword    query     string  false  "关键词"
+// @Param        status     query     int     false  "状态"
+// @Success      200  {object}  httpx.Body{data=TypeListResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-types [get]
 func (h *Handler) ListTypes(c *gin.Context) {
 	var query TypeListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -34,6 +48,17 @@ func (h *Handler) ListTypes(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// CreateType godoc
+// @Summary      创建字典类型
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreateTypeRequest  true  "字典类型参数"
+// @Success      200  {object}  httpx.Body{data=TypeResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-types [post]
 func (h *Handler) CreateType(c *gin.Context) {
 	var req CreateTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,6 +75,18 @@ func (h *Handler) CreateType(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateType godoc
+// @Summary      更新字典类型
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint               true  "字典类型 ID"
+// @Param        body  body  UpdateTypeRequest  true  "字典类型参数"
+// @Success      200  {object}  httpx.Body{data=TypeResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-types/{id}/update [post]
 func (h *Handler) UpdateType(c *gin.Context) {
 	typeID, ok := httpx.UintIDParam(c, "id", "字典类型 ID", h.log)
 	if !ok {
@@ -71,6 +108,18 @@ func (h *Handler) UpdateType(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateTypeStatus godoc
+// @Summary      更新字典类型状态
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint                     true  "字典类型 ID"
+// @Param        body  body  UpdateTypeStatusRequest  true  "状态参数"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-types/{id}/status [post]
 func (h *Handler) UpdateTypeStatus(c *gin.Context) {
 	typeID, ok := httpx.UintIDParam(c, "id", "字典类型 ID", h.log)
 	if !ok {
@@ -91,6 +140,21 @@ func (h *Handler) UpdateTypeStatus(c *gin.Context) {
 	httpx.Success(c, gin.H{"id": typeID, "status": req.Status})
 }
 
+// ListItems godoc
+// @Summary      查询字典项列表
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        page       query     int     false  "页码"
+// @Param        page_size  query     int     false  "每页条数"
+// @Param        type_id    query     uint    true   "字典类型 ID"
+// @Param        keyword    query     string  false  "关键词"
+// @Param        status     query     int     false  "状态"
+// @Success      200  {object}  httpx.Body{data=ItemListResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-items [get]
 func (h *Handler) ListItems(c *gin.Context) {
 	var query ItemListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -107,6 +171,17 @@ func (h *Handler) ListItems(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// CreateItem godoc
+// @Summary      创建字典项
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreateItemRequest  true  "字典项参数"
+// @Success      200  {object}  httpx.Body{data=ItemResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-items [post]
 func (h *Handler) CreateItem(c *gin.Context) {
 	var req CreateItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -123,6 +198,18 @@ func (h *Handler) CreateItem(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateItem godoc
+// @Summary      更新字典项
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint               true  "字典项 ID"
+// @Param        body  body  UpdateItemRequest  true  "字典项参数"
+// @Success      200  {object}  httpx.Body{data=ItemResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-items/{id}/update [post]
 func (h *Handler) UpdateItem(c *gin.Context) {
 	itemID, ok := httpx.UintIDParam(c, "id", "字典项 ID", h.log)
 	if !ok {
@@ -144,6 +231,18 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateItemStatus godoc
+// @Summary      更新字典项状态
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint                     true  "字典项 ID"
+// @Param        body  body  UpdateItemStatusRequest  true  "状态参数"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /api/v1/system/dict-items/{id}/status [post]
 func (h *Handler) UpdateItemStatus(c *gin.Context) {
 	itemID, ok := httpx.UintIDParam(c, "id", "字典项 ID", h.log)
 	if !ok {

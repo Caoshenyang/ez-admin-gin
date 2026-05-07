@@ -29,6 +29,8 @@ import {
 } from 'naive-ui'
 import { computed, h, onMounted, reactive, ref } from 'vue'
 
+import { usePermission } from '@/composables/usePermission'
+import { formatTime } from '@/utils/format'
 import { getDepartments } from '../api/department'
 import { getPosts } from '../api/post'
 import { getRoles } from '../api/role'
@@ -39,7 +41,6 @@ import {
   updateUserRoles,
   updateUserStatus,
 } from '../api/user'
-import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import {
   type DepartmentItem,
 } from '../types/department'
@@ -59,6 +60,7 @@ interface UserFormModel {
 }
 
 const message = useMessage()
+const { canUse } = usePermission()
 const loading = ref(false)
 const saving = ref(false)
 const departments = ref<DepartmentItem[]>([])
@@ -395,14 +397,6 @@ function handleRowAction(key: string, row: UserItem) {
   if (key === `role:${row.id}`) {
     openRole(row)
   }
-}
-
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-
-function formatTime(value: string) {
-  return value ? new Date(value).toLocaleString() : '-'
 }
 
 function resetForm() {

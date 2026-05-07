@@ -16,6 +16,11 @@ type Config struct {
 	Auth     AuthConfig     `mapstructure:"auth"`
 	Upload   UploadConfig   `mapstructure:"upload"`
 	Log      LogConfig      `mapstructure:"log"`
+	Swagger  SwaggerConfig  `mapstructure:"swagger"`
+}
+
+type SwaggerConfig struct {
+	Enabled bool `mapstructure:"enabled"`
 }
 
 type AppConfig struct {
@@ -131,6 +136,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("upload.public_path", "/uploads")
 	v.SetDefault("upload.max_size_mb", 10)
 	v.SetDefault("upload.allowed_exts", []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".docx", ".xlsx"})
+	v.SetDefault("swagger.enabled", true)
 }
 
 func bindEnvs(v *viper.Viper) {
@@ -168,6 +174,7 @@ func bindEnvs(v *viper.Viper) {
 		"upload.public_path",
 		"upload.max_size_mb",
 		"upload.allowed_exts",
+		"swagger.enabled",
 	}
 
 	for _, key := range keys {

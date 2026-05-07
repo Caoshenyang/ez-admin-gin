@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
+import type { DataTableColumns, FormRules } from 'naive-ui'
 import {
   NButton,
   NCard,
@@ -15,60 +15,42 @@ import {
   NTag,
   useMessage,
 } from 'naive-ui'
-import { h, onMounted, reactive, ref } from 'vue'
+import { h, reactive } from 'vue'
 
-import {
-  createPost,
-  getPosts,
-  updatePost,
-  updatePostStatus,
-} from '../api/post'
-import { buttonPermissionCodes } from '@/router/dynamic-menu'
-import {
-  PostStatus,
-  type CreatePostPayload,
-  type PostItem,
-  type PostListQuery,
-} from '../types/post'
+import { useListLoader } from '@/composables/useListLoader'
+import { useModalForm } from '@/composables/useModalForm'
+import { usePermission } from '@/composables/usePermission'
+import { useStatusToggle } from '@/composables/useStatusToggle'
+import { STATUS_FILTER_OPTIONS, STATUS_FORM_OPTIONS } from '@/constants/status'
+import { formatTime } from '@/utils/format'
+import { createPost, getPosts, updatePost, updatePostStatus } from '../api/post'
+import { PostStatus, type CreatePostPayload, type PostItem, type PostListQuery } from '../types/post'
 
 interface PostFormModel extends CreatePostPayload {
   id: number
 }
 
 const message = useMessage()
-const loading = ref(false)
-const saving = ref(false)
-const posts = ref<PostItem[]>([])
-const formRef = ref<FormInst | null>(null)
-const formVisible = ref(false)
-const formMode = ref<'create' | 'edit'>('create')
+const { canUse } = usePermission()
 
-const query = reactive<PostListQuery>({
-  keyword: '',
-  status: 0,
-})
+const { items: posts, loading, query, load, handleSearch, handleReset } = useListLoader<PostItem, PostListQuery>(
+  getPosts,
+  { keyword: '', status: 0 },
+)
 
-const formModel = reactive<PostFormModel>({
-  id: 0,
-  code: '',
-  name: '',
-  sort: 0,
-  status: PostStatus.Enabled,
-  remark: '',
-})
-
-const statusOptions = [
-  { label: '状态：全部', value: 0 },
-  { label: '启用', value: PostStatus.Enabled },
-  { label: '禁用', value: PostStatus.Disabled },
-]
-
-const formStatusOptions = statusOptions.slice(1)
-
-const rules: FormRules = {
-  code: [{ required: true, message: '请输入岗位编码', trigger: ['blur', 'input'] }],
-  name: [{ required: true, message: '请输入岗位名称', trigger: ['blur', 'input'] }],
+function defaultFormModel(): PostFormModel {
+  return { id: 0, code: '', name: '', sort: 0, status: PostStatus.Enabled, remark: '' }
 }
+
+const { formRef, formVisible, formMode, formModel, saving, openCreate, openEdit, handleSubmit } =
+  useModalForm<PostFormModel>(defaultFormModel, {
+    rules: {
+      code: [{ required: true, message: '请输入岗位编码', trigger: ['blur', 'input'] }],
+      name: [{ required: true, message: '请输入岗位名称', trigger: ['blur', 'input'] }],
+    } as FormRules,
+  })
+
+const { handleToggleStatus } = useStatusToggle<PostItem>(updatePostStatus, { onSuccess: load })
 
 const columns: DataTableColumns<PostItem> = [
   {
@@ -94,10 +76,7 @@ const columns: DataTableColumns<PostItem> = [
     render(row) {
       return h(
         NTag,
-        {
-          bordered: false,
-          type: row.status === PostStatus.Enabled ? 'success' : 'error',
-        },
+        { bordered: false, type: row.status === PostStatus.Enabled ? 'success' : 'error' },
         { default: () => (row.status === PostStatus.Enabled ? '启用' : '禁用') },
       )
     },
@@ -125,12 +104,7 @@ const columns: DataTableColumns<PostItem> = [
             canUse('system:post:update')
               ? h(
                   NButton,
-                  {
-                    size: 'small',
-                    ghost: true,
-                    type: 'info',
-                    onClick: () => openEdit(row),
-                  },
+                  { size: 'small', ghost: true, type: 'info', onClick: () => openEdit(row) },
                   { default: () => '编辑' },
                 )
               : null,
@@ -149,8 +123,7 @@ const columns: DataTableColumns<PostItem> = [
                         },
                         { default: () => (nextStatus === PostStatus.Disabled ? '禁用' : '启用') },
                       ),
-                    default: () =>
-                      `确认${nextStatus === PostStatus.Disabled ? '禁用' : '启用'}该岗位？`,
+                    default: () => `确认${nextStatus === PostStatus.Disabled ? '禁用' : '启用'}该岗位？`,
                   },
                 )
               : null,
@@ -161,113 +134,23 @@ const columns: DataTableColumns<PostItem> = [
   },
 ]
 
-function canUse(code: string) {
-  return buttonPermissionCodes.value.includes(code)
-}
-
-function formatTime(value: string) {
-  return value ? new Date(value).toLocaleString() : '-'
-}
-
-function resetForm() {
-  Object.assign(formModel, {
-    id: 0,
-    code: '',
-    name: '',
-    sort: 0,
-    status: PostStatus.Enabled,
-    remark: '',
-  })
-}
-
-async function loadPosts() {
-  loading.value = true
-  try {
-    posts.value = await getPosts({
-      keyword: query.keyword?.trim() || undefined,
-      status: query.status === 0 ? undefined : query.status,
-    })
-  } finally {
-    loading.value = false
+async function onSubmit() {
+  const payload = {
+    code: formModel.code,
+    name: formModel.name,
+    sort: formModel.sort,
+    status: formModel.status,
+    remark: formModel.remark,
   }
-}
-
-function handleSearch() {
-  void loadPosts()
-}
-
-function handleReset() {
-  query.keyword = ''
-  query.status = 0
-  void loadPosts()
-}
-
-function openCreate() {
-  formMode.value = 'create'
-  resetForm()
-  formVisible.value = true
-}
-
-function openEdit(row: PostItem) {
-  formMode.value = 'edit'
-  Object.assign(formModel, {
-    id: row.id,
-    code: row.code,
-    name: row.name,
-    sort: row.sort,
-    status: row.status,
-    remark: row.remark,
-  })
-  formVisible.value = true
-}
-
-async function handleSubmit() {
-  await formRef.value?.validate()
-  saving.value = true
-
-  try {
-    if (formMode.value === 'create') {
-      await createPost({
-        code: formModel.code,
-        name: formModel.name,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      message.success('岗位创建成功')
-    } else {
-      await updatePost(formModel.id, {
-        code: formModel.code,
-        name: formModel.name,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      message.success('岗位更新成功')
-    }
-
-    formVisible.value = false
-    await loadPosts()
-  } catch {
-    message.error(formMode.value === 'create' ? '岗位创建失败' : '岗位更新失败')
-  } finally {
-    saving.value = false
+  if (formMode.value === 'create') {
+    await createPost(payload)
+    message.success('岗位创建成功')
+  } else {
+    await updatePost(formModel.id, payload)
+    message.success('岗位更新成功')
   }
+  await load()
 }
-
-async function handleToggleStatus(row: PostItem, status: PostStatus) {
-  try {
-    await updatePostStatus(row.id, { status })
-    message.success(status === PostStatus.Enabled ? '岗位已启用' : '岗位已禁用')
-    await loadPosts()
-  } catch {
-    message.error('岗位状态更新失败')
-  }
-}
-
-onMounted(() => {
-  void loadPosts()
-})
 </script>
 
 <template>
@@ -293,7 +176,7 @@ onMounted(() => {
             class="w-64"
             @keyup.enter="handleSearch"
           />
-          <NSelect v-model:value="query.status" :options="statusOptions" class="w-36" />
+          <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-36" />
           <NButton type="primary" @click="handleSearch">查询</NButton>
           <NButton @click="handleReset">重置</NButton>
         </NSpace>
@@ -328,7 +211,7 @@ onMounted(() => {
         </NFormItem>
 
         <NFormItem label="状态" path="status">
-          <NSelect v-model:value="formModel.status" :options="formStatusOptions" />
+          <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
         </NFormItem>
 
         <NFormItem label="备注" path="remark" class="md:col-span-2">
@@ -339,7 +222,7 @@ onMounted(() => {
       <template #footer>
         <div class="flex justify-end gap-3">
           <NButton quaternary @click="formVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="handleSubmit">保存</NButton>
+          <NButton type="primary" :loading="saving" @click="handleSubmit(onSubmit)">保存</NButton>
         </div>
       </template>
     </NModal>

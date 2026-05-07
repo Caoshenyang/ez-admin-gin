@@ -1,0 +1,3226 @@
+definitions:
+  api.CreateItemRequest:
+    properties:
+      item_key:
+        type: string
+      label:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+      tag_type:
+        type: string
+      type_id:
+        type: integer
+      value:
+        type: string
+    type: object
+  api.CreateTypeRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+    type: object
+  api.ItemListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/domain.ItemResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  api.ItemResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      item_key:
+        type: string
+      label:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+      tag_type:
+        type: string
+      type_id:
+        type: integer
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
+  api.TypeListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/domain.TypeResponse'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  api.TypeResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+      updated_at:
+        type: string
+    type: object
+  api.UpdateItemRequest:
+    properties:
+      label:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+      tag_type:
+        type: string
+      value:
+        type: string
+    type: object
+  api.UpdateItemStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+    type: object
+  api.UpdateMenusRequest:
+    properties:
+      menu_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  api.UpdatePermissionsRequest:
+    properties:
+      permissions:
+        items:
+          $ref: '#/definitions/domain.PermissionItem'
+        type: array
+    type: object
+  api.UpdateRolesRequest:
+    properties:
+      role_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  api.UpdateTypeRequest:
+    properties:
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+    type: object
+  api.UpdateTypeStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+    type: object
+  datascope.Scope:
+    enum:
+    - all
+    - dept
+    - dept_and_children
+    - self
+    - custom_dept
+    type: string
+    x-enum-varnames:
+    - ScopeAll
+    - ScopeDept
+    - ScopeDeptAndChildren
+    - ScopeSelf
+    - ScopeCustomDept
+  domain.AccountProfileResponse:
+    properties:
+      data_scope:
+        $ref: '#/definitions/domain.MeDataScopeResult'
+      department_id:
+        type: integer
+      department_name:
+        type: string
+      is_super_admin:
+        type: boolean
+      nickname:
+        type: string
+      role_codes:
+        items:
+          type: string
+        type: array
+      status:
+        $ref: '#/definitions/model.UserStatus'
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  domain.DashboardCurrentUser:
+    properties:
+      nickname:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  domain.DashboardHealth:
+    properties:
+      database:
+        type: string
+      env:
+        type: string
+      redis:
+        type: string
+    type: object
+  domain.DashboardLoginItem:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      ip:
+        type: string
+      message:
+        type: string
+      status:
+        $ref: '#/definitions/model.LoginLogStatus'
+      username:
+        type: string
+    type: object
+  domain.DashboardMetrics:
+    properties:
+      config_total:
+        type: integer
+      enabled_role_total:
+        type: integer
+      enabled_user_total:
+        type: integer
+      file_total:
+        type: integer
+      notice_total:
+        type: integer
+      today_login_failed_total:
+        type: integer
+      today_operation_total:
+        type: integer
+      today_risk_operation_total:
+        type: integer
+      user_total:
+        type: integer
+    type: object
+  domain.DashboardNoticeItem:
+    properties:
+      id:
+        type: integer
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.DashboardOperationItem:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      latency_ms:
+        type: integer
+      method:
+        type: string
+      path:
+        type: string
+      status_code:
+        type: integer
+      success:
+        type: boolean
+      username:
+        type: string
+    type: object
+  domain.DashboardResponse:
+    properties:
+      current_user:
+        $ref: '#/definitions/domain.DashboardCurrentUser'
+      health:
+        $ref: '#/definitions/domain.DashboardHealth'
+      latest_notices:
+        items:
+          $ref: '#/definitions/domain.DashboardNoticeItem'
+        type: array
+      metrics:
+        $ref: '#/definitions/domain.DashboardMetrics'
+      recent_logins:
+        items:
+          $ref: '#/definitions/domain.DashboardLoginItem'
+        type: array
+      recent_operations:
+        items:
+          $ref: '#/definitions/domain.DashboardOperationItem'
+        type: array
+    type: object
+  domain.ItemResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      item_key:
+        type: string
+      label:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+      tag_type:
+        type: string
+      type_id:
+        type: integer
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
+  domain.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  domain.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      nickname:
+        type: string
+      token_type:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  domain.MeDataScopeResult:
+    properties:
+      allow_all:
+        type: boolean
+      custom_department_ids:
+        items:
+          type: integer
+        type: array
+      include_department:
+        type: boolean
+      include_dept_tree:
+        type: boolean
+      require_self:
+        type: boolean
+    type: object
+  domain.MeResponse:
+    properties:
+      data_scope:
+        $ref: '#/definitions/domain.MeDataScopeResult'
+      department_id:
+        type: integer
+      is_super_admin:
+        type: boolean
+      role_codes:
+        items:
+          type: string
+        type: array
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  domain.MenuResponse:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/domain.MenuResponse'
+        type: array
+      code:
+        type: string
+      component:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      parent_id:
+        type: integer
+      path:
+        type: string
+      sort:
+        type: integer
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.MenuType'
+    type: object
+  domain.PermissionItem:
+    properties:
+      method:
+        type: string
+      path:
+        type: string
+    type: object
+  domain.TypeResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemDictStatus'
+      updated_at:
+        type: string
+    type: object
+  domain.UpdateAccountPasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  domain.UpdateAccountProfileRequest:
+    properties:
+      nickname:
+        type: string
+    type: object
+  domain.ValueResponse:
+    properties:
+      key:
+        type: string
+      source:
+        type: string
+      value:
+        type: string
+    type: object
+  errorsx.Code:
+    enum:
+    - 0
+    - 40000
+    - 40100
+    - 40300
+    - 40400
+    - 50300
+    - 50000
+    type: integer
+    x-enum-varnames:
+    - CodeSuccess
+    - CodeBadRequest
+    - CodeUnauthorized
+    - CodeForbidden
+    - CodeNotFound
+    - CodeServiceUnavailable
+    - CodeInternal
+  ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest:
+    properties:
+      code:
+        type: string
+      leader_user_id:
+        type: integer
+      name:
+        type: string
+      parent_id:
+        type: integer
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.DepartmentStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_department_api.UpdateRequest:
+    properties:
+      code:
+        type: string
+      leader_user_id:
+        type: integer
+      name:
+        type: string
+      parent_id:
+        type: integer
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.DepartmentStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_department_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.DepartmentStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_menu_api.CreateRequest:
+    properties:
+      code:
+        type: string
+      component:
+        type: string
+      icon:
+        type: string
+      parent_id:
+        type: integer
+      path:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.MenuStatus'
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.MenuType'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_menu_api.UpdateRequest:
+    properties:
+      component:
+        type: string
+      icon:
+        type: string
+      parent_id:
+        type: integer
+      path:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.MenuStatus'
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.MenuType'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_menu_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.MenuStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_post_api.CreateRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.PostStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_post_api.UpdateRequest:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.PostStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_post_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.PostStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_role_api.CreateRequest:
+    properties:
+      code:
+        type: string
+      custom_department_ids:
+        items:
+          type: integer
+        type: array
+      data_scope:
+        $ref: '#/definitions/datascope.Scope'
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.RoleStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_role_api.UpdateRequest:
+    properties:
+      custom_department_ids:
+        items:
+          type: integer
+        type: array
+      data_scope:
+        $ref: '#/definitions/datascope.Scope'
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.RoleStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_role_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.RoleStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_user_api.CreateRequest:
+    properties:
+      department_id:
+        type: integer
+      nickname:
+        type: string
+      password:
+        type: string
+      post_ids:
+        items:
+          type: integer
+        type: array
+      role_ids:
+        items:
+          type: integer
+        type: array
+      status:
+        $ref: '#/definitions/model.UserStatus'
+      username:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_iam_user_api.UpdateRequest:
+    properties:
+      department_id:
+        type: integer
+      nickname:
+        type: string
+      post_ids:
+        items:
+          type: integer
+        type: array
+      status:
+        $ref: '#/definitions/model.UserStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_iam_user_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.UserStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_system_attachment_api.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_attachment_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_attachment_api.Response:
+    properties:
+      biz_type:
+        type: string
+      category:
+        type: string
+      created_at:
+        type: string
+      display_name:
+        type: string
+      ext:
+        type: string
+      file_id:
+        type: integer
+      file_name:
+        type: string
+      id:
+        type: integer
+      mime_type:
+        type: string
+      original_name:
+        type: string
+      remark:
+        type: string
+      size:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemAttachmentStatus'
+      updated_at:
+        type: string
+      uploader_id:
+        type: integer
+      url:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_attachment_api.UpdateRequest:
+    properties:
+      biz_type:
+        type: string
+      category:
+        type: string
+      display_name:
+        type: string
+      remark:
+        type: string
+      status:
+        $ref: '#/definitions/model.SystemAttachmentStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_system_attachment_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.SystemAttachmentStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_system_attachment_domain.Response:
+    properties:
+      biz_type:
+        type: string
+      category:
+        type: string
+      created_at:
+        type: string
+      display_name:
+        type: string
+      ext:
+        type: string
+      file_id:
+        type: integer
+      file_name:
+        type: string
+      id:
+        type: integer
+      mime_type:
+        type: string
+      original_name:
+        type: string
+      remark:
+        type: string
+      size:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemAttachmentStatus'
+      updated_at:
+        type: string
+      uploader_id:
+        type: integer
+      url:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest:
+    properties:
+      group_code:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
+      value:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_domain.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_domain.Response:
+    properties:
+      created_at:
+        type: string
+      group_code:
+        type: string
+      id:
+        type: integer
+      key:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest:
+    properties:
+      group_code:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
+      value:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_system_file_api.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_file_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_file_api.Response:
+    properties:
+      created_at:
+        type: string
+      ext:
+        type: string
+      file_name:
+        type: string
+      id:
+        type: integer
+      mime_type:
+        type: string
+      original_name:
+        type: string
+      path:
+        type: string
+      remark:
+        type: string
+      sha256:
+        type: string
+      size:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemFileStatus'
+      storage:
+        type: string
+      updated_at:
+        type: string
+      uploader_id:
+        type: integer
+      url:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_file_domain.Response:
+    properties:
+      created_at:
+        type: string
+      ext:
+        type: string
+      file_name:
+        type: string
+      id:
+        type: integer
+      mime_type:
+        type: string
+      original_name:
+        type: string
+      path:
+        type: string
+      remark:
+        type: string
+      sha256:
+        type: string
+      size:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemFileStatus'
+      storage:
+        type: string
+      updated_at:
+        type: string
+      uploader_id:
+        type: integer
+      url:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_loginlog_api.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_loginlog_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_loginlog_domain.Response:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      ip:
+        type: string
+      message:
+        type: string
+      status:
+        $ref: '#/definitions/model.LoginLogStatus'
+      user_agent:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest:
+    properties:
+      content:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+      title:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_domain.Response:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest:
+    properties:
+      content:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+      title:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+    type: object
+  ez-admin-gin_server_internal_modules_system_operationlog_api.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_operationlog_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_operationlog_domain.Response:
+    properties:
+      created_at:
+        type: string
+      error_message:
+        type: string
+      id:
+        type: integer
+      ip:
+        type: string
+      latency_ms:
+        type: integer
+      method:
+        type: string
+      path:
+        type: string
+      query:
+        type: string
+      route_path:
+        type: string
+      status_code:
+        type: integer
+      success:
+        type: boolean
+      user_agent:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  httpx.Body:
+    properties:
+      code:
+        $ref: '#/definitions/errorsx.Code'
+      data: {}
+      message:
+        type: string
+    type: object
+  model.DepartmentStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - DepartmentStatusEnabled
+    - DepartmentStatusDisabled
+  model.LoginLogStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - LoginLogStatusSuccess
+    - LoginLogStatusFailed
+  model.MenuStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - MenuStatusEnabled
+    - MenuStatusDisabled
+  model.MenuType:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - MenuTypeDirectory
+    - MenuTypeMenu
+    - MenuTypeButton
+  model.NoticeStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - NoticeStatusEnabled
+    - NoticeStatusDisabled
+  model.PostStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - PostStatusEnabled
+    - PostStatusDisabled
+  model.RoleStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - RoleStatusEnabled
+    - RoleStatusDisabled
+  model.SystemAttachmentStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - SystemAttachmentStatusEnabled
+    - SystemAttachmentStatusDisabled
+  model.SystemConfigStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - SystemConfigStatusEnabled
+    - SystemConfigStatusDisabled
+  model.SystemDictStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - SystemDictStatusEnabled
+    - SystemDictStatusDisabled
+  model.SystemFileStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - SystemFileStatusEnabled
+    - SystemFileStatusDisabled
+  model.UserStatus:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - UserStatusEnabled
+    - UserStatusDisabled
+  setup.initRequest:
+    properties:
+      nickname:
+        maxLength: 64
+        minLength: 1
+        type: string
+      password:
+        maxLength: 128
+        minLength: 6
+        type: string
+      username:
+        maxLength: 64
+        minLength: 2
+        type: string
+    required:
+    - nickname
+    - password
+    - username
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/system/attachments:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 附件分类
+        in: query
+        name: category
+        type: string
+      - description: 业务类型
+        in: query
+        name: biz_type
+        type: string
+      - description: 文件后缀
+        in: query
+        name: ext
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_attachment_api.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询附件列表
+      tags:
+      - System / 附件管理
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 附件文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: 附件名称
+        in: formData
+        name: display_name
+        type: string
+      - description: 附件分类
+        in: formData
+        name: category
+        type: string
+      - description: 业务类型
+        in: formData
+        name: biz_type
+        type: string
+      - description: 状态
+        in: formData
+        name: status
+        type: integer
+      - description: 备注
+        in: formData
+        name: remark
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_attachment_api.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 上传附件
+      tags:
+      - System / 附件管理
+  /api/v1/system/attachments/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 附件 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_attachment_api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新附件状态
+      tags:
+      - System / 附件管理
+  /api/v1/system/attachments/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 附件 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 附件参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_attachment_api.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_attachment_api.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新附件信息
+      tags:
+      - System / 附件管理
+  /api/v1/system/configs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 配置分组
+        in: query
+        name: group_code
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询配置列表
+      tags:
+      - System / 配置管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 配置参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建系统配置
+      tags:
+      - System / 配置管理
+  /api/v1/system/configs/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 配置 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新配置状态
+      tags:
+      - System / 配置管理
+  /api/v1/system/configs/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 配置 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 配置参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新系统配置
+      tags:
+      - System / 配置管理
+  /api/v1/system/configs/value/{key}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 配置键
+        in: path
+        name: key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.ValueResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 读取配置值
+      tags:
+      - System / 配置管理
+  /api/v1/system/departments:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询部门列表
+      tags:
+      - IAM / 部门管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 部门信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建部门
+      tags:
+      - IAM / 部门管理
+  /api/v1/system/departments/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 部门 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_department_api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新部门状态
+      tags:
+      - IAM / 部门管理
+  /api/v1/system/departments/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 部门 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 部门信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_department_api.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新部门
+      tags:
+      - IAM / 部门管理
+  /api/v1/system/dict-items:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 字典类型 ID
+        in: query
+        name: type_id
+        required: true
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.ItemListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询字典项列表
+      tags:
+      - System / 字典管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典项参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.ItemResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建字典项
+      tags:
+      - System / 字典管理
+  /api/v1/system/dict-items/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典项 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateItemStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新字典项状态
+      tags:
+      - System / 字典管理
+  /api/v1/system/dict-items/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典项 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 字典项参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.ItemResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新字典项
+      tags:
+      - System / 字典管理
+  /api/v1/system/dict-types:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.TypeListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询字典类型列表
+      tags:
+      - System / 字典管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典类型参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.TypeResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建字典类型
+      tags:
+      - System / 字典管理
+  /api/v1/system/dict-types/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典类型 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateTypeStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新字典类型状态
+      tags:
+      - System / 字典管理
+  /api/v1/system/dict-types/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典类型 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 字典类型参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.TypeResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新字典类型
+      tags:
+      - System / 字典管理
+  /api/v1/system/files:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 文件后缀
+        in: query
+        name: ext
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_file_api.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询文件列表
+      tags:
+      - System / 文件管理
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: 文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_file_api.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 上传文件
+      tags:
+      - System / 文件管理
+  /api/v1/system/login-logs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 用户名
+        in: query
+        name: username
+        type: string
+      - description: IP 地址
+        in: query
+        name: ip
+        type: string
+      - description: 登录状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_loginlog_api.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询登录日志列表
+      tags:
+      - System / 登录日志
+  /api/v1/system/menus:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询菜单树
+      tags:
+      - IAM / 菜单管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 菜单信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_menu_api.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建菜单
+      tags:
+      - IAM / 菜单管理
+  /api/v1/system/menus/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 菜单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除菜单
+      tags:
+      - IAM / 菜单管理
+  /api/v1/system/menus/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 菜单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_menu_api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新菜单状态
+      tags:
+      - IAM / 菜单管理
+  /api/v1/system/menus/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 菜单 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_menu_api.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新菜单
+      tags:
+      - IAM / 菜单管理
+  /api/v1/system/notices:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询公告列表
+      tags:
+      - System / 公告管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建公告
+      tags:
+      - System / 公告管理
+  /api/v1/system/notices/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新公告状态
+      tags:
+      - System / 公告管理
+  /api/v1/system/notices/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 公告参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新公告
+      tags:
+      - System / 公告管理
+  /api/v1/system/operation-logs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 用户名
+        in: query
+        name: username
+        type: string
+      - description: 请求方法
+        in: query
+        name: method
+        type: string
+      - description: 请求路径
+        in: query
+        name: path
+        type: string
+      - description: 是否成功，支持 true/false/1/0
+        in: query
+        name: success
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_operationlog_api.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询操作日志列表
+      tags:
+      - System / 操作日志
+  /api/v1/system/posts:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询岗位列表
+      tags:
+      - IAM / 岗位管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 岗位信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_post_api.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建岗位
+      tags:
+      - IAM / 岗位管理
+  /api/v1/system/posts/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 岗位 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_post_api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新岗位状态
+      tags:
+      - IAM / 岗位管理
+  /api/v1/system/posts/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 岗位 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 岗位信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_post_api.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新岗位
+      tags:
+      - IAM / 岗位管理
+  /api/v1/system/roles:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询角色列表
+      tags:
+      - IAM / 角色管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_role_api.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建角色
+      tags:
+      - IAM / 角色管理
+  /api/v1/system/roles/{id}/menus:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 菜单 ID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateMenusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新角色菜单权限
+      tags:
+      - IAM / 角色管理
+  /api/v1/system/roles/{id}/permissions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 权限列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdatePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新角色接口权限
+      tags:
+      - IAM / 角色管理
+  /api/v1/system/roles/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_role_api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新角色状态
+      tags:
+      - IAM / 角色管理
+  /api/v1/system/roles/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 角色信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_role_api.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新角色
+      tags:
+      - IAM / 角色管理
+  /api/v1/system/users:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 状态
+        in: query
+        name: status
+        type: integer
+      - description: 部门 ID
+        in: query
+        name: department_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询用户列表
+      tags:
+      - IAM / 用户管理
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_user_api.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 创建用户
+      tags:
+      - IAM / 用户管理
+  /api/v1/system/users/{id}/roles:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 角色 ID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.UpdateRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新用户角色
+      tags:
+      - IAM / 用户管理
+  /api/v1/system/users/{id}/status:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 状态
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_user_api.UpdateStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新用户状态
+      tags:
+      - IAM / 用户管理
+  /api/v1/system/users/{id}/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_iam_user_api.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新用户
+      tags:
+      - IAM / 用户管理
+  /auth/account:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AccountProfileResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询账户资料
+      tags:
+      - 认证
+  /auth/account/password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 密码参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateAccountPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 修改账户密码
+      tags:
+      - 认证
+  /auth/account/profile:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 更新参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateAccountProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AccountProfileResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新账户资料
+      tags:
+      - 认证
+  /auth/dashboard:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.DashboardResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询工作台数据
+      tags:
+      - 认证
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 登录参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      summary: 用户登录
+      tags:
+      - 认证
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.MeResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证
+  /auth/menus:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.MenuResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询当前用户菜单
+      tags:
+      - 认证
+  /setup/init:
+    post:
+      consumes:
+      - application/json
+      description: 创建超级管理员账号，仅当系统中无用户时可执行。
+      parameters:
+      - description: 初始化参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/setup.initRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 系统初始化
+      tags:
+      - 系统
+swagger: "2.0"

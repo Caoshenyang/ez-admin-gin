@@ -71,7 +71,8 @@
       "Bash(where claude:*)",
       "Bash(npm list:*)",
       "Bash(npm view:*)",
-      "Bash(npm config:*)"
+      "Bash(npm config:*)",
+      "Bash(npx vue-tsc *)"
     ]
   }
 }

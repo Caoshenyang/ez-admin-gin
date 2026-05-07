@@ -20,6 +20,16 @@ func NewLoginHandler(service *authapp.LoginService, log *zap.Logger) *LoginHandl
 	return &LoginHandler{service: service, log: log}
 }
 
+// Login godoc
+// @Summary      用户登录
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Param        body  body  authdomain.LoginRequest  true  "登录参数"
+// @Success      200  {object}  httpx.Body{data=authdomain.LoginResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      500  {object}  httpx.Body
+// @Router       /auth/login [post]
 func (h *LoginHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,6 +56,15 @@ func NewMeHandler(service *authapp.MeService, log *zap.Logger) *MeHandler {
 	return &MeHandler{service: service, log: log}
 }
 
+// Me godoc
+// @Summary      获取当前用户信息
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  httpx.Body{data=authdomain.MeResponse}
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /auth/me [get]
 func (h *MeHandler) Me(c *gin.Context) {
 	if actor, ok := middleware.CurrentActor(c); ok {
 		httpx.Success(c, h.service.Build(actor))
@@ -74,6 +93,15 @@ func NewAccountHandler(service *authapp.AccountService, log *zap.Logger) *Accoun
 	return &AccountHandler{service: service, log: log}
 }
 
+// Profile godoc
+// @Summary      查询账户资料
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  httpx.Body{data=authdomain.AccountProfileResponse}
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /auth/account [get]
 func (h *AccountHandler) Profile(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -89,6 +117,17 @@ func (h *AccountHandler) Profile(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdateProfile godoc
+// @Summary      更新账户资料
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Param        body  body  authdomain.UpdateAccountProfileRequest  true  "更新参数"
+// @Success      200  {object}  httpx.Body{data=authdomain.AccountProfileResponse}
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /auth/account/profile [post]
 func (h *AccountHandler) UpdateProfile(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -110,6 +149,17 @@ func (h *AccountHandler) UpdateProfile(c *gin.Context) {
 	httpx.Success(c, result)
 }
 
+// UpdatePassword godoc
+// @Summary      修改账户密码
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Param        body  body  authdomain.UpdateAccountPasswordRequest  true  "密码参数"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /auth/account/password [post]
 func (h *AccountHandler) UpdatePassword(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -139,6 +189,15 @@ func NewMenuHandler(service *authapp.MenuService, log *zap.Logger) *MenuHandler 
 	return &MenuHandler{service: service, log: log}
 }
 
+// Menus godoc
+// @Summary      查询当前用户菜单
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  httpx.Body{data=[]authdomain.MenuResponse}
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /auth/menus [get]
 func (h *MenuHandler) Menus(c *gin.Context) {
 	userID, ok := middleware.CurrentUserID(c)
 	if !ok {
@@ -164,6 +223,15 @@ func NewDashboardHandler(service *authapp.DashboardService, log *zap.Logger) *Da
 	return &DashboardHandler{service: service, log: log}
 }
 
+// Dashboard godoc
+// @Summary      查询工作台数据
+// @Tags         认证
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  httpx.Body{data=authdomain.DashboardResponse}
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /auth/dashboard [get]
 func (h *DashboardHandler) Dashboard(c *gin.Context) {
 	userID, ok := middleware.CurrentUserID(c)
 	if !ok {

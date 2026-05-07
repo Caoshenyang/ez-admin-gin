@@ -29,6 +29,18 @@ type initRequest struct {
 	Nickname string `json:"nickname" binding:"required,min=1,max=64"`
 }
 
+// Init godoc
+// @Summary      系统初始化
+// @Description  创建超级管理员账号，仅当系统中无用户时可执行。
+// @Tags         系统
+// @Accept       json
+// @Produce      json
+// @Param        body  body  initRequest  true  "初始化参数"
+// @Success      200  {object}  map[string]any
+// @Failure      400  {object}  map[string]any
+// @Failure      409  {object}  map[string]any
+// @Failure      500  {object}  map[string]any
+// @Router       /setup/init [post]
 func (h *setupHandler) Init(c *gin.Context) {
 	var req initRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
