@@ -15,7 +15,7 @@ import {
   NTag,
   useMessage,
 } from 'naive-ui'
-import { h, reactive } from 'vue'
+import { h } from 'vue'
 
 import { useListLoader } from '@/composables/useListLoader'
 import { useModalForm } from '@/composables/useModalForm'
@@ -42,7 +42,7 @@ function defaultFormModel(): PostFormModel {
   return { id: 0, code: '', name: '', sort: 0, status: PostStatus.Enabled, remark: '' }
 }
 
-const { formRef, formVisible, formMode, formModel, saving, openCreate, openEdit, handleSubmit } =
+const { formRef, formVisible, formMode, formModel, saving, rules, openCreate, openEdit, handleSubmit } =
   useModalForm<PostFormModel>(defaultFormModel, {
     rules: {
       code: [{ required: true, message: '请输入岗位编码', trigger: ['blur', 'input'] }],
@@ -50,7 +50,7 @@ const { formRef, formVisible, formMode, formModel, saving, openCreate, openEdit,
     } as FormRules,
   })
 
-const { handleToggleStatus } = useStatusToggle<PostItem>(updatePostStatus, { onSuccess: load })
+const { handleToggleStatus } = useStatusToggle(updatePostStatus, { onSuccess: load })
 
 const columns: DataTableColumns<PostItem> = [
   {

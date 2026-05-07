@@ -28,7 +28,7 @@ func NewHandler(service *postapp.Service, log *zap.Logger) *Handler {
 // @Success      200  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/posts [get]
+// @Router       /system/posts [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -54,7 +54,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/posts [post]
+// @Router       /system/posts [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -81,7 +81,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/posts/{id}/update [post]
+// @Router       /system/posts/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	postID, ok := httpx.UintIDParam(c, "id", "岗位 ID", h.log)
 	if !ok {
@@ -113,7 +113,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/posts/{id}/status [post]
+// @Router       /system/posts/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	postID, ok := httpx.UintIDParam(c, "id", "岗位 ID", h.log)
 	if !ok {

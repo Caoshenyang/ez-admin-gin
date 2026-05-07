@@ -1,33 +1,16 @@
 <script setup lang="ts">
 import {
-  ChevronDownOutline,
-  CloseOutline,
-  EllipsisHorizontal,
-  ExpandOutline,
   LogOutOutline,
-  MoonOutline,
-  NotificationsOutline,
   PersonCircleOutline,
-  SearchOutline,
 } from '@vicons/ionicons5'
 import type { DropdownOption, MenuOption } from 'naive-ui'
-import {
-  NButton,
-  NDropdown,
-  NIcon,
-  NInput,
-  NLayout,
-  NLayoutContent,
-  NLayoutHeader,
-  NLayoutSider,
-  NMenu,
-  NScrollbar,
-  useMessage,
-} from 'naive-ui'
+import { NIcon, NLayout, NLayoutContent, useMessage } from 'naive-ui'
 import { computed, h, onBeforeUnmount, onMounted, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
-import BrandLogo from '@/ui/BrandLogo.vue'
+import AppHeader from '@/components/app-shell/AppHeader.vue'
+import AppSidebar from '@/components/app-shell/AppSidebar.vue'
+import WorkTabs from '@/components/app-shell/WorkTabs.vue'
 import {
   collectExpandedMenuKeysByPath,
   findMenuCodeByPath,
@@ -200,120 +183,33 @@ onBeforeUnmount(() => {
 
 <template>
   <NLayout class="h-screen bg-[#F5F7FA]" has-sider>
-    <NLayoutSider
-      collapse-mode="width"
-      bordered
-      show-trigger="bar"
-      content-class="flex h-full flex-col"
-      :collapsed-width="72"
-      :width="240"
-      :native-scrollbar="false"
-      inverted
-    >
-      <div class="flex items-center px-4 py-4">
-        <button
-          type="button"
-          class="flex items-center border-none bg-transparent px-0 py-0 text-left text-white"
-          @click="navigateTo('/dashboard')"
-        >
-          <BrandLogo :width="42" direction="inline" :show-title="true" variant="dark" />
-        </button>
-      </div>
-
-      <p class="px-4 text-xs font-semibold tracking-wide text-[#6B7280]">主菜单</p>
-
-      <NScrollbar class="mt-3 min-h-0 flex-1 px-2" trigger="none">
-        <NMenu
-          :value="shellStore.activeMenuKey"
-          :expanded-keys="shellStore.expandedMenuKeys"
-          :options="naiveMenuOptions"
-          :indent="18"
-          :collapsed-icon-size="20"
-          inverted
-          @update:value="handleMenuUpdate"
-          @update:expanded-keys="handleMenuExpand"
-        />
-      </NScrollbar>
-    </NLayoutSider>
+    <AppSidebar
+      :active-menu-key="shellStore.activeMenuKey"
+      :expanded-menu-keys="shellStore.expandedMenuKeys"
+      :menu-options="naiveMenuOptions"
+      @navigate="navigateTo"
+      @select="handleMenuUpdate"
+      @expand="handleMenuExpand"
+    />
 
     <NLayout class="min-w-0 bg-[#F5F7FA]">
-      <NLayoutHeader
-        bordered
-        class="flex h-14 items-center justify-between bg-white px-6"
-      >
-        <p class="text-sm text-[#374151]">{{ breadcrumbText }}</p>
+      <AppHeader
+        :breadcrumb-text="breadcrumbText"
+        :display-name="displayName"
+        :dropdown-options="dropdownOptions"
+        @user-action="handleUserAction"
+      />
 
-        <div class="flex items-center gap-2.5">
-          <NInput placeholder="搜索菜单 / 页面" clearable class="w-46">
-            <template #prefix>
-              <NIcon :component="SearchOutline" />
-            </template>
-          </NInput>
-
-          <NButton quaternary circle>
-            <template #icon>
-              <NIcon :component="NotificationsOutline" />
-            </template>
-          </NButton>
-
-          <NButton quaternary circle>
-            <template #icon>
-              <NIcon :component="ExpandOutline" />
-            </template>
-          </NButton>
-
-          <NButton quaternary circle>
-            <template #icon>
-              <NIcon :component="MoonOutline" />
-            </template>
-          </NButton>
-
-          <NDropdown trigger="click" :options="dropdownOptions" @select="handleUserAction">
-            <NButton secondary>
-              <template #icon>
-                <NIcon :component="ChevronDownOutline" />
-              </template>
-              {{ displayName }}
-            </NButton>
-          </NDropdown>
-        </div>
-      </NLayoutHeader>
-
-      <div class="admin-tabs-bar">
-        <NScrollbar x-scrollable trigger="none" class="min-w-0 flex-1">
-          <div class="admin-tabs-track">
-            <button
-              v-for="tab in shellStore.openTabs"
-              :key="tab.to"
-              type="button"
-              class="admin-tab-chip"
-              :class="{ 'admin-tab-chip--active': route.path === tab.to }"
-              @click="navigateTo(tab.to)"
-            >
-              <span class="truncate">{{ tab.title }}</span>
-              <span
-                v-if="tab.closable"
-                class="admin-tab-chip__close"
-                @click.stop="handleCloseTab(tab.to)"
-              >
-                <NIcon :component="CloseOutline" :size="14" />
-              </span>
-            </button>
-          </div>
-        </NScrollbar>
-
-        <div class="admin-tabs-actions">
-          <NButton quaternary size="small" @click="handleRefresh">刷新</NButton>
-          <NButton quaternary size="small" @click="handleCloseCurrentTab">关闭当前</NButton>
-          <NButton quaternary size="small" @click="handleCloseOtherTabs">关闭其他</NButton>
-          <NButton quaternary size="small" @click="handleCloseAllTabs">关闭全部</NButton>
-          <NButton quaternary circle size="small">
-            <template #icon>
-              <NIcon :component="EllipsisHorizontal" />
-            </template>
-          </NButton>
-        </div>
-      </div>
+      <WorkTabs
+        :active-path="route.path"
+        :tabs="shellStore.openTabs"
+        @navigate="navigateTo"
+        @close-tab="handleCloseTab"
+        @refresh="handleRefresh"
+        @close-current="handleCloseCurrentTab"
+        @close-others="handleCloseOtherTabs"
+        @close-all="handleCloseAllTabs"
+      />
 
       <NLayoutContent
         class="admin-layout-content"
@@ -329,69 +225,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.admin-tabs-bar {
-  display: flex;
-  min-height: 42px;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 0 16px;
-}
-
-.admin-tabs-track {
-  display: inline-flex;
-  min-width: 100%;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 0;
-}
-
-.admin-tab-chip {
-  display: inline-flex;
-  min-width: 0;
-  max-width: 220px;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #d9dee8;
-  border-radius: 999px;
-  background: #f9fafb;
-  padding: 0 12px;
-  height: 28px;
-  color: #374151;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.admin-tab-chip--active {
-  border-color: #18a058;
-  background: #18a058;
-  color: #ffffff;
-  font-weight: 600;
-}
-
-.admin-tab-chip__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-}
-
-.admin-tab-chip__close:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.admin-tabs-actions {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 4px;
-}
-
 .admin-layout-content {
   height: calc(100vh - 98px);
   overflow: auto;

@@ -35,7 +35,7 @@ func NewHandler(service *attachmentapp.Service, log *zap.Logger) *Handler {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/attachments [get]
+// @Router       /system/attachments [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -67,7 +67,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/attachments [post]
+// @Router       /system/attachments [post]
 func (h *Handler) Upload(c *gin.Context) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
@@ -102,7 +102,7 @@ func (h *Handler) Upload(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/attachments/{id}/update [post]
+// @Router       /system/attachments/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	id, ok := httpx.UintIDParam(c, "id", "附件 ID", h.log)
 	if !ok {
@@ -135,7 +135,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/attachments/{id}/status [post]
+// @Router       /system/attachments/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	id, ok := httpx.UintIDParam(c, "id", "附件 ID", h.log)
 	if !ok {

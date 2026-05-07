@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/system/attachments": {
+        "/system/attachments": {
             "get": {
                 "security": [
                     {
@@ -198,7 +198,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/attachments/{id}/status": {
+        "/system/attachments/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -255,7 +255,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/attachments/{id}/update": {
+        "/system/attachments/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -324,7 +324,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/configs": {
+        "/system/configs": {
             "get": {
                 "security": [
                     {
@@ -467,7 +467,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/configs/value/{key}": {
+        "/system/configs/value/{key}": {
             "get": {
                 "security": [
                     {
@@ -527,7 +527,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/configs/{id}/status": {
+        "/system/configs/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -584,7 +584,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/configs/{id}/update": {
+        "/system/configs/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -653,7 +653,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/departments": {
+        "/system/departments": {
             "get": {
                 "security": [
                     {
@@ -742,7 +742,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/departments/{id}/status": {
+        "/system/departments/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -793,7 +793,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/departments/{id}/update": {
+        "/system/departments/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -844,7 +844,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/dict-items": {
+        "/system/dict-items": {
             "get": {
                 "security": [
                     {
@@ -988,7 +988,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/dict-items/{id}/status": {
+        "/system/dict-items/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -1045,7 +1045,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/dict-items/{id}/update": {
+        "/system/dict-items/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -1114,7 +1114,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/dict-types": {
+        "/system/dict-types": {
             "get": {
                 "security": [
                     {
@@ -1251,7 +1251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/dict-types/{id}/status": {
+        "/system/dict-types/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -1308,7 +1308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/dict-types/{id}/update": {
+        "/system/dict-types/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -1377,7 +1377,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/files": {
+        "/system/files": {
             "get": {
                 "security": [
                     {
@@ -1518,7 +1518,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/login-logs": {
+        "/system/login-logs": {
             "get": {
                 "security": [
                     {
@@ -1601,7 +1601,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/menus": {
+        "/system/menus": {
             "get": {
                 "security": [
                     {
@@ -1676,7 +1676,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/menus/{id}/delete": {
+        "/system/menus/{id}/delete": {
             "post": {
                 "security": [
                     {
@@ -1718,7 +1718,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/menus/{id}/status": {
+        "/system/menus/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -1769,7 +1769,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/menus/{id}/update": {
+        "/system/menus/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -1820,7 +1820,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/notices": {
+        "/system/notices": {
             "get": {
                 "security": [
                     {
@@ -1957,7 +1957,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/notices/{id}/status": {
+        "/system/notices/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -2014,7 +2014,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/notices/{id}/update": {
+        "/system/notices/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -2083,7 +2083,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/operation-logs": {
+        "/system/operation-logs": {
             "get": {
                 "security": [
                     {
@@ -2172,7 +2172,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/posts": {
+        "/system/posts": {
             "get": {
                 "security": [
                     {
@@ -2261,7 +2261,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/posts/{id}/status": {
+        "/system/posts/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -2312,7 +2312,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/posts/{id}/update": {
+        "/system/posts/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -2363,7 +2363,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/roles": {
+        "/system/roles": {
             "get": {
                 "security": [
                     {
@@ -2452,7 +2452,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/roles/{id}/menus": {
+        "/system/roles/{id}/menus": {
             "post": {
                 "security": [
                     {
@@ -2503,7 +2503,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/roles/{id}/permissions": {
+        "/system/roles/{id}/permissions": {
             "post": {
                 "security": [
                     {
@@ -2554,7 +2554,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/roles/{id}/status": {
+        "/system/roles/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -2605,7 +2605,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/roles/{id}/update": {
+        "/system/roles/{id}/update": {
             "post": {
                 "security": [
                     {
@@ -2656,7 +2656,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/users": {
+        "/system/users": {
             "get": {
                 "security": [
                     {
@@ -2769,7 +2769,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/users/{id}/roles": {
+        "/system/users/{id}/roles": {
             "post": {
                 "security": [
                     {
@@ -2826,7 +2826,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/users/{id}/status": {
+        "/system/users/{id}/status": {
             "post": {
                 "security": [
                     {
@@ -2883,7 +2883,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/system/users/{id}/update": {
+        "/system/users/{id}/update": {
             "post": {
                 "security": [
                     {

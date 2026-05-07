@@ -33,7 +33,7 @@ func NewHandler(service *fileapp.Service, log *zap.Logger) *Handler {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/files [get]
+// @Router       /system/files [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -60,7 +60,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/files [post]
+// @Router       /system/files [post]
 func (h *Handler) Upload(c *gin.Context) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {

@@ -2,7 +2,7 @@ import { reactive, ref } from 'vue'
 import type { Ref } from 'vue'
 import type { FormInst, FormRules } from 'naive-ui'
 
-export function useModalForm<T extends Record<string, any>>(
+export function useModalForm<T extends object>(
   defaultModel: () => T,
   options?: { rules?: FormRules },
 ) {
@@ -11,7 +11,7 @@ export function useModalForm<T extends Record<string, any>>(
   const formMode: Ref<'create' | 'edit'> = ref('create')
   const formModel: T = reactive(defaultModel()) as T
   const saving = ref(false)
-  const rules = options?.rules
+  const rules: FormRules = options?.rules ?? {}
 
   function resetForm() {
     Object.assign(formModel, defaultModel())

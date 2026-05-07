@@ -6,6 +6,7 @@ import (
 	fileapp "ez-admin-gin/server/internal/modules/system/file/application"
 	fileinfra "ez-admin-gin/server/internal/modules/system/file/infra"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
+	platformDatabase "ez-admin-gin/server/internal/platform/database"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -21,8 +22,10 @@ type RouteOptions struct {
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	repo := attachmentinfra.NewRepository(opts.DB)
 	fileRepo := fileinfra.NewRepository(opts.DB)
-	fileService := fileapp.NewService(opts.DB, fileRepo, opts.Upload, opts.Log)
-	service := attachmentapp.NewService(opts.DB, repo, fileService)
+	transactor := platformDatabase.NewTransactor(opts.DB)
+	fileStorage := fileinfra.NewLocalStorage(opts.Upload)
+	fileService := fileapp.NewService(transactor, fileRepo, fileStorage, opts.Upload, opts.Log)
+	service := attachmentapp.NewService(transactor, repo, fileService)
 	handler := NewHandler(service, opts.Log)
 
 	group.GET("/attachments", handler.List)

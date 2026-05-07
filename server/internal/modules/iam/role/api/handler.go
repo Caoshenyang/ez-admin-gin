@@ -28,7 +28,7 @@ func NewHandler(service *roleapp.Service, log *zap.Logger) *Handler {
 // @Success      200  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/roles [get]
+// @Router       /system/roles [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -54,7 +54,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/roles [post]
+// @Router       /system/roles [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -81,7 +81,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/roles/{id}/update [post]
+// @Router       /system/roles/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {
@@ -113,7 +113,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/roles/{id}/status [post]
+// @Router       /system/roles/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {
@@ -144,7 +144,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/roles/{id}/permissions [post]
+// @Router       /system/roles/{id}/permissions [post]
 func (h *Handler) UpdatePermissions(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {
@@ -176,7 +176,7 @@ func (h *Handler) UpdatePermissions(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/roles/{id}/menus [post]
+// @Router       /system/roles/{id}/menus [post]
 func (h *Handler) UpdateMenus(c *gin.Context) {
 	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
 	if !ok {

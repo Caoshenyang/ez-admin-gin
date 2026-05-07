@@ -15,7 +15,7 @@ import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { login } from '../api/auth'
-import BrandLogo from '@/ui/BrandLogo.vue'
+import BrandLogo from '@/components/brand/BrandLogo.vue'
 import { hasAccessToken, setAuthSession } from '@/utils/auth'
 
 const router = useRouter()

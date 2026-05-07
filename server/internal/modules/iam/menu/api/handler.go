@@ -26,7 +26,7 @@ func NewHandler(service *menuapp.Service, log *zap.Logger) *Handler {
 // @Success      200  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/menus [get]
+// @Router       /system/menus [get]
 func (h *Handler) List(c *gin.Context) {
 	result, err := h.service.List()
 	if err != nil {
@@ -46,7 +46,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/menus [post]
+// @Router       /system/menus [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,7 +73,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/menus/{id}/update [post]
+// @Router       /system/menus/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	menuID, ok := httpx.UintIDParam(c, "id", "菜单 ID", h.log)
 	if !ok {
@@ -105,7 +105,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/menus/{id}/status [post]
+// @Router       /system/menus/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	menuID, ok := httpx.UintIDParam(c, "id", "菜单 ID", h.log)
 	if !ok {
@@ -135,7 +135,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/menus/{id}/delete [post]
+// @Router       /system/menus/{id}/delete [post]
 func (h *Handler) Delete(c *gin.Context) {
 	menuID, ok := httpx.UintIDParam(c, "id", "菜单 ID", h.log)
 	if !ok {

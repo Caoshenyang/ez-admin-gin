@@ -1,8 +1,9 @@
 package application
 
 import (
+	"context"
+
 	userdomain "ez-admin-gin/server/internal/modules/iam/user/domain"
-	userinfra "ez-admin-gin/server/internal/modules/iam/user/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
 	"ez-admin-gin/server/internal/platform/datascope"
@@ -13,13 +14,13 @@ import (
 )
 
 type Service struct {
-	db   *gorm.DB
-	repo *userinfra.Repository
+	tx   UserTransactor
+	repo UserRepository
 }
 
-func NewService(db *gorm.DB, repo *userinfra.Repository) *Service {
+func NewService(tx UserTransactor, repo UserRepository) *Service {
 	return &Service{
-		db:   db,
+		tx:   tx,
 		repo: repo,
 	}
 }
@@ -71,7 +72,7 @@ func (s *Service) Create(actor datascope.Actor, req userdomain.CreateRequest) (u
 	}
 
 	var created userdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		exists, err := s.repo.UsernameExists(tx, req.Username)
 		if err != nil {
 			return err
@@ -125,7 +126,7 @@ func (s *Service) Update(actor datascope.Actor, userID uint, currentUserID uint,
 	}
 
 	var updated userdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		user, err := s.repo.FindByIDInScope(tx, actor, userID)
 		if err != nil {
 			return err
@@ -171,7 +172,7 @@ func (s *Service) UpdateStatus(actor datascope.Actor, userID uint, currentUserID
 		return errorsx.BadRequest("不能禁用当前登录用户")
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		user, err := s.repo.FindByIDInScope(tx, actor, userID)
 		if err != nil {
 			return err
@@ -191,7 +192,7 @@ func (s *Service) UpdateRoles(actor datascope.Actor, userID uint, currentUserID 
 		return nil, err
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		user, err := s.repo.FindByIDInScope(tx, actor, userID)
 		if err != nil {
 			return err

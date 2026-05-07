@@ -1193,7 +1193,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /api/v1/system/attachments:
+  /system/attachments:
     get:
       consumes:
       - application/json
@@ -1305,7 +1305,7 @@ paths:
       summary: 上传附件
       tags:
       - System / 附件管理
-  /api/v1/system/attachments/{id}/status:
+  /system/attachments/{id}/status:
     post:
       consumes:
       - application/json
@@ -1341,7 +1341,7 @@ paths:
       summary: 更新附件状态
       tags:
       - System / 附件管理
-  /api/v1/system/attachments/{id}/update:
+  /system/attachments/{id}/update:
     post:
       consumes:
       - application/json
@@ -1382,7 +1382,7 @@ paths:
       summary: 更新附件信息
       tags:
       - System / 附件管理
-  /api/v1/system/configs:
+  /system/configs:
     get:
       consumes:
       - application/json
@@ -1467,7 +1467,7 @@ paths:
       summary: 创建系统配置
       tags:
       - System / 配置管理
-  /api/v1/system/configs/{id}/status:
+  /system/configs/{id}/status:
     post:
       consumes:
       - application/json
@@ -1503,7 +1503,7 @@ paths:
       summary: 更新配置状态
       tags:
       - System / 配置管理
-  /api/v1/system/configs/{id}/update:
+  /system/configs/{id}/update:
     post:
       consumes:
       - application/json
@@ -1544,7 +1544,7 @@ paths:
       summary: 更新系统配置
       tags:
       - System / 配置管理
-  /api/v1/system/configs/value/{key}:
+  /system/configs/value/{key}:
     get:
       consumes:
       - application/json
@@ -1579,7 +1579,7 @@ paths:
       summary: 读取配置值
       tags:
       - System / 配置管理
-  /api/v1/system/departments:
+  /system/departments:
     get:
       consumes:
       - application/json
@@ -1634,7 +1634,7 @@ paths:
       summary: 创建部门
       tags:
       - IAM / 部门管理
-  /api/v1/system/departments/{id}/status:
+  /system/departments/{id}/status:
     post:
       consumes:
       - application/json
@@ -1666,7 +1666,7 @@ paths:
       summary: 更新部门状态
       tags:
       - IAM / 部门管理
-  /api/v1/system/departments/{id}/update:
+  /system/departments/{id}/update:
     post:
       consumes:
       - application/json
@@ -1698,7 +1698,7 @@ paths:
       summary: 更新部门
       tags:
       - IAM / 部门管理
-  /api/v1/system/dict-items:
+  /system/dict-items:
     get:
       consumes:
       - application/json
@@ -1784,7 +1784,7 @@ paths:
       summary: 创建字典项
       tags:
       - System / 字典管理
-  /api/v1/system/dict-items/{id}/status:
+  /system/dict-items/{id}/status:
     post:
       consumes:
       - application/json
@@ -1820,7 +1820,7 @@ paths:
       summary: 更新字典项状态
       tags:
       - System / 字典管理
-  /api/v1/system/dict-items/{id}/update:
+  /system/dict-items/{id}/update:
     post:
       consumes:
       - application/json
@@ -1861,7 +1861,7 @@ paths:
       summary: 更新字典项
       tags:
       - System / 字典管理
-  /api/v1/system/dict-types:
+  /system/dict-types:
     get:
       consumes:
       - application/json
@@ -1942,7 +1942,7 @@ paths:
       summary: 创建字典类型
       tags:
       - System / 字典管理
-  /api/v1/system/dict-types/{id}/status:
+  /system/dict-types/{id}/status:
     post:
       consumes:
       - application/json
@@ -1978,7 +1978,7 @@ paths:
       summary: 更新字典类型状态
       tags:
       - System / 字典管理
-  /api/v1/system/dict-types/{id}/update:
+  /system/dict-types/{id}/update:
     post:
       consumes:
       - application/json
@@ -2019,7 +2019,7 @@ paths:
       summary: 更新字典类型
       tags:
       - System / 字典管理
-  /api/v1/system/files:
+  /system/files:
     get:
       consumes:
       - application/json
@@ -2103,7 +2103,7 @@ paths:
       summary: 上传文件
       tags:
       - System / 文件管理
-  /api/v1/system/login-logs:
+  /system/login-logs:
     get:
       consumes:
       - application/json
@@ -2153,7 +2153,7 @@ paths:
       summary: 查询登录日志列表
       tags:
       - System / 登录日志
-  /api/v1/system/menus:
+  /system/menus:
     get:
       consumes:
       - application/json
@@ -2199,7 +2199,7 @@ paths:
       summary: 创建菜单
       tags:
       - IAM / 菜单管理
-  /api/v1/system/menus/{id}/delete:
+  /system/menus/{id}/delete:
     post:
       consumes:
       - application/json
@@ -2225,7 +2225,7 @@ paths:
       summary: 删除菜单
       tags:
       - IAM / 菜单管理
-  /api/v1/system/menus/{id}/status:
+  /system/menus/{id}/status:
     post:
       consumes:
       - application/json
@@ -2257,7 +2257,7 @@ paths:
       summary: 更新菜单状态
       tags:
       - IAM / 菜单管理
-  /api/v1/system/menus/{id}/update:
+  /system/menus/{id}/update:
     post:
       consumes:
       - application/json
@@ -2289,7 +2289,7 @@ paths:
       summary: 更新菜单
       tags:
       - IAM / 菜单管理
-  /api/v1/system/notices:
+  /system/notices:
     get:
       consumes:
       - application/json
@@ -2370,7 +2370,7 @@ paths:
       summary: 创建公告
       tags:
       - System / 公告管理
-  /api/v1/system/notices/{id}/status:
+  /system/notices/{id}/status:
     post:
       consumes:
       - application/json
@@ -2406,7 +2406,7 @@ paths:
       summary: 更新公告状态
       tags:
       - System / 公告管理
-  /api/v1/system/notices/{id}/update:
+  /system/notices/{id}/update:
     post:
       consumes:
       - application/json
@@ -2447,7 +2447,7 @@ paths:
       summary: 更新公告
       tags:
       - System / 公告管理
-  /api/v1/system/operation-logs:
+  /system/operation-logs:
     get:
       consumes:
       - application/json
@@ -2501,7 +2501,7 @@ paths:
       summary: 查询操作日志列表
       tags:
       - System / 操作日志
-  /api/v1/system/posts:
+  /system/posts:
     get:
       consumes:
       - application/json
@@ -2556,7 +2556,7 @@ paths:
       summary: 创建岗位
       tags:
       - IAM / 岗位管理
-  /api/v1/system/posts/{id}/status:
+  /system/posts/{id}/status:
     post:
       consumes:
       - application/json
@@ -2588,7 +2588,7 @@ paths:
       summary: 更新岗位状态
       tags:
       - IAM / 岗位管理
-  /api/v1/system/posts/{id}/update:
+  /system/posts/{id}/update:
     post:
       consumes:
       - application/json
@@ -2620,7 +2620,7 @@ paths:
       summary: 更新岗位
       tags:
       - IAM / 岗位管理
-  /api/v1/system/roles:
+  /system/roles:
     get:
       consumes:
       - application/json
@@ -2675,7 +2675,7 @@ paths:
       summary: 创建角色
       tags:
       - IAM / 角色管理
-  /api/v1/system/roles/{id}/menus:
+  /system/roles/{id}/menus:
     post:
       consumes:
       - application/json
@@ -2707,7 +2707,7 @@ paths:
       summary: 更新角色菜单权限
       tags:
       - IAM / 角色管理
-  /api/v1/system/roles/{id}/permissions:
+  /system/roles/{id}/permissions:
     post:
       consumes:
       - application/json
@@ -2739,7 +2739,7 @@ paths:
       summary: 更新角色接口权限
       tags:
       - IAM / 角色管理
-  /api/v1/system/roles/{id}/status:
+  /system/roles/{id}/status:
     post:
       consumes:
       - application/json
@@ -2771,7 +2771,7 @@ paths:
       summary: 更新角色状态
       tags:
       - IAM / 角色管理
-  /api/v1/system/roles/{id}/update:
+  /system/roles/{id}/update:
     post:
       consumes:
       - application/json
@@ -2803,7 +2803,7 @@ paths:
       summary: 更新角色
       tags:
       - IAM / 角色管理
-  /api/v1/system/users:
+  /system/users:
     get:
       consumes:
       - application/json
@@ -2874,7 +2874,7 @@ paths:
       summary: 创建用户
       tags:
       - IAM / 用户管理
-  /api/v1/system/users/{id}/roles:
+  /system/users/{id}/roles:
     post:
       consumes:
       - application/json
@@ -2910,7 +2910,7 @@ paths:
       summary: 更新用户角色
       tags:
       - IAM / 用户管理
-  /api/v1/system/users/{id}/status:
+  /system/users/{id}/status:
     post:
       consumes:
       - application/json
@@ -2946,7 +2946,7 @@ paths:
       summary: 更新用户状态
       tags:
       - IAM / 用户管理
-  /api/v1/system/users/{id}/update:
+  /system/users/{id}/update:
     post:
       consumes:
       - application/json

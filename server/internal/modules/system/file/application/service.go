@@ -2,20 +2,12 @@ package application
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
-	"io"
 	"mime/multipart"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	filedomain "ez-admin-gin/server/internal/modules/system/file/domain"
-	fileinfra "ez-admin-gin/server/internal/modules/system/file/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
@@ -26,10 +18,8 @@ import (
 )
 
 const (
-	defaultUploadDir        = "uploads"
-	defaultUploadPublicPath = "/uploads"
-	defaultUploadMaxSizeMB  = 10
-	localFileStorage        = "local"
+	defaultUploadMaxSizeMB = 10
+	localFileStorage       = "local"
 )
 
 var defaultUploadAllowedExts = []string{
@@ -37,18 +27,20 @@ var defaultUploadAllowedExts = []string{
 }
 
 type Service struct {
-	db   *gorm.DB
-	repo *fileinfra.Repository
-	cfg  platformConfig.UploadConfig
-	log  *zap.Logger
+	tx      FileTransactor
+	repo    FileRepository
+	storage FileStorage
+	cfg     platformConfig.UploadConfig
+	log     *zap.Logger
 }
 
-func NewService(db *gorm.DB, repo *fileinfra.Repository, cfg platformConfig.UploadConfig, log *zap.Logger) *Service {
+func NewService(tx FileTransactor, repo FileRepository, storage FileStorage, cfg platformConfig.UploadConfig, log *zap.Logger) *Service {
 	return &Service{
-		db:   db,
-		repo: repo,
-		cfg:  normalizeUploadConfig(cfg),
-		log:  log,
+		tx:      tx,
+		repo:    repo,
+		storage: storage,
+		cfg:     normalizeUploadConfig(cfg),
+		log:     log,
 	}
 }
 
@@ -81,7 +73,7 @@ func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader 
 		return model.SystemFile{}, err
 	}
 
-	saved, err := s.saveUploadedFile(fileHeader)
+	saved, err := s.storage.SaveUploadedFile(fileHeader)
 	if err != nil {
 		return model.SystemFile{}, errorsx.Internal("保存文件失败", err)
 	}
@@ -101,10 +93,10 @@ func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader 
 		Remark:       "",
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := s.tx.WithinTransaction(ctx, func(tx *gorm.DB) error {
 		return s.repo.Create(tx, &item)
 	}); err != nil {
-		_ = os.Remove(saved.AbsolutePath)
+		_ = s.storage.Delete(saved.AbsolutePath)
 		return model.SystemFile{}, errorsx.Internal("保存文件记录失败", err)
 	}
 
@@ -112,8 +104,10 @@ func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader 
 }
 
 func (s *Service) CleanupUploadedFile(item model.SystemFile) {
-	_ = s.db.Where("id = ?", item.ID).Delete(&model.SystemFile{}).Error
-	_ = os.Remove(item.Path)
+	_ = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
+		return s.repo.DeleteByID(tx, item.ID)
+	})
+	_ = s.storage.Delete(item.Path)
 }
 
 func (s *Service) validateUploadFile(fileHeader *multipart.FileHeader) error {
@@ -133,69 +127,21 @@ func (s *Service) validateUploadFile(fileHeader *multipart.FileHeader) error {
 	return filedomain.ValidateAllowedExt(ext, s.cfg.AllowedExts)
 }
 
-func (s *Service) saveUploadedFile(fileHeader *multipart.FileHeader) (filedomain.SavedUploadedFile, error) {
-	src, err := fileHeader.Open()
-	if err != nil {
-		return filedomain.SavedUploadedFile{}, err
-	}
-	defer src.Close()
-
-	now := time.Now()
-	dateDir := now.Format("20060102")
-	ext := filedomain.NormalizeExt(filepath.Ext(fileHeader.Filename))
-	randomPart, err := randomHex(8)
-	if err != nil {
-		return filedomain.SavedUploadedFile{}, err
-	}
-
-	fileName := fmt.Sprintf("%s_%s%s", now.Format("20060102150405"), randomPart, ext)
-	targetDir := filepath.Join(s.cfg.Dir, dateDir)
-	if err := os.MkdirAll(targetDir, 0o755); err != nil {
-		return filedomain.SavedUploadedFile{}, err
-	}
-
-	absolutePath := filepath.Join(targetDir, fileName)
-	dst, err := os.OpenFile(absolutePath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
-	if err != nil {
-		return filedomain.SavedUploadedFile{}, err
-	}
-	defer dst.Close()
-
-	hasher := sha256.New()
-	written, err := io.Copy(dst, io.TeeReader(src, hasher))
-	if err != nil {
-		_ = os.Remove(absolutePath)
-		return filedomain.SavedUploadedFile{}, err
-	}
-
-	publicPath := normalizeUploadPublicPath(s.cfg.PublicPath)
-	relativePath := filepath.ToSlash(filepath.Join(s.cfg.Dir, dateDir, fileName))
-	url := publicPath + "/" + dateDir + "/" + fileName
-	mimeType := strings.TrimSpace(fileHeader.Header.Get("Content-Type"))
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
-
-	return filedomain.SavedUploadedFile{
-		OriginalName: filepath.Base(fileHeader.Filename),
-		FileName:     fileName,
-		Ext:          ext,
-		MimeType:     mimeType,
-		Size:         written,
-		Sha256:       hex.EncodeToString(hasher.Sum(nil)),
-		Path:         relativePath,
-		URL:          url,
-		AbsolutePath: absolutePath,
-	}, nil
-}
-
 func normalizeUploadConfig(cfg platformConfig.UploadConfig) platformConfig.UploadConfig {
 	cfg.Dir = strings.TrimSpace(cfg.Dir)
 	if cfg.Dir == "" {
-		cfg.Dir = defaultUploadDir
+		cfg.Dir = "uploads"
 	}
 
-	cfg.PublicPath = normalizeUploadPublicPath(cfg.PublicPath)
+	cfg.PublicPath = strings.TrimSpace(cfg.PublicPath)
+	if cfg.PublicPath == "" {
+		cfg.PublicPath = "/uploads"
+	} else {
+		if !strings.HasPrefix(cfg.PublicPath, "/") {
+			cfg.PublicPath = "/" + cfg.PublicPath
+		}
+		cfg.PublicPath = strings.TrimRight(cfg.PublicPath, "/")
+	}
 	if cfg.MaxSizeMB <= 0 {
 		cfg.MaxSizeMB = defaultUploadMaxSizeMB
 	}
@@ -207,28 +153,9 @@ func normalizeUploadConfig(cfg platformConfig.UploadConfig) platformConfig.Uploa
 	return cfg
 }
 
-func normalizeUploadPublicPath(publicPath string) string {
-	publicPath = strings.TrimSpace(publicPath)
-	if publicPath == "" {
-		return defaultUploadPublicPath
-	}
-	if !strings.HasPrefix(publicPath, "/") {
-		publicPath = "/" + publicPath
-	}
-	return strings.TrimRight(publicPath, "/")
-}
-
 func uploadMaxBytes(maxSizeMB int64) int64 {
 	if maxSizeMB <= 0 {
 		maxSizeMB = defaultUploadMaxSizeMB
 	}
 	return maxSizeMB * 1024 * 1024
-}
-
-func randomHex(size int) (string, error) {
-	bytes := make([]byte, size)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }

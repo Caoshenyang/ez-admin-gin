@@ -35,7 +35,7 @@ func NewHandler(service *userapp.Service, log *zap.Logger) *Handler {
 // @Success      200  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/users [get]
+// @Router       /system/users [get]
 func (h *Handler) List(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -67,7 +67,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/users [post]
+// @Router       /system/users [post]
 func (h *Handler) Create(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -100,7 +100,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/users/{id}/update [post]
+// @Router       /system/users/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -139,7 +139,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/users/{id}/status [post]
+// @Router       /system/users/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {
@@ -180,7 +180,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/users/{id}/roles [post]
+// @Router       /system/users/{id}/roles [post]
 func (h *Handler) UpdateRoles(c *gin.Context) {
 	actor, ok := httpx.CurrentActor(c, h.log)
 	if !ok {

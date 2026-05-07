@@ -3,6 +3,7 @@ package api
 import (
 	configapp "ez-admin-gin/server/internal/modules/system/config/application"
 	configinfra "ez-admin-gin/server/internal/modules/system/config/infra"
+	platformDatabase "ez-admin-gin/server/internal/platform/database"
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"
@@ -18,7 +19,8 @@ type RouteOptions struct {
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	repo := configinfra.NewRepository(opts.DB)
-	service := configapp.NewService(opts.DB, repo, opts.Redis, opts.Log)
+	cache := configinfra.NewCache(opts.Redis)
+	service := configapp.NewService(platformDatabase.NewTransactor(opts.DB), repo, cache, opts.Log)
 	handler := NewHandler(service, opts.Log)
 
 	group.GET("/configs", handler.List)

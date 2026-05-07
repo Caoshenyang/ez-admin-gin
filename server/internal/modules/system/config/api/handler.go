@@ -35,7 +35,7 @@ func NewHandler(service *configapp.Service, log *zap.Logger) *Handler {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/configs [get]
+// @Router       /system/configs [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -62,7 +62,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/configs [post]
+// @Router       /system/configs [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -90,7 +90,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/configs/{id}/update [post]
+// @Router       /system/configs/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	configID, ok := httpx.UintIDParam(c, "id", "配置 ID", h.log)
 	if !ok {
@@ -123,7 +123,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/configs/{id}/status [post]
+// @Router       /system/configs/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	configID, ok := httpx.UintIDParam(c, "id", "配置 ID", h.log)
 	if !ok {
@@ -154,7 +154,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/configs/value/{key} [get]
+// @Router       /system/configs/value/{key} [get]
 func (h *Handler) Value(c *gin.Context) {
 	key := strings.TrimSpace(c.Param("key"))
 	result, err := h.service.Value(c.Request.Context(), key)

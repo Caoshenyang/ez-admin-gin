@@ -33,7 +33,7 @@ func NewHandler(service *operationlogapp.Service, log *zap.Logger) *Handler {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/operation-logs [get]
+// @Router       /system/operation-logs [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {

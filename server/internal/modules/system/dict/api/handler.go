@@ -31,7 +31,7 @@ func NewHandler(service *dictapp.Service, log *zap.Logger) *Handler {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-types [get]
+// @Router       /system/dict-types [get]
 func (h *Handler) ListTypes(c *gin.Context) {
 	var query TypeListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -58,7 +58,7 @@ func (h *Handler) ListTypes(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-types [post]
+// @Router       /system/dict-types [post]
 func (h *Handler) CreateType(c *gin.Context) {
 	var req CreateTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,7 +86,7 @@ func (h *Handler) CreateType(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-types/{id}/update [post]
+// @Router       /system/dict-types/{id}/update [post]
 func (h *Handler) UpdateType(c *gin.Context) {
 	typeID, ok := httpx.UintIDParam(c, "id", "字典类型 ID", h.log)
 	if !ok {
@@ -119,7 +119,7 @@ func (h *Handler) UpdateType(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-types/{id}/status [post]
+// @Router       /system/dict-types/{id}/status [post]
 func (h *Handler) UpdateTypeStatus(c *gin.Context) {
 	typeID, ok := httpx.UintIDParam(c, "id", "字典类型 ID", h.log)
 	if !ok {
@@ -154,7 +154,7 @@ func (h *Handler) UpdateTypeStatus(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-items [get]
+// @Router       /system/dict-items [get]
 func (h *Handler) ListItems(c *gin.Context) {
 	var query ItemListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -181,7 +181,7 @@ func (h *Handler) ListItems(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-items [post]
+// @Router       /system/dict-items [post]
 func (h *Handler) CreateItem(c *gin.Context) {
 	var req CreateItemRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -209,7 +209,7 @@ func (h *Handler) CreateItem(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-items/{id}/update [post]
+// @Router       /system/dict-items/{id}/update [post]
 func (h *Handler) UpdateItem(c *gin.Context) {
 	itemID, ok := httpx.UintIDParam(c, "id", "字典项 ID", h.log)
 	if !ok {
@@ -242,7 +242,7 @@ func (h *Handler) UpdateItem(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/dict-items/{id}/status [post]
+// @Router       /system/dict-items/{id}/status [post]
 func (h *Handler) UpdateItemStatus(c *gin.Context) {
 	itemID, ok := httpx.UintIDParam(c, "id", "字典项 ID", h.log)
 	if !ok {

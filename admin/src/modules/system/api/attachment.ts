@@ -5,6 +5,7 @@ import type {
   AttachmentItem,
   AttachmentListQuery,
   AttachmentListResponse,
+  AttachmentStatus,
   CreateAttachmentPayload,
   UpdateAttachmentPayload,
 } from '../types/attachment'
@@ -44,10 +45,10 @@ export async function updateAttachment(id: number, payload: UpdateAttachmentPayl
   return response.data.data
 }
 
-export async function updateAttachmentStatus(id: number, status: number) {
+export async function updateAttachmentStatus(id: number, payload: { status: AttachmentStatus }) {
   const response = await http.post<ApiResponse<{ id: number, status: number }>>(
     `/system/attachments/${id}/status`,
-    { status },
+    payload,
   )
   return response.data.data
 }

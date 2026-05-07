@@ -56,3 +56,7 @@ func (r *Repository) List(query filedomain.ListQuery, page int, pageSize int) ([
 func (r *Repository) Create(db *gorm.DB, item *model.SystemFile) error {
 	return db.Create(item).Error
 }
+
+func (r *Repository) DeleteByID(db *gorm.DB, id uint) error {
+	return db.Where("id = ?", id).Delete(&model.SystemFile{}).Error
+}

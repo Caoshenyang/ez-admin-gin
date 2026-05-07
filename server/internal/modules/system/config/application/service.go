@@ -5,12 +5,10 @@ import (
 	"time"
 
 	configdomain "ez-admin-gin/server/internal/modules/system/config/domain"
-	configinfra "ez-admin-gin/server/internal/modules/system/config/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
 	"ez-admin-gin/server/internal/platform/model"
 
-	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -21,14 +19,14 @@ const (
 )
 
 type Service struct {
-	db    *gorm.DB
-	repo  *configinfra.Repository
-	redis *goredis.Client
+	tx    ConfigTransactor
+	repo  ConfigRepository
+	cache ConfigCache
 	log   *zap.Logger
 }
 
-func NewService(db *gorm.DB, repo *configinfra.Repository, redis *goredis.Client, log *zap.Logger) *Service {
-	return &Service{db: db, repo: repo, redis: redis, log: log}
+func NewService(tx ConfigTransactor, repo ConfigRepository, cache ConfigCache, log *zap.Logger) *Service {
+	return &Service{tx: tx, repo: repo, cache: cache, log: log}
 }
 
 func (s *Service) List(query configdomain.ListQuery) (configdomain.ListResponse, error) {
@@ -63,7 +61,7 @@ func (s *Service) Create(ctx context.Context, req configdomain.CreateRequest) (c
 		Remark:    req.Remark,
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(ctx, func(tx *gorm.DB) error {
 		exists, err := s.repo.KeyExists(tx, req.Key)
 		if err != nil {
 			return err
@@ -89,7 +87,7 @@ func (s *Service) Update(ctx context.Context, configID uint, req configdomain.Up
 	}
 
 	var updated configdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(ctx, func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, configID)
 		if err != nil {
 			return err
@@ -115,7 +113,7 @@ func (s *Service) UpdateStatus(ctx context.Context, configID uint, status model.
 	}
 
 	var updated configdomain.Entity
-	err := s.db.Transaction(func(tx *gorm.DB) error {
+	err := s.tx.WithinTransaction(ctx, func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, configID)
 		if err != nil {
 			return err
@@ -141,12 +139,12 @@ func (s *Service) Value(ctx context.Context, key string) (configdomain.ValueResp
 		return configdomain.ValueResponse{}, err
 	}
 
-	if s.redis != nil {
-		value, err := s.redis.Get(ctx, s.cacheKey(key)).Result()
-		if err == nil {
+	if s.cache != nil {
+		value, found, err := s.cache.Get(ctx, s.cacheKey(key))
+		if found {
 			return configdomain.ValueResponse{Key: key, Value: value, Source: "cache"}, nil
 		}
-		if err != nil && err != goredis.Nil {
+		if err != nil {
 			s.log.Warn("get system config cache failed", zap.String("key", key), zap.Error(err))
 		}
 	}
@@ -165,19 +163,19 @@ func (s *Service) cacheKey(key string) string {
 }
 
 func (s *Service) writeCache(ctx context.Context, item model.SystemConfig) {
-	if s.redis == nil {
+	if s.cache == nil {
 		return
 	}
-	if err := s.redis.Set(ctx, s.cacheKey(item.ConfigKey), item.Value, cacheTTL).Err(); err != nil {
+	if err := s.cache.Set(ctx, s.cacheKey(item.ConfigKey), item.Value, cacheTTL); err != nil {
 		s.log.Warn("set system config cache failed", zap.String("key", item.ConfigKey), zap.Error(err))
 	}
 }
 
 func (s *Service) deleteCache(ctx context.Context, key string) {
-	if s.redis == nil {
+	if s.cache == nil {
 		return
 	}
-	if err := s.redis.Del(ctx, s.cacheKey(key)).Err(); err != nil {
+	if err := s.cache.Delete(ctx, s.cacheKey(key)); err != nil {
 		s.log.Warn("delete system config cache failed", zap.String("key", key), zap.Error(err))
 	}
 }

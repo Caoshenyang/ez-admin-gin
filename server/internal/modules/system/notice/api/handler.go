@@ -32,7 +32,7 @@ func NewHandler(service *noticeapp.Service, log *zap.Logger) *Handler {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/notices [get]
+// @Router       /system/notices [get]
 func (h *Handler) List(c *gin.Context) {
 	var query ListQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
@@ -57,7 +57,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/notices [post]
+// @Router       /system/notices [post]
 func (h *Handler) Create(c *gin.Context) {
 	var req CreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -83,7 +83,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/notices/{id}/update [post]
+// @Router       /system/notices/{id}/update [post]
 func (h *Handler) Update(c *gin.Context) {
 	noticeID, ok := httpx.UintIDParam(c, "id", "公告 ID", h.log)
 	if !ok {
@@ -113,7 +113,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
-// @Router       /api/v1/system/notices/{id}/status [post]
+// @Router       /system/notices/{id}/status [post]
 func (h *Handler) UpdateStatus(c *gin.Context) {
 	noticeID, ok := httpx.UintIDParam(c, "id", "公告 ID", h.log)
 	if !ok {

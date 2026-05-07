@@ -6,8 +6,6 @@ import (
 	"mime/multipart"
 
 	attachmentdomain "ez-admin-gin/server/internal/modules/system/attachment/domain"
-	attachmentinfra "ez-admin-gin/server/internal/modules/system/attachment/infra"
-	fileapp "ez-admin-gin/server/internal/modules/system/file/application"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
 	"ez-admin-gin/server/internal/platform/model"
@@ -16,13 +14,13 @@ import (
 )
 
 type Service struct {
-	db          *gorm.DB
-	repo        *attachmentinfra.Repository
-	fileService *fileapp.Service
+	tx          AttachmentTransactor
+	repo        AttachmentRepository
+	fileService FileAssetService
 }
 
-func NewService(db *gorm.DB, repo *attachmentinfra.Repository, fileService *fileapp.Service) *Service {
-	return &Service{db: db, repo: repo, fileService: fileService}
+func NewService(tx AttachmentTransactor, repo AttachmentRepository, fileService FileAssetService) *Service {
+	return &Service{tx: tx, repo: repo, fileService: fileService}
 }
 
 func (s *Service) List(query attachmentdomain.ListQuery) (attachmentdomain.ListResponse, error) {
@@ -66,7 +64,7 @@ func (s *Service) CreateByUpload(ctx context.Context, uploaderID uint, fileHeade
 		Remark:      req.Remark,
 	}
 
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	if err := s.tx.WithinTransaction(ctx, func(tx *gorm.DB) error {
 		return s.repo.Create(tx, &item)
 	}); err != nil {
 		s.fileService.CleanupUploadedFile(uploaded)
@@ -87,7 +85,7 @@ func (s *Service) Update(id uint, req attachmentdomain.UpdateRequest) (attachmen
 		return attachmentdomain.Response{}, err
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, id)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -115,7 +113,7 @@ func (s *Service) UpdateStatus(id uint, status model.SystemAttachmentStatus) err
 		return errorsx.BadRequest("附件状态不正确")
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, id)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
