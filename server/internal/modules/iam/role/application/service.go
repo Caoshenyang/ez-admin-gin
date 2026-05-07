@@ -2,7 +2,6 @@ package application
 
 import (
 	roledomain "ez-admin-gin/server/internal/modules/iam/role/domain"
-	roleinfra "ez-admin-gin/server/internal/modules/iam/role/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
 	"ez-admin-gin/server/internal/platform/model"
@@ -11,12 +10,12 @@ import (
 )
 
 type Service struct {
-	db   *gorm.DB
-	repo *roleinfra.Repository
+	tx   RoleTransactor
+	repo RoleRepository
 }
 
-func NewService(db *gorm.DB, repo *roleinfra.Repository) *Service {
-	return &Service{db: db, repo: repo}
+func NewService(tx RoleTransactor, repo RoleRepository) *Service {
+	return &Service{tx: tx, repo: repo}
 }
 
 func (s *Service) List(query roledomain.ListQuery) (roledomain.ListResponse, error) {
@@ -62,7 +61,7 @@ func (s *Service) Create(req roledomain.CreateRequest) (roledomain.Response, err
 	}
 
 	var created roledomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		exists, err := s.repo.CodeExists(tx, req.Code)
 		if err != nil {
 			return err
@@ -102,7 +101,7 @@ func (s *Service) Update(roleID uint, req roledomain.UpdateRequest) (roledomain.
 	}
 
 	var updated roledomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		role, err := s.repo.FindByID(tx, roleID)
 		if err != nil {
 			return err
@@ -138,7 +137,7 @@ func (s *Service) UpdateStatus(roleID uint, status model.RoleStatus) error {
 		return errorsx.BadRequest("角色状态不正确")
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		role, err := s.repo.FindByID(tx, roleID)
 		if err != nil {
 			return err
@@ -158,7 +157,7 @@ func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.Permis
 	}
 
 	var roleCode string
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		role, err := s.repo.FindByID(tx, roleID)
 		if err != nil {
 			return err
@@ -183,7 +182,7 @@ func (s *Service) UpdateMenus(roleID uint, menuIDs []uint) ([]uint, error) {
 		return nil, err
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		role, err := s.repo.FindByID(tx, roleID)
 		if err != nil {
 			return err

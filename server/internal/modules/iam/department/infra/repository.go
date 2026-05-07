@@ -2,7 +2,6 @@ package infra
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	departmentdomain "ez-admin-gin/server/internal/modules/iam/department/domain"
@@ -169,22 +168,4 @@ func (r *Repository) Subtree(db *gorm.DB, departmentID uint, fullPath string) ([
 
 func (r *Repository) UpdateAncestors(db *gorm.DB, departmentID uint, ancestors string) error {
 	return db.Model(&model.Department{}).Where("id = ?", departmentID).Update("ancestors", ancestors).Error
-}
-
-func BuildAncestors(parent model.Department) string {
-	if parent.ID == 0 {
-		return "0"
-	}
-	return fmt.Sprintf("%s,%d", parent.Ancestors, parent.ID)
-}
-
-func FullPath(item model.Department) string {
-	if item.Ancestors == "" {
-		return fmt.Sprintf("%d", item.ID)
-	}
-	return fmt.Sprintf("%s,%d", item.Ancestors, item.ID)
-}
-
-func IsDescendantPath(path string, target string) bool {
-	return path == target || strings.HasPrefix(path, target+",")
 }

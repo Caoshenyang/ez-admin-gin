@@ -72,7 +72,17 @@
       "Bash(npm list:*)",
       "Bash(npm view:*)",
       "Bash(npm config:*)",
-      "Bash(npx vue-tsc *)"
+      "Bash(npx vue-tsc *)",
+      "Bash(npx oxlint *)",
+      "Bash(swag *)",
+      "Bash(go install *)",
+      "Bash(chmod +x *)",
+      "Bash(bash *)",
+      "Bash(ls -la admin/src/modules/iam/components/)",
+      "Bash(ls -la admin/src/modules/iam/composables/)",
+      "Bash(ls -la admin/src/modules/system/components/)",
+      "Bash(ls -la admin/src/modules/system/composables/)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

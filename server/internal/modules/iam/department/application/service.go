@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	departmentdomain "ez-admin-gin/server/internal/modules/iam/department/domain"
-	departmentinfra "ez-admin-gin/server/internal/modules/iam/department/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/platform/datascope"
 	"ez-admin-gin/server/internal/platform/model"
@@ -15,12 +14,12 @@ import (
 )
 
 type Service struct {
-	repo *departmentinfra.Repository
-	db   *gorm.DB
+	tx   DepartmentTransactor
+	repo DepartmentRepository
 }
 
-func NewService(db *gorm.DB, repo *departmentinfra.Repository) *Service {
-	return &Service{db: db, repo: repo}
+func NewService(tx DepartmentTransactor, repo DepartmentRepository) *Service {
+	return &Service{tx: tx, repo: repo}
 }
 
 func (s *Service) List(actor datascope.Actor, query departmentdomain.ListQuery) ([]departmentdomain.Response, error) {
@@ -41,7 +40,7 @@ func (s *Service) Create(actor datascope.Actor, req departmentdomain.CreateReque
 	}
 
 	var created departmentdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		exists, err := s.repo.CodeExists(tx, code, 0)
 		if err != nil {
 			return err
@@ -63,7 +62,7 @@ func (s *Service) Create(actor datascope.Actor, req departmentdomain.CreateReque
 
 		created = departmentdomain.Entity{
 			ParentID:     parentID,
-			Ancestors:    departmentinfra.BuildAncestors(parent),
+			Ancestors:    departmentdomain.BuildAncestors(parent),
 			Name:         name,
 			Code:         code,
 			LeaderUserID: leaderUserID,
@@ -89,7 +88,7 @@ func (s *Service) Update(actor datascope.Actor, departmentID uint, req departmen
 	}
 
 	var updated departmentdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		current, err := s.repo.FindByIDInScope(tx, actor, departmentID)
 		if err != nil {
 			return err
@@ -117,17 +116,17 @@ func (s *Service) Update(actor datascope.Actor, departmentID uint, req departmen
 			return errorsx.BadRequest("不能把部门挂到自己下面")
 		}
 
-		oldFullPath := departmentinfra.FullPath(current)
+		oldFullPath := departmentdomain.FullPath(current)
 		oldParentID := current.ParentID
 		oldAncestors := current.Ancestors
 		if parent.ID != 0 {
-			parentFullPath := departmentinfra.FullPath(parent)
-			if departmentinfra.IsDescendantPath(parentFullPath, oldFullPath) {
+			parentFullPath := departmentdomain.FullPath(parent)
+			if departmentdomain.IsDescendantPath(parentFullPath, oldFullPath) {
 				return errorsx.BadRequest("不能把部门挂到自己的子部门下面")
 			}
 		}
 
-		newAncestors := departmentinfra.BuildAncestors(parent)
+		newAncestors := departmentdomain.BuildAncestors(parent)
 		if err := s.repo.Update(tx, &current, parentID, newAncestors, name, code, leaderUserID, sortValue, status, remark); err != nil {
 			return err
 		}
@@ -161,7 +160,7 @@ func (s *Service) UpdateStatus(actor datascope.Actor, departmentID uint, status 
 		return errorsx.BadRequest("部门状态不正确")
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		current, err := s.repo.FindByIDInScope(tx, actor, departmentID)
 		if err != nil {
 			return err

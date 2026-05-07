@@ -80,3 +80,21 @@ pnpm exec vue-tsc --noEmit
 ```
 
 如果 `pnpm exec` 解析不到二进制，可以直接调用 `admin/node_modules/.bin` 下的对应命令。视觉验证由用户负责时，在最终回复里明确说明未跑浏览器验证。
+
+## 模块分层约定
+
+每个业务模块目录遵循固定的三层职责：
+
+```
+modules/{module}/
+├── api/            接口调用，只做 HTTP 请求和类型转换
+├── types/          TypeScript 类型定义
+├── composables/    状态管理 + 副作用逻辑（useXxxPage）
+├── components/     展示组件，不直接调用 api
+└── pages/          编排层，只做拼装和路由绑定
+```
+
+- **pages** 只负责把 composable 返回的数据/函数通过 props 和 events 接到组件上，不包含业务逻辑。
+- **components** 通过 props 接收数据、通过 events 上报交互，不导入 api 层。
+- **composables** 封装全部状态、计算属性和副作用，返回页面所需的全部响应式数据和方法。
+- 全局共享组件放在 `admin/src/components/`，模块级组件放在各自 `components/` 目录。

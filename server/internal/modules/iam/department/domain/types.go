@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -111,4 +112,22 @@ func BuildResponse(item model.Department) Response {
 		CreatedAt:    item.CreatedAt,
 		UpdatedAt:    item.UpdatedAt,
 	}
+}
+
+func BuildAncestors(parent model.Department) string {
+	if parent.ID == 0 {
+		return "0"
+	}
+	return fmt.Sprintf("%s,%d", parent.Ancestors, parent.ID)
+}
+
+func FullPath(item model.Department) string {
+	if item.Ancestors == "" {
+		return fmt.Sprintf("%d", item.ID)
+	}
+	return fmt.Sprintf("%s,%d", item.Ancestors, item.ID)
+}
+
+func IsDescendantPath(path string, target string) bool {
+	return path == target || strings.HasPrefix(path, target+",")
 }

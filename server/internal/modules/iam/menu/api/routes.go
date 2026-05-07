@@ -3,6 +3,7 @@ package api
 import (
 	menuapp "ez-admin-gin/server/internal/modules/iam/menu/application"
 	menuinfra "ez-admin-gin/server/internal/modules/iam/menu/infra"
+	"ez-admin-gin/server/internal/platform/database"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -16,7 +17,8 @@ type RouteOptions struct {
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	repo := menuinfra.NewRepository(opts.DB)
-	service := menuapp.NewService(opts.DB, repo)
+	tx := database.NewTransactor(opts.DB)
+	service := menuapp.NewService(tx, repo)
 	handler := NewHandler(service, opts.Log)
 
 	group.GET("/menus", handler.List)

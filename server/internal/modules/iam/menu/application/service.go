@@ -2,7 +2,6 @@ package application
 
 import (
 	menudomain "ez-admin-gin/server/internal/modules/iam/menu/domain"
-	menuinfra "ez-admin-gin/server/internal/modules/iam/menu/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/platform/model"
 
@@ -10,15 +9,12 @@ import (
 )
 
 type Service struct {
-	db   *gorm.DB
-	repo *menuinfra.Repository
+	tx   MenuTransactor
+	repo MenuRepository
 }
 
-func NewService(db *gorm.DB, repo *menuinfra.Repository) *Service {
-	return &Service{
-		db:   db,
-		repo: repo,
-	}
+func NewService(tx MenuTransactor, repo MenuRepository) *Service {
+	return &Service{tx: tx, repo: repo}
 }
 
 func (s *Service) List() ([]menudomain.Response, error) {
@@ -49,7 +45,7 @@ func (s *Service) Create(req menudomain.CreateRequest) (menudomain.Response, err
 		Remark:    req.Remark,
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		exists, err := s.repo.CodeExists(tx, req.Code)
 		if err != nil {
 			return err
@@ -77,7 +73,7 @@ func (s *Service) Update(menuID uint, req menudomain.UpdateRequest) (menudomain.
 	}
 
 	var updated menudomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, menuID)
 		if err != nil {
 			return err
@@ -104,7 +100,7 @@ func (s *Service) UpdateStatus(menuID uint, status model.MenuStatus) error {
 		return errorsx.BadRequest("菜单状态不正确")
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, menuID)
 		if err != nil {
 			return err
@@ -115,7 +111,7 @@ func (s *Service) UpdateStatus(menuID uint, status model.MenuStatus) error {
 }
 
 func (s *Service) Delete(menuID uint) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, menuID)
 		if err != nil {
 			return err

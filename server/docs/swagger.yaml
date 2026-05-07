@@ -1,3 +1,4 @@
+basePath: /api/v1
 definitions:
   api.CreateItemRequest:
     properties:
@@ -1190,9 +1191,254 @@ definitions:
     - password
     - username
     type: object
+host: localhost:8080
 info:
   contact: {}
+  description: EZ Admin 后台管理系统 API，包含认证、用户管理、角色管理、系统配置等功能。
+  title: EZ Admin Gin API
+  version: "1.0"
 paths:
+  /auth/account:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AccountProfileResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询账户资料
+      tags:
+      - 认证
+  /auth/account/password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 密码参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateAccountPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 修改账户密码
+      tags:
+      - 认证
+  /auth/account/profile:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 更新参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdateAccountProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AccountProfileResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 更新账户资料
+      tags:
+      - 认证
+  /auth/dashboard:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.DashboardResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询工作台数据
+      tags:
+      - 认证
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 登录参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      summary: 用户登录
+      tags:
+      - 认证
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.MeResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证
+  /auth/menus:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.MenuResponse'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询当前用户菜单
+      tags:
+      - 认证
+  /setup/init:
+    post:
+      consumes:
+      - application/json
+      description: 创建超级管理员账号，仅当系统中无用户时可执行。
+      parameters:
+      - description: 初始化参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/setup.initRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 系统初始化
+      tags:
+      - 系统
   /system/attachments:
     get:
       consumes:
@@ -2982,245 +3228,10 @@ paths:
       summary: 更新用户
       tags:
       - IAM / 用户管理
-  /auth/account:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/httpx.Body'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.AccountProfileResponse'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      security:
-      - BearerAuth: []
-      summary: 查询账户资料
-      tags:
-      - 认证
-  /auth/account/password:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 密码参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/domain.UpdateAccountPasswordRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/httpx.Body'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httpx.Body'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      security:
-      - BearerAuth: []
-      summary: 修改账户密码
-      tags:
-      - 认证
-  /auth/account/profile:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 更新参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/domain.UpdateAccountProfileRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/httpx.Body'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.AccountProfileResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httpx.Body'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      security:
-      - BearerAuth: []
-      summary: 更新账户资料
-      tags:
-      - 认证
-  /auth/dashboard:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/httpx.Body'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.DashboardResponse'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      security:
-      - BearerAuth: []
-      summary: 查询工作台数据
-      tags:
-      - 认证
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 登录参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/domain.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/httpx.Body'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.LoginResponse'
-              type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/httpx.Body'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      summary: 用户登录
-      tags:
-      - 认证
-  /auth/me:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/httpx.Body'
-            - properties:
-                data:
-                  $ref: '#/definitions/domain.MeResponse'
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      security:
-      - BearerAuth: []
-      summary: 获取当前用户信息
-      tags:
-      - 认证
-  /auth/menus:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/httpx.Body'
-            - properties:
-                data:
-                  items:
-                    $ref: '#/definitions/domain.MenuResponse'
-                  type: array
-              type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/httpx.Body'
-      security:
-      - BearerAuth: []
-      summary: 查询当前用户菜单
-      tags:
-      - 认证
-  /setup/init:
-    post:
-      consumes:
-      - application/json
-      description: 创建超级管理员账号，仅当系统中无用户时可执行。
-      parameters:
-      - description: 初始化参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/setup.initRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: 系统初始化
-      tags:
-      - 系统
+securityDefinitions:
+  BearerAuth:
+    description: 输入 Bearer {token}
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

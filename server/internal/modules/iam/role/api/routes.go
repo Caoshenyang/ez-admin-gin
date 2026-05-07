@@ -3,6 +3,7 @@ package api
 import (
 	roleapp "ez-admin-gin/server/internal/modules/iam/role/application"
 	roleinfra "ez-admin-gin/server/internal/modules/iam/role/infra"
+	"ez-admin-gin/server/internal/platform/database"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -16,7 +17,8 @@ type RouteOptions struct {
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	repo := roleinfra.NewRepository(opts.DB)
-	service := roleapp.NewService(opts.DB, repo)
+	tx := database.NewTransactor(opts.DB)
+	service := roleapp.NewService(tx, repo)
 	handler := NewHandler(service, opts.Log)
 
 	group.GET("/roles", handler.List)

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { CloseOutline } from '@vicons/ionicons5'
 import type { FormInst, FormRules, SelectOption } from 'naive-ui'
-import { NButton, NForm, NFormItem, NIcon, NInput, NInputNumber, NModal, NSelect } from 'naive-ui'
+import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect } from 'naive-ui'
+
+import FormModalHeader from '@/components/FormModalHeader.vue'
 
 import type { RoleFormModel } from '../composables/useRolePage'
 
@@ -25,13 +26,11 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
 <template>
   <NModal :show="show" preset="card" :closable="false" class="role-modal" style="width: 560px; max-width: calc(100vw - 32px)" @update:show="(value) => $emit('update:show', value)">
     <template #header>
-      <div class="modal-header">
-        <h2>{{ formMode === 'create' ? '新增角色' : '编辑角色' }}</h2>
-        <p>{{ formMode === 'create' ? '角色编码创建后会成为权限策略主体，建议使用稳定英文标识。' : '角色编码保持只读，避免影响已有权限策略。' }}</p>
-        <button type="button" class="modal-close" @click="$emit('update:show', false)">
-          <NIcon :size="18"><CloseOutline /></NIcon>
-        </button>
-      </div>
+      <FormModalHeader
+        :title="formMode === 'create' ? '新增角色' : '编辑角色'"
+        :subtitle="formMode === 'create' ? '角色编码创建后会成为权限策略主体，建议使用稳定英文标识。' : '角色编码保持只读，避免影响已有权限策略。'"
+        @close="$emit('update:show', false)"
+      />
     </template>
 
     <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="80">
@@ -71,40 +70,5 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
 
 .role-modal :deep(.n-card-header) {
   padding: 0;
-}
-
-.modal-header {
-  position: relative;
-  padding: 24px 28px;
-  background: linear-gradient(135deg, #eff6ff 0%, #e8f2ff 58%, #f4f9ff 100%);
-}
-
-.modal-header h2 {
-  font-size: 19px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.modal-header p {
-  margin-top: 8px;
-  max-width: 420px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #64748b;
-}
-
-.modal-close {
-  position: absolute;
-  top: 20px;
-  right: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  color: #64748b;
 }
 </style>
