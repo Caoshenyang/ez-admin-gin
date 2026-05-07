@@ -37,8 +37,6 @@ description: "集中记录后台底座中系统表的 PostgreSQL 与 MySQL 建�
 | `sys_dict_item` | 系统字典项表 |
 | `sys_file` | 文件上传记录表 |
 | `sys_attachment` | 附件中心表 |
-| `sys_customer` | CRM 客户档案表 |
-| `sys_customer_followup` | CRM 客户跟进记录表 |
 | `sys_operation_log` | 操作日志表 |
 | `sys_login_log` | 登录日志表 |
 | `sys_notice` | 公告表 |
@@ -49,70 +47,26 @@ description: "集中记录后台底座中系统表的 PostgreSQL 与 MySQL 建�
 | `casbin_rule` | Casbin 权限策略表 |
 
 ::: info v2 结构升级说明
-`v2` 主线已经把组织体系、数据权限和首批业务模块一起补齐了。像 `sys_user.department_id`、`sys_role.data_scope`、`sys_attachment`、`sys_customer` 这些结构，都应该和 [数据权限模型](./data-scope-model) 以及第 8 章模块接入主线一起理解。
+`v2` 主线已经把组织体系、数据权限和首批系统 / 通用模块一起补齐。像 `sys_user.department_id`、`sys_role.data_scope`、`sys_attachment` 这些结构，都应该和 [数据权限模型](./data-scope-model) 以及第 6 章模块接入主线一起理解。
+
+历史上用于演示业务模块接入的 CRM 表已经从当前分支移除，因此这页不再把它们列为“当前表清单”。
 :::
 
-<a id="sys-customer"></a>
+## 业务模块建表补充约定
 
-## `sys_customer` CRM 客户档案表
+这页现在只保留仓库主线仍然存在的表结构；如果你后续在自己的项目里新增非 `system` 分组业务表，最值得先判断的是它要不要进入统一数据权限链路。
 
-`sys_customer` 用来承接第一个非 `system` 分组的真实业务模块。它的设计目标不是做一套复杂 CRM，而是用最小但完整的业务资源，证明当前底座的模块接入、菜单权限和数据权限链路都已经可以稳定落地。
+如果需要复用当前 `datascope.UserQueryScope(...)` 语义，业务主表通常至少应考虑保留下面两类字段：
 
-字段含义：
-
-| 字段 | 说明 |
+| 字段 | 作用 |
 | --- | --- |
-| `id` | 客户记录主键，数据库自增生成 |
-| `name` | 客户名称 |
-| `contact_name` | 联系人姓名 |
-| `phone` | 联系电话 |
-| `level` | 客户等级，例如 `a`、`b`、`vip` |
-| `source` | 客户来源，例如 `referral`、`ads`、`offline` |
-| `department_id` | 归属部门 ID，对应 `sys_department.id` |
-| `owner_user_id` | 负责人用户 ID，对应 `sys_user.id` |
-| `status` | 客户状态：`1` 启用，`2` 停用 |
-| `remark` | 备注 |
-| `created_at` | 创建时间 |
-| `updated_at` | 更新时间 |
-| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
+| `department_id` | 表达数据归属部门，接入 `dept / dept_and_children / custom_dept` 这类范围过滤 |
+| `owner_user_id` | 表达数据负责人，接入 `self` 这类“只看我自己”语义 |
 
-这个表最关键的不是字段数量，而是它同时具有：
+这不是要求每张业务表都长成同一个样子，而是提醒你：
 
-- 部门归属字段 `department_id`
-- 负责人字段 `owner_user_id`
-
-这样模块就能直接复用统一的 `datascope.UserQueryScope(...)`，让 `all / dept / self / custom_dept` 这套平台数据权限语义真正进入业务资源。
-
-<a id="sys-customer-followup"></a>
-
-## `sys_customer_followup` CRM 客户跟进记录表
-
-`sys_customer_followup` 是客户档案之上的动作层业务表。它不是第二套孤立 CRM 结构，而是沿当前业务模块骨架继续扩出来的一张记录表，用来承接销售跟进、方案推进和下一次行动安排。
-
-字段含义：
-
-| 字段 | 说明 |
-| --- | --- |
-| `id` | 跟进记录主键，数据库自增生成 |
-| `customer_id` | 关联客户 ID，对应 `sys_customer.id` |
-| `department_id` | 继承客户归属部门 ID，对应 `sys_department.id` |
-| `owner_user_id` | 继承客户负责人 ID，对应 `sys_user.id` |
-| `follow_type` | 跟进方式，例如 `phone`、`wechat`、`visit`、`meeting` |
-| `subject` | 跟进主题 |
-| `content` | 跟进内容 |
-| `result` | 跟进结果摘要 |
-| `next_follow_at` | 下次计划跟进时间 |
-| `status` | 跟进状态：`1` 待跟进，`2` 已完成，`3` 已关闭 |
-| `created_at` | 创建时间 |
-| `updated_at` | 更新时间 |
-| `deleted_at` | 逻辑删除时间，`NULL` 表示未删除 |
-
-这张表最关键的设计点不是“多了一条客户动作记录”，而是它继续保留了：
-
-- `department_id`
-- `owner_user_id`
-
-这样 `crm/followup` 依然可以直接复用统一的 `datascope.UserQueryScope(...)`，不需要因为进入业务动作层就发明第二套数据权限规则。
+- 想复用现成数据权限规则，就要给查询作用域足够的归属信息
+- 如果业务表本身不适合直接带这两个字段，也要尽早想清楚要通过哪张主表或关系链补足归属语义
 
 <a id="sys-user"></a>
 

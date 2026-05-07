@@ -45,7 +45,7 @@ POST /api/v1/setup/init
 - `server/migrations/postgres/000002_seed_data.up.sql`
 - `server/migrations/mysql/000001_init_schema.up.sql`
 - `server/migrations/mysql/000002_seed_data.up.sql`
-- `server/internal/handler/setup/setup.go`
+- `server/internal/module/setup/handler.go`
 - `scripts/setup-server.sh`
 
 ## 第一段：迁移种子到底写了什么
@@ -156,7 +156,7 @@ VALUES ('p', 'super_admin', '/api/v1/system/users', 'GET');
 
 当前实现位于：
 
-- `server/internal/handler/setup/setup.go`
+- `server/internal/module/setup/handler.go`
 
 它会做下面几件事：
 
@@ -278,4 +278,4 @@ curl -X POST http://localhost/api/v1/setup/init \
 - [权限码约定](./permission-code-conventions)
 - [动态菜单组件白名单](./dynamic-menu-component-reference)
 - [数据库建表语句](./database-ddl)
-- [第 9 章：部署与项目复用](../tutorial/chapter-9/)
+- [第 8 章：部署与项目复用](../tutorial/chapter-8/)

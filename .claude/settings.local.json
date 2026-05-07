@@ -53,7 +53,25 @@
       "Bash(sed -i '1s/^\\\\xef\\\\xbb\\\\xbf//' deploy.ps1)",
       "Bash(python3 -c \":*)",
       "Bash(python -c \":*)",
-      "Bash(xxd D:/A/ez-admin-gin/scripts/pack.ps1)"
+      "Bash(xxd D:/A/ez-admin-gin/scripts/pack.ps1)",
+      "Bash(xargs grep:*)",
+      "Bash(xargs wc:*)",
+      "Bash(wc -l /d/A/ez-admin-gin/server/internal/handler/system/*.go)",
+      "Bash(go vet:*)",
+      "Bash(go test:*)",
+      "Bash(grep \"^d.*cmd$\")",
+      "Bash(cd:*)",
+      "Bash(rm docs/tutorial/chapter-8/backend-module-structure.md docs/tutorial/chapter-8/backend-module-integration.md docs/tutorial/chapter-8/permission-menu-integration.md docs/tutorial/chapter-8/business-module-example.md docs/tutorial/chapter-8/customer-followup-module.md docs/tutorial/chapter-8/index.md)",
+      "Bash(rmdir docs/tutorial/chapter-8)",
+      "Bash(rm -rf server/internal/module/crm)",
+      "Bash(rm server/internal/model/customer.go server/internal/model/customer_followup.go)",
+      "Bash(rm server/migrations/postgres/000008_phase4_customer_schema.down.sql server/migrations/postgres/000008_phase4_customer_schema.up.sql server/migrations/postgres/000009_phase4_customer_seed_data.down.sql server/migrations/postgres/000009_phase4_customer_seed_data.up.sql server/migrations/postgres/000010_phase4_followup_schema.down.sql server/migrations/postgres/000010_phase4_followup_schema.up.sql server/migrations/postgres/000011_phase4_followup_seed_data.down.sql server/migrations/postgres/000011_phase4_followup_seed_data.up.sql)",
+      "Bash(rm server/migrations/mysql/000008_phase4_customer_schema.down.sql server/migrations/mysql/000008_phase4_customer_schema.up.sql server/migrations/mysql/000009_phase4_customer_seed_data.down.sql server/migrations/mysql/000009_phase4_customer_seed_data.up.sql server/migrations/mysql/000010_phase4_followup_schema.down.sql server/migrations/mysql/000010_phase4_followup_schema.up.sql server/migrations/mysql/000011_phase4_followup_seed_data.down.sql server/migrations/mysql/000011_phase4_followup_seed_data.up.sql)",
+      "Bash(claude --version)",
+      "Bash(where claude:*)",
+      "Bash(npm list:*)",
+      "Bash(npm view:*)",
+      "Bash(npm config:*)"
     ]
   }
 }

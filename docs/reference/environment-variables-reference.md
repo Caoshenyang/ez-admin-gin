@@ -5,7 +5,7 @@ description: "集中记录当前底座支持的 EZ_* 环境变量、默认值、
 
 # 环境变量参考
 
-这页只做快速查阅，不替代第 9 章的部署步骤。  
+这页只做快速查阅，不替代第 8 章的部署步骤。
 如果你需要确认“某个变量有没有、默认值是什么、上线前哪些最该先改”，直接查这里。
 
 ::: tip 🎯 这页解决什么
@@ -137,7 +137,7 @@ EZ_* 环境变量覆盖
 
 ## 当前默认部署主线为什么用 `127.0.0.1`
 
-在第 9 章默认部署主线里：
+在第 8 章默认部署主线里：
 
 - PostgreSQL 容器映射到 `127.0.0.1:5432`
 - Redis 容器映射到 `127.0.0.1:6379`
@@ -175,6 +175,6 @@ EZ_* 环境变量覆盖
 
 ## 相关教程页
 
-- [第 9 章：环境变量与初始化数据](/tutorial/chapter-9/env-and-init-data)
-- [第 9 章：部署验证与复用说明](/tutorial/chapter-9/deployment-and-reuse)
-- [第 9 章：长期运维 FAQ](/tutorial/chapter-9/operations-maintenance-faq)
+- [第 8 章：环境变量与初始化数据](/tutorial/chapter-8/env-and-init-data)
+- [第 8 章：部署验证与复用说明](/tutorial/chapter-8/deployment-and-reuse)
+- [第 8 章：长期运维 FAQ](/tutorial/chapter-8/operations-maintenance-faq)

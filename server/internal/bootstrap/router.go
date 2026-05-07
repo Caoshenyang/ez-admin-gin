@@ -1,13 +1,13 @@
 package bootstrap
 
 import (
-	"ez-admin-gin/server/internal/config"
-	authModule "ez-admin-gin/server/internal/module/auth"
-	crmModule "ez-admin-gin/server/internal/module/crm"
-	setupModule "ez-admin-gin/server/internal/module/setup"
-	systemModule "ez-admin-gin/server/internal/module/system"
+	authModule "ez-admin-gin/server/internal/modules/auth"
+	iamModule "ez-admin-gin/server/internal/modules/iam"
+	setupModule "ez-admin-gin/server/internal/modules/setup"
+	systemModule "ez-admin-gin/server/internal/modules/system"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
+	platformConfig "ez-admin-gin/server/internal/platform/config"
 	appLogger "ez-admin-gin/server/internal/platform/logger"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +18,7 @@ import (
 
 // RouterOptions 汇总模块路由装配需要的依赖。
 type RouterOptions struct {
-	Config     *config.Config
+	Config     *platformConfig.Config
 	Log        *zap.Logger
 	DB         *gorm.DB
 	Redis      *goredis.Client
@@ -47,17 +47,17 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		Log: opts.Log,
 		DB:  opts.DB,
 	})
+	iamModule.RegisterRoutes(r, iamModule.RouteOptions{
+		Log:        opts.Log,
+		DB:         opts.DB,
+		Token:      opts.Token,
+		Permission: opts.Permission,
+	})
 	systemModule.RegisterRoutes(r, systemModule.RouteOptions{
 		Config:     opts.Config,
 		Log:        opts.Log,
 		DB:         opts.DB,
 		Redis:      opts.Redis,
-		Token:      opts.Token,
-		Permission: opts.Permission,
-	})
-	crmModule.RegisterRoutes(r, crmModule.RouteOptions{
-		DB:         opts.DB,
-		Log:        opts.Log,
 		Token:      opts.Token,
 		Permission: opts.Permission,
 	})

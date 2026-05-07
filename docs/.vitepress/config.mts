@@ -195,7 +195,12 @@ export default defineConfig({
             { text: '模块固定结构', link: '/tutorial/chapter-6/module-structure' },
             { text: '后端模块接入流程', link: '/tutorial/chapter-6/backend-module-flow' },
             { text: '示例业务模块', link: '/tutorial/chapter-6/sample-module' },
-            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' }
+            { text: '数据字典模块落地', link: '/tutorial/chapter-6/dict-module' },
+            { text: '附件中心落地', link: '/tutorial/chapter-6/attachment-center-module' },
+            { text: '账户中心落地', link: '/tutorial/chapter-6/account-center-module' },
+            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' },
+            { text: '前端页面接入流程', link: '/tutorial/chapter-6/frontend-page-flow' },
+            { text: '模块接入验收清单', link: '/tutorial/chapter-6/module-integration-checklist' }
           ]
         },
         {
@@ -218,43 +223,20 @@ export default defineConfig({
           ]
         },
         {
-          text: '第 8 章：模块化接入规范',
+          text: '第 8 章：部署、升级与复用',
           collapsible: true,
           items: [
             { text: '章节导读', link: '/tutorial/chapter-8/' },
-            { text: '后端模块固定结构', link: '/tutorial/chapter-8/backend-module-structure' },
-            { text: '后端模块接入流程', link: '/tutorial/chapter-8/backend-module-integration' },
-            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-8/permission-menu-integration' },
-            { text: '前端页面接入流程', link: '/tutorial/chapter-8/frontend-page-flow' },
-            { text: 'CRM 客户模块示例', link: '/tutorial/chapter-8/business-module-example' },
-            { text: '模块接入验收清单', link: '/tutorial/chapter-8/module-integration-checklist' }
-          ]
-        },
-        {
-          text: '第 8 章扩展实现参考',
-          collapsible: true,
-          items: [
-            { text: '数据字典模块落地', link: '/tutorial/chapter-8/dict-module' },
-            { text: '账户中心落地', link: '/tutorial/chapter-8/account-center-module' },
-            { text: '附件中心落地', link: '/tutorial/chapter-8/attachment-center-module' },
-            { text: 'CRM 客户跟进模块落地', link: '/tutorial/chapter-8/customer-followup-module' }
-          ]
-        },
-        {
-          text: '第 9 章：部署、升级与复用',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-9/' },
-            { text: '环境变量与初始化数据', link: '/tutorial/chapter-9/env-and-init-data' },
-            { text: '部署验证与复用说明', link: '/tutorial/chapter-9/deployment-and-reuse' },
-            { text: 'Compose 与服务运行结构', link: '/tutorial/chapter-9/compose-and-service-layout' },
-            { text: 'Nginx 与 HTTPS 入口层', link: '/tutorial/chapter-9/nginx-and-https' },
-            { text: '部署变体说明', link: '/tutorial/chapter-9/deployment-variants' },
-            { text: '更新与回滚策略', link: '/tutorial/chapter-9/update-and-rollback' },
-            { text: '回滚分级策略', link: '/tutorial/chapter-9/rollback-strategy-levels' },
-            { text: '部署排障 FAQ', link: '/tutorial/chapter-9/deployment-troubleshooting-faq' },
-            { text: '长期运维 FAQ', link: '/tutorial/chapter-9/operations-maintenance-faq' },
-            { text: '新项目复用清单', link: '/tutorial/chapter-9/project-reuse-checklist' }
+            { text: '环境变量与初始化数据', link: '/tutorial/chapter-8/env-and-init-data' },
+            { text: '部署验证与复用说明', link: '/tutorial/chapter-8/deployment-and-reuse' },
+            { text: 'Compose 与服务运行结构', link: '/tutorial/chapter-8/compose-and-service-layout' },
+            { text: 'Nginx 与 HTTPS 入口层', link: '/tutorial/chapter-8/nginx-and-https' },
+            { text: '部署变体说明', link: '/tutorial/chapter-8/deployment-variants' },
+            { text: '更新与回滚策略', link: '/tutorial/chapter-8/update-and-rollback' },
+            { text: '回滚分级策略', link: '/tutorial/chapter-8/rollback-strategy-levels' },
+            { text: '部署排障 FAQ', link: '/tutorial/chapter-8/deployment-troubleshooting-faq' },
+            { text: '长期运维 FAQ', link: '/tutorial/chapter-8/operations-maintenance-faq' },
+            { text: '新项目复用清单', link: '/tutorial/chapter-8/project-reuse-checklist' }
           ]
         }
       ],

@@ -9,7 +9,7 @@ search: false
 ::: warning 历史页说明
 这页保留的是旧章节位置下的部署说明，用来兼容早期引用。
 
-当前教程主线里的 canonical 位置已经切到 [第 9 章：部署验证与复用说明](../chapter-9/deployment-and-reuse)。
+当前教程主线里的 canonical 位置已经切到 [第 8 章：部署验证与复用说明](../chapter-8/deployment-and-reuse)。
 :::
 
 这一节把后台底座部署到公网。思路很简单：本地编译好二进制和静态文件，打成压缩包上传到服务器解压运行，Docker 负责数据库、缓存和 Nginx。

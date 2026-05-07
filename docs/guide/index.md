@@ -57,7 +57,7 @@ docker compose -f deploy/compose.local.win.yml up -d
 
 ```bash
 cd server
-go run ./cmd/server
+go run .
 ```
 
 后端默认监听 `http://localhost:8080`。首次启动会自动执行迁移并创建系统表、菜单和权限种子数据。

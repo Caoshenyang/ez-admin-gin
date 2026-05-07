@@ -1,9 +1,9 @@
 ---
-title: 后端模块接入流程
-description: "按当前最终版结构说明一个新模块如何接入后端，从模型复用到 service、handler、routes 与系统聚合。"
+title: 内置模块落地流程
+description: "按当前最终版结构说明一个系统内置模块如何落地到 module/system 与 module/iam，从模型复用到 service、handler、routes 与系统聚合。"
 ---
 
-# 后端模块接入流程
+# 内置模块落地流程
 
 前一页已经把模块骨架定下来了。这一页继续往前走，把“一个新模块怎么真正接进当前后端”这件事拆成一条可以照着走的路径。
 
@@ -22,7 +22,7 @@ description: "按当前最终版结构说明一个新模块如何接入后端，
 
 ## 先看当前真实接入路径
 
-现在一个系统模块真正进入后端，不再是“改 `internal/router/router.go` 再 new 一个 handler”，而是下面这条路径：
+现在一个系统模块真正进入后端，不再是”改某个全局路由文件再 new 一个 handler”，而是下面这条路径：
 
 ```text
 internal/model/*
@@ -300,7 +300,7 @@ group.GET("/configs/value/:key", handler.Value)
 
 这一页最值得明确的一点是：
 
-> 当前教程主线已经不再推荐“Model 写在 `internal/model`，逻辑全塞进 `internal/handler/system/*.go`，最后去改一个全局大路由文件”这套方式。
+> 当前教程主线已经不再推荐”Model 写在 `internal/model`，逻辑全塞进一个巨型 handler 文件，最后去改一个全局大路由”这套方式。
 
 原因不是它完全不能工作，而是它已经不适合当前仓库这条企业级完整版主线继续扩展。
 

@@ -14,7 +14,7 @@ description: "把一个新模块从目录骨架、路由装配、权限常量、
 
 适合在你准备新增：
 
-- `crm/customer`
+- `project/customer`
 - `project/task`
 - `system/dict`
 
@@ -102,10 +102,10 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 
 ```go
 const (
-	PermissionList   = "crm:customer:list"
-	PermissionCreate = "crm:customer:create"
-	PermissionUpdate = "crm:customer:update"
-	PermissionDelete = "crm:customer:delete"
+	PermissionList   = "project:customer:list"
+	PermissionCreate = "project:customer:create"
+	PermissionUpdate = "project:customer:update"
+	PermissionDelete = "project:customer:delete"
 )
 ```
 
@@ -242,8 +242,8 @@ sys_role_menu
 
 对应教程页：
 
-- [第 8 章：示例业务模块](/tutorial/chapter-8/business-module-example)
-- [第 8 章：模块接入验收清单](/tutorial/chapter-8/module-integration-checklist)
+- [第 6 章：示例业务模块](/tutorial/chapter-6/sample-module)
+- [第 6 章：模块接入验收清单](/tutorial/chapter-6/module-integration-checklist)
 
 ## 和哪些参考页一起看最顺
 

@@ -1,83 +1,50 @@
 ---
-title: 第 8 章：模块化接入规范
-description: "围绕当前最终版结构，用 `crm/customer` 主案例和扩展实现参考讲清后端、前端、菜单、权限和数据权限如何一起接进底座。"
+title: 第 8 章：部署、升级与复用
+description: "围绕当前已有部署正文，收口环境变量、初始化数据、部署验证、升级发布和新项目复用。"
 ---
 
-# 第 8 章：模块化接入规范
+# 第 8 章：部署、升级与复用
 
 ::: tip 🎯 这一章会做成什么
-这一章会用 `crm/customer` 这条真实业务主案例，把最终版后台底座的模块接入方式讲透：不是只新增几个文件，而是把后端模块、前端页面、菜单权限、按钮权限和数据权限一次串起来。
+这一章会把项目从“本地能跑”推进到“可以部署、可以升级、可以复制到新项目继续用”。
 :::
 
 ## 本章聚焦什么
 
-走到这一章时，前面的平台基础设施、认证链路、接口权限、数据权限、系统模块和前端管理台都已经具备。接下来要解决的是：
+企业级完整版主线的最后一章，不只讲 Docker 和 Nginx，还会把部署产物、环境变量、升级迁移、回滚说明和新项目复用清单一起收口。
 
-> 一个新的业务模块，应该怎样按当前最终结构稳定落地，而不是继续把代码散落在全局目录里。
+::: info 边界提醒
+本章统一承担部署、升级、回滚、排障和复用相关内容。旧章节位置下的部署页只保留兼容跳转，不再承载主线正文。
+:::
 
-这里和第 6 章的边界也很明确：
+## 本章正文
 
-- 第 6 章更偏平台内置系统模块本身怎么落稳
-- 第 8 章更偏新增业务模块怎么沿既有骨架接进来
+当前已经可以直接阅读的部署正文有：
 
-## 当前这一章的真实主线
-
-第 8 章现在更像前面几章的“收口章”，会把已经讲过的后端模块结构和前端运行时能力，整合成一条完整接入路径：
-
-```text
-crm/customer 模型与模块边界
-  ↓
-后端路由与系统聚合
-  ↓
-菜单、按钮与 Casbin 种子
-  ↓
-前端 types / api / pages
-  ↓
-dynamic-menu.ts
-  ↓
-最终内容页面进入后台
-```
-
-也就是说，这一章不再单独发明新结构，而是把：
-
-- 第 6 章已经讲清的后端模块结构
-- 第 7 章已经讲清的前端运行时主线
-
-真正接到一起。
-
-## 当前推荐阅读顺序
-
-建议按下面顺序阅读：
-
-1. [后端模块固定结构](./backend-module-structure)
-2. [后端模块接入流程](./backend-module-integration)
-3. [权限、菜单与迁移接入](./permission-menu-integration)
-4. [前端页面接入流程](./frontend-page-flow)
-5. [CRM 客户模块示例](./business-module-example)
-6. [模块接入验收清单](./module-integration-checklist)
-
-这样顺下来，刚好就是“后端怎么接 → 权限菜单怎么接 → 前端怎么接 → 用一个真实业务主案例整体验证”。
-
-## 为什么这里会复用前面几章的正文
-
-当前仓库已经把很多关键接入能力分散收在第 6、7 章里：
-
-- 第 6 章偏后端模块边界
-- 第 7 章偏前端运行时和页面容器
-
-第 8 章的任务不是重复讲一遍，而是把这些能力收敛成“新增模块时到底该按什么顺序落”的规范。
-
-所以第 8 章现在要做的，不是继续堆多个并列主案例，而是先用一个仓库里真实存在的 `crm/customer` 主案例，把“模块接入顺序本身”讲清楚。
+- [环境变量与初始化数据](./env-and-init-data)
+- [部署验证与复用说明](./deployment-and-reuse)
+- [Compose 与服务运行结构](./compose-and-service-layout)
+- [Nginx 与 HTTPS 入口层](./nginx-and-https)
+- [部署变体说明](./deployment-variants)
+- [更新与回滚策略](./update-and-rollback)
+- [回滚分级策略](./rollback-strategy-levels)
+- [部署排障 FAQ](./deployment-troubleshooting-faq)
+- [长期运维 FAQ](./operations-maintenance-faq)
+- [新项目复用清单](./project-reuse-checklist)
 
 ## 本章完成后的判断标准
 
-这一章完全收稳后，至少应该能回答下面几个问题：
+这一章收稳后，至少应该能回答下面几个问题：
 
-1. 一个新模块应该先落后端还是先落前端
-2. 为什么菜单、按钮和 Casbin 种子必须和模块代码一起考虑
-3. 为什么前端页面接入不是只写一个 `.vue` 文件
-4. 数据权限应该在哪一步接入，而不是最后补丁式加上
-5. 一个模块什么时候才算真正“进入后台系统”
+1. 部署前哪些环境变量和初始化数据必须准备好
+2. 基础设施为什么交给 `docker compose`，后端为什么交给 `systemd`
+3. Nginx 和 HTTPS 应该放在什么位置，反向代理链路怎么验证
+4. 面对不同交付边界，应该选哪一种部署形态
+5. 日常发版如何更新，出现异常后如何回滚
+6. 不同故障级别下，回滚动作应该做到什么程度
+7. 常见故障出现后，应该先看哪一层、先跑哪些检查命令
+8. 部署上线后，平时应该固定看哪些指标、日志和备份动作
+9. 换一个新项目继续复用这套底座时，哪些内容可以直接复制，哪些内容必须重配
 
 ## 怎么继续读
 
@@ -86,16 +53,13 @@ dynamic-menu.ts
 
 ## 本章小节
 
-- [后端模块固定结构](./backend-module-structure)
-- [后端模块接入流程](./backend-module-integration)
-- [权限、菜单与迁移接入](./permission-menu-integration)
-- [前端页面接入流程](./frontend-page-flow)
-- [CRM 客户模块示例](./business-module-example)
-- [模块接入验收清单](./module-integration-checklist)
-
-## 扩展阅读
-
-- [数据字典模块落地](./dict-module)
-- [账户中心落地](./account-center-module)
-- [附件中心落地](./attachment-center-module)
-- [CRM 客户跟进模块落地](./customer-followup-module)
+- [环境变量与初始化数据](./env-and-init-data)
+- [部署验证与复用说明](./deployment-and-reuse)
+- [Compose 与服务运行结构](./compose-and-service-layout)
+- [Nginx 与 HTTPS 入口层](./nginx-and-https)
+- [部署变体说明](./deployment-variants)
+- [更新与回滚策略](./update-and-rollback)
+- [回滚分级策略](./rollback-strategy-levels)
+- [部署排障 FAQ](./deployment-troubleshooting-faq)
+- [长期运维 FAQ](./operations-maintenance-faq)
+- [新项目复用清单](./project-reuse-checklist)

@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- v2 后端骨架：`bootstrap / platform / module` 命名空间与 `cmd/server` 启动入口
+- v2 后端骨架：`bootstrap / platform / module` 命名空间与 `main.go` (embed) 启动入口
 - 组织体系和数据权限基础模型：部门、岗位、用户岗位关系、角色数据范围、自定义部门范围
 - PostgreSQL / MySQL `000003_enterprise_foundation` 迁移文件
 - 文档页：企业级架构升级、Go vs Java 工程结构、数据权限模型

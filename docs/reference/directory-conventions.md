@@ -89,7 +89,7 @@ description: "集中说明 EZ Admin Gin 当前仓库各主目录职责、server/
 也就是当前真实主线已经是：
 
 ```text
-cmd/server
+main.go (embed)
   ↓
 bootstrap/run.go
   ↓
@@ -202,12 +202,10 @@ module/*
 
 ## 当前哪些目录属于历史兼容区
 
-仓库里现在仍然能看到一些旧目录：
+仓库里仍有一些旧目录与当前主线结构并存：
 
 | 目录 | 当前状态 |
 | --- | --- |
-| `server/internal/handler/*` | 仍有少量历史实现被复用 |
-| `server/internal/router` | 历史路由装配目录 |
 | `server/internal/config` / `database` / `logger` / `redis` / `token` / `permission` | 与 `platform/*` 对应的旧落点仍在仓库中 |
 
 这类目录的理解方式应该是：
@@ -221,9 +219,10 @@ module/*
 - `bootstrap`
 - `platform`
 - `module`
+- `app`
 - `middleware`
 
-而不是继续扩大 `handler/*` 或旧式扁平目录。
+而不是继续扩大旧式扁平目录。
 :::
 
 ## 新增代码时最实用的放置判断
@@ -240,5 +239,5 @@ module/*
 
 - [第 6 章：核心系统模块](../tutorial/chapter-6/)
 - [第 7 章：前端企业级管理台](../tutorial/chapter-7/)
-- [第 8 章：模块化接入规范](../tutorial/chapter-8/)
+- [第 6 章：核心系统模块](../tutorial/chapter-6/)
 - [模块规范](./module-conventions)

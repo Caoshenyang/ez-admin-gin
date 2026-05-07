@@ -12,10 +12,10 @@ import (
 	"strings"
 	"testing"
 
-	"ez-admin-gin/server/internal/config"
-	"ez-admin-gin/server/internal/model"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
+	platformConfig "ez-admin-gin/server/internal/platform/config"
+	"ez-admin-gin/server/internal/platform/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
@@ -129,47 +129,33 @@ type attachmentListResponseData struct {
 	Total int64                    `json:"total"`
 }
 
-type customerResponseData struct {
-	ID             uint   `json:"id"`
-	Name           string `json:"name"`
-	ContactName    string `json:"contact_name"`
-	Phone          string `json:"phone"`
-	Level          string `json:"level"`
-	Source         string `json:"source"`
-	DepartmentID   uint   `json:"department_id"`
-	DepartmentName string `json:"department_name"`
-	OwnerUserID    uint   `json:"owner_user_id"`
-	OwnerUsername  string `json:"owner_username"`
-	OwnerNickname  string `json:"owner_nickname"`
-	Status         int    `json:"status"`
-	Remark         string `json:"remark"`
+type departmentResponseData struct {
+	ID       uint                     `json:"id"`
+	ParentID uint                     `json:"parent_id"`
+	Name     string                   `json:"name"`
+	Code     string                   `json:"code"`
+	Status   int                      `json:"status"`
+	Children []departmentResponseData `json:"children"`
 }
 
-type customerListResponseData struct {
-	Items []customerResponseData `json:"items"`
-	Total int64                  `json:"total"`
+type postResponseData struct {
+	ID     uint   `json:"id"`
+	Code   string `json:"code"`
+	Name   string `json:"name"`
+	Status int    `json:"status"`
 }
 
-type customerFollowUpResponseData struct {
-	ID             uint    `json:"id"`
-	CustomerID     uint    `json:"customer_id"`
-	CustomerName   string  `json:"customer_name"`
-	DepartmentID   uint    `json:"department_id"`
-	DepartmentName string  `json:"department_name"`
-	OwnerUserID    uint    `json:"owner_user_id"`
-	OwnerUsername  string  `json:"owner_username"`
-	OwnerNickname  string  `json:"owner_nickname"`
-	FollowType     string  `json:"follow_type"`
-	Subject        string  `json:"subject"`
-	Content        string  `json:"content"`
-	Result         string  `json:"result"`
-	NextFollowAt   *string `json:"next_follow_at"`
-	Status         int     `json:"status"`
-}
-
-type customerFollowUpListResponseData struct {
-	Items []customerFollowUpResponseData `json:"items"`
-	Total int64                          `json:"total"`
+type menuResponseData struct {
+	ID        uint               `json:"id"`
+	ParentID  uint               `json:"parent_id"`
+	Type      model.MenuType     `json:"type"`
+	Code      string             `json:"code"`
+	Title     string             `json:"title"`
+	Path      string             `json:"path"`
+	Component string             `json:"component"`
+	Icon      string             `json:"icon"`
+	Sort      int                `json:"sort"`
+	Children  []menuResponseData `json:"children"`
 }
 
 type testEnv struct {
@@ -293,6 +279,141 @@ func TestAuthLoginSuccessAndFailure(t *testing.T) {
 	decodeJSON(t, failure.Body.Bytes(), &failureResp)
 	if failureResp.Code != 40100 || failureResp.Message != "用户名或密码错误" {
 		t.Fatalf("unexpected login failure body: %+v", failureResp)
+	}
+}
+
+func TestSetupInitSuperAdminCanSeeOrgMenusAndAccessOrgEndpoints(t *testing.T) {
+	env := newTestEnv(t, func(db *gorm.DB) {
+		mustCreateRole(t, db, model.Role{
+			ID:        1,
+			Code:      "super_admin",
+			Name:      "超级管理员",
+			Sort:      1,
+			DataScope: "all",
+			Status:    model.RoleStatusEnabled,
+		})
+
+		mustCreateMenu(t, db, model.Menu{
+			ID:     100,
+			Type:   model.MenuTypeDirectory,
+			Code:   "system",
+			Title:  "系统管理",
+			Path:   "/system",
+			Icon:   "setting",
+			Sort:   10,
+			Status: model.MenuStatusEnabled,
+		})
+		mustCreateMenu(t, db, model.Menu{
+			ID:        211,
+			ParentID:  100,
+			Type:      model.MenuTypeMenu,
+			Code:      "system:department",
+			Title:     "部门管理",
+			Path:      "/system/departments",
+			Component: "system/DepartmentView",
+			Icon:      "git-branch",
+			Sort:      25,
+			Status:    model.MenuStatusEnabled,
+		})
+		mustCreateMenu(t, db, model.Menu{
+			ID:        212,
+			ParentID:  100,
+			Type:      model.MenuTypeMenu,
+			Code:      "system:post",
+			Title:     "岗位管理",
+			Path:      "/system/posts",
+			Component: "system/PostView",
+			Icon:      "briefcase",
+			Sort:      26,
+			Status:    model.MenuStatusEnabled,
+		})
+
+		mustCreateRoleMenu(t, db, 1, 100)
+		mustCreateRoleMenu(t, db, 1, 211)
+		mustCreateRoleMenu(t, db, 1, 212)
+
+		mustCreatePolicy(t, db, "super_admin", "/api/v1/system/departments", http.MethodGet)
+		mustCreatePolicy(t, db, "super_admin", "/api/v1/system/posts", http.MethodGet)
+
+		mustCreateDepartment(t, db, model.Department{
+			ID:     10,
+			Name:   "研发中心",
+			Code:   "rd-center",
+			Sort:   10,
+			Status: model.DepartmentStatusEnabled,
+		})
+		if err := db.Create(&model.Post{
+			ID:     20,
+			Code:   "team-lead",
+			Name:   "团队负责人",
+			Sort:   5,
+			Status: model.PostStatusEnabled,
+		}).Error; err != nil {
+			t.Fatalf("create post team-lead: %v", err)
+		}
+	})
+
+	initResp := env.doJSON(http.MethodPost, "/api/v1/setup/init", "", map[string]any{
+		"username": "admin",
+		"password": "Admin12345",
+		"nickname": "管理员",
+	})
+	if initResp.Code != http.StatusOK {
+		t.Fatalf("expected setup init status 200, got %d: %s", initResp.Code, initResp.Body.String())
+	}
+
+	login := env.doJSON(http.MethodPost, "/api/v1/auth/login", "", map[string]any{
+		"username": "admin",
+		"password": "Admin12345",
+	})
+	if login.Code != http.StatusOK {
+		t.Fatalf("expected login status 200, got %d: %s", login.Code, login.Body.String())
+	}
+
+	var loginResp apiResponse[loginResponseData]
+	decodeJSON(t, login.Body.Bytes(), &loginResp)
+	token := "Bearer " + loginResp.Data.AccessToken
+
+	menus := env.doJSON(http.MethodGet, "/api/v1/auth/menus", token, nil)
+	if menus.Code != http.StatusOK {
+		t.Fatalf("expected menus status 200, got %d: %s", menus.Code, menus.Body.String())
+	}
+
+	var menuResp apiResponse[[]menuResponseData]
+	decodeJSON(t, menus.Body.Bytes(), &menuResp)
+	systemMenu := findMenuByCode(menuResp.Data, "system")
+	if systemMenu == nil {
+		t.Fatalf("expected system root menu in response, got %+v", menuResp.Data)
+	}
+	departmentMenu := findMenuByCode(systemMenu.Children, "system:department")
+	if departmentMenu == nil || departmentMenu.Path != "/system/departments" || departmentMenu.Component != "system/DepartmentView" {
+		t.Fatalf("expected department menu to be visible, got %+v", systemMenu.Children)
+	}
+	postMenu := findMenuByCode(systemMenu.Children, "system:post")
+	if postMenu == nil || postMenu.Path != "/system/posts" || postMenu.Component != "system/PostView" {
+		t.Fatalf("expected post menu to be visible, got %+v", systemMenu.Children)
+	}
+
+	listDepartments := env.doJSON(http.MethodGet, "/api/v1/system/departments", token, nil)
+	if listDepartments.Code != http.StatusOK {
+		t.Fatalf("expected list departments status 200, got %d: %s", listDepartments.Code, listDepartments.Body.String())
+	}
+
+	var departmentListResp apiResponse[[]departmentResponseData]
+	decodeJSON(t, listDepartments.Body.Bytes(), &departmentListResp)
+	if len(departmentListResp.Data) != 1 || departmentListResp.Data[0].Code != "rd-center" {
+		t.Fatalf("unexpected department list response: %+v", departmentListResp.Data)
+	}
+
+	listPosts := env.doJSON(http.MethodGet, "/api/v1/system/posts", token, nil)
+	if listPosts.Code != http.StatusOK {
+		t.Fatalf("expected list posts status 200, got %d: %s", listPosts.Code, listPosts.Body.String())
+	}
+
+	var postListResp apiResponse[[]postResponseData]
+	decodeJSON(t, listPosts.Body.Bytes(), &postListResp)
+	if len(postListResp.Data) != 1 || postListResp.Data[0].Code != "team-lead" {
+		t.Fatalf("unexpected post list response: %+v", postListResp.Data)
 	}
 }
 
@@ -433,6 +554,93 @@ func TestSystemUsersDataScopeFiltersByDepartment(t *testing.T) {
 	}
 	if _, ok := usernames["erin"]; ok {
 		t.Fatalf("did not expect other department user erin to be visible, got %+v", listResp.Data.Items)
+	}
+}
+
+func TestSystemDepartmentAndPostHappyPath(t *testing.T) {
+	var actor model.User
+	env := newTestEnv(t, func(db *gorm.DB) {
+		mustCreateRole(t, db, model.Role{
+			ID:        12,
+			Code:      "org_admin",
+			Name:      "组织管理员",
+			Sort:      12,
+			DataScope: "all",
+			Status:    model.RoleStatusEnabled,
+		})
+		mustCreatePolicy(t, db, "org_admin", "/api/v1/system/departments", http.MethodGet)
+		mustCreatePolicy(t, db, "org_admin", "/api/v1/system/departments", http.MethodPost)
+		mustCreatePolicy(t, db, "org_admin", "/api/v1/system/posts", http.MethodGet)
+		mustCreatePolicy(t, db, "org_admin", "/api/v1/system/posts", http.MethodPost)
+
+		actor = mustCreateUser(t, db, seededUser{
+			Username:     "org-admin",
+			Password:     "OrgAdmin123",
+			Nickname:     "OrgAdmin",
+			DepartmentID: 10,
+			Status:       model.UserStatusEnabled,
+		})
+		mustCreateUserRole(t, db, actor.ID, 12)
+	})
+
+	token := env.mustIssueToken(actor.ID, actor.Username)
+
+	createDepartment := env.doJSON(http.MethodPost, "/api/v1/system/departments", token, map[string]any{
+		"parent_id":      0,
+		"name":           "研发中心",
+		"code":           "rd-center",
+		"leader_user_id": actor.ID,
+		"sort":           10,
+		"status":         1,
+		"remark":         "测试部门",
+	})
+	if createDepartment.Code != http.StatusOK {
+		t.Fatalf("expected create department status 200, got %d: %s", createDepartment.Code, createDepartment.Body.String())
+	}
+
+	var createDepartmentResp apiResponse[departmentResponseData]
+	decodeJSON(t, createDepartment.Body.Bytes(), &createDepartmentResp)
+	if createDepartmentResp.Data.Code != "rd-center" {
+		t.Fatalf("unexpected department create response: %+v", createDepartmentResp.Data)
+	}
+
+	createPost := env.doJSON(http.MethodPost, "/api/v1/system/posts", token, map[string]any{
+		"code":   "team-lead",
+		"name":   "团队负责人",
+		"sort":   5,
+		"status": 1,
+		"remark": "测试岗位",
+	})
+	if createPost.Code != http.StatusOK {
+		t.Fatalf("expected create post status 200, got %d: %s", createPost.Code, createPost.Body.String())
+	}
+
+	var createPostResp apiResponse[postResponseData]
+	decodeJSON(t, createPost.Body.Bytes(), &createPostResp)
+	if createPostResp.Data.Code != "team-lead" {
+		t.Fatalf("unexpected post create response: %+v", createPostResp.Data)
+	}
+
+	listDepartments := env.doJSON(http.MethodGet, "/api/v1/system/departments", token, nil)
+	if listDepartments.Code != http.StatusOK {
+		t.Fatalf("expected list departments status 200, got %d: %s", listDepartments.Code, listDepartments.Body.String())
+	}
+
+	var departmentListResp apiResponse[[]departmentResponseData]
+	decodeJSON(t, listDepartments.Body.Bytes(), &departmentListResp)
+	if len(departmentListResp.Data) != 1 || departmentListResp.Data[0].Code != "rd-center" {
+		t.Fatalf("unexpected department list response: %+v", departmentListResp.Data)
+	}
+
+	listPosts := env.doJSON(http.MethodGet, "/api/v1/system/posts", token, nil)
+	if listPosts.Code != http.StatusOK {
+		t.Fatalf("expected list posts status 200, got %d: %s", listPosts.Code, listPosts.Body.String())
+	}
+
+	var postListResp apiResponse[[]postResponseData]
+	decodeJSON(t, listPosts.Body.Bytes(), &postListResp)
+	if len(postListResp.Data) != 1 || postListResp.Data[0].Code != "team-lead" {
+		t.Fatalf("unexpected post list response: %+v", postListResp.Data)
 	}
 }
 
@@ -715,469 +923,6 @@ func TestSystemAttachmentHappyPath(t *testing.T) {
 	}
 }
 
-func TestCRMCustomerHappyPath(t *testing.T) {
-	var actor model.User
-	env := newTestEnv(t, func(db *gorm.DB) {
-		mustCreateDepartment(t, db, model.Department{
-			ID:       10,
-			ParentID: 0,
-			Name:     "销售一部",
-			Code:     "sales-a",
-			Sort:     10,
-			Status:   model.DepartmentStatusEnabled,
-		})
-		mustCreateRole(t, db, model.Role{
-			ID:        8,
-			Code:      "customer_admin",
-			Name:      "客户管理员",
-			Sort:      8,
-			DataScope: "all",
-			Status:    model.RoleStatusEnabled,
-		})
-		mustCreatePolicy(t, db, "customer_admin", "/api/v1/crm/customers", http.MethodGet)
-		mustCreatePolicy(t, db, "customer_admin", "/api/v1/crm/customers", http.MethodPost)
-		mustCreatePolicy(t, db, "customer_admin", "/api/v1/crm/customers/:id/update", http.MethodPost)
-		mustCreatePolicy(t, db, "customer_admin", "/api/v1/crm/customers/:id/status", http.MethodPost)
-
-		actor = mustCreateUser(t, db, seededUser{
-			Username:     "customer-admin",
-			Password:     "Customer12345",
-			Nickname:     "CustomerAdmin",
-			DepartmentID: 10,
-			Status:       model.UserStatusEnabled,
-		})
-		mustCreateUserRole(t, db, actor.ID, 8)
-	})
-
-	token := env.mustIssueToken(actor.ID, actor.Username)
-
-	createResp := env.doJSON(http.MethodPost, "/api/v1/crm/customers", token, map[string]any{
-		"name":         "星河工业设备有限公司",
-		"contact_name": "陈经理",
-		"phone":        "13800138000",
-		"level":        "vip",
-		"source":       "referral",
-		"status":       1,
-		"remark":       "重点客户",
-	})
-	if createResp.Code != http.StatusOK {
-		t.Fatalf("expected create customer status 200, got %d: %s", createResp.Code, createResp.Body.String())
-	}
-
-	var createBody apiResponse[customerResponseData]
-	decodeJSON(t, createResp.Body.Bytes(), &createBody)
-	if createBody.Data.Name != "星河工业设备有限公司" || createBody.Data.OwnerUserID != actor.ID {
-		t.Fatalf("unexpected customer create response: %+v", createBody.Data)
-	}
-
-	listResp := env.doJSON(http.MethodGet, "/api/v1/crm/customers?page=1&page_size=10", token, nil)
-	if listResp.Code != http.StatusOK {
-		t.Fatalf("expected customer list status 200, got %d: %s", listResp.Code, listResp.Body.String())
-	}
-
-	var listBody apiResponse[customerListResponseData]
-	decodeJSON(t, listResp.Body.Bytes(), &listBody)
-	if listBody.Data.Total != 1 || len(listBody.Data.Items) != 1 {
-		t.Fatalf("unexpected customer list response: %+v", listBody.Data)
-	}
-
-	updateResp := env.doJSON(
-		http.MethodPost,
-		fmt.Sprintf("/api/v1/crm/customers/%d/update", createBody.Data.ID),
-		token,
-		map[string]any{
-			"name":         "星河工业设备集团",
-			"contact_name": "李总监",
-			"phone":        "13900139000",
-			"level":        "a",
-			"source":       "offline",
-			"status":       1,
-			"remark":       "已进入方案评审",
-		},
-	)
-	if updateResp.Code != http.StatusOK {
-		t.Fatalf("expected update customer status 200, got %d: %s", updateResp.Code, updateResp.Body.String())
-	}
-
-	var updateBody apiResponse[customerResponseData]
-	decodeJSON(t, updateResp.Body.Bytes(), &updateBody)
-	if updateBody.Data.Name != "星河工业设备集团" || updateBody.Data.Level != "a" {
-		t.Fatalf("unexpected customer update response: %+v", updateBody.Data)
-	}
-
-	statusResp := env.doJSON(
-		http.MethodPost,
-		fmt.Sprintf("/api/v1/crm/customers/%d/status", createBody.Data.ID),
-		token,
-		map[string]any{"status": 2},
-	)
-	if statusResp.Code != http.StatusOK {
-		t.Fatalf("expected customer status update 200, got %d: %s", statusResp.Code, statusResp.Body.String())
-	}
-}
-
-func TestCRMCustomerDataScopeFiltersByDepartment(t *testing.T) {
-	var actor model.User
-	env := newTestEnv(t, func(db *gorm.DB) {
-		mustCreateDepartment(t, db, model.Department{
-			ID:       10,
-			ParentID: 0,
-			Name:     "销售一部",
-			Code:     "sales-a",
-			Sort:     10,
-			Status:   model.DepartmentStatusEnabled,
-		})
-		mustCreateDepartment(t, db, model.Department{
-			ID:       20,
-			ParentID: 0,
-			Name:     "销售二部",
-			Code:     "sales-b",
-			Sort:     20,
-			Status:   model.DepartmentStatusEnabled,
-		})
-		mustCreateRole(t, db, model.Role{
-			ID:        9,
-			Code:      "customer_manager",
-			Name:      "客户经理",
-			Sort:      9,
-			DataScope: "dept",
-			Status:    model.RoleStatusEnabled,
-		})
-		mustCreatePolicy(t, db, "customer_manager", "/api/v1/crm/customers", http.MethodGet)
-
-		actor = mustCreateUser(t, db, seededUser{
-			Username:     "iris",
-			Password:     "Iris123456",
-			Nickname:     "Iris",
-			DepartmentID: 10,
-			Status:       model.UserStatusEnabled,
-		})
-		sameDeptOwner := mustCreateUser(t, db, seededUser{
-			Username:     "jack",
-			Password:     "Jack123456",
-			Nickname:     "Jack",
-			DepartmentID: 10,
-			Status:       model.UserStatusEnabled,
-		})
-		otherDeptOwner := mustCreateUser(t, db, seededUser{
-			Username:     "kate",
-			Password:     "Kate123456",
-			Nickname:     "Kate",
-			DepartmentID: 20,
-			Status:       model.UserStatusEnabled,
-		})
-		mustCreateUserRole(t, db, actor.ID, 9)
-
-		if err := db.Create(&model.Customer{
-			Name:         "同部门客户",
-			DepartmentID: 10,
-			OwnerUserID:  sameDeptOwner.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create same department customer: %v", err)
-		}
-		if err := db.Create(&model.Customer{
-			Name:         "跨部门客户",
-			DepartmentID: 20,
-			OwnerUserID:  otherDeptOwner.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create other department customer: %v", err)
-		}
-		if err := db.Create(&model.Customer{
-			Name:         "当前负责人客户",
-			DepartmentID: 10,
-			OwnerUserID:  actor.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create actor customer: %v", err)
-		}
-	})
-
-	token := env.mustIssueToken(actor.ID, actor.Username)
-	resp := env.doJSON(http.MethodGet, "/api/v1/crm/customers?page=1&page_size=10", token, nil)
-	if resp.Code != http.StatusOK {
-		t.Fatalf("expected scoped customer list status 200, got %d: %s", resp.Code, resp.Body.String())
-	}
-
-	var listResp apiResponse[customerListResponseData]
-	decodeJSON(t, resp.Body.Bytes(), &listResp)
-	if listResp.Data.Total != 2 {
-		t.Fatalf("expected 2 visible customers in same department, got %+v", listResp.Data)
-	}
-
-	names := make(map[string]struct{}, len(listResp.Data.Items))
-	for _, item := range listResp.Data.Items {
-		names[item.Name] = struct{}{}
-	}
-	if _, ok := names["同部门客户"]; !ok {
-		t.Fatalf("expected same department customer to be visible, got %+v", listResp.Data.Items)
-	}
-	if _, ok := names["当前负责人客户"]; !ok {
-		t.Fatalf("expected actor customer to be visible, got %+v", listResp.Data.Items)
-	}
-	if _, ok := names["跨部门客户"]; ok {
-		t.Fatalf("did not expect other department customer to be visible, got %+v", listResp.Data.Items)
-	}
-}
-
-func TestCRMFollowUpHappyPath(t *testing.T) {
-	var actor model.User
-	env := newTestEnv(t, func(db *gorm.DB) {
-		mustCreateDepartment(t, db, model.Department{
-			ID:       10,
-			ParentID: 0,
-			Name:     "销售一部",
-			Code:     "sales-a",
-			Sort:     10,
-			Status:   model.DepartmentStatusEnabled,
-		})
-		mustCreateRole(t, db, model.Role{
-			ID:        10,
-			Code:      "followup_admin",
-			Name:      "跟进管理员",
-			Sort:      10,
-			DataScope: "all",
-			Status:    model.RoleStatusEnabled,
-		})
-		mustCreatePolicy(t, db, "followup_admin", "/api/v1/crm/followups", http.MethodGet)
-		mustCreatePolicy(t, db, "followup_admin", "/api/v1/crm/followups", http.MethodPost)
-		mustCreatePolicy(t, db, "followup_admin", "/api/v1/crm/followups/:id/update", http.MethodPost)
-		mustCreatePolicy(t, db, "followup_admin", "/api/v1/crm/followups/:id/status", http.MethodPost)
-
-		actor = mustCreateUser(t, db, seededUser{
-			Username:     "followup-admin",
-			Password:     "Follow12345",
-			Nickname:     "FollowUpAdmin",
-			DepartmentID: 10,
-			Status:       model.UserStatusEnabled,
-		})
-		mustCreateUserRole(t, db, actor.ID, 10)
-
-		if err := db.Create(&model.Customer{
-			ID:           1,
-			Name:         "星河工业设备有限公司",
-			ContactName:  "陈经理",
-			Phone:        "13800138000",
-			Level:        "vip",
-			Source:       "referral",
-			DepartmentID: 10,
-			OwnerUserID:  actor.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create customer for followup: %v", err)
-		}
-	})
-
-	token := env.mustIssueToken(actor.ID, actor.Username)
-	nextFollowAt := "2026-05-10T09:30:00Z"
-
-	createResp := env.doJSON(http.MethodPost, "/api/v1/crm/followups", token, map[string]any{
-		"customer_id":    1,
-		"follow_type":    "visit",
-		"subject":        "首次上门沟通",
-		"content":        "确认采购周期与预算窗口",
-		"result":         "约定下周二继续方案评审",
-		"next_follow_at": nextFollowAt,
-		"status":         1,
-	})
-	if createResp.Code != http.StatusOK {
-		t.Fatalf("expected create followup status 200, got %d: %s", createResp.Code, createResp.Body.String())
-	}
-
-	var createBody apiResponse[customerFollowUpResponseData]
-	decodeJSON(t, createResp.Body.Bytes(), &createBody)
-	if createBody.Data.CustomerName != "星河工业设备有限公司" || createBody.Data.FollowType != "visit" {
-		t.Fatalf("unexpected followup create response: %+v", createBody.Data)
-	}
-
-	listResp := env.doJSON(http.MethodGet, "/api/v1/crm/followups?page=1&page_size=10", token, nil)
-	if listResp.Code != http.StatusOK {
-		t.Fatalf("expected followup list status 200, got %d: %s", listResp.Code, listResp.Body.String())
-	}
-
-	var listBody apiResponse[customerFollowUpListResponseData]
-	decodeJSON(t, listResp.Body.Bytes(), &listBody)
-	if listBody.Data.Total != 1 || len(listBody.Data.Items) != 1 {
-		t.Fatalf("unexpected followup list response: %+v", listBody.Data)
-	}
-
-	updateResp := env.doJSON(
-		http.MethodPost,
-		fmt.Sprintf("/api/v1/crm/followups/%d/update", createBody.Data.ID),
-		token,
-		map[string]any{
-			"follow_type":    "meeting",
-			"subject":        "方案评审会",
-			"content":        "确认实施范围和预算上限",
-			"result":         "客户同意进入报价阶段",
-			"next_follow_at": "2026-05-15T06:00:00Z",
-			"status":         2,
-		},
-	)
-	if updateResp.Code != http.StatusOK {
-		t.Fatalf("expected update followup status 200, got %d: %s", updateResp.Code, updateResp.Body.String())
-	}
-
-	var updateBody apiResponse[customerFollowUpResponseData]
-	decodeJSON(t, updateResp.Body.Bytes(), &updateBody)
-	if updateBody.Data.Subject != "方案评审会" || updateBody.Data.Status != 2 {
-		t.Fatalf("unexpected followup update response: %+v", updateBody.Data)
-	}
-
-	statusResp := env.doJSON(
-		http.MethodPost,
-		fmt.Sprintf("/api/v1/crm/followups/%d/status", createBody.Data.ID),
-		token,
-		map[string]any{"status": 3},
-	)
-	if statusResp.Code != http.StatusOK {
-		t.Fatalf("expected followup status update 200, got %d: %s", statusResp.Code, statusResp.Body.String())
-	}
-}
-
-func TestCRMFollowUpDataScopeFiltersByDepartment(t *testing.T) {
-	var actor model.User
-	env := newTestEnv(t, func(db *gorm.DB) {
-		mustCreateDepartment(t, db, model.Department{
-			ID:       10,
-			ParentID: 0,
-			Name:     "销售一部",
-			Code:     "sales-a",
-			Sort:     10,
-			Status:   model.DepartmentStatusEnabled,
-		})
-		mustCreateDepartment(t, db, model.Department{
-			ID:       20,
-			ParentID: 0,
-			Name:     "销售二部",
-			Code:     "sales-b",
-			Sort:     20,
-			Status:   model.DepartmentStatusEnabled,
-		})
-		mustCreateRole(t, db, model.Role{
-			ID:        11,
-			Code:      "followup_manager",
-			Name:      "跟进经理",
-			Sort:      11,
-			DataScope: "dept",
-			Status:    model.RoleStatusEnabled,
-		})
-		mustCreatePolicy(t, db, "followup_manager", "/api/v1/crm/followups", http.MethodGet)
-
-		actor = mustCreateUser(t, db, seededUser{
-			Username:     "luna",
-			Password:     "Luna123456",
-			Nickname:     "Luna",
-			DepartmentID: 10,
-			Status:       model.UserStatusEnabled,
-		})
-		sameDeptOwner := mustCreateUser(t, db, seededUser{
-			Username:     "mike",
-			Password:     "Mike123456",
-			Nickname:     "Mike",
-			DepartmentID: 10,
-			Status:       model.UserStatusEnabled,
-		})
-		otherDeptOwner := mustCreateUser(t, db, seededUser{
-			Username:     "nina",
-			Password:     "Nina123456",
-			Nickname:     "Nina",
-			DepartmentID: 20,
-			Status:       model.UserStatusEnabled,
-		})
-		mustCreateUserRole(t, db, actor.ID, 11)
-
-		if err := db.Create(&model.Customer{
-			ID:           101,
-			Name:         "同部门客户",
-			DepartmentID: 10,
-			OwnerUserID:  sameDeptOwner.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create same department customer for followup: %v", err)
-		}
-		if err := db.Create(&model.Customer{
-			ID:           102,
-			Name:         "跨部门客户",
-			DepartmentID: 20,
-			OwnerUserID:  otherDeptOwner.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create other department customer for followup: %v", err)
-		}
-		if err := db.Create(&model.Customer{
-			ID:           103,
-			Name:         "当前负责人客户",
-			DepartmentID: 10,
-			OwnerUserID:  actor.ID,
-			Status:       model.CustomerStatusEnabled,
-		}).Error; err != nil {
-			t.Fatalf("create actor customer for followup: %v", err)
-		}
-
-		if err := db.Create(&model.CustomerFollowUp{
-			CustomerID:   101,
-			DepartmentID: 10,
-			OwnerUserID:  sameDeptOwner.ID,
-			FollowType:   "phone",
-			Subject:      "同部门跟进",
-			Content:      "同部门客户继续推进",
-			Status:       model.CustomerFollowUpStatusPending,
-		}).Error; err != nil {
-			t.Fatalf("create same department followup: %v", err)
-		}
-		if err := db.Create(&model.CustomerFollowUp{
-			CustomerID:   102,
-			DepartmentID: 20,
-			OwnerUserID:  otherDeptOwner.ID,
-			FollowType:   "phone",
-			Subject:      "跨部门跟进",
-			Content:      "不应被当前部门看到",
-			Status:       model.CustomerFollowUpStatusPending,
-		}).Error; err != nil {
-			t.Fatalf("create other department followup: %v", err)
-		}
-		if err := db.Create(&model.CustomerFollowUp{
-			CustomerID:   103,
-			DepartmentID: 10,
-			OwnerUserID:  actor.ID,
-			FollowType:   "visit",
-			Subject:      "当前负责人跟进",
-			Content:      "当前负责人自己的客户",
-			Status:       model.CustomerFollowUpStatusPending,
-		}).Error; err != nil {
-			t.Fatalf("create actor followup: %v", err)
-		}
-	})
-
-	token := env.mustIssueToken(actor.ID, actor.Username)
-	resp := env.doJSON(http.MethodGet, "/api/v1/crm/followups?page=1&page_size=10", token, nil)
-	if resp.Code != http.StatusOK {
-		t.Fatalf("expected scoped followup list status 200, got %d: %s", resp.Code, resp.Body.String())
-	}
-
-	var listResp apiResponse[customerFollowUpListResponseData]
-	decodeJSON(t, resp.Body.Bytes(), &listResp)
-	if listResp.Data.Total != 2 {
-		t.Fatalf("expected 2 visible followups in same department, got %+v", listResp.Data)
-	}
-
-	subjects := make(map[string]struct{}, len(listResp.Data.Items))
-	for _, item := range listResp.Data.Items {
-		subjects[item.Subject] = struct{}{}
-	}
-	if _, ok := subjects["同部门跟进"]; !ok {
-		t.Fatalf("expected same department followup to be visible, got %+v", listResp.Data.Items)
-	}
-	if _, ok := subjects["当前负责人跟进"]; !ok {
-		t.Fatalf("expected actor followup to be visible, got %+v", listResp.Data.Items)
-	}
-	if _, ok := subjects["跨部门跟进"]; ok {
-		t.Fatalf("did not expect other department followup to be visible, got %+v", listResp.Data.Items)
-	}
-}
-
 func newTestEnv(t *testing.T, seed func(db *gorm.DB)) *testEnv {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
@@ -1196,17 +941,17 @@ func newTestEnv(t *testing.T, seed func(db *gorm.DB)) *testEnv {
 		seed(db)
 	}
 
-	cfg := &config.Config{
-		App: config.AppConfig{
+	cfg := &platformConfig.Config{
+		App: platformConfig.AppConfig{
 			Name: "ez-admin-test",
 			Env:  "test",
 		},
-		Auth: config.AuthConfig{
+		Auth: platformConfig.AuthConfig{
 			JWTSecret:      strings.Repeat("t", 32),
 			AccessTokenTTL: 3600,
 			Issuer:         "ez-admin-test",
 		},
-		Upload: config.UploadConfig{
+		Upload: platformConfig.UploadConfig{
 			Dir:        t.TempDir(),
 			PublicPath: "/uploads",
 			MaxSizeMB:  10,
@@ -1247,8 +992,6 @@ func migrateTestSchema(t *testing.T, db *gorm.DB) {
 		&model.SystemDictItem{},
 		&model.SystemDictType{},
 		&model.SystemAttachment{},
-		&model.Customer{},
-		&model.CustomerFollowUp{},
 		&model.LoginLog{},
 		&model.Menu{},
 		&model.Notice{},
@@ -1387,10 +1130,24 @@ func mustCreateDepartment(t *testing.T, db *gorm.DB, department model.Department
 	}
 }
 
+func mustCreateMenu(t *testing.T, db *gorm.DB, menu model.Menu) {
+	t.Helper()
+	if err := db.Create(&menu).Error; err != nil {
+		t.Fatalf("create menu %s: %v", menu.Code, err)
+	}
+}
+
 func mustCreateUserRole(t *testing.T, db *gorm.DB, userID uint, roleID uint) {
 	t.Helper()
 	if err := db.Create(&model.UserRole{UserID: userID, RoleID: roleID}).Error; err != nil {
 		t.Fatalf("create user role binding user=%d role=%d: %v", userID, roleID, err)
+	}
+}
+
+func mustCreateRoleMenu(t *testing.T, db *gorm.DB, roleID uint, menuID uint) {
+	t.Helper()
+	if err := db.Create(&model.RoleMenu{RoleID: roleID, MenuID: menuID}).Error; err != nil {
+		t.Fatalf("create role menu binding role=%d menu=%d: %v", roleID, menuID, err)
 	}
 }
 
@@ -1412,4 +1169,13 @@ func decodeJSON(t *testing.T, raw []byte, target any) {
 	if err := json.Unmarshal(raw, target); err != nil {
 		t.Fatalf("decode json: %v\nbody=%s", err, string(raw))
 	}
+}
+
+func findMenuByCode(menus []menuResponseData, code string) *menuResponseData {
+	for i := range menus {
+		if menus[i].Code == code {
+			return &menus[i]
+		}
+	}
+	return nil
 }

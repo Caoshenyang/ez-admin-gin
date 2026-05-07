@@ -1,4 +1,4 @@
-import type { LoginResponse } from '../types/auth'
+import type { LoginResponse } from '@/modules/auth/types/auth'
 
 const ACCESS_TOKEN_KEY = 'ez-admin-access-token'
 const TOKEN_TYPE_KEY = 'ez-admin-token-type'

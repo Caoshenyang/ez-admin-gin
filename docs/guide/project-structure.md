@@ -23,7 +23,6 @@ description: "EZ Admin Gin 的技术栈组成、当前目录结构，以及企�
 ```
 ez-admin-gin/
 ├── server/          # Go 后端
-│   ├── cmd/         # v2 启动入口
 │   ├── configs/     # 配置文件（config.yaml）
 │   ├── internal/    # 启动装配、平台能力和业务模块
 │   └── migrations/  # 数据库迁移
@@ -37,7 +36,7 @@ ez-admin-gin/
 
 各目录职责：
 
-- **server/** — Go 后端，当前同时保留兼容入口 `main.go` 和 v2 入口 `cmd/server/`
+- **server/** — Go 后端，入口 `main.go` 使用 embed 嵌入迁移文件
 - **admin/** — Vue 3 前端管理台，页面、组件、路由和状态管理都在 `src/` 下
 - **docs/** — VitePress 文档站，就是你现在在读的站点
 - **deploy/** — Docker Compose 文件和 Nginx 反向代理配置，分为本地开发环境和生产环境
@@ -89,14 +88,14 @@ server/
 - `module/system/dict` 证明字典类型与字典项这种双表资源可以稳定落在标准模块结构里
 - `module/auth` 下的账户中心证明“当前登录人自助能力”不需要再复制一套后台管理员模块
 - `module/system/attachment` 证明业务化资源层可以复用既有底层上传能力，而不是重新发明一套文件链路
-- `module/crm/customer` 证明非 `system` 分组的真实业务模块也能沿同一条主线接入菜单、按钮、前端页面和数据权限
+- 历史上的业务示例模块曾证明非 `system` 分组资源也能沿同一条主线接入菜单、按钮、前端页面和数据权限；当前主线保留的是这套接入规范，而不是继续内置 CRM 目录
 
 也就是说，这套目录骨架现在已经覆盖了：
 
 - 平台入口
 - IAM 与系统基础模块
 - 当前登录人维度的自助能力
-- 非 `system` 分组的真实业务模块
+- 非 `system` 分组的业务模块接入模式
 
 后续继续扩模块时，应该直接沿这些已成立的路径延伸，而不是再开并行结构。
 

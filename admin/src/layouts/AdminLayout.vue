@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {
-  ChevronBackOutline,
   ChevronDownOutline,
-  ChevronForwardOutline,
+  CloseOutline,
   EllipsisHorizontal,
   ExpandOutline,
   LogOutOutline,
@@ -11,7 +10,7 @@ import {
   PersonCircleOutline,
   SearchOutline,
 } from '@vicons/ionicons5'
-import type { DropdownOption } from 'naive-ui'
+import type { DropdownOption, MenuOption } from 'naive-ui'
 import {
   NButton,
   NDropdown,
@@ -22,34 +21,35 @@ import {
   NLayoutHeader,
   NLayoutSider,
   NMenu,
+  NScrollbar,
   useMessage,
 } from 'naive-ui'
-import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
-import BrandLogo from '../components/BrandLogo.vue'
+import BrandLogo from '@/ui/BrandLogo.vue'
+import {
+  collectExpandedMenuKeysByPath,
+  findMenuCodeByPath,
+  findMenuOptionByKey,
+  findMenuTitleByPath,
+  sideMenuOptions,
+} from '../router/dynamic-menu'
 import { resetDynamicRoutes } from '../router'
-import { findMenuTitleByPath, sideMenuOptions } from '../router/dynamic-menu'
+import { useAdminShellStore } from '../stores/admin-shell'
 import {
   AUTH_USER_INFO_UPDATED_EVENT,
   clearAuthSession,
   getAuthUserInfo,
 } from '../utils/auth'
 
-interface WorkTab {
-  title: string
-  to: string
-  closable: boolean
-}
-
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const shellStore = useAdminShellStore()
 
-const openTabs = ref<WorkTab[]>([{ title: '工作台', to: '/dashboard', closable: false }])
-const sidebarCollapsed = ref(false)
+const currentUser = computed(() => getAuthUserInfo())
 
-const currentUser = ref(getAuthUserInfo())
 const displayName = computed(() => {
   return currentUser.value?.nickname || currentUser.value?.username || '管理员'
 })
@@ -62,19 +62,8 @@ const breadcrumbText = computed(() => {
   return `首页 / ${routeTitle.value}`
 })
 
-const activeMenuKey = computed(() => {
-  return route.path
-})
-
-const siderWidth = computed(() => {
-  return sidebarCollapsed.value ? 76 : 240
-})
-
-const siderContentStyle = computed(() => {
-  return {
-    padding: sidebarCollapsed.value ? '18px 10px 14px' : '18px 16px 14px',
-    background: '#111827',
-  }
+const naiveMenuOptions = computed(() => {
+  return sideMenuOptions.value as unknown as MenuOption[]
 })
 
 const dropdownOptions: DropdownOption[] = [
@@ -96,69 +85,83 @@ const dropdownOptions: DropdownOption[] = [
   },
 ]
 
-function ensureCurrentTab() {
-  const title = routeTitle.value
-  if (!title || route.path === '/login') {
+function syncShellByRoute() {
+  if (route.path === '/login') {
     return
   }
 
-  const exists = openTabs.value.some((tab) => tab.to === route.path)
-  if (exists) {
-    return
-  }
-
-  openTabs.value.push({
-    title,
+  shellStore.ensureTab({
+    title: routeTitle.value,
     to: route.path,
     closable: route.path !== '/dashboard',
   })
+
+  const activeKey = route.path === '/dashboard' ? 'dashboard' : findMenuCodeByPath(route.path)
+  shellStore.setActiveMenuKey(activeKey)
+  shellStore.ensureExpandedMenuKeys(collectExpandedMenuKeysByPath(route.path))
 }
 
 function navigateTo(path: string) {
+  if (!path) {
+    return
+  }
+
+  if (route.path === path) {
+    shellStore.refreshRoute(route.fullPath)
+    return
+  }
+
   void router.push(path)
 }
 
+function handleMenuExpand(keys: Array<string | number>) {
+  shellStore.setExpandedMenuKeys(keys.map(String))
+}
+
 function handleMenuUpdate(key: string | number) {
-  navigateTo(String(key))
+  const option = findMenuOptionByKey(String(key))
+  if (!option || option.menuType !== 2 || !option.routePath) {
+    return
+  }
+
+  navigateTo(option.routePath)
 }
 
 function handleCloseTab(path: string) {
-  const nextTabs = openTabs.value.filter((tab) => tab.to !== path)
-  openTabs.value =
-    nextTabs.length > 0 ? nextTabs : [{ title: '工作台', to: '/dashboard', closable: false }]
+  shellStore.closeTab(path)
 
   if (route.path === path) {
-    const fallback = openTabs.value[openTabs.value.length - 1]
-    if (!fallback) {
-      void router.push('/dashboard')
-      return
-    }
-
-    void router.push(fallback.to)
+    const fallback = shellStore.openTabs[shellStore.openTabs.length - 1]
+    navigateTo(fallback?.to ?? '/dashboard')
   }
+}
+
+function handleCloseCurrentTab() {
+  const current = shellStore.openTabs.find((tab) => tab.to === route.path)
+  if (!current?.closable) {
+    navigateTo('/dashboard')
+    return
+  }
+
+  handleCloseTab(current.to)
 }
 
 function handleCloseOtherTabs() {
-  const current = openTabs.value.find((tab) => tab.to === route.path)
+  shellStore.closeOtherTabs(route.path)
+}
 
-  openTabs.value = [{ title: '工作台', to: '/dashboard', closable: false }]
-
-  if (current && current.to !== '/dashboard') {
-    openTabs.value.push(current)
-  }
+function handleCloseAllTabs() {
+  shellStore.closeAllTabs()
+  navigateTo('/dashboard')
 }
 
 function handleRefresh() {
-  window.location.reload()
-}
-
-function toggleSidebar() {
-  sidebarCollapsed.value = !sidebarCollapsed.value
+  shellStore.refreshRoute(route.fullPath)
 }
 
 function handleUserAction(key: string | number) {
   if (key === 'account-profile') {
-    void router.push('/account/profile')
+    navigateTo('/account/profile')
     return
   }
 
@@ -167,88 +170,76 @@ function handleUserAction(key: string | number) {
   }
 
   clearAuthSession()
+  shellStore.reset()
   resetDynamicRoutes()
   message.success('已退出登录')
   void router.replace('/login')
 }
 
-function syncCurrentUser() {
-  currentUser.value = getAuthUserInfo()
-}
-
 watch(
   () => route.fullPath,
   () => {
-    ensureCurrentTab()
+    syncShellByRoute()
   },
   { immediate: true },
 )
 
+function handleAuthUserUpdate() {
+  // 本地用户信息变更时，computed 会自动更新；这里仅触发一次路由同步，确保标签标题可刷新。
+  syncShellByRoute()
+}
+
 onMounted(() => {
-  window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, syncCurrentUser)
+  window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener(AUTH_USER_INFO_UPDATED_EVENT, syncCurrentUser)
+  window.removeEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
 })
 </script>
+
 <template>
-  <NLayout class="h-screen overflow-hidden bg-[#F5F7FA]" has-sider :native-scrollbar="false">
+  <NLayout class="h-screen bg-[#F5F7FA]" has-sider>
     <NLayoutSider
-      inverted
       collapse-mode="width"
-      :collapsed="sidebarCollapsed"
-      :collapsed-width="76"
-      :width="siderWidth"
-      :native-scrollbar="false"
+      bordered
+      show-trigger="bar"
       content-class="flex h-full flex-col"
-      :content-style="siderContentStyle"
+      :collapsed-width="72"
+      :width="240"
+      :native-scrollbar="false"
+      inverted
     >
-      <div class="flex" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'">
+      <div class="flex items-center px-4 py-4">
         <button
           type="button"
-          class="flex min-h-10 items-center border-none bg-transparent px-0 py-0 text-left text-white transition-opacity hover:opacity-90"
+          class="flex items-center border-none bg-transparent px-0 py-0 text-left text-white"
           @click="navigateTo('/dashboard')"
         >
-          <BrandLogo
-            :width="sidebarCollapsed ? 34 : 44"
-            direction="inline"
-            :show-title="!sidebarCollapsed"
-            variant="dark"
-          />
+          <BrandLogo :width="42" direction="inline" :show-title="true" variant="dark" />
         </button>
       </div>
 
-      <p v-if="!sidebarCollapsed" class="mt-6 text-xs font-semibold tracking-wide text-[#6B7280]">
-        主菜单
-      </p>
+      <p class="px-4 text-xs font-semibold tracking-wide text-[#6B7280]">主菜单</p>
 
-      <NMenu
-        class="mt-3"
-        :value="activeMenuKey"
-        :options="sideMenuOptions"
-        :indent="18"
-        :collapsed="sidebarCollapsed"
-        :collapsed-width="76"
-        :collapsed-icon-size="20"
-        inverted
-        @update:value="handleMenuUpdate"
-      />
-
-      <button
-        type="button"
-        class="mt-auto flex h-10 items-center rounded-xl border-none bg-white/6 px-3 text-sm text-[#D1D5DB] transition-colors hover:bg-white/10 hover:text-white"
-        :class="sidebarCollapsed ? 'justify-center' : 'justify-start gap-2.5'"
-        @click="toggleSidebar"
-      >
-        <NIcon :component="sidebarCollapsed ? ChevronForwardOutline : ChevronBackOutline" />
-        <span v-if="!sidebarCollapsed">收起菜单</span>
-      </button>
+      <NScrollbar class="mt-3 min-h-0 flex-1 px-2" trigger="none">
+        <NMenu
+          :value="shellStore.activeMenuKey"
+          :expanded-keys="shellStore.expandedMenuKeys"
+          :options="naiveMenuOptions"
+          :indent="18"
+          :collapsed-icon-size="20"
+          inverted
+          @update:value="handleMenuUpdate"
+          @update:expanded-keys="handleMenuExpand"
+        />
+      </NScrollbar>
     </NLayoutSider>
 
-    <NLayout class="h-screen min-w-0 overflow-hidden bg-[#F5F7FA]" :native-scrollbar="false">
+    <NLayout class="min-w-0 bg-[#F5F7FA]">
       <NLayoutHeader
-        class="flex h-14 items-center justify-between border-b border-[#E5E7EB] bg-white px-6"
+        bordered
+        class="flex h-14 items-center justify-between bg-white px-6"
       >
         <p class="text-sm text-[#374151]">{{ breadcrumbText }}</p>
 
@@ -288,34 +279,34 @@ onBeforeUnmount(() => {
         </div>
       </NLayoutHeader>
 
-      <div class="flex h-10.5 items-center gap-2 border-b border-[#E5E7EB] bg-white px-4">
-        <div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <button
-            v-for="tab in openTabs"
-            :key="tab.to"
-            type="button"
-            class="flex h-7 items-center justify-center rounded border px-4 text-[13px]"
-            :class="
-              route.path === tab.to
-                ? 'border-[#18A058] bg-[#18A058] font-semibold text-white'
-                : 'border-[#D9DEE8] bg-[#F9FAFB] text-[#374151]'
-            "
-            @click="navigateTo(tab.to)"
-          >
-            <span>{{ tab.title }}</span>
-            <span
-              v-if="tab.closable"
-              class="ml-1 cursor-pointer"
-              @click.stop="handleCloseTab(tab.to)"
+      <div class="admin-tabs-bar">
+        <NScrollbar x-scrollable trigger="none" class="min-w-0 flex-1">
+          <div class="admin-tabs-track">
+            <button
+              v-for="tab in shellStore.openTabs"
+              :key="tab.to"
+              type="button"
+              class="admin-tab-chip"
+              :class="{ 'admin-tab-chip--active': route.path === tab.to }"
+              @click="navigateTo(tab.to)"
             >
-              ×
-            </span>
-          </button>
-        </div>
+              <span class="truncate">{{ tab.title }}</span>
+              <span
+                v-if="tab.closable"
+                class="admin-tab-chip__close"
+                @click.stop="handleCloseTab(tab.to)"
+              >
+                <NIcon :component="CloseOutline" :size="14" />
+              </span>
+            </button>
+          </div>
+        </NScrollbar>
 
-        <div class="flex shrink-0 items-center gap-1">
+        <div class="admin-tabs-actions">
           <NButton quaternary size="small" @click="handleRefresh">刷新</NButton>
+          <NButton quaternary size="small" @click="handleCloseCurrentTab">关闭当前</NButton>
           <NButton quaternary size="small" @click="handleCloseOtherTabs">关闭其他</NButton>
+          <NButton quaternary size="small" @click="handleCloseAllTabs">关闭全部</NButton>
           <NButton quaternary circle size="small">
             <template #icon>
               <NIcon :component="EllipsisHorizontal" />
@@ -325,11 +316,84 @@ onBeforeUnmount(() => {
       </div>
 
       <NLayoutContent
+        class="admin-layout-content"
+        content-style="padding: 32px; background: #F5F7FA;"
         :native-scrollbar="false"
-        content-style="height: calc(100vh - 98px); padding: 32px; overflow: hidden; background: #F5F7FA;"
       >
-        <RouterView />
+        <RouterView v-slot="{ Component, route: currentRoute }">
+          <component :is="Component" :key="shellStore.getRouteViewKey(currentRoute.fullPath)" />
+        </RouterView>
       </NLayoutContent>
     </NLayout>
   </NLayout>
 </template>
+
+<style scoped>
+.admin-tabs-bar {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 0 16px;
+}
+
+.admin-tabs-track {
+  display: inline-flex;
+  min-width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+}
+
+.admin-tab-chip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 220px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d9dee8;
+  border-radius: 999px;
+  background: #f9fafb;
+  padding: 0 12px;
+  height: 28px;
+  color: #374151;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.admin-tab-chip--active {
+  border-color: #18a058;
+  background: #18a058;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.admin-tab-chip__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+}
+
+.admin-tab-chip__close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.admin-tabs-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-layout-content {
+  height: calc(100vh - 98px);
+  overflow: auto;
+}
+</style>

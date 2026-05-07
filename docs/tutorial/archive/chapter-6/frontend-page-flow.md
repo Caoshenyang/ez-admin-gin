@@ -9,7 +9,7 @@ search: false
 ::: warning 历史页说明
 这页保留的是旧章节位置下的前端接入说明，用来兼容早期引用。
 
-当前教程主线里的 canonical 位置已经切到 [第 8 章：前端页面接入流程](../chapter-8/frontend-page-flow)。
+当前教程主线里的 canonical 位置已经切到 [第 6 章：前端页面接入流程](../chapter-6/frontend-page-flow)。
 :::
 
 上一节已经把后端接口、权限和菜单补齐了。这一节把前端部分接上，让模块能从侧边栏打开并调用真实接口。
@@ -229,4 +229,4 @@ const routeComponentMap: Record<string, RouteComponent> = {
 - 页面组件遵循统一的搜索 + 表格 + 弹框模式。
 - 路由映射把 component 字段关联到真实 Vue 文件。
 
-如果你想继续看当前主线下的真实业务模块示例，下一节直接读 [第 8 章：CRM 客户模块示例](../chapter-8/business-module-example)。
+如果你想继续看当前主线下的真实业务模块示例，下一节直接读 [第 6 章：系统模块示例](../chapter-6/sample-module)。

@@ -1,0 +1,11 @@
+UPDATE `sys_menu` SET `icon` = 'pulse', `updated_at` = NOW(3) WHERE `id` = 200;
+UPDATE `sys_menu` SET `icon` = 'people', `updated_at` = NOW(3) WHERE `id` = 201;
+UPDATE `sys_menu` SET `icon` = 'shield', `updated_at` = NOW(3) WHERE `id` = 202;
+UPDATE `sys_menu` SET `icon` = 'layers', `updated_at` = NOW(3) WHERE `id` = 203;
+UPDATE `sys_menu` SET `icon` = 'cog', `updated_at` = NOW(3) WHERE `id` = 204;
+UPDATE `sys_menu` SET `icon` = 'folder', `updated_at` = NOW(3) WHERE `id` = 205;
+UPDATE `sys_menu` SET `icon` = 'list', `updated_at` = NOW(3) WHERE `id` = 206;
+UPDATE `sys_menu` SET `icon` = 'time', `updated_at` = NOW(3) WHERE `id` = 207;
+UPDATE `sys_menu` SET `icon` = 'notifications', `updated_at` = NOW(3) WHERE `id` = 208;
+UPDATE `sys_menu` SET `icon` = 'git-branch', `updated_at` = NOW(3) WHERE `id` = 211;
+UPDATE `sys_menu` SET `icon` = 'briefcase', `updated_at` = NOW(3) WHERE `id` = 212;

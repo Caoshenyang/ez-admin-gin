@@ -186,4 +186,4 @@ description: "围绕当前 OperationLogView.vue 和 LoginLogView.vue，讲清只
 ## 下一步
 
 - 想回到第 7 章总览，重新串一次这些页面在后台里的位置，回到 [系统模块页面模式](./system-module-pages)
-- 想把这些前端页面放回完整模块接入流程里，继续读 [第 8 章：模块化接入规范](../chapter-8/)
+- 想把这些前端页面放回完整模块接入流程里，继续读 [第 6 章：核心系统模块](../chapter-6/)

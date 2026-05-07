@@ -15,7 +15,7 @@ description: "按当前最终版目录结构讲清用户、角色、菜单、配
 这一章建议带着两个问题往下看：
 
 - 当前一个模块到底应该落在 `auth / setup / system / iam` 的哪一层
-- 为什么现在要优先沿着 `dto / repository / service / handler / routes` 这条结构继续扩，而不是回去扩旧的 `internal/handler/*`
+- 为什么每个模块要沿着 `dto / repository / service / handler / routes` 这条固定结构落地
 :::
 
 ## 本章会解决什么
@@ -24,6 +24,7 @@ description: "按当前最终版目录结构讲清用户、角色、菜单、配
 
 - 用户、角色、部门、岗位、菜单这类 IAM 资源
 - 配置、文件、登录日志、操作日志、公告这类系统资源
+- 数据字典、附件中心、账户中心等常用通用模块
 - 模块路由如何从 `bootstrap` 进入，再汇总到 `module/system`
 - 模块内部为什么要继续保持职责拆分，而不是重新回到 Handler 直连一切
 
@@ -32,7 +33,7 @@ description: "按当前最终版目录结构讲清用户、角色、菜单、配
 现在仓库里的核心系统模块已经大体收敛到下面这条路径：
 
 ```text
-cmd/server
+main.go (embed)
   ↓
 bootstrap/run.go
   ↓
@@ -42,10 +43,9 @@ module/auth
 module/setup
 module/iam/*
 module/system/*
-module/crm/*
 ```
 
-这意味着第 6 章现在讲的，不应该再是“怎么在 `internal/router/router.go` 多挂一个 handler”，而应该是：
+这意味着第 6 章现在讲的，不是”怎么在某个全局路由文件里多挂一个 handler”，而是：
 
 - 如何把一个模块定义成独立边界
 - 如何把它纳入统一的系统路由聚合
@@ -63,20 +63,32 @@ module/crm/*
 - 哪些模块会额外带 `datascope` 或 `policy`
 - 什么情况下复用 `internal/model/*`，什么情况下在模块内单独放 `entity.go`
 
-### 2. 再看后端模块接入流程
+### 2. 再看内置模块落地流程
 
-再看 [后端模块接入流程](./backend-module-flow)。
+再看 [内置模块落地流程](./backend-module-flow)。
 
-这一页会按当前真实结构，把一个新模块从“准备接入”讲到“能被系统路由聚合并对外提供接口”。
+这一页会按当前真实结构，把一个系统内置模块从”准备接入”讲到”能被系统路由聚合并对外提供接口”。
 
-### 3. 最后再看系统模块示例和权限菜单接入
+### 3. 再看具体核心模块落地
 
-后面再继续看：
+接下来看几个具体的核心模块如何按同一套骨架落地：
 
-- [系统模块示例](./sample-module)
-- [权限、菜单与迁移接入](./permission-menu-migration)
+- [系统模块示例](./sample-module) — 公告模块
+- [数据字典模块落地](./dict-module) — 系统级公共字典
+- [附件中心落地](./attachment-center-module) — 复用底层上传能力的业务资源模型
+- [账户中心落地](./account-center-module) — 会话内自助能力
 
-这样顺序会更自然，因为你会先知道“模块骨架长什么样”，再去看“示例怎么套这套骨架”。
+### 4. 再看权限、菜单与迁移接入
+
+继续看 [权限、菜单与迁移接入](./permission-menu-migration)。
+
+### 5. 再看前端页面接入流程
+
+再看 [前端页面接入流程](./frontend-page-flow)。
+
+### 6. 最后用验收清单自查
+
+最后用 [模块接入验收清单](./module-integration-checklist) 来判断一个模块是否真正进入后台底座。
 
 ## 本章完成后的判断标准
 
@@ -86,28 +98,31 @@ module/crm/*
 2. 一个模块为什么要拆成 `dto / repository / service / handler / routes`
 3. 哪些模块需要 `datascope.go`，哪些暂时不需要
 4. 为什么系统路由现在由 `bootstrap/router.go` 统一装配
-5. 为什么旧的 `internal/handler/*` 和 `internal/router/router.go` 还在仓库里，但不该继续当主线扩张
+5. 数据字典、附件中心、账户中心分别适合放在哪一层
 
-::: warning ⚠️ 当前教程主线不再继续扩大 legacy 目录
-仓库里仍然保留着一部分旧的 `internal/handler/*` 和 `internal/router/router.go`，它们更多是迁移期遗留和兼容参考。
-
-从这一章开始，新增或重写模块时，教程一律优先沿当前最终版结构继续推进，不再把旧目录当成推荐落点。
+::: tip 当前主线已完全收敛到 `module/*`
+旧的全局 Handler 目录和路由文件已在代码清理中移除。当前所有模块统一沿 `module/<group>/<resource>` 落地，不再存在新旧结构并存的局面。
 :::
 
 ::: info 边界提醒
-第 6 章只负责把后端内置模块边界收稳。前端页面承接放在 [第 7 章](../chapter-7/)，新增业务模块如何接入放在 [第 8 章](../chapter-8/)。
+本章把后端模块结构、核心模块落地、权限菜单接入、前端页面接入和验收清单统一收口。前端运行时主线放在 [第 7 章](../chapter-7/)，部署、升级与复用放在 [第 8 章](../chapter-8/)。
 :::
 
 ## 本章小节
 
 - [模块固定结构](./module-structure)
-- [后端模块接入流程](./backend-module-flow)
+- [内置模块落地流程](./backend-module-flow)
 - [系统模块示例](./sample-module)
+- [数据字典模块落地](./dict-module)
+- [附件中心落地](./attachment-center-module)
+- [账户中心落地](./account-center-module)
 - [权限、菜单与迁移接入](./permission-menu-migration)
+- [前端页面接入流程](./frontend-page-flow)
+- [模块接入验收清单](./module-integration-checklist)
 
 ## 这一章结束后会走到哪里
 
-当第 6 章把核心系统模块结构收稳后，后面的前端管理台、动态菜单、页面流转和模块接入规范就都会有更清晰的后端对照面。
+当第 6 章把核心系统模块结构收稳后，后面的前端管理台和部署复用就都会有更清晰的后端对照面。
 
 也就是说，这一章真正交付的不是几组 CRUD，而是：
 

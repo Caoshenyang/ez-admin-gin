@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"ez-admin-gin/server/internal/config"
-	"ez-admin-gin/server/internal/database"
-	"ez-admin-gin/server/internal/migrate"
+	platformConfig "ez-admin-gin/server/internal/platform/config"
+	platformDatabase "ez-admin-gin/server/internal/platform/database"
+	platformMigrate "ez-admin-gin/server/internal/platform/migrate"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -59,11 +59,11 @@ func resolveRealDBDrivers(t *testing.T) []string {
 	return drivers
 }
 
-func loadRealDBConfig(t *testing.T, driver string) config.DatabaseConfig {
+func loadRealDBConfig(t *testing.T, driver string) platformConfig.DatabaseConfig {
 	t.Helper()
 
 	prefix := "EZ_REAL_DB_" + strings.ToUpper(driver) + "_"
-	return config.DatabaseConfig{
+	return platformConfig.DatabaseConfig{
 		Driver:          driver,
 		Host:            requireEnv(t, prefix+"HOST"),
 		Port:            requireEnvInt(t, prefix+"PORT"),
@@ -76,28 +76,28 @@ func loadRealDBConfig(t *testing.T, driver string) config.DatabaseConfig {
 	}
 }
 
-func verifyRealDBMigrations(t *testing.T, cfg config.DatabaseConfig) {
+func verifyRealDBMigrations(t *testing.T, cfg platformConfig.DatabaseConfig) {
 	t.Helper()
 
 	log := zap.NewNop()
-	dsn, err := database.MigrateDSN(cfg)
+	dsn, err := platformDatabase.MigrateDSN(cfg)
 	if err != nil {
 		t.Fatalf("build migrate dsn for %s: %v", cfg.Driver, err)
 	}
 
-	if err := migrate.Run(cfg.Driver, dsn, migrationsFS, log); err != nil {
+	if err := platformMigrate.Run(cfg.Driver, dsn, migrationsFS, log); err != nil {
 		t.Fatalf("apply migrations on %s: %v", cfg.Driver, err)
 	}
-	if err := migrate.Run(cfg.Driver, dsn, migrationsFS, log); err != nil {
+	if err := platformMigrate.Run(cfg.Driver, dsn, migrationsFS, log); err != nil {
 		t.Fatalf("re-apply migrations on %s should stay idempotent: %v", cfg.Driver, err)
 	}
 
-	db, err := database.New(cfg, log)
+	db, err := platformDatabase.New(cfg, log)
 	if err != nil {
 		t.Fatalf("open %s after migrations: %v", cfg.Driver, err)
 	}
 	defer func() {
-		if closeErr := database.Close(db); closeErr != nil {
+		if closeErr := platformDatabase.Close(db); closeErr != nil {
 			t.Fatalf("close %s after migrations: %v", cfg.Driver, closeErr)
 		}
 	}()

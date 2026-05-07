@@ -1,88 +1,58 @@
 ---
 title: 配置管理
-description: "设计后端配置文件、环境变量和不同运行环境的加载方式。"
+description: "设计后端配置文件、环境变量和当前启动入口的配置加载方式。"
 ---
 
 # 配置管理
 
-第一章已经让后端服务可以启动。现在把端口、运行环境、数据库和 Redis 这些信息从代码里移到配置里，后续接入日志、数据库和缓存时，就不用把参数写死在业务代码中。
+第一章已经让后端服务能跑起来。这一节把运行参数从代码里抽出来，让端口、环境、数据库、Redis、日志等配置都从 `configs/config.yaml` 和环境变量读取。
 
-::: tip 🎯 本节目标
-完成后，后端会从 `configs/config.yaml` 读取配置，并允许用环境变量覆盖配置值。
+::: tip 先记主线
+当前代码里，配置不是在业务 Handler 中零散读取，也不是在旧版 `cmd/server/main.go` 里手动解析，而是由 `server/internal/platform/config` 统一加载，再由 `server/internal/bootstrap/run.go` 分发给日志、数据库、Redis、鉴权和路由层。
 :::
 
 ## 配置放在哪里
 
-本节会新增下面这些文件：
+本节重点关注这几个位置：
 
 ```text
 server/
 ├─ configs/
 │  └─ config.yaml
+├─ main.go
 └─ internal/
-   └─ config/
-      └─ config.go
+   ├─ bootstrap/
+   │  └─ run.go
+   └─ platform/
+      └─ config/
+         └─ config.go
 ```
 
 | 位置 | 用途 |
 | --- | --- |
 | `configs/config.yaml` | 本地开发默认配置 |
-| `internal/config/config.go` | 读取配置、设置默认值、支持环境变量覆盖 |
+| `internal/platform/config/config.go` | 统一读取配置、设置默认值、绑定环境变量 |
+| `internal/bootstrap/run.go` | 启动时读取配置并把它分发给各平台能力 |
+| `server/main.go` | 只保留 `bootstrap.MustRun(...)`，不再内联配置加载流程 |
 
-::: warning ⚠️ 不要把生产密钥写进配置文件
-`config.yaml` 只放本地开发能公开的默认值。生产环境的密码、密钥、访问令牌，应该通过环境变量或部署平台的 Secret 管理。
+::: warning 不要再把配置主线理解成 `internal/config -> main.go -> gin.Run`
+仓库里仍然保留了 `server/internal/config` 这一层兼容落点，但当前启动主线已经切到 `internal/platform/config` 和 `internal/bootstrap/run.go`。阅读和继续扩展代码时，应优先以这条主线为准。
 :::
 
-## 🛠️ 安装配置库
+## 配置文件长什么样
 
-进入 `server/` 目录：
-
-::: code-group
-
-```powershell [Windows PowerShell]
-# 进入服务端目录
-Set-Location .\server
-```
-
-```bash [macOS / Linux]
-# 进入服务端目录
-cd server
-```
-
-:::
-
-安装 Viper：
-
-```bash
-# 安装配置读取依赖
-go get github.com/spf13/viper@latest
-```
-
-Viper 用来读取 YAML 配置，并支持环境变量覆盖。这里先只用它处理基础配置，不引入更复杂的配置中心。
-
-依赖资料入口：
-
-| 依赖 | 用途 | 资料 |
-| --- | --- | --- |
-| `github.com/spf13/viper` | 读取配置文件和环境变量 | [Go 包文档](https://pkg.go.dev/github.com/spf13/viper) / [项目仓库](https://github.com/spf13/viper) |
-
-## 🛠️ 创建配置文件
-
-创建 `server/configs/config.yaml`：
+当前服务端默认读取 `server/configs/config.yaml`。基础字段至少包括：
 
 ```yaml
 app:
-  # 应用名称，后续日志和部署信息会用到。
   name: ez-admin
-  # 当前运行环境，本地开发先使用 dev。
   env: dev
 
 server:
-  # HTTP 服务监听地址。
   addr: ":8080"
 
 database:
-  # 数据库配置和第一章的 Docker Compose 保持一致。
+  driver: postgres
   host: localhost
   port: 5432
   user: ez_admin
@@ -90,193 +60,67 @@ database:
   name: ez_admin
 
 redis:
-  # Redis 配置和第一章的 Docker Compose 保持一致。
   host: localhost
   port: 6379
   password: ""
   db: 0
 ```
 
-这些值和第一章的 `deploy/compose.local.yml` 保持一致，后续数据库和 Redis 连接会直接复用。
+后续章节会继续补充 `log`、`auth`、`upload` 等配置段，但入口规则不变：都由同一个配置加载器处理。
 
-## 🛠️ 创建配置加载代码
+## 当前项目如何加载配置
 
-::: details `server/internal/config/config.go` — 配置加载
-
-```go
-package config
-
-import (
-	"fmt"
-	"strings"
-
-	"github.com/spf13/viper"
-)
-
-// Config 汇总整个服务端会读取的配置段。
-type Config struct {
-	App      AppConfig      `mapstructure:"app"`
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-}
-
-// AppConfig 保存应用自身信息。
-type AppConfig struct {
-	Name string `mapstructure:"name"`
-	Env  string `mapstructure:"env"`
-}
-
-// ServerConfig 保存 HTTP 服务启动配置。
-type ServerConfig struct {
-	Addr string `mapstructure:"addr"`
-}
-
-// DatabaseConfig 保存数据库连接配置。
-type DatabaseConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
-	Name     string `mapstructure:"name"`
-}
-
-// RedisConfig 保存 Redis 连接配置。
-type RedisConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	Password string `mapstructure:"password"`
-	DB       int    `mapstructure:"db"`
-}
-
-// Load 读取配置文件，并把结果解析到 Config 结构体中。
-func Load() (*Config, error) {
-	v := viper.New()
-
-	// 配置文件位置是 server/configs/config.yaml。
-	v.SetConfigName("config")
-	v.SetConfigType("yaml")
-	v.AddConfigPath("./configs")
-
-	// 先设置默认值，再绑定环境变量。
-	setDefaults(v)
-	bindEnvs(v)
-
-	// EZ_SERVER_ADDR 这类环境变量会覆盖 server.addr。
-	v.SetEnvPrefix("EZ")
-	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	v.AutomaticEnv()
-
-	if err := v.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("read config: %w", err)
-	}
-
-	var cfg Config
-	if err := v.Unmarshal(&cfg); err != nil {
-		return nil, fmt.Errorf("unmarshal config: %w", err)
-	}
-
-	return &cfg, nil
-}
-
-// setDefaults 设置兜底值，避免配置文件缺少字段时直接变成零值。
-func setDefaults(v *viper.Viper) {
-	v.SetDefault("app.name", "ez-admin")
-	v.SetDefault("app.env", "dev")
-	v.SetDefault("server.addr", ":8080")
-	v.SetDefault("database.host", "localhost")
-	v.SetDefault("database.port", 5432)
-	v.SetDefault("database.user", "ez_admin")
-	v.SetDefault("database.password", "ez_admin_123456")
-	v.SetDefault("database.name", "ez_admin")
-	v.SetDefault("redis.host", "localhost")
-	v.SetDefault("redis.port", 6379)
-	v.SetDefault("redis.password", "")
-	v.SetDefault("redis.db", 0)
-}
-
-// bindEnvs 让环境变量能稳定参与结构体解析。
-func bindEnvs(v *viper.Viper) {
-	keys := []string{
-		"app.name",
-		"app.env",
-		"server.addr",
-		"database.host",
-		"database.port",
-		"database.user",
-		"database.password",
-		"database.name",
-		"redis.host",
-		"redis.port",
-		"redis.password",
-		"redis.db",
-	}
-
-	for _, key := range keys {
-		// BindEnv 返回错误通常来自 key 本身，这里的 key 是固定列表。
-		_ = v.BindEnv(key)
-	}
-}
-```
-
-:::
-
-::: details 为什么要写 `bindEnvs`
-环境变量覆盖要能稳定参与结构体解析。这里把配置项逐个绑定到环境变量，避免出现“环境变量设置了，但结构体里没读到”的情况。
-:::
-
-## 🛠️ 使用配置启动服务
-
-修改 `server/main.go`。这一处重点看三个变化：
-
-- 引入 `internal/config` 包。
-- 启动地址从 `cfg.Server.Addr` 读取。
-- 健康检查接口返回当前运行环境。
-
-::: details `server/main.go` — 接入配置
+当前启动不是在 `main.go` 里直接 `config.Load()`，而是先进入 `bootstrap.MustRun(...)`，再在 `run.go` 里统一加载：
 
 ```go
-package main
-
-import (
-	"log"
-
-	"ez-admin-gin/server/internal/config" // [!code ++]
-
-	"github.com/gin-gonic/gin"
-)
-
-func main() {
-	// 启动服务前先加载配置。
-	cfg, err := config.Load() // [!code ++]
+func MustRun(migrationsFS fs.FS, rbacModelPath string) {
+	cfg, err := platformConfig.Load()
 	if err != nil {
-		log.Fatalf("load config: %v", err) // [!code ++]
+		stdlog.Fatalf("load config: %v", err)
 	}
 
-	r := gin.Default()
-
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-			// 返回 env，方便验证配置文件已经被读取。
-			"env":    cfg.App.Env, // [!code ++]
-		})
-	})
-
-	// 服务端口不再写死，改为读取配置文件。
-	if err := r.Run(cfg.Server.Addr); err != nil { // [!code ++]
-		log.Fatalf("run server: %v", err) // [!code ++]
+	log, err := platformLogger.New(cfg.Log)
+	if err != nil {
+		stdlog.Fatalf("create logger: %v", err)
 	}
+
+	// 后续数据库、Redis、鉴权、路由都继续复用 cfg
 }
 ```
 
-:::
+这层分工的意思是：
 
-这里先只把 `server.addr` 和 `app.env` 接进启动流程，数据库和 Redis 配置会在后续章节使用。
+- `main.go` 只负责进入启动流程
+- `platform/config` 负责把配置读出来
+- `bootstrap/run.go` 负责决定配置在启动链上的使用顺序
+
+## `platform/config` 负责什么
+
+当前 `server/internal/platform/config/config.go` 提供的是统一配置入口。它做的事情包括：
+
+- 从 `./configs/config.yaml` 读取 YAML
+- 为关键字段设置默认值
+- 绑定 `EZ_` 前缀环境变量
+- 把结果解析成 `Config` 结构体
+
+典型代码结构可以概括成这样：
+
+```go
+v.SetConfigName("config")
+v.SetConfigType("yaml")
+v.AddConfigPath("./configs")
+
+setDefaults(v)
+bindEnvs(v)
+
+v.SetEnvPrefix("EZ")
+v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+v.AutomaticEnv()
+```
 
 ## 配置优先级
 
-本节采用下面的覆盖顺序：
+当前采用的覆盖顺序是：
 
 | 优先级 | 来源 | 示例 |
 | --- | --- | --- |
@@ -284,7 +128,7 @@ func main() {
 | 中 | `configs/config.yaml` | `server.addr: ":8080"` |
 | 高 | 环境变量 | `EZ_SERVER_ADDR=:18080` |
 
-环境变量名称规则：
+常见环境变量映射：
 
 | 配置项 | 环境变量 |
 | --- | --- |
@@ -295,54 +139,52 @@ func main() {
 
 ## ✅ 验证默认配置
 
-整理依赖：
+在 `server/` 目录启动服务：
 
 ```bash
-# 整理新增依赖
-go mod tidy
-```
-
-启动服务：
-
-```bash
-# 在 server/ 目录启动服务
 go run .
 ```
 
-访问健康检查接口：
+访问健康检查：
 
 ::: code-group
 
 ```powershell [Windows PowerShell]
-# 访问默认端口的健康检查接口
 Invoke-RestMethod http://localhost:8080/health
 ```
 
 ```bash [macOS / Linux]
-# 访问默认端口的健康检查接口
 curl http://localhost:8080/health
 ```
 
 :::
 
-应该能看到 `status` 为 `ok`，`env` 为 `dev`。
+当前返回已经是统一响应格式，而不是早期章节里的裸 JSON：
 
-验证完成后，回到运行 `go run .` 的终端，按 `Ctrl + C` 停止服务。
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "database": "ok",
+    "env": "dev",
+    "redis": "ok"
+  }
+}
+```
 
 ## ✅ 验证环境变量覆盖
 
-把服务端口临时改成 `18080`：
+临时把端口改成 `18080`：
 
 ::: code-group
 
 ```powershell [Windows PowerShell]
-# 临时把服务端口覆盖为 18080
 $env:EZ_SERVER_ADDR = ":18080"
 go run .
 ```
 
 ```bash [macOS / Linux]
-# 临时把服务端口覆盖为 18080
 EZ_SERVER_ADDR=:18080 go run .
 ```
 
@@ -353,26 +195,30 @@ EZ_SERVER_ADDR=:18080 go run .
 ::: code-group
 
 ```powershell [Windows PowerShell]
-# 访问被环境变量覆盖后的端口
 Invoke-RestMethod http://localhost:18080/health
 ```
 
 ```bash [macOS / Linux]
-# 访问被环境变量覆盖后的端口
 curl http://localhost:18080/health
 ```
 
 :::
 
-如果能正常返回，说明环境变量已经覆盖了配置文件里的端口。
+如果能正常返回，说明环境变量覆盖已经生效。
 
-::: warning ⚠️ PowerShell 环境变量只影响当前窗口
-`$env:EZ_SERVER_ADDR = ":18080"` 只在当前 PowerShell 窗口生效。验证完成后可以执行：
+::: warning PowerShell 环境变量只影响当前窗口
+验证完成后可以执行：
 
 ```powershell
-# 清理临时环境变量
 Remove-Item Env:EZ_SERVER_ADDR
 ```
 :::
 
-下一节开始接入日志系统：[日志系统](./logging-system)。
+## 这一页需要同步的认知
+
+1. 当前入口是 `server/main.go`，不是 `cmd/server/main.go`。
+2. 当前配置加载入口是 `internal/platform/config`，不是把读取逻辑散在旧目录里。
+3. 当前配置的消费者是 `bootstrap/run.go`，不是在 `main.go` 里手写一整套初始化。
+4. 当前健康检查返回结构已经是统一响应格式，不再只是 `{"status":"ok"}`。
+
+下一节继续接入日志系统：[日志系统](./logging-system)。

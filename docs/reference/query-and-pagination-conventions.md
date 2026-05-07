@@ -181,14 +181,13 @@ type ListQuery struct {
 
 ## 当前为什么每个模块都各自写 `NormalizePage`
 
-你会发现现在很多模块各自都有一份 `NormalizePage(...)`，而不是抽成一个全局工具。
+当前分页归一化逻辑已经收到 `internal/app/pagination.go` 的 `app.NormalizePage` 函数中。新增模块时可以直接调用：
 
-当前这样做的现实原因是：
+```go
+page, pageSize := app.NormalizePage(query.Page, query.PageSize)
+```
 
-- 逻辑虽然一致
-- 但还没正式抽成平台级分页工具
-
-这也意味着当前对外约定已经稳定，但内部仍有进一步收口空间。
+部分模块可能仍保留了自己的 `NormalizePage` 方法，这是历史遗留。新增模块应该直接使用 `app.NormalizePage`。
 
 ## 最常见的查询问题
 
@@ -218,4 +217,4 @@ type ListQuery struct {
 - [模块规范](./module-conventions)
 - [错误码参考](./error-code-reference)
 - [第 6 章：核心系统模块](../tutorial/chapter-6/)
-- [第 8 章：模块化接入规范](../tutorial/chapter-8/)
+- [第 6 章：核心系统模块](../tutorial/chapter-6/)

@@ -38,8 +38,8 @@ search: false
 - 第 5 章：组织体系、`Actor`、`gorm.Scopes(...)`、资源模式、模块接入规范、请求走读、验收清单
 - 第 6 章：模块固定结构、后端模块接入、示例模块、权限菜单接入
 - 第 7 章：前端运行时、登录态、布局、动态菜单、系统页模式和详细案例
-- 第 8 章：模块化接入规范
-- 第 9 章：部署、升级、回滚、排障、长期运维、项目复用
+- 第 6 章：核心系统模块（含模块接入、前端接入和验收清单）
+- 第 8 章：部署、升级、回滚、排障、长期运维、项目复用
 
 ## 残留页：保留内容价值，但不再作为主线入口
 
@@ -88,7 +88,7 @@ search: false
 - `tutorial/chapter-6/frontend-page-flow.md` → stub
 - `tutorial/archive/chapter-6/frontend-page-flow.md` → 归档正文
 
-当前 canonical 位置已经切到第 8 章。
+当前 canonical 位置已经切到第 6 章。
 
 ### 旧的部署页
 
@@ -96,7 +96,7 @@ search: false
 - `tutorial/chapter-7/deployment-and-reuse.md` → stub
 - `tutorial/archive/chapter-7/*` → 归档正文
 
-当前 canonical 位置已经切到第 9 章。
+当前 canonical 位置已经切到第 8 章。
 
 ## 后续维护规则
 

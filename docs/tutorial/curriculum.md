@@ -66,7 +66,12 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 - [模块固定结构](./chapter-6/module-structure)
 - [后端模块接入流程](./chapter-6/backend-module-flow)
 - [系统模块示例](./chapter-6/sample-module)
+- [数据字典模块落地](./chapter-6/dict-module)
+- [附件中心落地](./chapter-6/attachment-center-module)
+- [账户中心落地](./chapter-6/account-center-module)
 - [权限、菜单与迁移接入](./chapter-6/permission-menu-migration)
+- [前端页面接入流程](./chapter-6/frontend-page-flow)
+- [模块接入验收清单](./chapter-6/module-integration-checklist)
 
 ## 第 7 章：前端企业级管理台
 
@@ -84,26 +89,16 @@ description: "EZ Admin Gin 企业级完整版 0-1 教程的大纲，用于确定
 - [配置与文件页实现要点](./chapter-7/config-and-file-page-detail)
 - [日志查询页实现要点](./chapter-7/audit-log-pages)
 
-## 第 8 章：模块化接入规范
+## 第 8 章：部署、升级与复用
 
 - [章节导读](./chapter-8/)
-- [后端模块固定结构](./chapter-8/backend-module-structure)
-- [后端模块接入流程](./chapter-8/backend-module-integration)
-- [权限、菜单与迁移接入](./chapter-8/permission-menu-integration)
-- [前端页面接入流程](./chapter-8/frontend-page-flow)
-- [CRM 客户模块示例](./chapter-8/business-module-example)
-- [模块接入验收清单](./chapter-8/module-integration-checklist)
-
-## 第 9 章：部署、升级与复用
-
-- [章节导读](./chapter-9/)
-- [环境变量与初始化数据](./chapter-9/env-and-init-data)
-- [部署验证与复用说明](./chapter-9/deployment-and-reuse)
-- [Compose 与服务运行结构](./chapter-9/compose-and-service-layout)
-- [Nginx 与 HTTPS 入口层](./chapter-9/nginx-and-https)
-- [部署变体说明](./chapter-9/deployment-variants)
-- [更新与回滚策略](./chapter-9/update-and-rollback)
-- [回滚分级策略](./chapter-9/rollback-strategy-levels)
-- [部署排障 FAQ](./chapter-9/deployment-troubleshooting-faq)
-- [长期运维 FAQ](./chapter-9/operations-maintenance-faq)
-- [新项目复用清单](./chapter-9/project-reuse-checklist)
+- [环境变量与初始化数据](./chapter-8/env-and-init-data)
+- [部署验证与复用说明](./chapter-8/deployment-and-reuse)
+- [Compose 与服务运行结构](./chapter-8/compose-and-service-layout)
+- [Nginx 与 HTTPS 入口层](./chapter-8/nginx-and-https)
+- [部署变体说明](./chapter-8/deployment-variants)
+- [更新与回滚策略](./chapter-8/update-and-rollback)
+- [回滚分级策略](./chapter-8/rollback-strategy-levels)
+- [部署排障 FAQ](./chapter-8/deployment-troubleshooting-faq)
+- [长期运维 FAQ](./chapter-8/operations-maintenance-faq)
+- [新项目复用清单](./chapter-8/project-reuse-checklist)

@@ -20,7 +20,7 @@ description: "对齐当前最终版后端结构，讲清一个模块为什么由
 
 - 一个新模块应该建哪些文件
 - 每个文件各自承担什么职责
-- 为什么现在不再推荐把逻辑继续塞回 `internal/handler/*`
+- 哪些公共工具已经沉在 `internal/app/` 供所有模块复用
 :::
 
 ## 先看当前主线里的真实骨架
@@ -277,24 +277,41 @@ systemModule.RegisterRoutes(...)
 - 全局入口清楚，知道系统到底装了哪些模块
 - 每个模块保持可独立装配，不必直接依赖某个巨型路由文件
 
-## 当前还保留的 legacy 结构应该怎么理解
+## 模块公共工具：`internal/app/`
 
-仓库里目前仍然保留了一些旧的：
+当模块越来越多时，一些跨模块的通用逻辑会被提取到共享包里。当前 `internal/app/` 提供了三个这样的工具：
 
-- `internal/handler/*`
-- `internal/router/router.go`
+| 函数 | 作用 | 典型调用位置 |
+| --- | --- | --- |
+| `NormalizePage(page, pageSize)` | 分页参数归一化：页码最小 1，每页最小 10、最大 100 | 各模块 `dto.go` |
+| `WriteError(c, err, fallbackMsg, log)` | 统一处理 handler 层错误响应，区分 `apperror` 和未知错误 | 各模块 `handler.go` |
+| `CurrentActor(c, log)` | 从 `gin.Context` 提取当前登录用户，未登录时自动返回 401 | 需要 `Actor` 的 `handler.go` |
+| `UintIDParam(c, param, label, log)` | 从路径参数中解析 `uint` 类型 ID，失败时返回 400 | 需要路径 ID 的 `handler.go` |
 
-它们可以作为迁移期参考，但从教程主线角度，已经不再是推荐扩展点。
+这些工具解决的共性问题是：
 
-如果后续你继续新增模块，优先策略应该是：
+> 各模块 handler 里反复出现的"解析参数、取当前用户、写错误响应"样板代码，现在可以统一调用，不再每个模块各自实现一份。
 
-- 新能力直接进入 `module/*`
-- 旧目录逐步收缩，不再扩大
+举个例子，之前各模块 handler 里取当前登录用户时需要自己处理"未登录则返回 401"的逻辑，现在可以直接写：
 
-::: warning ⚠️ 不要在新旧结构之间来回横跳
-如果一个新模块一半代码放在 `module/*`，另一半又继续塞进 `internal/handler/system/*`，后面会非常难维护。
+```go
+actor, ok := app.CurrentActor(c, log)
+if !ok {
+    return
+}
+```
 
-当前最稳的做法是：即使仓库里还有 legacy 目录存在，新增主线能力也继续沿最终版结构推进。
+而路径参数解析也可以简化为：
+
+```go
+id, ok := app.UintIDParam(c, "id", "配置 ID", log)
+if !ok {
+    return
+}
+```
+
+::: tip 为什么放在 `internal/app/` 而不是每个模块各自实现
+这些函数不是某个特定模块的业务逻辑，而是所有模块共享的协议层工具。把它们收到 `internal/app/` 里，既避免了每个模块重复实现，也让后续修改（比如统一调整错误格式）只需要改一个地方。
 :::
 
 ## 一个新模块的最小文件清单

@@ -27,7 +27,7 @@
 
 ```text
 server/
-├── cmd/server/
+├── main.go
 ├── internal/bootstrap/
 ├── internal/platform/
 ├── internal/module/
@@ -36,7 +36,7 @@ server/
 
 已经落地的关键目录：
 
-- `server/cmd/server/main.go`
+- `server/main.go`
 - `server/internal/bootstrap/router.go`
 - `server/internal/bootstrap/run.go`
 - `server/internal/platform/authn`

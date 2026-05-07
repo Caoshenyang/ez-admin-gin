@@ -1,11 +1,13 @@
 import {
   AlbumsOutline,
   AppsOutline,
+  BriefcaseOutline,
   BeakerOutline,
   BuildOutline,
   CogOutline,
   DocumentTextOutline,
   FolderOpenOutline,
+  GitBranchOutline,
   GridOutline,
   LayersOutline,
   ListOutline,
@@ -21,30 +23,60 @@ import { NIcon, type MenuOption } from 'naive-ui'
 import type { RouteRecordRaw } from 'vue-router'
 import { computed, h, shallowRef, type Component } from 'vue'
 
-import { MenuType, type AuthMenu } from '../types/menu'
+import { MenuType, type AuthMenu } from '@/modules/iam/types/menu'
 
 type RouteComponent = NonNullable<RouteRecordRaw['component']>
 type MenuIconComponent = Component
+export interface AdminMenuOption {
+  label: string
+  key: string
+  menuCode: string
+  menuType: MenuType
+  routePath?: string
+  icon?: MenuOption['icon']
+  disabled?: boolean
+  children?: AdminMenuOption[]
+}
 
-const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
+const placeholderPage = () => import('@/modules/system/pages/PlaceholderPage.vue')
 
 const routeComponentMap: Record<string, RouteComponent> = {
-  'crm/CustomerView': () => import('../pages/crm/CustomerView.vue'),
-  'crm/CustomerFollowUpView': () => import('../pages/crm/CustomerFollowUpView.vue'),
-  'system/HealthView': () => import('../pages/system/HealthView.vue'),
-  'system/AttachmentView': () => import('../pages/system/AttachmentView.vue'),
-  'system/UserView': () => import('../pages/system/UserView.vue'),
-  'system/RoleView': () => import('../pages/system/RoleView.vue'),
-  'system/MenuView': () => import('../pages/system/MenuView.vue'),
-  'system/ConfigView': () => import('../pages/system/ConfigView.vue'),
-  'system/DictView': () => import('../pages/system/DictView.vue'),
-  'system/FileView': () => import('../pages/system/FileView.vue'),
-  'system/OperationLogView': () => import('../pages/system/OperationLogView.vue'),
-  'system/LoginLogView': () => import('../pages/system/LoginLogView.vue'),
-  'system/NoticeView': () => import('../pages/system/NoticeView.vue'),
+  'system/DepartmentView': () => import('@/modules/iam/pages/DepartmentView.vue'),
+  'system/HealthView': () => import('@/modules/system/pages/HealthView.vue'),
+  'system/AttachmentView': () => import('@/modules/system/pages/AttachmentView.vue'),
+  'system/ConfigView': () => import('@/modules/system/pages/ConfigView.vue'),
+  'system/DictView': () => import('@/modules/system/pages/DictView.vue'),
+  'system/FileView': () => import('@/modules/system/pages/FileView.vue'),
+  'system/OperationLogView': () => import('@/modules/system/pages/OperationLogView.vue'),
+  'system/LoginLogView': () => import('@/modules/system/pages/LoginLogView.vue'),
+  'system/MenuView': () => import('@/modules/iam/pages/MenuView.vue'),
+  'system/NoticeView': () => import('@/modules/system/pages/NoticeView.vue'),
+  'system/PostView': () => import('@/modules/iam/pages/PostView.vue'),
+  'system/RoleView': () => import('@/modules/iam/pages/RoleView.vue'),
+  'system/UserView': () => import('@/modules/iam/pages/UserView.vue'),
 }
 
 const defaultMenuIcon = AppsOutline
+
+const builtinMenuCodeIconMap: Record<string, MenuIconComponent> = {
+  dashboard: GridOutline,
+  system: SettingsOutline,
+  'system:health': PulseOutline,
+  'system:user': PeopleOutline,
+  'system:role': ShieldCheckmarkOutline,
+  'system:department': GitBranchOutline,
+  'system:post': BriefcaseOutline,
+  'system:menu': LayersOutline,
+  'system:config': CogOutline,
+  'system:file': FolderOpenOutline,
+  'system:attachment': FolderOpenOutline,
+  'system:dict': AlbumsOutline,
+  'system:dict-type': AlbumsOutline,
+  'system:dict-item': ListOutline,
+  'system:operation-log': ListOutline,
+  'system:login-log': TimeOutline,
+  'system:notice': NotificationsOutline,
+}
 
 // 后端 icon 字段只允许命中这份前端白名单，避免把任意字符串直接当组件渲染。
 const menuIconMap: Record<string, MenuIconComponent> = {
@@ -64,6 +96,7 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   file: FolderOpenOutline,
   files: FolderOpenOutline,
   folder: FolderOpenOutline,
+  gitbranch: GitBranchOutline,
   grid: GridOutline,
   health: PulseOutline,
   history: TimeOutline,
@@ -88,6 +121,7 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   page: DocumentTextOutline,
   people: PeopleOutline,
   person: PeopleOutline,
+  briefcase: BriefcaseOutline,
   role: ShieldCheckmarkOutline,
   roles: ShieldCheckmarkOutline,
   server: ServerOutline,
@@ -100,17 +134,20 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   users: PeopleOutline,
 }
 
-const builtinMenuOptions: MenuOption[] = [
+const builtinMenuOptions: AdminMenuOption[] = [
   {
     label: '工作台',
-    key: '/dashboard',
+    key: 'dashboard',
+    menuCode: 'dashboard',
+    menuType: MenuType.Menu,
+    routePath: '/dashboard',
     icon: renderMenuIcon(GridOutline),
   },
 ]
 
 export const authMenus = shallowRef<AuthMenu[]>([])
 
-export const sideMenuOptions = computed<MenuOption[]>(() => {
+export const sideMenuOptions = computed<AdminMenuOption[]>(() => {
   return [...builtinMenuOptions, ...buildMenuOptions(authMenus.value)]
 })
 
@@ -146,28 +183,57 @@ export function findMenuTitleByPath(path: string) {
   return collectPageMenus(authMenus.value).find((menu) => menu.path === path)?.title
 }
 
-function buildMenuOptions(menus: AuthMenu[]) {
+export function findMenuCodeByPath(path: string) {
+  return collectPageMenus(authMenus.value).find((menu) => menu.path === path)?.code ?? ''
+}
+
+export function findMenuOptionByKey(
+  key: string,
+  options: AdminMenuOption[] = sideMenuOptions.value,
+): AdminMenuOption | null {
+  for (const option of options) {
+    if (option.key === key) {
+      return option
+    }
+
+    const child = option.children ? findMenuOptionByKey(key, option.children) : null
+    if (child) {
+      return child
+    }
+  }
+
+  return null
+}
+
+export function collectExpandedMenuKeysByPath(path: string) {
+  const chain = findMenuCodeChainByPath(authMenus.value, path)
+  return chain.slice(0, -1)
+}
+
+function buildMenuOptions(menus: AuthMenu[]): AdminMenuOption[] {
   return menus.map(toMenuOption).filter(isMenuOption)
 }
 
-function toMenuOption(menu: AuthMenu): MenuOption | null {
+function toMenuOption(menu: AuthMenu): AdminMenuOption | null {
   if (menu.type === MenuType.Button) {
     return null
   }
 
   const children = buildMenuOptions(menu.children ?? [])
-  const key = menu.path || menu.code
 
   return {
     label: menu.title,
-    key,
-    icon: resolveMenuIcon(menu.icon),
+    key: menu.code,
+    menuCode: menu.code,
+    menuType: menu.type,
+    routePath: menu.type === MenuType.Menu ? menu.path : undefined,
+    icon: resolveMenuIcon(menu.code, menu.icon),
     disabled: menu.type === MenuType.Directory && children.length === 0,
     children: children.length > 0 ? children : undefined,
   }
 }
 
-function isMenuOption(option: MenuOption | null): option is MenuOption {
+function isMenuOption(option: AdminMenuOption | null): option is AdminMenuOption {
   return option !== null
 }
 
@@ -203,7 +269,13 @@ function resolveRouteComponent(component: string) {
   return routeComponentMap[component] ?? placeholderPage
 }
 
-function resolveMenuIcon(icon: string) {
+function resolveMenuIcon(code: string, icon: string) {
+  const normalizedCode = normalizeMenuCode(code)
+  const builtinIcon = builtinMenuCodeIconMap[normalizedCode]
+  if (builtinIcon) {
+    return renderMenuIcon(builtinIcon)
+  }
+
   return renderMenuIcon(menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon)
 }
 
@@ -218,6 +290,26 @@ function normalizeMenuIcon(icon: string) {
   return icon.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
+function normalizeMenuCode(code: string) {
+  return code.trim().toLowerCase()
+}
+
 function toChildRoutePath(path: string) {
   return path.replace(/^\/+/, '')
+}
+
+function findMenuCodeChainByPath(menus: AuthMenu[], path: string, parents: string[] = []): string[] {
+  for (const menu of menus) {
+    const nextParents = [...parents, menu.code]
+    if (menu.type === MenuType.Menu && menu.path === path) {
+      return nextParents
+    }
+
+    const childChain = findMenuCodeChainByPath(menu.children ?? [], path, nextParents)
+    if (childChain.length > 0) {
+      return childChain
+    }
+  }
+
+  return []
 }

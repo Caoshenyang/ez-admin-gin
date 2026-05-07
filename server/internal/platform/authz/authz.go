@@ -1,15 +1,41 @@
 package authz
 
 import (
-	legacyPermission "ez-admin-gin/server/internal/permission"
+	"fmt"
 
+	"github.com/casbin/casbin/v3"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
 	"gorm.io/gorm"
 )
 
-// Enforcer 复用现有 Casbin 封装，实现向 v2 authz 命名空间平滑迁移。
-type Enforcer = legacyPermission.Enforcer
+type Enforcer struct {
+	inner *casbin.Enforcer
+}
 
-// NewEnforcer 创建接口权限判断器。
 func NewEnforcer(db *gorm.DB, modelPath string) (*Enforcer, error) {
-	return legacyPermission.NewEnforcer(db, modelPath)
+	gormadapter.TurnOffAutoMigrate(db)
+
+	adapter, err := gormadapter.NewAdapterByDB(db)
+	if err != nil {
+		return nil, fmt.Errorf("create casbin adapter: %w", err)
+	}
+
+	enforcer, err := casbin.NewEnforcer(modelPath, adapter)
+	if err != nil {
+		return nil, fmt.Errorf("create casbin enforcer: %w", err)
+	}
+
+	if err := enforcer.LoadPolicy(); err != nil {
+		return nil, fmt.Errorf("load casbin policy: %w", err)
+	}
+
+	return &Enforcer{inner: enforcer}, nil
+}
+
+func (e *Enforcer) Enforce(sub string, obj string, act string) (bool, error) {
+	allowed, err := e.inner.Enforce(sub, obj, act)
+	if err != nil {
+		return false, fmt.Errorf("enforce permission: %w", err)
+	}
+	return allowed, nil
 }

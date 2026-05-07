@@ -31,7 +31,7 @@ Go 项目不是不能分层，而是不强调“层越多越专业”。
 | `DTO / VO` | `dto.go` | 请求参数和响应结构 |
 | `Security` | `platform/authn`、`platform/authz` | 登录态、接口权限 |
 | `Data Permission` | `platform/datascope` + 模块内 `datascope.go` | 数据范围解析和资源级过滤 |
-| `Spring Boot 启动类` | `cmd/server` + `bootstrap` | 应用启动、依赖装配、模块注册 |
+| `Spring Boot 启动类` | `main.go` + `bootstrap` | 应用启动、依赖装配、模块注册 |
 
 ## 为什么不继续用 v1 的结构
 

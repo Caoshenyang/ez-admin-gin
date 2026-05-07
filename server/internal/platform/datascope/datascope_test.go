@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"ez-admin-gin/server/internal/model"
 	"ez-admin-gin/server/internal/platform/datascope"
+	"ez-admin-gin/server/internal/platform/model"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"

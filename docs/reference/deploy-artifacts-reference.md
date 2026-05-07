@@ -18,7 +18,7 @@ description: "解析项目中 Dockerfile、Compose、Nginx 和部署脚本的设
 | Nginx 入口层 | `deploy/nginx/nginx-native*.conf`、`deploy/nginx/nginx*.conf` | 匹配不同部署形态的入口配置 |
 | 本地开发基础环境 | `deploy/compose.local.yml`、`deploy/compose.local.win.yml` | 第 1 章本地开发用的 PostgreSQL / Redis 基础环境 |
 
-如果你当前只关心第 9 章默认部署主线，优先看：
+如果你当前只关心第 8 章默认部署主线，优先看：
 
 - `scripts/pack.sh`
 - `scripts/setup-server.sh`
@@ -139,7 +139,7 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ### `compose.server.yml`：当前默认服务器主线
 
-这份文件当前最重要，因为第 9 章默认就是围绕它来讲的。
+这份文件当前最重要，因为第 8 章默认就是围绕它来讲的。
 
 它表达的是：
 
@@ -243,7 +243,7 @@ EZ_AUTH_JWT_SECRET: ${EZ_AUTH_JWT_SECRET:?JWT_SECRET is required}
 | `${VAR:-default}` | 变量未设置时使用默认值 |
 | `${VAR:?error message}` | 变量未设置时报错退出 |
 
-环境变量的完整清单和覆盖机制见 [环境变量与初始化数据](../tutorial/chapter-9/env-and-init-data)。
+环境变量的完整清单和覆盖机制见 [环境变量与初始化数据](../tutorial/chapter-8/env-and-init-data)。
 
 ## Nginx 配置文件怎么配套看
 

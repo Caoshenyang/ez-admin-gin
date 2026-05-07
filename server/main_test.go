@@ -16,10 +16,10 @@ func TestEmbeddedMigrationsStayInSyncAcrossDrivers(t *testing.T) {
 	}
 
 	required := []string{
-		"000010_phase4_followup_schema.down.sql",
-		"000010_phase4_followup_schema.up.sql",
-		"000011_phase4_followup_seed_data.down.sql",
-		"000011_phase4_followup_seed_data.up.sql",
+		"000008_phase4_org_menu_seed_data.down.sql",
+		"000008_phase4_org_menu_seed_data.up.sql",
+		"000009_phase4_menu_icon_alignment.down.sql",
+		"000009_phase4_menu_icon_alignment.up.sql",
 	}
 	for _, name := range required {
 		if !containsFile(mysqlFiles, name) {

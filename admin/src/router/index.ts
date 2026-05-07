@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import { getCurrentUserMenus } from '../api/menu'
+import { getCurrentUserMenus } from '@/modules/iam/api/menu'
 import { clearAuthSession, hasAccessToken } from '../utils/auth'
 import {
   buildDynamicRoutes,
@@ -21,7 +21,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('../pages/auth/LoginPage.vue'),
+      component: () => import('@/modules/auth/pages/LoginPage.vue'),
     },
     {
       path: '/',
@@ -31,14 +31,20 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'dashboard',
-          component: () => import('../pages/dashboard/DashboardHome.vue'),
+          component: () => import('@/modules/auth/pages/DashboardHome.vue'),
           meta: { title: '工作台' },
         },
         {
           path: 'account/profile',
           name: 'account-profile',
-          component: () => import('../pages/account/AccountCenterPage.vue'),
+          component: () => import('@/modules/auth/pages/AccountCenterPage.vue'),
           meta: { title: '账户中心' },
+        },
+        {
+          path: ':pathMatch(.*)*',
+          name: 'admin-dynamic-fallback',
+          component: () => import('@/modules/system/pages/PlaceholderPage.vue'),
+          meta: { title: '页面加载中' },
         },
       ],
     },
@@ -77,6 +83,10 @@ router.beforeEach(async (to) => {
       resetDynamicRoutes()
       return '/login'
     }
+  }
+
+  if (to.name === 'admin-dynamic-fallback') {
+    return '/dashboard'
   }
 
   return true

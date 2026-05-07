@@ -54,4 +54,23 @@ button:not(:disabled),
 [role='button']:not([aria-disabled='true']),
 .n-button:not(.n-button--disabled) {
   cursor: pointer;
-} 
+}
+
+.admin-page {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.admin-page-section {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-page-scroll {
+  overflow: auto;
+  padding-right: 4px;
+}

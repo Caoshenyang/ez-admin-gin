@@ -35,7 +35,7 @@ docker compose -f deploy/compose.local.win.yml up -d
 
 ```bash
 cd server
-go run ./cmd/server
+go run .
 ```
 
 后端默认监听 `http://localhost:8080`，首次启动会自动执行迁移。
@@ -98,7 +98,7 @@ pnpm docs:dev
 
 - 登录页
 - 后台壳子、动态菜单、工作标签
-- 用户、角色、菜单、配置、文件、日志、字典、附件、CRM 示例页面
+- 用户、角色、菜单、配置、文件、日志、字典、附件等管理页面
 - Dashboard 和账户中心
 
 ### 部署
@@ -114,7 +114,6 @@ pnpm docs:dev
 ```text
 ez-admin-gin/
 ├── server/
-│   ├── cmd/
 │   ├── configs/
 │   ├── internal/
 │   └── migrations/

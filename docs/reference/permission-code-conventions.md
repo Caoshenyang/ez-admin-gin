@@ -182,22 +182,22 @@ buttonPermissionCodes.value.includes("system:notice:create")
 
 如果你要给新模块补 `policy.go`、菜单和按钮节点，当前最稳的规则是：
 
-1. 先固定资源分组，例如 `system`, `crm`, `project`
+1. 先固定资源分组，例如 `system`, `project`, `sales`
 2. 再固定资源名，例如 `customer`, `task`, `invoice`
 3. 最后只给动作命名，不把上下文塞进动作名里
 
 也就是优先写成：
 
 ```text
-crm:customer:list
-crm:customer:create
-crm:customer:update
+project:customer:list
+project:customer:create
+project:customer:update
 ```
 
 而不是：
 
 ```text
-customer:list:crm
+customer:list:project
 customer:create:button
 ```
 
@@ -220,6 +220,6 @@ customer:create:button
 
 对应教程页：
 
-- [第 8 章：权限、菜单与迁移接入](/tutorial/chapter-8/permission-menu-integration)
+- [第 6 章：权限、菜单与迁移接入](/tutorial/chapter-6/permission-menu-migration)
 - [第 7 章：动态菜单注册与按钮权限](/tutorial/chapter-7/dynamic-route-registration)
 - [第 7 章：角色与菜单页实现要点](/tutorial/chapter-7/role-and-menu-page-detail)

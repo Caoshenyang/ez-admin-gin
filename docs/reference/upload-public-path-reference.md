@@ -213,4 +213,4 @@ location /uploads/ {
 - [数据库建表语句](./database-ddl)
 - [Nginx 配置参考](./nginx-config-reference)
 - [第 7 章：配置与文件页实现要点](/tutorial/chapter-7/config-and-file-page-detail)
-- [第 9 章：Nginx 与 HTTPS 入口层](/tutorial/chapter-9/nginx-and-https)
+- [第 8 章：Nginx 与 HTTPS 入口层](/tutorial/chapter-8/nginx-and-https)

@@ -1,17 +1,97 @@
 package authn
 
 import (
-	"ez-admin-gin/server/internal/config"
-	legacyToken "ez-admin-gin/server/internal/token"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"ez-admin-gin/server/internal/platform/config"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// Manager 复用现有 token 管理器，实现向 v2 authn 命名空间平滑迁移。
-type Manager = legacyToken.Manager
+var ErrInvalidToken = errors.New("invalid token")
 
-// Claims 复用现有访问令牌声明结构。
-type Claims = legacyToken.Claims
+type Claims struct {
+	UserID   uint   `json:"user_id"`
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
 
-// NewManager 创建访问令牌管理器。
+type Manager struct {
+	secret         []byte
+	issuer         string
+	accessTokenTTL time.Duration
+	now            func() time.Time
+}
+
 func NewManager(cfg config.AuthConfig) (*Manager, error) {
-	return legacyToken.NewManager(cfg)
+	secret := strings.TrimSpace(cfg.JWTSecret)
+	if len(secret) < 32 {
+		return nil, fmt.Errorf("jwt secret must be at least 32 characters")
+	}
+	if cfg.AccessTokenTTL <= 0 {
+		return nil, fmt.Errorf("access token ttl must be greater than 0")
+	}
+
+	issuer := strings.TrimSpace(cfg.Issuer)
+	if issuer == "" {
+		return nil, fmt.Errorf("jwt issuer cannot be empty")
+	}
+
+	return &Manager{
+		secret:         []byte(secret),
+		issuer:         issuer,
+		accessTokenTTL: time.Duration(cfg.AccessTokenTTL) * time.Second,
+		now:            time.Now,
+	}, nil
+}
+
+func (m *Manager) GenerateAccessToken(userID uint, username string) (string, time.Time, error) {
+	now := m.now()
+	expiresAt := now.Add(m.accessTokenTTL)
+
+	claims := Claims{
+		UserID:   userID,
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    m.issuer,
+			Subject:   fmt.Sprintf("%d", userID),
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(m.secret)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("sign access token: %w", err)
+	}
+
+	return tokenString, expiresAt, nil
+}
+
+func (m *Manager) ParseAccessToken(tokenString string) (*Claims, error) {
+	claims := &Claims{}
+
+	parsedToken, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(t *jwt.Token) (any, error) {
+			if t.Method != jwt.SigningMethodHS256 {
+				return nil, ErrInvalidToken
+			}
+			return m.secret, nil
+		},
+		jwt.WithIssuer(m.issuer),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidToken, err)
+	}
+	if !parsedToken.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	return claims, nil
 }
