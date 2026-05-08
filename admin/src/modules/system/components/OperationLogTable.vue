@@ -4,14 +4,14 @@ import { NButton, NCard, NDataTable, NPagination, NTag } from 'naive-ui'
 import { h } from 'vue'
 
 import TableStatsBar from '@/components/TableStatsBar.vue'
-import { formatTime } from '@/utils/format'
+import { displayText, formatTime } from '@/utils/format'
 import type { OperationLogItem } from '../types/operation-log'
 import {
   getAction,
   getModule,
   getRiskLevel,
   riskMeta,
-} from '../composables/useOperationLogPage'
+} from '../composables/operation-log-page.utils'
 
 defineProps<{
   loading: boolean
@@ -28,6 +28,7 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
+// rowProps 函数。
 function rowProps(row: OperationLogItem) {
   return {
     class: 'operation-table-row',
@@ -49,7 +50,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'username',
     width: 120,
     render(row) {
-      return h('span', { class: 'font-semibold text-[#111827]' }, row.username || '-')
+      return h('span', { class: 'font-semibold text-[#111827]' }, displayText(row.username))
     },
   },
   {
@@ -65,7 +66,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'method',
     width: 100,
     render(row) {
-      return h(NTag, { bordered: false, type: row.method === 'GET' ? 'success' : 'info' }, { default: () => row.method })
+      return h(NTag, { bordered: false, type: row.method === 'GET' ? 'success' : 'info' }, { default: () => displayText(row.method) })
     },
   },
   {
@@ -115,11 +116,7 @@ const columns: DataTableColumns<OperationLogItem> = [
 </script>
 
 <template>
-  <NCard
-    class="min-h-0 flex-1 rounded-lg"
-    :bordered="false"
-    content-style="height: 100%; padding: 0;"
-  >
+  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
     <TableStatsBar>
       <span class="text-sm text-[#6B7280]">共 {{ total }} 条</span>
       <template #actions>
@@ -129,8 +126,7 @@ const columns: DataTableColumns<OperationLogItem> = [
 
     <NDataTable
       remote
-      class="operation-table h-full"
-      style="height: calc(100% - 105px)"
+      class="operation-table"
       :columns="columns"
       :data="logs"
       :loading="loading"
@@ -138,7 +134,6 @@ const columns: DataTableColumns<OperationLogItem> = [
       :row-key="(row: OperationLogItem) => row.id"
       :row-props="rowProps"
       :bordered="false"
-      flex-height
     />
 
     <div class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3 text-sm text-[#6B7280]">

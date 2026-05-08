@@ -1,3 +1,4 @@
+// Package api 提供文件上传模块的 HTTP 请求处理器与路由定义。
 package api
 
 import (

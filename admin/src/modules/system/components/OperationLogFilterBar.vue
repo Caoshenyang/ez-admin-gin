@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { NButton, NCard, NInput, NSelect } from 'naive-ui'
 
-import { methodOptions, successOptions } from '../composables/useOperationLogPage'
+import { methodOptions, successOptions } from '../composables/operation-log-page.utils'
 
 const props = defineProps<{
   method: string

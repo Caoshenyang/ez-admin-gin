@@ -1,3 +1,4 @@
+// Package infra 实现角色的数据访问层，含 Casbin 策略写入。
 package infra
 
 import (
@@ -11,6 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 实现角色的数据访问层。
 type Repository struct {
 	db *gorm.DB
 }
@@ -19,6 +21,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 根据查询条件分页返回角色列表。
 func (r *Repository) List(query roledomain.ListQuery, page int, pageSize int) ([]model.Role, int64, error) {
 	queryDB := r.db.Model(&model.Role{})
 
@@ -49,6 +52,7 @@ func (r *Repository) List(query roledomain.ListQuery, page int, pageSize int) ([
 	return roles, total, nil
 }
 
+// FindByID 按 ID 查找角色。
 func (r *Repository) FindByID(db *gorm.DB, roleID uint) (model.Role, error) {
 	var role model.Role
 	err := db.First(&role, roleID).Error
@@ -62,6 +66,7 @@ func (r *Repository) FindByID(db *gorm.DB, roleID uint) (model.Role, error) {
 	return role, nil
 }
 
+// CodeExists 检查角色编码是否已存在。
 func (r *Repository) CodeExists(db *gorm.DB, code string) (bool, error) {
 	var role model.Role
 	err := db.Unscoped().Where("code = ?", code).First(&role).Error
@@ -75,6 +80,7 @@ func (r *Repository) CodeExists(db *gorm.DB, code string) (bool, error) {
 	return false, err
 }
 
+// DepartmentsUsable 校验给定的部门 ID 是否全部存在且启用。
 func (r *Repository) DepartmentsUsable(db *gorm.DB, departmentIDs []uint) error {
 	if len(departmentIDs) == 0 {
 		return nil
@@ -92,6 +98,7 @@ func (r *Repository) DepartmentsUsable(db *gorm.DB, departmentIDs []uint) error 
 	return nil
 }
 
+// MenusUsable 校验给定的菜单 ID 是否全部存在且启用。
 func (r *Repository) MenusUsable(db *gorm.DB, menuIDs []uint) error {
 	if len(menuIDs) == 0 {
 		return nil
@@ -109,10 +116,12 @@ func (r *Repository) MenusUsable(db *gorm.DB, menuIDs []uint) error {
 	return nil
 }
 
+// Create 创建角色记录。
 func (r *Repository) Create(db *gorm.DB, role *model.Role) error {
 	return db.Create(role).Error
 }
 
+// UpdateBase 更新角色的基本信息字段。
 func (r *Repository) UpdateBase(db *gorm.DB, role *model.Role, req roledomain.UpdateRequest) error {
 	if err := db.Model(role).Updates(map[string]any{
 		"name":       req.Name,
@@ -132,6 +141,7 @@ func (r *Repository) UpdateBase(db *gorm.DB, role *model.Role, req roledomain.Up
 	return nil
 }
 
+// UpdateStatus 更新角色的启用/禁用状态。
 func (r *Repository) UpdateStatus(db *gorm.DB, role *model.Role, status model.RoleStatus) error {
 	if err := db.Model(role).Update("status", status).Error; err != nil {
 		return err
@@ -140,6 +150,7 @@ func (r *Repository) UpdateStatus(db *gorm.DB, role *model.Role, status model.Ro
 	return nil
 }
 
+// RolePermissions 批量查询指定角色编码的 Casbin 权限策略。
 func (r *Repository) RolePermissions(roleCodes []string) (map[string][]roledomain.PermissionItem, error) {
 	result := make(map[string][]roledomain.PermissionItem, len(roleCodes))
 	if len(roleCodes) == 0 {
@@ -158,6 +169,7 @@ func (r *Repository) RolePermissions(roleCodes []string) (map[string][]roledomai
 	return result, nil
 }
 
+// RoleMenuIDs 批量查询指定角色关联的菜单 ID。
 func (r *Repository) RoleMenuIDs(roleIDs []uint) (map[uint][]uint, error) {
 	result := make(map[uint][]uint, len(roleIDs))
 	if len(roleIDs) == 0 {
@@ -176,6 +188,7 @@ func (r *Repository) RoleMenuIDs(roleIDs []uint) (map[uint][]uint, error) {
 	return result, nil
 }
 
+// RoleCustomDepartmentIDs 批量查询指定角色的自定义数据范围部门 ID。
 func (r *Repository) RoleCustomDepartmentIDs(roleIDs []uint) (map[uint][]uint, error) {
 	result := make(map[uint][]uint, len(roleIDs))
 	if len(roleIDs) == 0 {
@@ -194,6 +207,7 @@ func (r *Repository) RoleCustomDepartmentIDs(roleIDs []uint) (map[uint][]uint, e
 	return result, nil
 }
 
+// ReplacePermissions 替换指定角色的全部 Casbin 权限策略。
 func (r *Repository) ReplacePermissions(db *gorm.DB, roleCode string, permissions []roledomain.PermissionItem) error {
 	if err := db.Where("ptype = ? AND v0 = ?", "p", roleCode).Delete(&model.CasbinRule{}).Error; err != nil {
 		return err
@@ -210,6 +224,7 @@ func (r *Repository) ReplacePermissions(db *gorm.DB, roleCode string, permission
 	return db.Create(&rows).Error
 }
 
+// ReplaceMenus 替换指定角色的全部菜单关联。
 func (r *Repository) ReplaceMenus(db *gorm.DB, roleID uint, menuIDs []uint) error {
 	if err := db.Where("role_id = ?", roleID).Delete(&model.RoleMenu{}).Error; err != nil {
 		return err
@@ -226,6 +241,7 @@ func (r *Repository) ReplaceMenus(db *gorm.DB, roleID uint, menuIDs []uint) erro
 	return db.Create(&rows).Error
 }
 
+// ReplaceCustomDepartments 替换指定角色的自定义数据范围部门。
 func (r *Repository) ReplaceCustomDepartments(db *gorm.DB, roleID uint, departmentIDs []uint) error {
 	if err := db.Where("role_id = ?", roleID).Delete(&model.RoleDataScope{}).Error; err != nil {
 		return err

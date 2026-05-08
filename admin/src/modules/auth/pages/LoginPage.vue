@@ -31,6 +31,7 @@ const productFeatures = [
   '工程友好：Gin API + Vue 页面快速扩展',
 ]
 
+// createCaptcha 生成 4 位随机验证码文本（仅前端占位展示）。
 function createCaptcha() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   return Array.from({ length: 4 }, () => {
@@ -70,11 +71,13 @@ const footerText = computed(() => {
   return `© ${new Date().getFullYear()} EZ Admin · Naive UI Admin Template`
 })
 
+// refreshCaptcha 刷新验证码文本并清空用户已输入的验证码。
 function refreshCaptcha() {
   captchaText.value = createCaptcha()
   formModel.captcha = ''
 }
 
+// handleForgotPassword 点击"忘记密码"的回调，当前版本仅做提示。
 function handleForgotPassword() {
   message.info('当前版本先保留入口，后面再接入找回密码流程')
 }
@@ -84,6 +87,7 @@ if (hasAccessToken()) {
   void router.replace('/dashboard')
 }
 
+// handleSubmit 提交登录表单，校验通过后调用登录接口，成功后跳转到工作台。
 async function handleSubmit() {
   try {
     await formRef.value?.validate()

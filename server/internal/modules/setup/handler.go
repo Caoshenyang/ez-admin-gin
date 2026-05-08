@@ -4,23 +4,20 @@ import (
 	"errors"
 	"net/http"
 
-	"ez-admin-gin/server/internal/platform/model"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 var errAlreadyInitialized = errors.New("system already initialized")
 
 type setupHandler struct {
-	db  *gorm.DB
-	log *zap.Logger
+	service *Service
+	log     *zap.Logger
 }
 
-func newSetupHandler(db *gorm.DB, log *zap.Logger) *setupHandler {
-	return &setupHandler{db: db, log: log}
+func newSetupHandler(service *Service, log *zap.Logger) *setupHandler {
+	return &setupHandler{service: service, log: log}
 }
 
 type initRequest struct {
@@ -48,40 +45,12 @@ func (h *setupHandler) Init(c *gin.Context) {
 		return
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	user, err := h.service.Init(c.Request.Context(), InitRequest{
+		Username: req.Username,
+		Password: req.Password,
+		Nickname: req.Nickname,
+	})
 	if err != nil {
-		h.log.Error("hash password", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
-		return
-	}
-
-	var user model.User
-	if err := h.db.Transaction(func(tx *gorm.DB) error {
-		var count int64
-		if err := tx.Model(&model.User{}).Count(&count).Error; err != nil {
-			return err
-		}
-		if count > 0 {
-			return errAlreadyInitialized
-		}
-
-		var role model.Role
-		if err := tx.Where("code = ?", "super_admin").Where("status = ?", model.RoleStatusEnabled).First(&role).Error; err != nil {
-			return err
-		}
-
-		user = model.User{
-			Username:     req.Username,
-			PasswordHash: string(passwordHash),
-			Nickname:     req.Nickname,
-			Status:       model.UserStatusEnabled,
-		}
-		if err := tx.Create(&user).Error; err != nil {
-			return err
-		}
-
-		return tx.Create(&model.UserRole{UserID: user.ID, RoleID: role.ID}).Error
-	}); err != nil {
 		switch {
 		case errors.Is(err, errAlreadyInitialized):
 			c.JSON(http.StatusConflict, gin.H{"error": "系统已初始化，不能重复执行"})

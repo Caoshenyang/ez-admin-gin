@@ -1,3 +1,4 @@
+// Package domain 定义用户的请求/响应结构、权限常量和业务校验规则。
 package domain
 
 import (
@@ -8,6 +9,7 @@ import (
 	"ez-admin-gin/server/internal/platform/model"
 )
 
+// ListQuery 定义用户列表查询的过滤参数。
 type ListQuery struct {
 	Page     int    `form:"page"`
 	PageSize int    `form:"page_size"`
@@ -15,6 +17,7 @@ type ListQuery struct {
 	Status   int    `form:"status"`
 }
 
+// CreateRequest 定义创建用户的请求参数。
 type CreateRequest struct {
 	Username     string           `json:"username"`
 	Password     string           `json:"password"`
@@ -25,6 +28,7 @@ type CreateRequest struct {
 	PostIDs      []uint           `json:"post_ids"`
 }
 
+// UpdateRequest 定义更新用户的请求参数。
 type UpdateRequest struct {
 	Nickname     string           `json:"nickname"`
 	DepartmentID uint             `json:"department_id"`
@@ -32,14 +36,17 @@ type UpdateRequest struct {
 	PostIDs      []uint           `json:"post_ids"`
 }
 
+// UpdateStatusRequest 定义切换用户状态的请求参数。
 type UpdateStatusRequest struct {
 	Status model.UserStatus `json:"status"`
 }
 
+// UpdateRolesRequest 定义更新用户角色的请求参数。
 type UpdateRolesRequest struct {
 	RoleIDs []uint `json:"role_ids"`
 }
 
+// Response 定义用户信息的响应结构。
 type Response struct {
 	ID           uint             `json:"id"`
 	Username     string           `json:"username"`
@@ -52,6 +59,7 @@ type Response struct {
 	UpdatedAt    time.Time        `json:"updated_at"`
 }
 
+// ListResponse 定义用户分页列表的响应结构。
 type ListResponse struct {
 	Items    []Response `json:"items"`
 	Total    int64      `json:"total"`
@@ -59,7 +67,10 @@ type ListResponse struct {
 	PageSize int        `json:"page_size"`
 }
 
+// Entity 是用户聚合根模型的类型别名。
 type Entity = model.User
+
+// UserRoleEntity 是用户角色关联模型的类型别名。
 type UserRoleEntity = model.UserRole
 
 const (
@@ -70,6 +81,7 @@ const (
 	PermissionUpdateRoles  = "system:user:update_roles"
 )
 
+// NormalizeCreateRequest 规范化并校验用户创建请求参数。
 func NormalizeCreateRequest(req CreateRequest) (CreateRequest, error) {
 	req.Username = strings.TrimSpace(req.Username)
 	if req.Username == "" {
@@ -112,6 +124,7 @@ func NormalizeCreateRequest(req CreateRequest) (CreateRequest, error) {
 	return req, nil
 }
 
+// NormalizeUpdateRequest 规范化并校验用户更新请求参数。
 func NormalizeUpdateRequest(req UpdateRequest) (UpdateRequest, error) {
 	req.Nickname = strings.TrimSpace(req.Nickname)
 	if req.Nickname == "" {
@@ -132,10 +145,12 @@ func NormalizeUpdateRequest(req UpdateRequest) (UpdateRequest, error) {
 	return req, nil
 }
 
+// NormalizeRoleIDs 去重并校验角色 ID 列表。
 func NormalizeRoleIDs(roleIDs []uint) ([]uint, error) {
 	return normalizeUintIDs(roleIDs, "角色 ID 不正确")
 }
 
+// NormalizePostIDs 去重并校验岗位 ID 列表。
 func NormalizePostIDs(postIDs []uint) ([]uint, error) {
 	return normalizeUintIDs(postIDs, "岗位 ID 不正确")
 }
@@ -158,10 +173,12 @@ func normalizeUintIDs(ids []uint, invalidMessage string) ([]uint, error) {
 	return unique, nil
 }
 
+// ValidStatus 判断用户状态值是否合法。
 func ValidStatus(status model.UserStatus) bool {
 	return status == model.UserStatusEnabled || status == model.UserStatusDisabled
 }
 
+// BuildResponse 将用户模型及关联数据转换为响应结构。
 func BuildResponse(user model.User, roleIDs []uint, postIDs []uint) Response {
 	return Response{
 		ID:           user.ID,

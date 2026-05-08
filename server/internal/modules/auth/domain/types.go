@@ -1,3 +1,4 @@
+// Package domain 定义 auth 模块的请求/响应结构和业务校验规则。
 package domain
 
 import (

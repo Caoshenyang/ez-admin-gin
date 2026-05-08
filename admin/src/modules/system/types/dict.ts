@@ -3,8 +3,10 @@ export const DictStatus = {
   Disabled: 2,
 } as const
 
+// DictStatus 类型定义。
 export type DictStatus = (typeof DictStatus)[keyof typeof DictStatus]
 
+// DictTypeItem 类型定义。
 export interface DictTypeItem {
   id: number
   code: string
@@ -16,6 +18,7 @@ export interface DictTypeItem {
   updated_at: string
 }
 
+// DictTypeListQuery 类型定义。
 export interface DictTypeListQuery {
   page: number
   page_size: number
@@ -23,6 +26,7 @@ export interface DictTypeListQuery {
   status?: DictStatus | 0
 }
 
+// DictTypeListResponse 类型定义。
 export interface DictTypeListResponse {
   items: DictTypeItem[]
   total: number
@@ -30,6 +34,7 @@ export interface DictTypeListResponse {
   page_size: number
 }
 
+// CreateDictTypePayload 类型定义。
 export interface CreateDictTypePayload {
   code: string
   name: string
@@ -38,6 +43,7 @@ export interface CreateDictTypePayload {
   remark: string
 }
 
+// UpdateDictTypePayload 类型定义。
 export interface UpdateDictTypePayload {
   name: string
   sort: number
@@ -45,10 +51,12 @@ export interface UpdateDictTypePayload {
   remark: string
 }
 
+// UpdateDictTypeStatusPayload 类型定义。
 export interface UpdateDictTypeStatusPayload {
   status: DictStatus
 }
 
+// DictItem 类型定义。
 export interface DictItem {
   id: number
   type_id: number
@@ -63,6 +71,7 @@ export interface DictItem {
   updated_at: string
 }
 
+// DictItemListQuery 类型定义。
 export interface DictItemListQuery {
   page: number
   page_size: number
@@ -71,6 +80,7 @@ export interface DictItemListQuery {
   status?: DictStatus | 0
 }
 
+// DictItemListResponse 类型定义。
 export interface DictItemListResponse {
   items: DictItem[]
   total: number
@@ -78,6 +88,7 @@ export interface DictItemListResponse {
   page_size: number
 }
 
+// CreateDictItemPayload 类型定义。
 export interface CreateDictItemPayload {
   type_id: number
   item_key: string
@@ -89,6 +100,7 @@ export interface CreateDictItemPayload {
   remark: string
 }
 
+// UpdateDictItemPayload 类型定义。
 export interface UpdateDictItemPayload {
   label: string
   value: string
@@ -98,6 +110,7 @@ export interface UpdateDictItemPayload {
   remark: string
 }
 
+// UpdateDictItemStatusPayload 类型定义。
 export interface UpdateDictItemStatusPayload {
   status: DictStatus
 }

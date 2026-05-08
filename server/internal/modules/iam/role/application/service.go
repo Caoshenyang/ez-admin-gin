@@ -1,3 +1,4 @@
+// Package application 实现角色的业务逻辑：分页列表、CRUD、权限和菜单分配。
 package application
 
 import (
@@ -9,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Service 提供角色的业务操作服务。
 type Service struct {
 	tx   RoleTransactor
 	repo RoleRepository
@@ -18,6 +20,7 @@ func NewService(tx RoleTransactor, repo RoleRepository) *Service {
 	return &Service{tx: tx, repo: repo}
 }
 
+// List 分页查询角色列表，并附带每个角色的权限和菜单信息。
 func (s *Service) List(query roledomain.ListQuery) (roledomain.ListResponse, error) {
 	page, pageSize := paging.NormalizePage(query.Page, query.PageSize)
 
@@ -54,6 +57,7 @@ func (s *Service) List(query roledomain.ListQuery) (roledomain.ListResponse, err
 	return roledomain.ListResponse{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
+// Create 创建角色并关联自定义数据范围部门。
 func (s *Service) Create(req roledomain.CreateRequest) (roledomain.Response, error) {
 	req, err := roledomain.NormalizeCreateRequest(req)
 	if err != nil {
@@ -94,6 +98,7 @@ func (s *Service) Create(req roledomain.CreateRequest) (roledomain.Response, err
 	return roledomain.BuildResponse(created, req.CustomDepartmentIDs, nil, nil), nil
 }
 
+// Update 更新角色基本信息和自定义数据范围。
 func (s *Service) Update(roleID uint, req roledomain.UpdateRequest) (roledomain.Response, error) {
 	req, err := roledomain.NormalizeUpdateRequest(req)
 	if err != nil {
@@ -106,6 +111,7 @@ func (s *Service) Update(roleID uint, req roledomain.UpdateRequest) (roledomain.
 		if err != nil {
 			return err
 		}
+		// 超级管理员角色的关键属性不允许通过业务接口修改。
 		if role.Code == roledomain.SuperAdminRoleCode && req.Status == model.RoleStatusDisabled {
 			return errorsx.BadRequest("不能禁用超级管理员角色")
 		}
@@ -132,6 +138,7 @@ func (s *Service) Update(roleID uint, req roledomain.UpdateRequest) (roledomain.
 	return roledomain.BuildResponse(updated, req.CustomDepartmentIDs, nil, nil), nil
 }
 
+// UpdateStatus 切换角色的启用/禁用状态。
 func (s *Service) UpdateStatus(roleID uint, status model.RoleStatus) error {
 	if !roledomain.ValidRoleStatus(status) {
 		return errorsx.BadRequest("角色状态不正确")
@@ -150,6 +157,7 @@ func (s *Service) UpdateStatus(roleID uint, status model.RoleStatus) error {
 	})
 }
 
+// UpdatePermissions 更新角色的 Casbin 权限策略。
 func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.PermissionItem) ([]roledomain.PermissionItem, string, error) {
 	normalizedPermissions, err := roledomain.NormalizePermissions(permissions)
 	if err != nil {
@@ -176,6 +184,7 @@ func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.Permis
 	return normalizedPermissions, roleCode, nil
 }
 
+// UpdateMenus 更新角色的菜单分配。
 func (s *Service) UpdateMenus(roleID uint, menuIDs []uint) ([]uint, error) {
 	normalizedMenuIDs, err := roledomain.NormalizeIDs(menuIDs, "菜单 ID 不正确")
 	if err != nil {

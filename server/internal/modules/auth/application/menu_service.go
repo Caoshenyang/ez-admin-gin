@@ -2,7 +2,6 @@ package application
 
 import (
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
-	authinfra "ez-admin-gin/server/internal/modules/auth/infra"
 	"ez-admin-gin/server/internal/platform/model"
 )
 
@@ -11,14 +10,16 @@ type menuNode struct {
 	children []*menuNode
 }
 
+// MenuService 提供当前用户可见菜单树的查询服务。
 type MenuService struct {
-	repo *authinfra.Repository
+	repo MenuRepository
 }
 
-func NewMenuService(repo *authinfra.Repository) *MenuService {
+func NewMenuService(repo MenuRepository) *MenuService {
 	return &MenuService{repo: repo}
 }
 
+// Menus 查询当前用户可见的菜单树。
 func (s *MenuService) Menus(userID uint) ([]authdomain.MenuResponse, error) {
 	menus, err := s.repo.ListMenusByUserID(userID)
 	if err != nil {

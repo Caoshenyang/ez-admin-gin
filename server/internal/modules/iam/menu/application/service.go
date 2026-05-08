@@ -1,3 +1,4 @@
+// Package application 实现菜单的业务逻辑：树形列表查询、CRUD 和状态切换。
 package application
 
 import (
@@ -8,6 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Service 提供菜单的业务操作服务。
 type Service struct {
 	tx   MenuTransactor
 	repo MenuRepository
@@ -17,6 +19,7 @@ func NewService(tx MenuTransactor, repo MenuRepository) *Service {
 	return &Service{tx: tx, repo: repo}
 }
 
+// List 返回菜单树。
 func (s *Service) List() ([]menudomain.Response, error) {
 	items, err := s.repo.List()
 	if err != nil {
@@ -26,6 +29,7 @@ func (s *Service) List() ([]menudomain.Response, error) {
 	return buildTree(items), nil
 }
 
+// Create 校验编码唯一性和父级可用性后创建菜单。
 func (s *Service) Create(req menudomain.CreateRequest) (menudomain.Response, error) {
 	req, err := menudomain.NormalizeCreateRequest(req)
 	if err != nil {
@@ -66,6 +70,7 @@ func (s *Service) Create(req menudomain.CreateRequest) (menudomain.Response, err
 	return menudomain.BuildResponse(created), nil
 }
 
+// Update 更新菜单基本信息。
 func (s *Service) Update(menuID uint, req menudomain.UpdateRequest) (menudomain.Response, error) {
 	req, err := menudomain.NormalizeUpdateRequest(req)
 	if err != nil {
@@ -95,6 +100,7 @@ func (s *Service) Update(menuID uint, req menudomain.UpdateRequest) (menudomain.
 	return menudomain.BuildResponse(updated), nil
 }
 
+// UpdateStatus 切换菜单的启用/禁用状态。
 func (s *Service) UpdateStatus(menuID uint, status model.MenuStatus) error {
 	if !menudomain.ValidStatus(status) {
 		return errorsx.BadRequest("菜单状态不正确")
@@ -110,6 +116,7 @@ func (s *Service) UpdateStatus(menuID uint, status model.MenuStatus) error {
 	})
 }
 
+// Delete 删除菜单，需确保无子节点且未分配给角色。
 func (s *Service) Delete(menuID uint) error {
 	return s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, menuID)

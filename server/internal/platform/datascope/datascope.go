@@ -125,6 +125,7 @@ func UserQueryScope(db *gorm.DB, actor Actor, departmentColumn string, ownerColu
 			args = append(args, actor.UserID)
 		}
 
+		// 没有任何匹配条件时返回恒假，避免全表可见。
 		if len(conditions) == 0 {
 			return tx.Where("1 = 0")
 		}

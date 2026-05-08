@@ -16,9 +16,13 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
-	configapi.RegisterRoutes(group, configapi.RouteOptions{
+	service := NewService(ServiceOptions{
 		DB:    opts.DB,
 		Redis: opts.Redis,
 		Log:   opts.Log,
+	})
+	configapi.RegisterRoutes(group, configapi.RouteOptions{
+		Service: service,
+		Log:     opts.Log,
 	})
 }

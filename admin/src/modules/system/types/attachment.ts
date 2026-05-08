@@ -3,8 +3,10 @@ export const AttachmentStatus = {
   Disabled: 2,
 } as const
 
+// AttachmentStatus 类型定义。
 export type AttachmentStatus = (typeof AttachmentStatus)[keyof typeof AttachmentStatus]
 
+// AttachmentItem 类型定义。
 export interface AttachmentItem {
   id: number
   file_id: number
@@ -24,6 +26,7 @@ export interface AttachmentItem {
   updated_at: string
 }
 
+// AttachmentListQuery 类型定义。
 export interface AttachmentListQuery {
   page: number
   page_size: number
@@ -34,6 +37,7 @@ export interface AttachmentListQuery {
   status?: AttachmentStatus | 0
 }
 
+// AttachmentListResponse 类型定义。
 export interface AttachmentListResponse {
   items: AttachmentItem[]
   total: number
@@ -41,6 +45,7 @@ export interface AttachmentListResponse {
   page_size: number
 }
 
+// CreateAttachmentPayload 类型定义。
 export interface CreateAttachmentPayload {
   display_name?: string
   category?: string
@@ -49,6 +54,7 @@ export interface CreateAttachmentPayload {
   remark?: string
 }
 
+// UpdateAttachmentPayload 类型定义。
 export interface UpdateAttachmentPayload {
   display_name: string
   category: string

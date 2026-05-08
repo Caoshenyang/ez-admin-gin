@@ -1,8 +1,9 @@
 package application
 
 import (
+	"context"
+
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
-	authinfra "ez-admin-gin/server/internal/modules/auth/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/platform/datascope"
 	"ez-admin-gin/server/internal/platform/model"
@@ -11,15 +12,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// AccountService 提供当前登录人的账户资料查询与修改服务。
 type AccountService struct {
-	db   *gorm.DB
-	repo *authinfra.Repository
+	tx   AuthTransactor
+	repo AccountRepository
 }
 
-func NewAccountService(db *gorm.DB, repo *authinfra.Repository) *AccountService {
-	return &AccountService{db: db, repo: repo}
+func NewAccountService(tx AuthTransactor, repo AccountRepository) *AccountService {
+	return &AccountService{tx: tx, repo: repo}
 }
 
+// GetProfile 查询当前登录人的账户中心资料。
 func (s *AccountService) GetProfile(actor datascope.Actor) (authdomain.AccountProfileResponse, error) {
 	row, err := s.repo.FindAccountProfileByID(actor.UserID)
 	if err != nil {
@@ -43,6 +46,7 @@ func (s *AccountService) GetProfile(actor datascope.Actor) (authdomain.AccountPr
 	), nil
 }
 
+// UpdateProfile 更新当前登录人的昵称。
 func (s *AccountService) UpdateProfile(
 	actor datascope.Actor,
 	req authdomain.UpdateAccountProfileRequest,
@@ -52,7 +56,7 @@ func (s *AccountService) UpdateProfile(
 		return authdomain.AccountProfileResponse{}, err
 	}
 
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		user, err := s.repo.FindUserByID(tx, actor.UserID)
 		if err != nil {
 			return err
@@ -66,13 +70,14 @@ func (s *AccountService) UpdateProfile(
 	return s.GetProfile(actor)
 }
 
+// UpdatePassword 校验旧密码后更新为新密码。
 func (s *AccountService) UpdatePassword(actor datascope.Actor, req authdomain.UpdateAccountPasswordRequest) error {
 	req, err := authdomain.NormalizeUpdateAccountPasswordRequest(req)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		user, err := s.repo.FindUserByID(tx, actor.UserID)
 		if err != nil {
 			return err

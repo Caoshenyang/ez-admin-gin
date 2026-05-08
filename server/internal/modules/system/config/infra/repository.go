@@ -1,3 +1,4 @@
+// Package infra 实现系统配置的数据访问层。
 package infra
 
 import (
@@ -11,6 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 封装系统配置表的数据访问操作。
 type Repository struct {
 	db *gorm.DB
 }
@@ -19,6 +21,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 按关键词、分组和状态分页查询配置列表。
 func (r *Repository) List(query configdomain.ListQuery, page int, pageSize int) ([]model.SystemConfig, int64, error) {
 	queryDB := r.db.Model(&model.SystemConfig{})
 
@@ -54,6 +57,7 @@ func (r *Repository) List(query configdomain.ListQuery, page int, pageSize int) 
 	return items, total, nil
 }
 
+// FindByID 在指定事务中按主键查找配置，不存在时返回 NotFound 错误。
 func (r *Repository) FindByID(db *gorm.DB, configID uint) (model.SystemConfig, error) {
 	var item model.SystemConfig
 	err := db.First(&item, configID).Error
@@ -67,6 +71,7 @@ func (r *Repository) FindByID(db *gorm.DB, configID uint) (model.SystemConfig, e
 	return item, nil
 }
 
+// FindEnabledByKey 按配置键查找已启用的配置记录。
 func (r *Repository) FindEnabledByKey(key string) (model.SystemConfig, error) {
 	var item model.SystemConfig
 	err := r.db.Where("config_key = ?", key).Where("status = ?", model.SystemConfigStatusEnabled).First(&item).Error
@@ -80,6 +85,7 @@ func (r *Repository) FindEnabledByKey(key string) (model.SystemConfig, error) {
 	return item, nil
 }
 
+// KeyExists 检查指定配置键是否已存在（包含已软删除的记录）。
 func (r *Repository) KeyExists(db *gorm.DB, key string) (bool, error) {
 	var item model.SystemConfig
 	err := db.Unscoped().Where("config_key = ?", key).First(&item).Error
@@ -92,10 +98,12 @@ func (r *Repository) KeyExists(db *gorm.DB, key string) (bool, error) {
 	return false, err
 }
 
+// Create 在指定事务中插入一条新的配置记录。
 func (r *Repository) Create(db *gorm.DB, item *model.SystemConfig) error {
 	return db.Create(item).Error
 }
 
+// UpdateBase 更新配置的基本字段（分组、名称、值、排序、状态、备注）。
 func (r *Repository) UpdateBase(db *gorm.DB, item *model.SystemConfig, req configdomain.UpdateRequest) error {
 	if err := db.Model(item).Updates(map[string]any{
 		"group_code": req.GroupCode,
@@ -117,6 +125,7 @@ func (r *Repository) UpdateBase(db *gorm.DB, item *model.SystemConfig, req confi
 	return nil
 }
 
+// UpdateStatus 更新配置的状态字段。
 func (r *Repository) UpdateStatus(db *gorm.DB, item *model.SystemConfig, status model.SystemConfigStatus) error {
 	if err := db.Model(item).Update("status", status).Error; err != nil {
 		return err

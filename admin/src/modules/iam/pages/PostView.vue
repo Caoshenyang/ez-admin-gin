@@ -22,7 +22,7 @@ import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useStatusToggle } from '@/composables/useStatusToggle'
 import { STATUS_FILTER_OPTIONS, STATUS_FORM_OPTIONS } from '@/constants/status'
-import { formatTime } from '@/utils/format'
+import { displayText, formatTime } from '@/utils/format'
 import { createPost, getPosts, updatePost, updatePostStatus } from '../api/post'
 import { PostStatus, type CreatePostPayload, type PostItem, type PostListQuery } from '../types/post'
 
@@ -38,6 +38,7 @@ const { items: posts, loading, query, load, handleSearch, handleReset } = useLis
   { keyword: '', status: 0 },
 )
 
+// defaultFormModel 函数。
 function defaultFormModel(): PostFormModel {
   return { id: 0, code: '', name: '', sort: 0, status: PostStatus.Enabled, remark: '' }
 }
@@ -59,8 +60,8 @@ const columns: DataTableColumns<PostItem> = [
     minWidth: 240,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#111827]' }, row.name),
-        h('p', { class: 'text-xs text-[#6B7280]' }, row.code),
+        h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.name)),
+        h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.code)),
       ])
     },
   },
@@ -134,6 +135,7 @@ const columns: DataTableColumns<PostItem> = [
   },
 ]
 
+// onSubmit 函数。
 async function onSubmit() {
   const payload = {
     code: formModel.code,
@@ -182,7 +184,7 @@ async function onSubmit() {
         </NSpace>
       </NCard>
 
-      <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="height: 100%; padding: 0;">
+      <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column; padding: 0;">
         <NDataTable
           class="h-full"
           style="height: 100%"

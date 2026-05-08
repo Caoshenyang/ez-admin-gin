@@ -3,7 +3,7 @@ import { CloseOutline } from '@vicons/ionicons5'
 import type { FormInst, FormRules, SelectOption, TreeSelectOption } from 'naive-ui'
 import { NButton, NForm, NFormItem, NIcon, NInput, NModal, NSelect, NTreeSelect } from 'naive-ui'
 
-import type { UserFormModel } from '../composables/useUserPage'
+import type { UserFormModel } from '../types/user-page'
 
 defineProps<{
   departmentTreeOptions: TreeSelectOption[]

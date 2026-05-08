@@ -7,6 +7,11 @@ interface PaginatedResult<T> {
   total: number
 }
 
+/**
+ * useRemotePagination 提供分页列表的加载、搜索、翻页和重置逻辑。
+ * @param fetchFn 调用后端 API 获取分页数据
+ * @param defaultQuery 默认查询参数，含 page 和 page_size
+ */
 export function useRemotePagination<T, Q extends PageQuery>(
   fetchFn: (params: Q) => Promise<PaginatedResult<T>>,
   defaultQuery: Partial<Q> & { page?: number; page_size?: number },
@@ -28,6 +33,7 @@ export function useRemotePagination<T, Q extends PageQuery>(
       if (params.keyword !== undefined) {
         params.keyword = (params.keyword as string)?.trim() || undefined
       }
+      // status 为 0 表示"全部"，不传给后端。
       if (params.status === 0) {
         params.status = undefined as Q['status']
       }
@@ -40,6 +46,7 @@ export function useRemotePagination<T, Q extends PageQuery>(
   }
 
   function handleSearch() {
+    // 搜索时重置到第一页，避免在新条件下读到空数据。
     query.page = 1
     void load()
   }

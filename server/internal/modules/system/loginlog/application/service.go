@@ -1,19 +1,21 @@
+// Package application 实现登录日志的业务逻辑：分页列表查询。
 package application
 
 import (
 	loginlogdomain "ez-admin-gin/server/internal/modules/system/loginlog/domain"
-	loginloginfra "ez-admin-gin/server/internal/modules/system/loginlog/infra"
 	"ez-admin-gin/server/internal/pkg/paging"
 )
 
+// Service 封装登录日志的业务逻辑。
 type Service struct {
-	repo *loginloginfra.Repository
+	repo LoginLogRepository
 }
 
-func NewService(repo *loginloginfra.Repository) *Service {
+func NewService(repo LoginLogRepository) *Service {
 	return &Service{repo: repo}
 }
 
+// List 按用户名、IP 和状态分页查询登录日志列表。
 func (s *Service) List(query loginlogdomain.ListQuery) (loginlogdomain.ListResponse, error) {
 	page, pageSize := paging.NormalizePage(query.Page, query.PageSize)
 	status, err := loginlogdomain.NormalizeStatusFilter(query.Status)

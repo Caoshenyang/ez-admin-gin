@@ -16,9 +16,13 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
-	fileapi.RegisterRoutes(group, fileapi.RouteOptions{
+	service := NewService(ServiceOptions{
 		DB:     opts.DB,
 		Upload: opts.Upload,
 		Log:    opts.Log,
+	})
+	fileapi.RegisterRoutes(group, fileapi.RouteOptions{
+		Service: service,
+		Log:     opts.Log,
 	})
 }

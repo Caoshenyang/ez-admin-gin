@@ -1,6 +1,7 @@
 package system
 
 import (
+	"ez-admin-gin/server/internal/modules/modulekit"
 	attachmentmodule "ez-admin-gin/server/internal/modules/system/attachment"
 	configmodule "ez-admin-gin/server/internal/modules/system/config"
 	dictmodule "ez-admin-gin/server/internal/modules/system/dict"
@@ -11,7 +12,6 @@ import (
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
-	"ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"
@@ -33,12 +33,12 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 
 	r.GET("/health", health.Check)
 
-	api := r.Group("/api/v1")
-	system := api.Group("/system")
-	system.Use(middleware.Auth(opts.Token, opts.Log))
-	system.Use(middleware.LoadActor(opts.DB, opts.Log))
-	system.Use(middleware.OperationLog(opts.DB, opts.Log))
-	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
+	system := modulekit.NewProtectedSystemGroup(r, modulekit.ProtectedSystemGroupOptions{
+		Log:        opts.Log,
+		DB:         opts.DB,
+		Token:      opts.Token,
+		Permission: opts.Permission,
+	})
 
 	system.GET("/health", health.Check)
 	configmodule.RegisterRoutes(system, configmodule.RouteOptions{

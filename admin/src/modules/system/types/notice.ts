@@ -3,8 +3,10 @@ export const NoticeStatus = {
   Disabled: 2,
 } as const
 
+// NoticeStatus 类型定义。
 export type NoticeStatus = (typeof NoticeStatus)[keyof typeof NoticeStatus]
 
+// NoticeItem 类型定义。
 export interface NoticeItem {
   id: number
   title: string
@@ -16,6 +18,7 @@ export interface NoticeItem {
   updated_at: string
 }
 
+// NoticeListQuery 类型定义。
 export interface NoticeListQuery {
   page: number
   page_size: number
@@ -23,6 +26,7 @@ export interface NoticeListQuery {
   status?: NoticeStatus | 0
 }
 
+// NoticeListResponse 类型定义。
 export interface NoticeListResponse {
   items: NoticeItem[]
   total: number
@@ -30,6 +34,7 @@ export interface NoticeListResponse {
   page_size: number
 }
 
+// CreateNoticePayload 类型定义。
 export interface CreateNoticePayload {
   title: string
   content: string
@@ -38,6 +43,7 @@ export interface CreateNoticePayload {
   remark: string
 }
 
+// UpdateNoticePayload 类型定义。
 export interface UpdateNoticePayload {
   title: string
   content: string
@@ -46,6 +52,7 @@ export interface UpdateNoticePayload {
   remark: string
 }
 
+// UpdateNoticeStatusPayload 类型定义。
 export interface UpdateNoticeStatusPayload {
   status: NoticeStatus
 }

@@ -1,3 +1,4 @@
+// Package infra 实现文件的数据访问层。
 package infra
 
 import (
@@ -21,6 +22,7 @@ const (
 	defaultUploadPublicPath = "/uploads"
 )
 
+// LocalStorage 实现本地磁盘文件存储。
 type LocalStorage struct {
 	cfg platformConfig.UploadConfig
 }
@@ -29,6 +31,7 @@ func NewLocalStorage(cfg platformConfig.UploadConfig) *LocalStorage {
 	return &LocalStorage{cfg: normalizeUploadConfig(cfg)}
 }
 
+// SaveUploadedFile 将上传文件按日期目录存储，同时计算 SHA-256 校验。
 func (s *LocalStorage) SaveUploadedFile(fileHeader *multipart.FileHeader) (filedomain.SavedUploadedFile, error) {
 	src, err := fileHeader.Open()
 	if err != nil {
@@ -83,6 +86,7 @@ func (s *LocalStorage) SaveUploadedFile(fileHeader *multipart.FileHeader) (filed
 	}, nil
 }
 
+// Delete 删除指定路径的物理文件。
 func (s *LocalStorage) Delete(path string) error {
 	if strings.TrimSpace(path) == "" {
 		return nil

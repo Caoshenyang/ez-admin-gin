@@ -14,8 +14,9 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
+	service := NewService(ServiceOptions{DB: opts.DB})
 	dictapi.RegisterRoutes(group, dictapi.RouteOptions{
-		DB:  opts.DB,
-		Log: opts.Log,
+		Service: service,
+		Log:     opts.Log,
 	})
 }

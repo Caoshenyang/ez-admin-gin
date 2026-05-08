@@ -1,3 +1,4 @@
+// Package application 实现用户的业务逻辑：分页列表、CRUD、角色和岗位分配。
 package application
 
 import (
@@ -13,6 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Service 提供用户的业务操作服务。
 type Service struct {
 	tx   UserTransactor
 	repo UserRepository
@@ -25,6 +27,7 @@ func NewService(tx UserTransactor, repo UserRepository) *Service {
 	}
 }
 
+// List 分页查询用户列表，并附带每个用户的角色和岗位信息。
 func (s *Service) List(actor datascope.Actor, query userdomain.ListQuery) (userdomain.ListResponse, error) {
 	page, pageSize := paging.NormalizePage(query.Page, query.PageSize)
 
@@ -60,6 +63,7 @@ func (s *Service) List(actor datascope.Actor, query userdomain.ListQuery) (userd
 	}, nil
 }
 
+// Create 创建用户并关联角色和岗位。
 func (s *Service) Create(actor datascope.Actor, req userdomain.CreateRequest) (userdomain.Response, error) {
 	req, err := userdomain.NormalizeCreateRequest(req)
 	if err != nil {
@@ -116,11 +120,13 @@ func (s *Service) Create(actor datascope.Actor, req userdomain.CreateRequest) (u
 	return userdomain.BuildResponse(created, req.RoleIDs, req.PostIDs), nil
 }
 
+// Update 更新用户基本信息和岗位关联。
 func (s *Service) Update(actor datascope.Actor, userID uint, currentUserID uint, req userdomain.UpdateRequest) (userdomain.Response, error) {
 	req, err := userdomain.NormalizeUpdateRequest(req)
 	if err != nil {
 		return userdomain.Response{}, err
 	}
+	// 防止管理员把自己禁用后无法恢复。
 	if currentUserID == userID && req.Status == model.UserStatusDisabled {
 		return userdomain.Response{}, errorsx.BadRequest("不能禁用当前登录用户")
 	}
@@ -163,6 +169,7 @@ func (s *Service) Update(actor datascope.Actor, userID uint, currentUserID uint,
 	return userdomain.BuildResponse(updated, roleIDsByUser[updated.ID], postIDsByUser[updated.ID]), nil
 }
 
+// UpdateStatus 切换用户的启用/禁用状态。
 func (s *Service) UpdateStatus(actor datascope.Actor, userID uint, currentUserID uint, status uint) error {
 	nextStatus := model.UserStatus(status)
 	if !userdomain.ValidStatus(nextStatus) {
@@ -182,6 +189,7 @@ func (s *Service) UpdateStatus(actor datascope.Actor, userID uint, currentUserID
 	})
 }
 
+// UpdateRoles 更新用户的角色分配。
 func (s *Service) UpdateRoles(actor datascope.Actor, userID uint, currentUserID uint, roleIDs []uint) ([]uint, error) {
 	if currentUserID == userID {
 		return nil, errorsx.BadRequest("不能修改当前登录用户的角色")

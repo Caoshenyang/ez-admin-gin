@@ -56,14 +56,17 @@ const lastCheckedLabel = computed(() => {
   return lastCheckedAt.value ? formatTime(lastCheckedAt.value) : '尚未检查'
 })
 
+// formatStatusLabel 函数。
 function formatStatusLabel(value?: string) {
   return value === 'ok' ? '正常' : value || '待检查'
 }
 
+// getStatusTagType 函数。
 function getStatusTagType(value?: string) {
   return value === 'ok' ? 'success' : 'error'
 }
 
+// getStatusText 函数。
 function getStatusText(value?: string) {
   if (value === 'ok') {
     return '服务连通性正常'
@@ -76,8 +79,10 @@ function getStatusText(value?: string) {
   return '请点击刷新重新检查'
 }
 
+// getErrorMessage 函数。
 function getErrorMessage(error: unknown) {
   if (typeof error === 'object' && error !== null) {
+    // response 函数。
     const response = (error as { response?: { data?: { message?: string } } }).response
     if (typeof response?.data?.message === 'string' && response.data.message) {
       return response.data.message
@@ -87,6 +92,7 @@ function getErrorMessage(error: unknown) {
   return '系统状态获取失败，请稍后重试。'
 }
 
+// loadHealth 函数。
 async function loadHealth() {
   loading.value = true
   errorMessage.value = ''

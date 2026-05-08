@@ -111,6 +111,7 @@ const dataScopeText = computed(() => {
   return '未配置数据范围'
 })
 
+// loadProfile 函数。
 async function loadProfile() {
   loading.value = true
   try {
@@ -128,6 +129,7 @@ async function loadProfile() {
   }
 }
 
+// handleSaveProfile 函数。
 async function handleSaveProfile() {
   try {
     await profileFormRef.value?.validate()
@@ -154,6 +156,7 @@ async function handleSaveProfile() {
   }
 }
 
+// handleChangePassword 函数。
 async function handleChangePassword() {
   try {
     await passwordFormRef.value?.validate()

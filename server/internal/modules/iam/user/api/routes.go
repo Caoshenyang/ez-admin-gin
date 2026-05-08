@@ -2,23 +2,18 @@ package api
 
 import (
 	userapp "ez-admin-gin/server/internal/modules/iam/user/application"
-	userinfra "ez-admin-gin/server/internal/modules/iam/user/infra"
-	platformDatabase "ez-admin-gin/server/internal/platform/database"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type RouteOptions struct {
-	DB  *gorm.DB
-	Log *zap.Logger
+	Service *userapp.Service
+	Log     *zap.Logger
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
-	repo := userinfra.NewRepository(opts.DB)
-	service := userapp.NewService(platformDatabase.NewTransactor(opts.DB), repo)
-	handler := NewHandler(service, opts.Log)
+	handler := NewHandler(opts.Service, opts.Log)
 
 	group.GET("/users", handler.List)
 	group.POST("/users", handler.Create)

@@ -1,3 +1,4 @@
+// Package domain 定义角色的请求/响应结构、权限常量和业务校验规则。
 package domain
 
 import (
@@ -9,6 +10,7 @@ import (
 	"ez-admin-gin/server/internal/platform/model"
 )
 
+// ListQuery 定义角色列表查询的过滤参数。
 type ListQuery struct {
 	Page     int    `form:"page"`
 	PageSize int    `form:"page_size"`
@@ -16,6 +18,7 @@ type ListQuery struct {
 	Status   int    `form:"status"`
 }
 
+// CreateRequest 定义创建角色的请求参数。
 type CreateRequest struct {
 	Code                string           `json:"code"`
 	Name                string           `json:"name"`
@@ -26,6 +29,7 @@ type CreateRequest struct {
 	Remark              string           `json:"remark"`
 }
 
+// UpdateRequest 定义更新角色的请求参数。
 type UpdateRequest struct {
 	Name                string           `json:"name"`
 	Sort                int              `json:"sort"`
@@ -35,23 +39,28 @@ type UpdateRequest struct {
 	Remark              string           `json:"remark"`
 }
 
+// UpdateStatusRequest 定义切换角色状态的请求参数。
 type UpdateStatusRequest struct {
 	Status model.RoleStatus `json:"status"`
 }
 
+// PermissionItem 表示一条接口权限（路径+方法）。
 type PermissionItem struct {
 	Path   string `json:"path"`
 	Method string `json:"method"`
 }
 
+// UpdatePermissionsRequest 定义更新角色权限的请求参数。
 type UpdatePermissionsRequest struct {
 	Permissions []PermissionItem `json:"permissions"`
 }
 
+// UpdateMenusRequest 定义更新角色菜单的请求参数。
 type UpdateMenusRequest struct {
 	MenuIDs []uint `json:"menu_ids"`
 }
 
+// Response 定义角色信息的响应结构。
 type Response struct {
 	ID                  uint             `json:"id"`
 	Code                string           `json:"code"`
@@ -67,6 +76,7 @@ type Response struct {
 	UpdatedAt           time.Time        `json:"updated_at"`
 }
 
+// ListResponse 定义角色分页列表的响应结构。
 type ListResponse struct {
 	Items    []Response `json:"items"`
 	Total    int64      `json:"total"`
@@ -74,8 +84,13 @@ type ListResponse struct {
 	PageSize int        `json:"page_size"`
 }
 
+// Entity 是角色聚合根模型的类型别名。
 type Entity = model.Role
+
+// RoleMenuEntity 是角色菜单关联模型的类型别名。
 type RoleMenuEntity = model.RoleMenu
+
+// RoleDataScopeEntity 是角色数据范围关联模型的类型别名。
 type RoleDataScopeEntity = model.RoleDataScope
 
 const (
@@ -88,6 +103,7 @@ const (
 	SuperAdminRoleCode          = "super_admin"
 )
 
+// NormalizeCreateRequest 规范化并校验角色创建请求参数。
 func NormalizeCreateRequest(req CreateRequest) (CreateRequest, error) {
 	req.Code = strings.TrimSpace(req.Code)
 	if req.Code == "" {
@@ -136,6 +152,7 @@ func NormalizeCreateRequest(req CreateRequest) (CreateRequest, error) {
 	return req, nil
 }
 
+// NormalizeUpdateRequest 规范化并校验角色更新请求参数。
 func NormalizeUpdateRequest(req UpdateRequest) (UpdateRequest, error) {
 	req.Name = strings.TrimSpace(req.Name)
 	if req.Name == "" {
@@ -168,6 +185,7 @@ func NormalizeUpdateRequest(req UpdateRequest) (UpdateRequest, error) {
 	return req, nil
 }
 
+// NormalizePermissions 去重并规范化接口权限列表。
 func NormalizePermissions(permissions []PermissionItem) ([]PermissionItem, error) {
 	unique := make([]PermissionItem, 0, len(permissions))
 	seen := make(map[string]struct{}, len(permissions))
@@ -191,6 +209,7 @@ func NormalizePermissions(permissions []PermissionItem) ([]PermissionItem, error
 	return unique, nil
 }
 
+// NormalizeIDs 去重并校验 ID 列表。
 func NormalizeIDs(ids []uint, badRequestMessage string) ([]uint, error) {
 	unique := make([]uint, 0, len(ids))
 	seen := make(map[uint]struct{}, len(ids))
@@ -210,10 +229,12 @@ func NormalizeIDs(ids []uint, badRequestMessage string) ([]uint, error) {
 	return unique, nil
 }
 
+// ValidRoleStatus 判断角色状态值是否合法。
 func ValidRoleStatus(status model.RoleStatus) bool {
 	return status == model.RoleStatusEnabled || status == model.RoleStatusDisabled
 }
 
+// ValidDataScope 判断数据范围值是否合法。
 func ValidDataScope(scope datascope.Scope) bool {
 	switch scope {
 	case datascope.ScopeAll, datascope.ScopeDept, datascope.ScopeDeptAndChildren, datascope.ScopeSelf, datascope.ScopeCustomDept:
@@ -223,6 +244,7 @@ func ValidDataScope(scope datascope.Scope) bool {
 	}
 }
 
+// BuildResponse 将角色模型及关联数据转换为响应结构。
 func BuildResponse(role model.Role, customDepartmentIDs []uint, permissions []PermissionItem, menuIDs []uint) Response {
 	return Response{
 		ID:                  role.ID,

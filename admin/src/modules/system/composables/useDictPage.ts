@@ -4,15 +4,31 @@ import { h, onMounted, reactive, ref } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { useStatusToggle } from '@/composables/useStatusToggle'
+import { displayText } from '@/utils/format'
 import {
-  createDictItem,
-  createDictType,
-  getDictItems,
-  getDictTypes,
-  updateDictItem,
+  buildDictItemCreatePayload,
+  buildDictItemUpdatePayload,
+  buildDictTypeCreatePayload,
+  buildDictTypeUpdatePayload,
+  defaultDictItemFormModel,
+  defaultDictItemQuery,
+  defaultDictTypeFormModel,
+  defaultDictTypeQuery,
+  normalizeDictItemQuery,
+  normalizeDictTypeQuery,
+  toDictItemFormModel,
+  toDictTypeFormModel,
+} from './dict-page.utils'
+import {
+  createDictItem as createDictItemRequest,
+  createDictType as createDictTypeRequest,
+  getDictItems as getDictItemsRequest,
+  getDictTypes as getDictTypesRequest,
+  updateDictItem as updateDictItemRequest,
   updateDictItemStatus,
-  updateDictType,
+  updateDictType as updateDictTypeRequest,
   updateDictTypeStatus,
 } from '../api/dict'
 import {
@@ -22,39 +38,9 @@ import {
   type DictTypeItem,
   type DictTypeListQuery,
 } from '../types/dict'
+import type { DictItemFormModel, DictTypeFormModel } from '../types/dict-page'
 
-export interface DictTypeFormModel {
-  id: number
-  code: string
-  name: string
-  sort: number
-  status: DictStatus
-  remark: string
-}
-
-export interface DictItemFormModel {
-  id: number
-  type_id: number
-  item_key: string
-  label: string
-  value: string
-  tag_type: string
-  sort: number
-  status: DictStatus
-  remark: string
-}
-
-function defaultTypeFormModel(): DictTypeFormModel {
-  return {
-    id: 0,
-    code: '',
-    name: '',
-    sort: 10,
-    status: DictStatus.Enabled,
-    remark: '',
-  }
-}
-
+// 将标签类型字符串校验为合法的 Naive UI Tag 类型
 function toTagType(value: string) {
   if (value === 'success' || value === 'warning' || value === 'error' || value === 'info' || value === 'default') {
     return value
@@ -63,10 +49,11 @@ function toTagType(value: string) {
   return 'default'
 }
 
+// 字典管理页面组合式函数，封装字典类型和字典项的增删改查、状态切换等逻辑
 export function useDictPage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const successText = ref('')
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const typeLoading = ref(false)
   const itemLoading = ref(false)
@@ -79,33 +66,15 @@ export function useDictPage() {
   const dictItems = ref<DictItem[]>([])
   const dictItemTotal = ref(0)
 
-  const typeQuery = reactive<DictTypeListQuery>({
-    page: 1,
-    page_size: 10,
-    keyword: '',
-    status: 0,
-  })
+  // 字典类型列表查询条件
+  const typeQuery = reactive<DictTypeListQuery>(defaultDictTypeQuery())
 
-  const itemQuery = reactive<DictItemListQuery>({
-    page: 1,
-    page_size: 10,
-    type_id: 0,
-    keyword: '',
-    status: 0,
-  })
+  // 字典项列表查询条件
+  const itemQuery = reactive<DictItemListQuery>(defaultDictItemQuery())
 
+  // 生成字典项表单的默认值（自动关联当前选中的字典类型）
   function defaultItemFormModel(): DictItemFormModel {
-    return {
-      id: 0,
-      type_id: selectedTypeID.value ?? 0,
-      item_key: '',
-      label: '',
-      value: '',
-      tag_type: '',
-      sort: 10,
-      status: DictStatus.Enabled,
-      remark: '',
-    }
+    return defaultDictItemFormModel(selectedTypeID.value ?? 0)
   }
 
   const {
@@ -118,7 +87,7 @@ export function useDictPage() {
     openCreate: openTypeCreateBase,
     openEdit: openTypeEditBase,
     handleSubmit: handleTypeSubmit,
-  } = useModalForm<DictTypeFormModel>(defaultTypeFormModel, {
+  } = useModalForm<DictTypeFormModel>(defaultDictTypeFormModel, {
     rules: {
       code: [{ required: true, message: '请输入字典编码', trigger: 'blur' }],
       name: [{ required: true, message: '请输入字典名称', trigger: 'blur' }],
@@ -143,6 +112,7 @@ export function useDictPage() {
     } as FormRules,
   })
 
+  // 从服务端加载字典项列表
   async function loadDictItems() {
     if (!selectedTypeID.value) {
       dictItems.value = []
@@ -153,12 +123,7 @@ export function useDictPage() {
     itemLoading.value = true
 
     try {
-      const data = await getDictItems({
-        ...itemQuery,
-        type_id: selectedTypeID.value,
-        keyword: itemQuery.keyword?.trim() || undefined,
-        status: itemQuery.status === 0 ? undefined : itemQuery.status,
-      })
+      const data = await getDictItemsRequest(normalizeDictItemQuery(itemQuery, selectedTypeID.value))
 
       dictItems.value = data.items
       dictItemTotal.value = data.total
@@ -167,6 +132,7 @@ export function useDictPage() {
     }
   }
 
+  // 选中指定字典类型并加载其字典项
   async function selectType(row: DictTypeItem) {
     selectedTypeID.value = row.id
     selectedType.value = row
@@ -175,15 +141,12 @@ export function useDictPage() {
     await loadDictItems()
   }
 
+  // 从服务端加载字典类型列表
   async function loadDictTypes() {
     typeLoading.value = true
 
     try {
-      const data = await getDictTypes({
-        ...typeQuery,
-        keyword: typeQuery.keyword?.trim() || undefined,
-        status: typeQuery.status === 0 ? undefined : typeQuery.status,
-      })
+      const data = await getDictTypesRequest(normalizeDictTypeQuery(typeQuery))
 
       dictTypes.value = data.items
       dictTypeTotal.value = data.total
@@ -208,26 +171,29 @@ export function useDictPage() {
 
   const { handleToggleStatus: handleToggleTypeStatus } = useStatusToggle(updateDictTypeStatus, {
     onSuccess: async () => {
-      successText.value = '字典类型状态已更新'
+      showSuccess('字典类型状态已更新')
       await loadDictTypes()
     },
   })
 
   const { handleToggleStatus: handleToggleItemStatus } = useStatusToggle(updateDictItemStatus, {
     onSuccess: async () => {
-      successText.value = '字典项状态已更新'
+      showSuccess('字典项状态已更新')
       await loadDictItems()
     },
   })
 
+  // 打开创建字典类型的弹窗
   function openTypeCreate() {
     openTypeCreateBase()
   }
 
+  // 打开编辑字典类型的弹窗
   function openTypeEdit(row: DictTypeItem) {
-    openTypeEditBase(row)
+    openTypeEditBase(toDictTypeFormModel(row))
   }
 
+  // 打开创建字典项的弹窗，需先选中字典类型
   function openItemCreate() {
     if (!selectedTypeID.value) {
       message.warning('请先选择一个字典类型')
@@ -238,35 +204,27 @@ export function useDictPage() {
     itemFormModel.type_id = selectedTypeID.value
   }
 
+  // 打开编辑字典项的弹窗
   function openItemEdit(row: DictItem) {
-    openItemEditBase(row)
+    openItemEditBase(toDictItemFormModel(row))
   }
 
+  // 提交字典类型表单（新建或更新）
   async function submitType() {
     if (typeFormMode.value === 'create') {
-      await createDictType({
-        code: typeFormModel.code.trim(),
-        name: typeFormModel.name.trim(),
-        sort: typeFormModel.sort,
-        status: typeFormModel.status,
-        remark: typeFormModel.remark.trim(),
-      })
-      successText.value = '字典类型创建成功'
+      await createDictTypeRequest(buildDictTypeCreatePayload(typeFormModel))
+      showSuccess('字典类型创建成功')
       message.success('字典类型创建成功')
     } else {
-      await updateDictType(typeFormModel.id, {
-        name: typeFormModel.name.trim(),
-        sort: typeFormModel.sort,
-        status: typeFormModel.status,
-        remark: typeFormModel.remark.trim(),
-      })
-      successText.value = '字典类型已更新'
+      await updateDictTypeRequest(typeFormModel.id, buildDictTypeUpdatePayload(typeFormModel))
+      showSuccess('字典类型已更新')
       message.success('字典类型更新成功')
     }
 
     await loadDictTypes()
   }
 
+  // 提交字典项表单（新建或更新）
   async function submitItem() {
     if (!selectedTypeID.value) {
       message.warning('请先选择一个字典类型')
@@ -274,82 +232,69 @@ export function useDictPage() {
     }
 
     if (itemFormMode.value === 'create') {
-      await createDictItem({
-        type_id: selectedTypeID.value,
-        item_key: itemFormModel.item_key.trim(),
-        label: itemFormModel.label.trim(),
-        value: itemFormModel.value.trim(),
-        tag_type: itemFormModel.tag_type.trim(),
-        sort: itemFormModel.sort,
-        status: itemFormModel.status,
-        remark: itemFormModel.remark.trim(),
-      })
-      successText.value = '字典项创建成功'
+      await createDictItemRequest(buildDictItemCreatePayload(selectedTypeID.value, itemFormModel))
+      showSuccess('字典项创建成功')
       message.success('字典项创建成功')
     } else {
-      await updateDictItem(itemFormModel.id, {
-        label: itemFormModel.label.trim(),
-        value: itemFormModel.value.trim(),
-        tag_type: itemFormModel.tag_type.trim(),
-        sort: itemFormModel.sort,
-        status: itemFormModel.status,
-        remark: itemFormModel.remark.trim(),
-      })
-      successText.value = '字典项已更新'
+      await updateDictItemRequest(itemFormModel.id, buildDictItemUpdatePayload(itemFormModel))
+      showSuccess('字典项已更新')
       message.success('字典项更新成功')
     }
 
     await loadDictItems()
   }
 
+  // 搜索字典类型
   function handleTypeSearch() {
     typeQuery.page = 1
     void loadDictTypes()
   }
 
+  // 重置字典类型搜索条件
   function handleTypeReset() {
-    typeQuery.page = 1
-    typeQuery.page_size = 10
-    typeQuery.keyword = ''
-    typeQuery.status = 0
+    Object.assign(typeQuery, defaultDictTypeQuery())
     void loadDictTypes()
   }
 
+  // 搜索字典项
   function handleItemSearch() {
     itemQuery.page = 1
     void loadDictItems()
   }
 
+  // 重置字典项搜索条件
   function handleItemReset() {
-    itemQuery.page = 1
-    itemQuery.page_size = 10
-    itemQuery.keyword = ''
-    itemQuery.status = 0
+    Object.assign(itemQuery, defaultDictItemQuery(selectedTypeID.value ?? 0))
     void loadDictItems()
   }
 
+  // 处理字典类型分页页码变化
   function handleTypePageChange(page: number) {
     typeQuery.page = page
     void loadDictTypes()
   }
 
+  // 处理字典类型每页条数变化
   function handleTypePageSizeChange(pageSize: number) {
     typeQuery.page = 1
     typeQuery.page_size = pageSize
     void loadDictTypes()
   }
 
+  // 处理字典项分页页码变化
   function handleItemPageChange(page: number) {
     itemQuery.page = page
     void loadDictItems()
   }
 
+  // 处理字典项每页条数变化
   function handleItemPageSizeChange(pageSize: number) {
     itemQuery.page = 1
     itemQuery.page_size = pageSize
     void loadDictItems()
   }
 
+  // 字典类型列表表格列定义
   const typeColumns: DataTableColumns<DictTypeItem> = [
     {
       title: '字典类型',
@@ -357,8 +302,8 @@ export function useDictPage() {
       minWidth: 220,
       render(row) {
         return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[#111827]' }, row.name),
-          h('p', { class: 'text-xs text-[#6B7280]' }, row.code),
+          h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.name)),
+          h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.code)),
         ])
       },
     },
@@ -426,6 +371,7 @@ export function useDictPage() {
     },
   ]
 
+  // 字典项列表表格列定义
   const itemColumns: DataTableColumns<DictItem> = [
     {
       title: '字典项',
@@ -433,8 +379,8 @@ export function useDictPage() {
       minWidth: 220,
       render(row) {
         return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[#111827]' }, row.label),
-          h('p', { class: 'text-xs text-[#6B7280]' }, `${row.item_key} · ${row.value}`),
+          h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.label)),
+          h('p', { class: 'text-xs text-[#6B7280]' }, `${displayText(row.item_key)} · ${displayText(row.value)}`),
         ])
       },
     },
@@ -518,6 +464,7 @@ export function useDictPage() {
     },
   ]
 
+  // 字典类型行的属性，用于高亮选中行和点击选中
   function typeRowProps(row: DictTypeItem) {
     return {
       class: row.id === selectedTypeID.value ? 'dict-type-row dict-type-row--active' : 'dict-type-row',
@@ -527,12 +474,14 @@ export function useDictPage() {
     }
   }
 
+  // 组件挂载时自动加载字典类型列表
   onMounted(() => {
     void loadDictTypes()
   })
 
   return {
     canUse,
+    closeSuccess,
     dictItemTotal,
     dictItems,
     dictTypeTotal,

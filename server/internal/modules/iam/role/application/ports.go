@@ -8,8 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// RoleTransactor 是角色模块使用的事务管理器类型别名。
 type RoleTransactor = database.Transactor
 
+// RoleRepository 定义角色聚合根的数据访问接口。
 type RoleRepository interface {
 	List(query roledomain.ListQuery, page int, pageSize int) ([]model.Role, int64, error)
 	FindByID(db *gorm.DB, roleID uint) (model.Role, error)

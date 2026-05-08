@@ -1,3 +1,4 @@
+// Package application 实现系统配置的业务逻辑：分页列表、CRUD、缓存同步和按键取值。
 package application
 
 import (
@@ -18,6 +19,7 @@ const (
 	cacheTTL    = time.Hour
 )
 
+// Service 封装系统配置的业务逻辑，包括列表查询、增删改、状态切换和按键取值。
 type Service struct {
 	tx    ConfigTransactor
 	repo  ConfigRepository
@@ -29,6 +31,7 @@ func NewService(tx ConfigTransactor, repo ConfigRepository, cache ConfigCache, l
 	return &Service{tx: tx, repo: repo, cache: cache, log: log}
 }
 
+// List 按关键词、分组和状态分页查询系统配置列表。
 func (s *Service) List(query configdomain.ListQuery) (configdomain.ListResponse, error) {
 	page, pageSize := paging.NormalizePage(query.Page, query.PageSize)
 
@@ -45,6 +48,7 @@ func (s *Service) List(query configdomain.ListQuery) (configdomain.ListResponse,
 	return configdomain.ListResponse{Items: result, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
+// Create 创建系统配置，校验键唯一性后写入数据库并同步缓存。
 func (s *Service) Create(ctx context.Context, req configdomain.CreateRequest) (configdomain.Response, error) {
 	req, err := configdomain.NormalizeCreateRequest(req)
 	if err != nil {
@@ -80,6 +84,7 @@ func (s *Service) Create(ctx context.Context, req configdomain.CreateRequest) (c
 	return configdomain.BuildResponse(created), nil
 }
 
+// Update 更新指定配置的基本信息并同步缓存。
 func (s *Service) Update(ctx context.Context, configID uint, req configdomain.UpdateRequest) (configdomain.Response, error) {
 	req, err := configdomain.NormalizeUpdateRequest(req)
 	if err != nil {
@@ -107,6 +112,7 @@ func (s *Service) Update(ctx context.Context, configID uint, req configdomain.Up
 	return configdomain.BuildResponse(updated), nil
 }
 
+// UpdateStatus 切换配置的启用/禁用状态并同步缓存。
 func (s *Service) UpdateStatus(ctx context.Context, configID uint, status model.SystemConfigStatus) error {
 	if !configdomain.ValidStatus(status) {
 		return errorsx.BadRequest("配置状态不正确")
@@ -133,6 +139,7 @@ func (s *Service) UpdateStatus(ctx context.Context, configID uint, status model.
 	return nil
 }
 
+// Value 优先从 Redis 缓存读取配置值，未命中时回源数据库并回填缓存。
 func (s *Service) Value(ctx context.Context, key string) (configdomain.ValueResponse, error) {
 	key, err := configdomain.NormalizeKey(key)
 	if err != nil {
@@ -180,6 +187,7 @@ func (s *Service) deleteCache(ctx context.Context, key string) {
 	}
 }
 
+// syncCache 启用的配置写入缓存，禁用的删除缓存，保证 Value() 读到最新状态。
 func (s *Service) syncCache(ctx context.Context, item model.SystemConfig) {
 	if item.Status == model.SystemConfigStatusEnabled {
 		s.writeCache(ctx, item)

@@ -9,7 +9,9 @@ import { useMenuPage } from '../composables/useMenuPage'
 const {
   buttonCount,
   canUse,
+  closeSuccess,
   collapseAll,
+  componentOptions,
   directoryCount,
   displayMenus,
   expandAll,
@@ -26,6 +28,7 @@ const {
   handleToggleStatus,
   loadMenus,
   loading,
+  menuCount,
   openCreateChild,
   openCreateRoot,
   openEdit,
@@ -59,7 +62,7 @@ const {
         :show-icon="true"
         closable
         class="mx-auto w-full max-w-[520px]"
-        @close="successText = ''"
+        @close="closeSuccess"
       >
         {{ successText }}
       </NAlert>
@@ -100,6 +103,7 @@ const {
       :form-mode="formMode"
       :form-type-options="formTypeOptions"
       :parent-options="parentOptions"
+      :component-options="componentOptions"
       :rules="rules"
       :saving="saving"
       @submit="handleSubmit"

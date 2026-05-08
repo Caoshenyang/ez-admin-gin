@@ -11,14 +11,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// ErrInvalidToken 表示令牌无效或校验失败。
 var ErrInvalidToken = errors.New("invalid token")
 
+// Claims 定义 JWT 访问令牌的自定义载荷字段。
 type Claims struct {
 	UserID   uint   `json:"user_id"`
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
+// Manager 管理 JWT 的签发和解析。
 type Manager struct {
 	secret         []byte
 	issuer         string
@@ -48,6 +51,7 @@ func NewManager(cfg config.AuthConfig) (*Manager, error) {
 	}, nil
 }
 
+// GenerateAccessToken 签发 HS256 JWT，返回 token 字符串和过期时间。
 func (m *Manager) GenerateAccessToken(userID uint, username string) (string, time.Time, error) {
 	now := m.now()
 	expiresAt := now.Add(m.accessTokenTTL)
@@ -72,6 +76,7 @@ func (m *Manager) GenerateAccessToken(userID uint, username string) (string, tim
 	return tokenString, expiresAt, nil
 }
 
+// ParseAccessToken 解析并校验 JWT，验证签名算法和 issuer。
 func (m *Manager) ParseAccessToken(tokenString string) (*Claims, error) {
 	claims := &Claims{}
 

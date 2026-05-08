@@ -8,6 +8,7 @@ import { useConfigPage } from '../composables/useConfigPage'
 
 const {
   canUse,
+  closeSuccess,
   columns,
   configs,
   formMode,
@@ -45,7 +46,7 @@ const {
         </NButton>
       </div>
 
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="successText = ''">
+      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}
       </NAlert>
 

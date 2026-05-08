@@ -4,7 +4,7 @@ import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect } from
 
 import FormModalHeader from '@/components/FormModalHeader.vue'
 
-import type { RoleFormModel } from '../composables/useRolePage'
+import type { RoleFormModel } from '../types/role-page'
 
 defineProps<{
   formMode: 'create' | 'edit'

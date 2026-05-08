@@ -18,6 +18,7 @@ function getStorage(mode: StorageMode) {
   return mode === 'local' ? localStorage : sessionStorage
 }
 
+// readStorageValue 同时查找 localStorage 和 sessionStorage，支持"记住登录"和"不记住"两种存储。
 function readStorageValue(key: string) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? ''
 }

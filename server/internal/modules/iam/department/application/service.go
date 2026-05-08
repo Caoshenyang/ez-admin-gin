@@ -1,3 +1,4 @@
+// Package application 实现部门的业务逻辑：树形列表查询、创建、更新和状态切换。
 package application
 
 import (
@@ -13,6 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Service 提供部门的业务操作服务。
 type Service struct {
 	tx   DepartmentTransactor
 	repo DepartmentRepository
@@ -22,6 +24,7 @@ func NewService(tx DepartmentTransactor, repo DepartmentRepository) *Service {
 	return &Service{tx: tx, repo: repo}
 }
 
+// List 返回当前用户数据权限范围内的部门树。
 func (s *Service) List(actor datascope.Actor, query departmentdomain.ListQuery) ([]departmentdomain.Response, error) {
 	items, err := s.repo.List(actor, query)
 	if err != nil {
@@ -31,6 +34,7 @@ func (s *Service) List(actor datascope.Actor, query departmentdomain.ListQuery) 
 	return buildTree(items), nil
 }
 
+// Create 校验编码唯一性和负责人可用性后创建部门。
 func (s *Service) Create(actor datascope.Actor, req departmentdomain.CreateRequest) (departmentdomain.Response, error) {
 	parentID, name, code, leaderUserID, sortValue, status, remark, err := departmentdomain.NormalizeDepartmentInput(
 		req.ParentID, req.Name, req.Code, req.LeaderUserID, req.Sort, req.Status, req.Remark,
@@ -79,6 +83,7 @@ func (s *Service) Create(actor datascope.Actor, req departmentdomain.CreateReque
 	return departmentdomain.BuildResponse(created), nil
 }
 
+// Update 更新部门信息，必要时级联刷新子部门的祖先路径。
 func (s *Service) Update(actor datascope.Actor, departmentID uint, req departmentdomain.UpdateRequest) (departmentdomain.Response, error) {
 	parentID, name, code, leaderUserID, sortValue, status, remark, err := departmentdomain.NormalizeDepartmentInput(
 		req.ParentID, req.Name, req.Code, req.LeaderUserID, req.Sort, req.Status, req.Remark,
@@ -131,6 +136,7 @@ func (s *Service) Update(actor datascope.Actor, departmentID uint, req departmen
 			return err
 		}
 
+		// 仅当父级或祖先链实际变化时才级联刷新子部门。
 		if oldParentID != parentID || oldAncestors != newAncestors {
 			newFullPath := fmt.Sprintf("%s,%d", newAncestors, current.ID)
 			children, err := s.repo.Subtree(tx, current.ID, oldFullPath)
@@ -155,6 +161,7 @@ func (s *Service) Update(actor datascope.Actor, departmentID uint, req departmen
 	return departmentdomain.BuildResponse(updated), nil
 }
 
+// UpdateStatus 切换部门的启用/禁用状态。
 func (s *Service) UpdateStatus(actor datascope.Actor, departmentID uint, status model.DepartmentStatus) error {
 	if !departmentdomain.ValidStatus(status) {
 		return errorsx.BadRequest("部门状态不正确")

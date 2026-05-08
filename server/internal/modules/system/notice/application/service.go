@@ -1,23 +1,27 @@
+// Package application 实现公告的业务逻辑：分页列表、CRUD 和状态切换。
 package application
 
 import (
+	"context"
+
 	noticedomain "ez-admin-gin/server/internal/modules/system/notice/domain"
-	noticeinfra "ez-admin-gin/server/internal/modules/system/notice/infra"
 	"ez-admin-gin/server/internal/pkg/paging"
 	"ez-admin-gin/server/internal/platform/model"
 
 	"gorm.io/gorm"
 )
 
+// Service 封装公告的业务逻辑，包括列表查询、增删改和状态切换。
 type Service struct {
-	db   *gorm.DB
-	repo *noticeinfra.Repository
+	tx   NoticeTransactor
+	repo NoticeRepository
 }
 
-func NewService(db *gorm.DB, repo *noticeinfra.Repository) *Service {
-	return &Service{db: db, repo: repo}
+func NewService(tx NoticeTransactor, repo NoticeRepository) *Service {
+	return &Service{tx: tx, repo: repo}
 }
 
+// List 按关键词和状态分页查询公告列表。
 func (s *Service) List(query noticedomain.ListQuery) (noticedomain.ListResponse, error) {
 	page, pageSize := paging.NormalizePage(query.Page, query.PageSize)
 	status, err := noticedomain.NormalizeStatusFilter(query.Status)
@@ -38,6 +42,7 @@ func (s *Service) List(query noticedomain.ListQuery) (noticedomain.ListResponse,
 	return noticedomain.ListResponse{Items: result, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
+// Create 创建公告并写入数据库。
 func (s *Service) Create(req noticedomain.CreateRequest) (noticedomain.Response, error) {
 	req, err := noticedomain.NormalizeCreateRequest(req)
 	if err != nil {
@@ -52,7 +57,7 @@ func (s *Service) Create(req noticedomain.CreateRequest) (noticedomain.Response,
 		Remark:  req.Remark,
 	}
 
-	if err := s.db.Transaction(func(tx *gorm.DB) error {
+	if err := s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		return s.repo.Create(tx, &created)
 	}); err != nil {
 		return noticedomain.Response{}, err
@@ -61,6 +66,7 @@ func (s *Service) Create(req noticedomain.CreateRequest) (noticedomain.Response,
 	return noticedomain.BuildResponse(created), nil
 }
 
+// Update 更新指定公告的基本信息。
 func (s *Service) Update(noticeID uint, req noticedomain.UpdateRequest) (noticedomain.Response, error) {
 	req, err := noticedomain.NormalizeUpdateRequest(req)
 	if err != nil {
@@ -68,7 +74,7 @@ func (s *Service) Update(noticeID uint, req noticedomain.UpdateRequest) (noticed
 	}
 
 	var updated noticedomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, noticeID)
 		if err != nil {
 			return err
@@ -86,13 +92,14 @@ func (s *Service) Update(noticeID uint, req noticedomain.UpdateRequest) (noticed
 	return noticedomain.BuildResponse(updated), nil
 }
 
+// UpdateStatus 切换公告的启用/禁用状态。
 func (s *Service) UpdateStatus(noticeID uint, status model.NoticeStatus) error {
 	status, err := noticedomain.NormalizeStatus(status, false)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, noticeID)
 		if err != nil {
 			return err

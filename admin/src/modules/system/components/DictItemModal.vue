@@ -4,7 +4,7 @@ import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NForm, NFormItem, NIcon, NInput, NInputNumber, NModal, NSelect } from 'naive-ui'
 
 import { STATUS_FORM_OPTIONS } from '@/constants/status'
-import type { DictItemFormModel } from '../composables/useDictPage'
+import type { DictItemFormModel } from '../types/dict-page'
 import type { DictTypeItem } from '../types/dict'
 
 defineProps<{

@@ -20,7 +20,7 @@ defineEmits<{
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="height: 100%; padding: 0;">
+  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
     <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
       <span class="text-sm text-[#6B7280]">共 {{ total }} 条</span>
       <NButton text type="primary" @click="$emit('refresh')">刷新</NButton>
@@ -28,15 +28,13 @@ defineEmits<{
 
     <NDataTable
       remote
-      class="notice-table h-full"
-      style="height: calc(100% - 105px)"
+      class="notice-table"
       :columns="columns"
       :data="items"
       :loading="loading"
       :pagination="false"
       :row-key="(row: NoticeItem) => row.id"
       :bordered="false"
-      flex-height
     />
 
     <div class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3 text-sm text-[#6B7280]">

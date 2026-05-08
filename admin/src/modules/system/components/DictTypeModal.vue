@@ -4,7 +4,7 @@ import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NForm, NFormItem, NIcon, NInput, NInputNumber, NModal, NSelect } from 'naive-ui'
 
 import { STATUS_FORM_OPTIONS } from '@/constants/status'
-import type { DictTypeFormModel } from '../composables/useDictPage'
+import type { DictTypeFormModel } from '../types/dict-page'
 
 defineProps<{
   formMode: 'create' | 'edit'

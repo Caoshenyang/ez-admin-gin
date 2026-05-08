@@ -1,3 +1,4 @@
+// Package infra 实现登录日志的数据访问层。
 package infra
 
 import (
@@ -7,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 封装登录日志表的数据访问操作。
 type Repository struct {
 	db *gorm.DB
 }
@@ -15,6 +17,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 按用户名、IP 和状态分页查询登录日志。
 func (r *Repository) List(query loginlogdomain.ListQuery, page int, pageSize int, status *model.LoginLogStatus) ([]loginlogdomain.Entity, int64, error) {
 	queryDB := r.db.Model(&loginlogdomain.Entity{})
 

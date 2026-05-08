@@ -1,37 +1,28 @@
 package api
 
 import (
-	authapp "ez-admin-gin/server/internal/modules/auth/application"
-	authinfra "ez-admin-gin/server/internal/modules/auth/infra"
+	authservicekit "ez-admin-gin/server/internal/modules/auth/servicekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
-	platformConfig "ez-admin-gin/server/internal/platform/config"
 	"ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
-	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type RouteOptions struct {
-	Config *platformConfig.Config
-	Log    *zap.Logger
-	DB     *gorm.DB
-	Redis  *goredis.Client
-	Token  *authnPlatform.Manager
+	Log      *zap.Logger
+	DB       *gorm.DB
+	Token    *authnPlatform.Manager
+	Services authservicekit.Services
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
-	repo := authinfra.NewRepository(opts.DB)
-
-	login := NewLoginHandler(authapp.NewLoginService(repo, opts.Token, opts.Log), opts.Log)
-	me := NewMeHandler(authapp.NewMeService(), opts.Log)
-	account := NewAccountHandler(authapp.NewAccountService(opts.DB, repo), opts.Log)
-	menus := NewMenuHandler(authapp.NewMenuService(repo), opts.Log)
-	dashboard := NewDashboardHandler(
-		authapp.NewDashboardService(opts.Config, opts.DB, repo, opts.Redis, opts.Log),
-		opts.Log,
-	)
+	login := NewLoginHandler(opts.Services.Login, opts.Log)
+	me := NewMeHandler(opts.Services.Me, opts.Log)
+	account := NewAccountHandler(opts.Services.Account, opts.Log)
+	menus := NewMenuHandler(opts.Services.Menu, opts.Log)
+	dashboard := NewDashboardHandler(opts.Services.Dashboard, opts.Log)
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")

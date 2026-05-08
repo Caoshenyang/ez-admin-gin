@@ -1,3 +1,4 @@
+// Package infra 实现用户的数据访问层，包含数据权限作用域过滤。
 package infra
 
 import (
@@ -12,6 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 实现用户的数据访问层。
 type Repository struct {
 	db *gorm.DB
 }
@@ -20,6 +22,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 根据查询条件分页返回数据权限范围内的用户列表。
 func (r *Repository) List(actor datascope.Actor, query userdomain.ListQuery, page int, pageSize int) ([]model.User, int64, error) {
 	queryDB := applyDataScope(r.db.Model(&model.User{}), actor)
 
@@ -50,6 +53,7 @@ func (r *Repository) List(actor datascope.Actor, query userdomain.ListQuery, pag
 	return users, total, nil
 }
 
+// RoleIDsByUserIDs 批量查询指定用户关联的角色 ID。
 func (r *Repository) RoleIDsByUserIDs(userIDs []uint) (map[uint][]uint, error) {
 	result := make(map[uint][]uint, len(userIDs))
 	if len(userIDs) == 0 {
@@ -68,6 +72,7 @@ func (r *Repository) RoleIDsByUserIDs(userIDs []uint) (map[uint][]uint, error) {
 	return result, nil
 }
 
+// PostIDsByUserIDs 批量查询指定用户关联的岗位 ID。
 func (r *Repository) PostIDsByUserIDs(userIDs []uint) (map[uint][]uint, error) {
 	result := make(map[uint][]uint, len(userIDs))
 	if len(userIDs) == 0 {
@@ -86,6 +91,7 @@ func (r *Repository) PostIDsByUserIDs(userIDs []uint) (map[uint][]uint, error) {
 	return result, nil
 }
 
+// FindByIDInScope 在数据权限范围内按 ID 查找用户。
 func (r *Repository) FindByIDInScope(db *gorm.DB, actor datascope.Actor, userID uint) (model.User, error) {
 	var user model.User
 	err := applyDataScope(db, actor).First(&user, userID).Error
@@ -99,6 +105,7 @@ func (r *Repository) FindByIDInScope(db *gorm.DB, actor datascope.Actor, userID 
 	return user, nil
 }
 
+// UsernameExists 检查用户名是否已存在。
 func (r *Repository) UsernameExists(db *gorm.DB, username string) (bool, error) {
 	var user model.User
 	err := db.Unscoped().Where("username = ?", username).First(&user).Error
@@ -112,6 +119,7 @@ func (r *Repository) UsernameExists(db *gorm.DB, username string) (bool, error) 
 	return false, err
 }
 
+// DepartmentUsable 校验指定部门是否存在且启用。
 func (r *Repository) DepartmentUsable(db *gorm.DB, departmentID uint) error {
 	if departmentID == 0 {
 		return nil
@@ -132,6 +140,7 @@ func (r *Repository) DepartmentUsable(db *gorm.DB, departmentID uint) error {
 	return nil
 }
 
+// RolesUsable 校验给定的角色 ID 是否全部存在且启用。
 func (r *Repository) RolesUsable(db *gorm.DB, roleIDs []uint) error {
 	if len(roleIDs) == 0 {
 		return nil
@@ -152,6 +161,7 @@ func (r *Repository) RolesUsable(db *gorm.DB, roleIDs []uint) error {
 	return nil
 }
 
+// PostsUsable 校验给定的岗位 ID 是否全部存在且启用。
 func (r *Repository) PostsUsable(db *gorm.DB, postIDs []uint) error {
 	if len(postIDs) == 0 {
 		return nil
@@ -172,10 +182,12 @@ func (r *Repository) PostsUsable(db *gorm.DB, postIDs []uint) error {
 	return nil
 }
 
+// Create 创建用户记录。
 func (r *Repository) Create(db *gorm.DB, user *model.User) error {
 	return db.Create(user).Error
 }
 
+// UpdateBase 更新用户的基本信息字段。
 func (r *Repository) UpdateBase(db *gorm.DB, user *model.User, nickname string, departmentID uint, status model.UserStatus) error {
 	if err := db.Model(user).Updates(map[string]any{
 		"nickname":      nickname,
@@ -191,6 +203,7 @@ func (r *Repository) UpdateBase(db *gorm.DB, user *model.User, nickname string, 
 	return nil
 }
 
+// UpdateStatus 更新用户的启用/禁用状态。
 func (r *Repository) UpdateStatus(db *gorm.DB, user *model.User, status model.UserStatus) error {
 	if err := db.Model(user).Update("status", status).Error; err != nil {
 		return err
@@ -200,6 +213,7 @@ func (r *Repository) UpdateStatus(db *gorm.DB, user *model.User, status model.Us
 	return nil
 }
 
+// ReplaceRoles 替换指定用户的全部角色关联。
 func (r *Repository) ReplaceRoles(db *gorm.DB, userID uint, roleIDs []uint) error {
 	if err := db.Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
 		return err
@@ -220,6 +234,7 @@ func (r *Repository) ReplaceRoles(db *gorm.DB, userID uint, roleIDs []uint) erro
 	return db.Create(&rows).Error
 }
 
+// ReplacePosts 替换指定用户的全部岗位关联。
 func (r *Repository) ReplacePosts(db *gorm.DB, userID uint, postIDs []uint) error {
 	if err := db.Where("user_id = ?", userID).Delete(&model.UserPost{}).Error; err != nil {
 		return err

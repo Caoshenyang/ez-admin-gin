@@ -1,3 +1,4 @@
+// Package application 实现文件上传的业务逻辑：上传、关联实体和失败回滚。
 package application
 
 import (
@@ -26,6 +27,7 @@ var defaultUploadAllowedExts = []string{
 	".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".docx", ".xlsx",
 }
 
+// Service 封装文件上传的业务逻辑，包括列表查询、上传、关联实体和失败回滚。
 type Service struct {
 	tx      FileTransactor
 	repo    FileRepository
@@ -44,6 +46,7 @@ func NewService(tx FileTransactor, repo FileRepository, storage FileStorage, cfg
 	}
 }
 
+// List 按关键词、扩展名和状态分页查询文件列表。
 func (s *Service) List(query filedomain.ListQuery) (filedomain.ListResponse, error) {
 	page, pageSize := paging.NormalizePage(query.Page, query.PageSize)
 	items, total, err := s.repo.List(query, page, pageSize)
@@ -59,6 +62,7 @@ func (s *Service) List(query filedomain.ListQuery) (filedomain.ListResponse, err
 	return filedomain.ListResponse{Items: result, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
+// Upload 上传文件并返回响应 DTO。
 func (s *Service) Upload(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader) (filedomain.Response, error) {
 	item, err := s.UploadEntity(ctx, uploaderID, fileHeader)
 	if err != nil {
@@ -68,6 +72,7 @@ func (s *Service) Upload(ctx context.Context, uploaderID uint, fileHeader *multi
 	return filedomain.BuildResponse(item), nil
 }
 
+// UploadEntity 上传文件到存储并写入数据库记录，失败时自动清理物理文件。
 func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader) (model.SystemFile, error) {
 	if err := s.validateUploadFile(fileHeader); err != nil {
 		return model.SystemFile{}, err
@@ -103,6 +108,7 @@ func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader 
 	return item, nil
 }
 
+// CleanupUploadedFile 在关联业务保存失败时回滚：删除文件记录和物理文件。
 func (s *Service) CleanupUploadedFile(item model.SystemFile) {
 	_ = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		return s.repo.DeleteByID(tx, item.ID)

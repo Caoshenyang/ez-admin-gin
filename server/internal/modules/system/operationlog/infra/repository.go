@@ -1,3 +1,4 @@
+// Package infra 实现操作日志的数据访问层。
 package infra
 
 import (
@@ -8,6 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 封装操作日志表的数据访问操作。
 type Repository struct {
 	db *gorm.DB
 }
@@ -16,6 +18,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 按用户名、方法、路径和成功状态分页查询操作日志。
 func (r *Repository) List(query operationlogdomain.ListQuery, page int, pageSize int, success *bool) ([]operationlogdomain.Entity, int64, error) {
 	queryDB := r.db.Model(&operationlogdomain.Entity{})
 

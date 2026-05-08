@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Run 执行数据库迁移；遇到脏锁时自动强制解锁后重试。
 func Run(driver, dsn string, migrationsFS fs.FS, log *zap.Logger) error {
 	sub, err := fs.Sub(migrationsFS, "migrations/"+driver)
 	if err != nil {
@@ -31,6 +32,7 @@ func Run(driver, dsn string, migrationsFS fs.FS, log *zap.Logger) error {
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
 		version, dirty, versionErr := m.Version()
+		// 脏迁移通常是上次中断导致，强制解锁后重试自动恢复。
 		if versionErr == nil && dirty {
 			log.Warn("dirty migration detected, forcing unlock", zap.Uint("version", version))
 			if forceErr := m.Force(int(version)); forceErr != nil {

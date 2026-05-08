@@ -1,8 +1,10 @@
 package application
 
 import (
+	"context"
+	"mime/multipart"
+
 	attachmentdomain "ez-admin-gin/server/internal/modules/system/attachment/domain"
-	fileapp "ez-admin-gin/server/internal/modules/system/file/application"
 	"ez-admin-gin/server/internal/platform/database"
 	"ez-admin-gin/server/internal/platform/model"
 
@@ -19,4 +21,8 @@ type AttachmentRepository interface {
 }
 
 type AttachmentTransactor = database.Transactor
-type FileAssetService = fileapp.AssetService
+
+type FileAssetService interface {
+	UploadEntity(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader) (model.SystemFile, error)
+	CleanupUploadedFile(item model.SystemFile)
+}

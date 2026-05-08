@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { NAlert, NButton } from 'naive-ui'
-import { useMessage } from 'naive-ui'
 
 import UserFilterBar from '../components/UserFilterBar.vue'
 import UserFormModal from '../components/UserFormModal.vue'
@@ -8,8 +7,6 @@ import UserRoleModal from '../components/UserRoleModal.vue'
 import UserTable from '../components/UserTable.vue'
 import { useUserPage } from '../composables/useUserPage'
 import type { UserStatus } from '../types/user'
-
-const message = useMessage()
 
 const {
   canUse,
@@ -51,21 +48,6 @@ const {
   submitForm,
   successText,
 } = useUserPage()
-
-async function handleSubmit() {
-  await submitForm()
-  message.success(formMode.value === 'create' ? '用户创建成功' : '用户更新成功')
-}
-
-async function handleRoleSubmit() {
-  await handleSaveRoles()
-  message.success('用户角色已更新')
-}
-
-async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0], status: Parameters<typeof handleToggleStatus>[1]) {
-  await handleToggleStatus(row, status)
-  message.success('用户状态已更新')
-}
 </script>
 
 <template>
@@ -124,7 +106,7 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
         @page-size-change="handlePageSizeChange"
         @refresh="handleSearch"
         @role="openRole"
-        @toggle-status="handleStatusChange"
+        @toggle-status="handleToggleStatus"
       />
     </section>
 
@@ -138,7 +120,7 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
       :role-options="roleOptions"
       :rules="rules"
       :saving="saving"
-      @submit="handleSubmit"
+      @submit="submitForm"
     />
 
     <UserRoleModal
@@ -148,7 +130,7 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
       :role-user="roleUser"
       :role-ids="selectedRoleIDs"
       @update:role-ids="selectedRoleIDs = $event"
-      @submit="handleRoleSubmit"
+      @submit="handleSaveRoles"
     />
   </main>
 </template>

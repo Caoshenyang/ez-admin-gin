@@ -1,13 +1,10 @@
-import type {
-  DataTableRowKey,
-  FormRules,
-  SelectOption,
-  TreeSelectOption,
-} from 'naive-ui'
+import type { DataTableRowKey, TreeSelectOption } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { getDepartments } from '../api/department'
 import { getPosts } from '../api/post'
 import { getRoles } from '../api/role'
@@ -22,46 +19,28 @@ import type { DepartmentItem } from '../types/department'
 import { PostStatus, type PostItem } from '../types/post'
 import { RoleStatus, type RoleItem } from '../types/role'
 import { UserStatus, type UserItem, type UserListQuery } from '../types/user'
+import type { UserFormModel } from '../types/user-page'
+import {
+  buildDepartmentNameMap,
+  buildPostOptions,
+  buildRoleFilterOptions,
+  buildRoleOptions,
+  buildUserCreatePayload,
+  buildUserDepartmentTreeOptions,
+  buildUserUpdatePayload,
+  defaultUserListQuery,
+  defaultUserFormModel,
+  toUserFormModel,
+  normalizeUserListQuery,
+  userFormRules,
+  userStatusOptions,
+} from './user-page.utils'
 
-export interface UserFormModel {
-  id: number
-  username: string
-  password: string
-  nickname: string
-  department_id: number
-  status: UserStatus
-  role_ids: number[]
-  post_ids: number[]
-}
-
-const userStatusOptions = [
-  { label: '状态：全部', value: 0 },
-  { label: '启用', value: UserStatus.Enabled },
-  { label: '禁用', value: UserStatus.Disabled },
-]
-
-const userFormRules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  department_id: [{ required: true, type: 'number', message: '请选择部门', trigger: ['change', 'blur'] }],
-}
-
-function defaultUserFormModel(): UserFormModel {
-  return {
-    id: 0,
-    username: '',
-    password: '',
-    nickname: '',
-    department_id: 0,
-    status: UserStatus.Enabled,
-    role_ids: [],
-    post_ids: [],
-  }
-}
-
+// 用户管理页面组合式函数，封装用户列表、创建、编辑、角色分配、状态切换等逻辑
 export function useUserPage() {
+  const message = useMessage()
   const { canUse } = usePermission()
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const roleSaving = ref(false)
   const departments = ref<DepartmentItem[]>([])
@@ -70,18 +49,12 @@ export function useUserPage() {
   const posts = ref<PostItem[]>([])
   const total = ref(0)
   const checkedRowKeys = ref<DataTableRowKey[]>([])
-  const successText = ref('')
   const roleVisible = ref(false)
   const roleUser = ref<UserItem | null>(null)
   const selectedRoleIDs = ref<number[]>([])
 
-  const query = reactive<UserListQuery>({
-    page: 1,
-    page_size: 10,
-    keyword: '',
-    role_id: 0,
-    status: 0,
-  })
+  // 用户列表查询条件
+  const query = reactive<UserListQuery>(defaultUserListQuery())
 
   const {
     formRef,
@@ -94,42 +67,31 @@ export function useUserPage() {
     openEdit: openEditBase,
   } = useModalForm<UserFormModel>(defaultUserFormModel, { rules: userFormRules })
 
+  // 角色ID到名称的映射
   const roleNameMap = computed(() => new Map(roles.value.map((role) => [role.id, role.name])))
-  const departmentNameMap = computed(() => {
-    return new Map(flattenDepartments(departments.value).map((department) => [department.id, department.name]))
-  })
+
+  // 部门ID到名称的映射（扁平化后的部门列表）
+  const departmentNameMap = computed(() => buildDepartmentNameMap(departments.value))
+
+  // 岗位ID到名称的映射
   const postNameMap = computed(() => new Map(posts.value.map((post) => [post.id, post.name])))
 
-  const departmentTreeOptions = computed<TreeSelectOption[]>(() => {
-    return [{ label: '未分配部门', value: 0 }, ...buildDepartmentTreeOptions(departments.value)]
-  })
+  // 部门树形选择选项
+  const departmentTreeOptions = computed<TreeSelectOption[]>(() => buildUserDepartmentTreeOptions(departments.value))
 
-  const roleOptions = computed<SelectOption[]>(() => {
-    return roles.value.map((role) => ({
-      label: `${role.name}（${role.code}）`,
-      value: role.id,
-    }))
-  })
+  // 角色下拉选项
+  const roleOptions = computed(() => buildRoleOptions(roles.value))
 
-  const postOptions = computed<SelectOption[]>(() => {
-    return posts.value.map((post) => ({
-      label: `${post.name}（${post.code}）`,
-      value: post.id,
-    }))
-  })
+  // 岗位下拉选项
+  const postOptions = computed(() => buildPostOptions(posts.value))
 
-  const roleFilterOptions = computed<SelectOption[]>(() => {
-    return [
-      { label: '角色：全部', value: 0 },
-      ...roles.value.map((role) => ({
-        label: role.name,
-        value: role.id,
-      })),
-    ]
-  })
+  // 角色筛选下拉选项（含"全部"）
+  const roleFilterOptions = computed(() => buildRoleFilterOptions(roles.value))
 
+  // 已勾选的行数
   const selectedCount = computed(() => checkedRowKeys.value.length)
 
+  // 根据角色筛选条件过滤后的用户列表
   const displayUsers = computed(() => {
     if (!query.role_id) {
       return users.value
@@ -138,67 +100,54 @@ export function useUserPage() {
     return users.value.filter((user) => user.role_ids.includes(query.role_id ?? 0))
   })
 
+  // 过滤后的用户总数
   const displayTotal = computed(() => (query.role_id ? displayUsers.value.length : total.value))
 
-  function closeSuccess() {
-    successText.value = ''
-  }
-
+  // 处理表格勾选行变化
   function handleCheckedRowKeys(keys: DataTableRowKey[]) {
     checkedRowKeys.value = keys
   }
 
+  // 处理分页页码变化
   function handlePageChange(page: number) {
     query.page = page
     void loadUsers()
   }
 
+  // 处理每页条数变化
   function handlePageSizeChange(pageSize: number) {
     query.page = 1
     query.page_size = pageSize
     void loadUsers()
   }
 
+  // 重置搜索条件并重新加载用户列表
   function handleReset() {
-    query.page = 1
-    query.page_size = 10
-    query.keyword = ''
-    query.role_id = 0
-    query.status = 0
+    Object.assign(query, defaultUserListQuery())
     void loadUsers()
   }
 
+  // 搜索用户
   function handleSearch() {
     query.page = 1
     void loadUsers()
   }
 
+  // 打开创建用户的弹窗
   function openCreate() {
     openCreateBase()
   }
 
+  // 打开编辑用户的弹窗，将当前行数据填充到表单
   function openEdit(row: UserItem) {
-    openEditBase({
-      id: row.id,
-      username: row.username,
-      password: '',
-      nickname: row.nickname,
-      department_id: row.department_id,
-      status: row.status,
-      role_ids: row.role_ids,
-      post_ids: row.post_ids,
-    })
+    openEditBase(toUserFormModel(row))
   }
 
+  // 从服务端加载用户列表
   async function loadUsers() {
     loading.value = true
     try {
-      const data = await getUsers({
-        ...query,
-        keyword: query.keyword?.trim() || undefined,
-        role_id: query.role_id === 0 ? undefined : query.role_id,
-        status: query.status === 0 ? undefined : query.status,
-      })
+      const data = await getUsers(normalizeUserListQuery(query))
       users.value = data.items
       total.value = data.total
       checkedRowKeys.value = []
@@ -207,6 +156,7 @@ export function useUserPage() {
     }
   }
 
+  // 从服务端加载角色列表
   async function loadRoles() {
     const data = await getRoles({
       page: 1,
@@ -216,37 +166,29 @@ export function useUserPage() {
     roles.value = data.items
   }
 
+  // 从服务端加载部门树数据
   async function loadDepartments() {
     departments.value = await getDepartments()
   }
 
+  // 从服务端加载岗位列表
   async function loadPosts() {
     posts.value = await getPosts({ status: PostStatus.Enabled })
   }
 
+  // 提交用户表单（新建或更新）
   async function submitForm() {
     await formRef.value?.validate()
     saving.value = true
     try {
       if (formMode.value === 'create') {
-        await createUser({
-          username: formModel.username,
-          password: formModel.password,
-          nickname: formModel.nickname,
-          department_id: formModel.department_id,
-          status: formModel.status,
-          role_ids: formModel.role_ids,
-          post_ids: formModel.post_ids,
-        })
-        successText.value = '用户创建成功，临时密码已生成'
+        await createUser(buildUserCreatePayload(formModel))
+        showSuccess('用户创建成功，临时密码已生成')
+        message.success('用户创建成功')
       } else {
-        await updateUser(formModel.id, {
-          nickname: formModel.nickname,
-          department_id: formModel.department_id,
-          status: formModel.status,
-          post_ids: formModel.post_ids,
-        })
-        successText.value = '用户信息已更新'
+        await updateUser(formModel.id, buildUserUpdatePayload(formModel))
+        showSuccess('用户信息已更新')
+        message.success('用户更新成功')
       }
 
       formVisible.value = false
@@ -256,18 +198,22 @@ export function useUserPage() {
     }
   }
 
+  // 切换用户的启用/禁用状态
   async function handleToggleStatus(row: UserItem, status: UserStatus) {
     await updateUserStatus(row.id, { status })
-    successText.value = `用户已${status === UserStatus.Enabled ? '启用' : '禁用'}`
+    showSuccess(`用户已${status === UserStatus.Enabled ? '启用' : '禁用'}`)
+    message.success('用户状态已更新')
     await loadUsers()
   }
 
+  // 打开角色分配弹窗
   function openRole(row: UserItem) {
     roleUser.value = row
     selectedRoleIDs.value = [...row.role_ids]
     roleVisible.value = true
   }
 
+  // 保存用户角色分配
   async function handleSaveRoles() {
     if (!roleUser.value) {
       return
@@ -276,7 +222,8 @@ export function useUserPage() {
     roleSaving.value = true
     try {
       await updateUserRoles(roleUser.value.id, { role_ids: selectedRoleIDs.value })
-      successText.value = '用户角色已更新'
+      showSuccess('用户角色已更新')
+      message.success('用户角色已更新')
       roleVisible.value = false
       await loadUsers()
     } finally {
@@ -284,6 +231,7 @@ export function useUserPage() {
     }
   }
 
+  // 组件挂载时并行加载部门、角色、岗位和用户数据
   onMounted(async () => {
     await Promise.all([loadDepartments(), loadRoles(), loadPosts(), loadUsers()])
   })
@@ -328,26 +276,4 @@ export function useUserPage() {
     submitForm,
     successText,
   }
-}
-
-function flattenDepartments(items: DepartmentItem[]) {
-  const result: DepartmentItem[] = []
-
-  for (const item of items) {
-    result.push(item)
-
-    if (item.children?.length) {
-      result.push(...flattenDepartments(item.children))
-    }
-  }
-
-  return result
-}
-
-function buildDepartmentTreeOptions(items: DepartmentItem[]): TreeSelectOption[] {
-  return items.map((item) => ({
-    label: `${item.name}（${item.code}）`,
-    value: item.id,
-    children: item.children?.length ? buildDepartmentTreeOptions(item.children) : undefined,
-  }))
 }

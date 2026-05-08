@@ -2,7 +2,7 @@
 import type { FormInst, FormRules, SelectOption, TreeSelectOption } from 'naive-ui'
 import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, NTreeSelect } from 'naive-ui'
 
-import type { DepartmentFormModel } from '../composables/useDepartmentPage'
+import type { DepartmentFormModel } from '../types/department-page'
 
 defineProps<{
   formMode: 'create' | 'edit'

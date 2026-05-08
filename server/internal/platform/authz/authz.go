@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Enforcer 封装 Casbin 鉴权引擎，基于角色-资源-动作三元组判断权限。
 type Enforcer struct {
 	inner *casbin.Enforcer
 }
@@ -32,6 +33,7 @@ func NewEnforcer(db *gorm.DB, modelPath string) (*Enforcer, error) {
 	return &Enforcer{inner: enforcer}, nil
 }
 
+// Enforce 判断指定角色是否有权对资源执行操作。
 func (e *Enforcer) Enforce(sub string, obj string, act string) (bool, error) {
 	allowed, err := e.inner.Enforce(sub, obj, act)
 	if err != nil {

@@ -1,23 +1,27 @@
+// Package application 实现岗位的业务逻辑：列表查询、CRUD 和状态切换。
 package application
 
 import (
+	"context"
+
 	postdomain "ez-admin-gin/server/internal/modules/iam/post/domain"
-	postinfra "ez-admin-gin/server/internal/modules/iam/post/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/platform/model"
 
 	"gorm.io/gorm"
 )
 
+// Service 提供岗位的业务操作服务。
 type Service struct {
-	db   *gorm.DB
-	repo *postinfra.Repository
+	tx   PostTransactor
+	repo PostRepository
 }
 
-func NewService(db *gorm.DB, repo *postinfra.Repository) *Service {
-	return &Service{db: db, repo: repo}
+func NewService(tx PostTransactor, repo PostRepository) *Service {
+	return &Service{tx: tx, repo: repo}
 }
 
+// List 根据查询条件返回岗位列表。
 func (s *Service) List(query postdomain.ListQuery) ([]postdomain.Response, error) {
 	items, err := s.repo.List(query)
 	if err != nil {
@@ -32,6 +36,7 @@ func (s *Service) List(query postdomain.ListQuery) ([]postdomain.Response, error
 	return result, nil
 }
 
+// Create 校验编码唯一性后创建岗位。
 func (s *Service) Create(req postdomain.CreateRequest) (postdomain.Response, error) {
 	code, name, sortValue, status, remark, err := postdomain.NormalizeInput(req.Code, req.Name, req.Sort, req.Status, req.Remark)
 	if err != nil {
@@ -39,7 +44,7 @@ func (s *Service) Create(req postdomain.CreateRequest) (postdomain.Response, err
 	}
 
 	var created postdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		exists, err := s.repo.CodeExists(tx, code, 0)
 		if err != nil {
 			return err
@@ -64,6 +69,7 @@ func (s *Service) Create(req postdomain.CreateRequest) (postdomain.Response, err
 	return postdomain.BuildResponse(created), nil
 }
 
+// Update 更新岗位信息。
 func (s *Service) Update(postID uint, req postdomain.UpdateRequest) (postdomain.Response, error) {
 	code, name, sortValue, status, remark, err := postdomain.NormalizeInput(req.Code, req.Name, req.Sort, req.Status, req.Remark)
 	if err != nil {
@@ -71,7 +77,7 @@ func (s *Service) Update(postID uint, req postdomain.UpdateRequest) (postdomain.
 	}
 
 	var updated postdomain.Entity
-	err = s.db.Transaction(func(tx *gorm.DB) error {
+	err = s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, postID)
 		if err != nil {
 			return err
@@ -99,12 +105,13 @@ func (s *Service) Update(postID uint, req postdomain.UpdateRequest) (postdomain.
 	return postdomain.BuildResponse(updated), nil
 }
 
+// UpdateStatus 切换岗位的启用/禁用状态。
 func (s *Service) UpdateStatus(postID uint, status model.PostStatus) error {
 	if !postdomain.ValidStatus(status) {
 		return errorsx.BadRequest("岗位状态不正确")
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
 		item, err := s.repo.FindByID(tx, postID)
 		if err != nil {
 			return err

@@ -3,6 +3,7 @@ import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
 import { h } from 'vue'
 
+import { displayText } from '@/utils/format'
 import { DepartmentStatus, type DepartmentItem } from '@/modules/iam/types/department'
 
 const props = defineProps<{
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   toggleStatus: [row: DepartmentItem, status: DepartmentStatus]
 }>()
 
+// formatTime 函数。
 function formatTime(value: string) {
   return value ? new Date(value).toLocaleString() : '-'
 }
@@ -27,8 +29,8 @@ const columns: DataTableColumns<DepartmentItem> = [
     minWidth: 260,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#111827]' }, row.name),
-        h('p', { class: 'text-xs text-[#6B7280]' }, row.code),
+        h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.name)),
+        h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.code)),
       ])
     },
   },
@@ -124,17 +126,15 @@ const columns: DataTableColumns<DepartmentItem> = [
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="height: 100%; padding: 0;">
+  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
     <NDataTable
-      class="h-full"
-      style="height: 100%"
+      class="department-table"
       :columns="columns"
       :data="departments"
       :loading="loading"
       :pagination="false"
       :bordered="false"
       children-key="children"
-      flex-height
     />
   </NCard>
 </template>

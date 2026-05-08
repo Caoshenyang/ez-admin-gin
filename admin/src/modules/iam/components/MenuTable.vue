@@ -4,6 +4,7 @@ import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag, NTooltip } from 
 import { h } from 'vue'
 
 import TableStatsBar from '@/components/TableStatsBar.vue'
+import { displayText } from '@/utils/format'
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
 
 const props = defineProps<{
@@ -40,7 +41,7 @@ const columns: DataTableColumns<AdminMenu> = [
       const cfg = typeConfig[row.type]
 
       return h('span', { class: 'inline-flex items-center gap-2' }, [
-        h('span', { class: 'font-medium text-[#111827]' }, row.title),
+        h('span', { class: 'font-medium text-[#111827]' }, displayText(row.title)),
         h(
           NTag,
           { size: 'small', bordered: false, round: false, type: cfg.type },
@@ -55,7 +56,7 @@ const columns: DataTableColumns<AdminMenu> = [
     minWidth: 130,
     ellipsis: { tooltip: true },
     render(row) {
-      return row.path || '-'
+      return displayText(row.path)
     },
   },
   {
@@ -177,17 +178,14 @@ const columns: DataTableColumns<AdminMenu> = [
   },
 ]
 
+// rowKey 函数。
 function rowKey(row: AdminMenu) {
   return row.id
 }
 </script>
 
 <template>
-  <NCard
-    class="min-h-0 flex-1 rounded-lg"
-    :bordered="false"
-    content-style="height: 100%; padding: 0;"
-  >
+  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
     <TableStatsBar>
       <span class="text-xs text-[#6B7280]">
         共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单 {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }}
@@ -203,7 +201,6 @@ function rowKey(row: AdminMenu) {
 
     <NDataTable
       class="menu-table"
-      style="height: calc(100% - 48px)"
       :columns="columns"
       :data="displayMenus"
       :loading="loading"
@@ -213,7 +210,6 @@ function rowKey(row: AdminMenu) {
       :bordered="false"
       children-key="children"
       @update:expanded-row-keys="expandedRowKeys = $event"
-      flex-height
     />
   </NCard>
 </template>

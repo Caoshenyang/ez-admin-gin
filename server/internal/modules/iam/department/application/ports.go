@@ -9,8 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// DepartmentTransactor 是部门模块使用的事务管理器类型别名。
 type DepartmentTransactor = database.Transactor
 
+// DepartmentRepository 定义部门聚合根的数据访问接口。
 type DepartmentRepository interface {
 	List(actor datascope.Actor, query departmentdomain.ListQuery) ([]model.Department, error)
 	FindByIDInScope(db *gorm.DB, actor datascope.Actor, departmentID uint) (model.Department, error)

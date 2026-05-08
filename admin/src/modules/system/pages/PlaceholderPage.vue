@@ -19,7 +19,7 @@ defineProps<{
         <NButton tertiary type="primary"> 后续接入 </NButton>
       </div>
 
-      <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="height: 100%;">
+      <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column;">
         <div class="flex h-full items-center justify-center">
           <NEmpty description="本页会在后续小节继续补齐">
             <template #extra>

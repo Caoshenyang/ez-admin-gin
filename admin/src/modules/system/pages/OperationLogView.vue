@@ -5,8 +5,10 @@ import OperationLogTable from '../components/OperationLogTable.vue'
 import { useOperationLogPage } from '../composables/useOperationLogPage'
 
 const {
+  closeDetail,
   detailRow,
   detailVisible,
+  handleDetailVisibleChange,
   handlePageChange,
   handlePageSizeChange,
   handleReset,
@@ -57,6 +59,7 @@ const {
     <OperationLogDetailDrawer
       v-model:show="detailVisible"
       :detail-row="detailRow"
+      @update:show="handleDetailVisibleChange"
     />
   </main>
 </template>

@@ -2,6 +2,7 @@ package auth
 
 import (
 	authapi "ez-admin-gin/server/internal/modules/auth/api"
+	authservicekit "ez-admin-gin/server/internal/modules/auth/servicekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
 
@@ -20,11 +21,17 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
-	authapi.RegisterRoutes(r, authapi.RouteOptions{
+	services := authservicekit.NewServices(authservicekit.ServiceOptions{
 		Config: opts.Config,
 		Log:    opts.Log,
 		DB:     opts.DB,
 		Redis:  opts.Redis,
 		Token:  opts.Token,
+	})
+	authapi.RegisterRoutes(r, authapi.RouteOptions{
+		Log:      opts.Log,
+		DB:       opts.DB,
+		Token:    opts.Token,
+		Services: services,
 	})
 }

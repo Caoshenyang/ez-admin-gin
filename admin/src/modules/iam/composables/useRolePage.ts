@@ -2,6 +2,7 @@ import type { FormRules, SelectOption, TreeOption } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import { getAdminMenus } from '../api/menu'
 import {
@@ -15,66 +16,34 @@ import {
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
 import {
   RoleStatus,
+  // RoleItem 类型定义。
   type RoleItem,
+  // RoleListQuery 类型定义。
   type RoleListQuery,
-  type RolePermissionItem,
 } from '../types/role'
+import type { PermissionRow, PermissionTab, RoleFormModel } from '../types/role-page'
+import {
+  buildRoleCreatePayload,
+  buildRoleUpdatePayload,
+  defaultRoleListQuery,
+  defaultPermissionRow,
+  defaultRoleFormModel,
+  flattenRoleMenus,
+  getRoleStatusTagType,
+  normalizeRolePermissions,
+  permissionMethodOptions,
+  roleFormRules,
+  roleStatusOptions,
+  superAdminRoleCode,
+  toPermissionRows,
+  toRoleFormModel,
+  toRoleMenuTreeOption,
+} from './role-page.utils'
 
-export interface RoleFormModel {
-  id: number
-  code: string
-  name: string
-  sort: number
-  status: RoleStatus
-  remark: string
-}
-
-export interface PermissionRow {
-  id: number
-  path: string
-  method: string
-}
-
-export type PermissionTab = 'menu' | 'button' | 'api'
-
-const superAdminRoleCode = 'super_admin'
-
-function defaultRoleFormModel(): RoleFormModel {
-  return {
-    id: 0,
-    code: '',
-    name: '',
-    sort: 10,
-    status: RoleStatus.Enabled,
-    remark: '',
-  }
-}
-
-function toTreeOption(menu: AdminMenu): TreeOption {
-  const typeText = menu.type === MenuType.Directory ? '目录' : menu.type === MenuType.Menu ? '菜单' : '按钮'
-  const statusText = menu.status === MenuStatus.Enabled ? '' : '（禁用）'
-
-  return {
-    key: menu.id,
-    label: `${menu.title}  ${typeText}  ${menu.code}${statusText}`,
-    children: menu.children?.map(toTreeOption),
-    disabled: menu.status !== MenuStatus.Enabled,
-  }
-}
-
-function flattenMenus(items: AdminMenu[]) {
-  const result: AdminMenu[] = []
-
-  for (const item of items) {
-    result.push(item)
-    result.push(...flattenMenus(item.children ?? []))
-  }
-
-  return result
-}
-
+// 角色管理页面组合式函数，封装角色列表、菜单权限、API权限分配等逻辑
 export function useRolePage() {
   const message = useMessage()
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const saving = ref(false)
   const roles = ref<RoleItem[]>([])
@@ -83,40 +52,28 @@ export function useRolePage() {
   const activeTab = ref<PermissionTab>('menu')
   const checkedMenuIDs = ref<Array<string | number>>([])
   const permissionRows = ref<PermissionRow[]>([])
-  const successText = ref('')
 
-  const query = reactive<RoleListQuery>({
-    page: 1,
-    page_size: 100,
-    keyword: '',
-    status: 0,
-  })
+  // 角色列表查询条件
+  const query = reactive<RoleListQuery>(defaultRoleListQuery())
 
   const formRef = ref()
   const formVisible = ref(false)
   const formMode = ref<'create' | 'edit'>('create')
   const formModel = reactive<RoleFormModel>(defaultRoleFormModel())
 
-  const statusOptions: SelectOption[] = [
-    { label: '状态：全部', value: 0 },
-    { label: '启用', value: RoleStatus.Enabled },
-    { label: '禁用', value: RoleStatus.Disabled },
-  ]
+  // 状态筛选选项
+  const statusOptions: SelectOption[] = roleStatusOptions
 
-  const methodOptions: SelectOption[] = [
-    { label: 'GET', value: 'GET' },
-    { label: 'POST', value: 'POST' },
-    { label: 'PUT', value: 'PUT' },
-    { label: 'DELETE', value: 'DELETE' },
-  ]
+  // HTTP方法选项
+  const methodOptions: SelectOption[] = permissionMethodOptions
 
-  const rules: FormRules = {
-    code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }],
-    name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-  }
+  // 表单校验规则
+  const rules: FormRules = roleFormRules
 
+  // 当前选中的角色对象
   const selectedRole = computed(() => roles.value.find((role) => role.id === selectedRoleID.value) ?? null)
 
+  // 根据关键词和状态过滤后的角色列表
   const filteredRoles = computed(() => {
     const keyword = query.keyword?.trim().toLowerCase() ?? ''
 
@@ -131,15 +88,31 @@ export function useRolePage() {
     })
   })
 
-  const menuTreeOptions = computed<TreeOption[]>(() => menus.value.map(toTreeOption))
-  const allMenus = computed(() => flattenMenus(menus.value))
+  // 菜单树形选项
+  const menuTreeOptions = computed<TreeOption[]>(() => menus.value.map(toRoleMenuTreeOption))
+
+  // 所有扁平化后的菜单
+  const allMenus = computed(() => flattenRoleMenus(menus.value))
+
+  // 非按钮类型的菜单ID集合（目录 + 菜单）
   const menuIDSet = computed(() => new Set(allMenus.value.filter((menu) => menu.type !== MenuType.Button).map((menu) => menu.id)))
+
+  // 按钮类型的菜单ID集合
   const buttonIDSet = computed(() => new Set(allMenus.value.filter((menu) => menu.type === MenuType.Button).map((menu) => menu.id)))
+
+  // 已勾选的菜单数量
   const checkedMenuCount = computed(() => checkedMenuIDs.value.filter((id) => menuIDSet.value.has(Number(id))).length)
+
+  // 已勾选的按钮数量
   const checkedButtonCount = computed(() => checkedMenuIDs.value.filter((id) => buttonIDSet.value.has(Number(id))).length)
+
+  // 已勾选的总数
   const checkedTotal = computed(() => checkedMenuIDs.value.length)
+
+  // 是否可以编辑选中的角色（超级管理员不可编辑）
   const canEditSelectedRole = computed(() => selectedRole.value !== null && selectedRole.value.code !== superAdminRoleCode)
 
+  // 角色切换后要同步整块权限面板，避免旧角色的勾选和接口行残留。
   watch(selectedRole, (role) => {
     if (!role) {
       checkedMenuIDs.value = []
@@ -148,25 +121,25 @@ export function useRolePage() {
     }
 
     checkedMenuIDs.value = [...role.menu_ids]
-    permissionRows.value = role.permissions.map((permission, index) => ({
-      id: index + 1,
-      path: permission.path,
-      method: permission.method,
-    }))
+    permissionRows.value = toPermissionRows(role)
   })
 
+  // 判断当前用户是否拥有指定按钮权限码
   function canUse(code: string) {
     return buttonPermissionCodes.value.includes(code)
   }
 
+  // 根据角色状态返回标签类型（success / error）
   function statusType(status: RoleStatus) {
-    return status === RoleStatus.Enabled ? 'success' : 'error'
+    return getRoleStatusTagType(status)
   }
 
+  // 选中指定角色
   function selectRole(role: RoleItem) {
     selectedRoleID.value = role.id
   }
 
+  // 从服务端加载角色列表
   async function loadRoles() {
     loading.value = true
     try {
@@ -189,62 +162,49 @@ export function useRolePage() {
     }
   }
 
+  // 从服务端加载菜单树数据
   async function loadMenus() {
     menus.value = await getAdminMenus()
   }
 
+  // 搜索角色
   async function handleSearch() {
     await loadRoles()
   }
 
+  // 重置搜索条件并重新加载角色列表
   function handleReset() {
-    query.keyword = ''
-    query.status = 0
+    Object.assign(query, defaultRoleListQuery())
     void loadRoles()
   }
 
+  // 打开创建角色的弹窗
   function openCreate() {
     formMode.value = 'create'
     Object.assign(formModel, defaultRoleFormModel())
     formVisible.value = true
   }
 
+  // 打开编辑角色的弹窗，将当前行数据填充到表单
   function openEdit(role: RoleItem) {
     formMode.value = 'edit'
-    Object.assign(formModel, {
-      id: role.id,
-      code: role.code,
-      name: role.name,
-      sort: role.sort,
-      status: role.status,
-      remark: role.remark,
-    })
+    Object.assign(formModel, toRoleFormModel(role))
     formVisible.value = true
   }
 
+  // 提交角色表单（新建或更新）
   async function submitRole() {
     await formRef.value?.validate()
     saving.value = true
     try {
       if (formMode.value === 'create') {
-        const created = await createRole({
-          code: formModel.code.trim(),
-          name: formModel.name.trim(),
-          sort: formModel.sort,
-          status: formModel.status,
-          remark: formModel.remark.trim(),
-        })
+        const created = await createRole(buildRoleCreatePayload(formModel))
         selectedRoleID.value = created.id
-        successText.value = '角色创建成功'
+        showSuccess('角色创建成功')
         message.success('角色创建成功')
       } else {
-        await updateRole(formModel.id, {
-          name: formModel.name.trim(),
-          sort: formModel.sort,
-          status: formModel.status,
-          remark: formModel.remark.trim(),
-        })
-        successText.value = '角色信息已更新'
+        await updateRole(formModel.id, buildRoleUpdatePayload(formModel))
+        showSuccess('角色信息已更新')
         message.success('角色信息已更新')
       }
 
@@ -255,54 +215,36 @@ export function useRolePage() {
     }
   }
 
+  // 切换角色的启用/禁用状态
   async function handleToggleRoleStatus(role: RoleItem) {
     const status = role.status === RoleStatus.Enabled ? RoleStatus.Disabled : RoleStatus.Enabled
     await updateRoleStatus(role.id, { status })
-    successText.value = `角色已${status === RoleStatus.Enabled ? '启用' : '禁用'}`
+    showSuccess(`角色已${status === RoleStatus.Enabled ? '启用' : '禁用'}`)
     message.success('角色状态已更新')
     await loadRoles()
   }
 
+  // 全选所有启用的菜单和按钮
   function handleCheckAll() {
     checkedMenuIDs.value = allMenus.value.filter((menu) => menu.status === MenuStatus.Enabled).map((menu) => menu.id)
   }
 
+  // 清空所有勾选的菜单和按钮
   function handleClearAll() {
     checkedMenuIDs.value = []
   }
 
+  // 新增一行API权限
   function addPermissionRow() {
-    permissionRows.value.push({
-      id: Date.now(),
-      path: '',
-      method: 'GET',
-    })
+    permissionRows.value.push(defaultPermissionRow())
   }
 
+  // 删除指定行的API权限
   function removePermissionRow(id: number) {
     permissionRows.value = permissionRows.value.filter((row) => row.id !== id)
   }
 
-  function normalizePermissions(rows: PermissionRow[]): RolePermissionItem[] {
-    const seen = new Set<string>()
-    const result: RolePermissionItem[] = []
-
-    for (const row of rows) {
-      const path = row.path.trim()
-      const method = row.method.trim().toUpperCase()
-
-      if (!path || !method) continue
-
-      const key = `${method} ${path}`
-      if (seen.has(key)) continue
-
-      seen.add(key)
-      result.push({ path, method })
-    }
-
-    return result
-  }
-
+  // 保存权限（菜单权限或API权限）
   async function handleSavePermissions() {
     if (!selectedRole.value || !canEditSelectedRole.value) {
       return
@@ -311,15 +253,15 @@ export function useRolePage() {
     saving.value = true
     try {
       if (activeTab.value === 'api') {
-        const permissions = normalizePermissions(permissionRows.value)
+        const permissions = normalizeRolePermissions(permissionRows.value)
         await updateRolePermissions(selectedRole.value.id, { permissions })
-        successText.value = '接口权限已更新'
+        showSuccess('接口权限已更新')
         message.success('接口权限已更新')
       } else {
         await updateRoleMenus(selectedRole.value.id, {
           menu_ids: checkedMenuIDs.value.map(Number),
         })
-        successText.value = '菜单与按钮权限已更新'
+        showSuccess('菜单与按钮权限已更新')
         message.success('菜单与按钮权限已更新')
       }
 
@@ -329,6 +271,7 @@ export function useRolePage() {
     }
   }
 
+  // 组件挂载时并行加载菜单和角色数据
   onMounted(async () => {
     await Promise.all([loadMenus(), loadRoles()])
   })
@@ -342,6 +285,7 @@ export function useRolePage() {
     checkedMenuCount,
     checkedMenuIDs,
     checkedTotal,
+    closeSuccess,
     filteredRoles,
     formMode,
     formModel,

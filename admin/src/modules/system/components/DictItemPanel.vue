@@ -1,3 +1,4 @@
+<!-- DictItemPanel 展示字典类型下的字典项列表，支持增删改。 -->
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NEmpty, NInput, NPagination, NSelect, NTag } from 'naive-ui'
@@ -27,7 +28,7 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="min-h-0 rounded-lg" :bordered="false" content-style="height: 100%; padding: 0;">
+  <NCard class="min-h-0 rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column; padding: 0;">
     <div class="dict-card-shell">
       <div class="dict-card-shell__header">
         <div>
@@ -66,13 +67,14 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 
         <NDataTable
           remote
-          class="dict-table flex-1"
+          class="dict-table h-full min-h-0"
           :columns="columns"
           :data="items"
           :loading="loading"
           :pagination="false"
           :row-key="(row: DictItem) => row.id"
           :bordered="false"
+          style="height: 100%;"
           flex-height
         />
 
@@ -102,9 +104,10 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 
 <style scoped>
 .dict-card-shell {
-  display: flex;
+  display: grid;
+  min-height: 0;
   height: 100%;
-  flex-direction: column;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .dict-card-shell__header {

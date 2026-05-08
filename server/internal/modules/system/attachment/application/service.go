@@ -1,3 +1,4 @@
+// Package application 实现附件的业务逻辑：按业务关联查询附件列表。
 package application
 
 import (
@@ -13,6 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Service 封装附件的业务逻辑，包括列表查询、上传创建、更新和状态切换。
 type Service struct {
 	tx          AttachmentTransactor
 	repo        AttachmentRepository
@@ -23,6 +25,7 @@ func NewService(tx AttachmentTransactor, repo AttachmentRepository, fileService 
 	return &Service{tx: tx, repo: repo, fileService: fileService}
 }
 
+// List 按关键词、分类、业务类型、扩展名和状态分页查询附件列表。
 func (s *Service) List(query attachmentdomain.ListQuery) (attachmentdomain.ListResponse, error) {
 	if _, err := attachmentdomain.NormalizeStatusFilter(query.Status); err != nil {
 		return attachmentdomain.ListResponse{}, err
@@ -42,6 +45,7 @@ func (s *Service) List(query attachmentdomain.ListQuery) (attachmentdomain.ListR
 	return attachmentdomain.ListResponse{Items: result, Total: total, Page: page, PageSize: pageSize}, nil
 }
 
+// CreateByUpload 上传文件并创建附件记录，失败时自动回滚已上传的文件。
 func (s *Service) CreateByUpload(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader, req attachmentdomain.CreateRequest) (attachmentdomain.Response, error) {
 	uploaded, err := s.fileService.UploadEntity(ctx, uploaderID, fileHeader)
 	if err != nil {
@@ -79,6 +83,7 @@ func (s *Service) CreateByUpload(ctx context.Context, uploaderID uint, fileHeade
 	return attachmentdomain.BuildResponse(view), nil
 }
 
+// Update 更新指定附件的基本信息。
 func (s *Service) Update(id uint, req attachmentdomain.UpdateRequest) (attachmentdomain.Response, error) {
 	req, err := attachmentdomain.NormalizeUpdateRequest(req)
 	if err != nil {
@@ -108,6 +113,7 @@ func (s *Service) Update(id uint, req attachmentdomain.UpdateRequest) (attachmen
 	return attachmentdomain.BuildResponse(view), nil
 }
 
+// UpdateStatus 切换附件的启用/禁用状态。
 func (s *Service) UpdateStatus(id uint, status model.SystemAttachmentStatus) error {
 	if !attachmentdomain.ValidStatus(status) {
 		return errorsx.BadRequest("附件状态不正确")

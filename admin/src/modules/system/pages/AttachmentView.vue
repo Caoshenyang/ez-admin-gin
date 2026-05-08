@@ -45,6 +45,7 @@ const {
   formatSubmitUploadError,
 } = useAttachmentPage()
 
+// copyURL 函数。
 function copyURL(url: string) {
   navigator.clipboard.writeText(url).then(
     () => message.success('链接已复制'),
@@ -52,6 +53,7 @@ function copyURL(url: string) {
   )
 }
 
+// handleUploadSubmit 函数。
 async function handleUploadSubmit() {
   try {
     await submitUpload()
@@ -61,11 +63,13 @@ async function handleUploadSubmit() {
   }
 }
 
+// handleEditSubmitAction 函数。
 async function handleEditSubmitAction() {
   await handleEditSubmit(submitEdit)
   message.success('附件信息已更新')
 }
 
+// handleStatusChange 函数。
 async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0], status: Parameters<typeof handleToggleStatus>[1]) {
   await handleToggleStatus(row, status)
   message.success('附件状态已更新')

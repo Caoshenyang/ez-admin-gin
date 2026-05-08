@@ -1,3 +1,4 @@
+// Package application 实现 auth 模块的业务逻辑：登录、菜单查询、账户管理和仪表盘。
 package application
 
 import (
@@ -7,25 +8,25 @@ import (
 	"time"
 
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
-	authinfra "ez-admin-gin/server/internal/modules/auth/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
-	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	"ez-admin-gin/server/internal/platform/model"
 
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// LoginService 处理用户登录认证与登录日志记录。
 type LoginService struct {
-	repo  *authinfra.Repository
-	token *authnPlatform.Manager
+	repo  LoginRepository
+	token TokenIssuer
 	log   *zap.Logger
 }
 
-func NewLoginService(repo *authinfra.Repository, token *authnPlatform.Manager, log *zap.Logger) *LoginService {
+func NewLoginService(repo LoginRepository, token TokenIssuer, log *zap.Logger) *LoginService {
 	return &LoginService{repo: repo, token: token, log: log}
 }
 
+// Login 校验用户名密码，成功后签发 Access Token 并记录登录日志。
 func (s *LoginService) Login(
 	ctx context.Context,
 	req authdomain.LoginRequest,
@@ -76,6 +77,7 @@ func (s *LoginService) Login(
 	}, nil
 }
 
+// RecordLogin 写入一条登录日志，失败仅 warn 不中断主流程。
 func (s *LoginService) RecordLogin(
 	_ context.Context,
 	userID uint,

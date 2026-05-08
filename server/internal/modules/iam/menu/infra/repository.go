@@ -1,3 +1,4 @@
+// Package infra 实现菜单的数据访问层。
 package infra
 
 import (
@@ -10,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 实现菜单的数据访问层。
 type Repository struct {
 	db *gorm.DB
 }
@@ -18,6 +20,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 返回所有菜单记录。
 func (r *Repository) List() ([]model.Menu, error) {
 	var items []model.Menu
 	if err := r.db.Order("sort ASC, id ASC").Find(&items).Error; err != nil {
@@ -27,6 +30,7 @@ func (r *Repository) List() ([]model.Menu, error) {
 	return items, nil
 }
 
+// FindByID 按 ID 查找菜单。
 func (r *Repository) FindByID(db *gorm.DB, menuID uint) (model.Menu, error) {
 	var item model.Menu
 	err := db.First(&item, menuID).Error
@@ -40,6 +44,7 @@ func (r *Repository) FindByID(db *gorm.DB, menuID uint) (model.Menu, error) {
 	return item, nil
 }
 
+// CodeExists 检查菜单编码是否已存在。
 func (r *Repository) CodeExists(db *gorm.DB, code string) (bool, error) {
 	var item model.Menu
 	err := db.Unscoped().Where("code = ?", code).First(&item).Error
@@ -53,6 +58,7 @@ func (r *Repository) CodeExists(db *gorm.DB, code string) (bool, error) {
 	return false, err
 }
 
+// ParentUsable 校验父级菜单是否可挂载指定类型的子节点。
 func (r *Repository) ParentUsable(db *gorm.DB, parentID uint, menuType model.MenuType, currentID uint) error {
 	if parentID == 0 {
 		if menuType != model.MenuTypeDirectory {
@@ -83,6 +89,7 @@ func (r *Repository) ParentUsable(db *gorm.DB, parentID uint, menuType model.Men
 	return nil
 }
 
+// CanDelete 校验菜单是否可以删除（无子节点且未分配给角色）。
 func (r *Repository) CanDelete(db *gorm.DB, menuID uint) error {
 	var childCount int64
 	if err := db.Model(&model.Menu{}).Where("parent_id = ?", menuID).Count(&childCount).Error; err != nil {
@@ -103,10 +110,12 @@ func (r *Repository) CanDelete(db *gorm.DB, menuID uint) error {
 	return nil
 }
 
+// Create 创建菜单记录。
 func (r *Repository) Create(db *gorm.DB, item *model.Menu) error {
 	return db.Create(item).Error
 }
 
+// UpdateBase 更新菜单的基本信息字段。
 func (r *Repository) UpdateBase(db *gorm.DB, item *model.Menu, req menudomain.UpdateRequest) error {
 	if err := db.Model(item).Updates(map[string]any{
 		"parent_id": req.ParentID,
@@ -134,6 +143,7 @@ func (r *Repository) UpdateBase(db *gorm.DB, item *model.Menu, req menudomain.Up
 	return nil
 }
 
+// UpdateStatus 更新菜单的启用/禁用状态。
 func (r *Repository) UpdateStatus(db *gorm.DB, item *model.Menu, status model.MenuStatus) error {
 	if err := db.Model(item).Update("status", status).Error; err != nil {
 		return err
@@ -142,6 +152,7 @@ func (r *Repository) UpdateStatus(db *gorm.DB, item *model.Menu, status model.Me
 	return nil
 }
 
+// Delete 删除菜单记录。
 func (r *Repository) Delete(db *gorm.DB, item *model.Menu) error {
 	return db.Delete(item).Error
 }

@@ -14,7 +14,7 @@ import {
 } from 'naive-ui'
 import { computed, h } from 'vue'
 
-import { formatTime } from '@/utils/format'
+import { displayText, formatTime } from '@/utils/format'
 import { UserStatus, type UserItem } from '../types/user'
 
 const props = defineProps<{
@@ -49,8 +49,8 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 180,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#111827]' }, row.username),
-        h('p', { class: 'text-xs text-[#6B7280]' }, row.nickname),
+        h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.username)),
+        h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.nickname)),
       ])
     },
   },
@@ -198,7 +198,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="height: 100%; padding: 0;">
+  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
     <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
       <NSpace :size="12">
         <span class="text-sm text-[#6B7280]">已选 {{ selectedCount }} 项</span>
@@ -214,8 +214,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 
     <NDataTable
       remote
-      class="user-table h-full"
-      style="height: calc(100% - 105px)"
+      class="user-table"
       :columns="columns"
       :data="users"
       :loading="loading"
@@ -223,7 +222,6 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
       :row-key="(row: UserItem) => row.id"
       :checked-row-keys="checkedRowKeys"
       :bordered="false"
-      flex-height
       @update:checked-row-keys="(keys) => emit('checkedRowKeysChange', keys)"
     />
 

@@ -1,3 +1,4 @@
+// Package domain 定义岗位的请求/响应结构、权限常量和业务校验规则。
 package domain
 
 import (

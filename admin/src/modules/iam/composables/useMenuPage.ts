@@ -2,6 +2,7 @@ import type { FormInst, FormRules, SelectOption } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import {
   createMenu,
@@ -11,179 +12,103 @@ import {
   updateMenuStatus,
 } from '../api/menu'
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
+import { routeComponentOptions } from '@/router/route-components'
+import type { MenuFormModel, MenuQuery } from '../types/menu-page'
+import {
+  buildMenuPayload,
+  buildMenuParentOptions,
+  defaultMenuQuery,
+  defaultMenuFormModel,
+  filterMenus,
+  flattenMenus,
+  menuFormTypeOptions,
+  menuStatusOptions,
+  menuTypeOptions,
+  toMenuFormModel,
+} from './menu-page.utils'
 
-export interface MenuFormModel {
-  id: number
-  parent_id: number
-  type: MenuType
-  code: string
-  title: string
-  path: string
-  component: string
-  icon: string
-  sort: number
-  status: MenuStatus
-  remark: string
-}
-
-export interface MenuQuery {
-  keyword: string
-  type: 0 | MenuType
-  status: 0 | MenuStatus
-}
-
-function defaultFormModel(): MenuFormModel {
-  return {
-    id: 0,
-    parent_id: 0,
-    type: MenuType.Directory,
-    code: '',
-    title: '',
-    path: '',
-    component: '',
-    icon: '',
-    sort: 10,
-    status: MenuStatus.Enabled,
-    remark: '',
-  }
-}
-
-function flattenMenus(items: AdminMenu[]): AdminMenu[] {
-  const result: AdminMenu[] = []
-
-  for (const item of items) {
-    result.push(item)
-    result.push(...flattenMenus(item.children ?? []))
-  }
-
-  return result
-}
-
-function menuLevel(flatMenus: AdminMenu[], id: number) {
-  let level = 0
-  let current = flatMenus.find((menu) => menu.id === id)
-
-  while (current && current.parent_id !== 0) {
-    level += 1
-    current = flatMenus.find((menu) => menu.id === current?.parent_id)
-  }
-
-  return level
-}
-
-function filterMenus(items: AdminMenu[], query: MenuQuery): AdminMenu[] {
-  const keyword = query.keyword.trim().toLowerCase()
-  const result: AdminMenu[] = []
-
-  for (const item of items) {
-    const children = filterMenus(item.children ?? [], query)
-    const matchedKeyword =
-      keyword === '' ||
-      item.title.toLowerCase().includes(keyword) ||
-      item.code.toLowerCase().includes(keyword) ||
-      item.path.toLowerCase().includes(keyword)
-    const matchedType = query.type === 0 || item.type === query.type
-    const matchedStatus = query.status === 0 || item.status === query.status
-
-    if ((matchedKeyword && matchedType && matchedStatus) || children.length > 0) {
-      result.push({
-        ...item,
-        children: children.length > 0 ? children : undefined,
-      })
-    }
-  }
-
-  return result
-}
-
+// 菜单管理页面组合式函数，封装菜单树加载、创建、编辑、删除、状态切换等逻辑
 export function useMenuPage() {
   const message = useMessage()
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const saving = ref(false)
   const menus = ref<AdminMenu[]>([])
-  const successText = ref('')
   const formVisible = ref(false)
   const formMode = ref<'create' | 'edit'>('create')
   const formRef = ref<FormInst | null>(null)
   const expandedRowKeys = ref<Array<string | number>>([])
 
-  const query = reactive<MenuQuery>({
-    keyword: '',
-    type: 0,
-    status: MenuStatus.Enabled,
-  })
+  // 搜索查询条件
+  const query = reactive<MenuQuery>(defaultMenuQuery())
 
-  const formModel = reactive<MenuFormModel>(defaultFormModel())
+  // 菜单表单数据
+  const formModel = reactive<MenuFormModel>(defaultMenuFormModel())
 
-  const typeOptions: SelectOption[] = [
-    { label: '类型：全部', value: 0 },
-    { label: '目录', value: MenuType.Directory },
-    { label: '菜单', value: MenuType.Menu },
-    { label: '按钮', value: MenuType.Button },
-  ]
+  // 菜单类型筛选选项
+  const typeOptions: SelectOption[] = menuTypeOptions
 
-  const formTypeOptions: SelectOption[] = [
-    { label: '目录', value: MenuType.Directory },
-    { label: '菜单', value: MenuType.Menu },
-    { label: '按钮', value: MenuType.Button },
-  ]
+  // 表单中的菜单类型选项（不含"全部"）
+  const formTypeOptions: SelectOption[] = menuFormTypeOptions
 
-  const statusOptions: SelectOption[] = [
-    { label: '状态：全部', value: 0 },
-    { label: '启用', value: MenuStatus.Enabled },
-    { label: '禁用', value: MenuStatus.Disabled },
-  ]
+  // 状态筛选选项
+  const statusOptions: SelectOption[] = menuStatusOptions
 
+  // 表单校验规则
   const rules: FormRules = {
     code: [{ required: true, message: '请输入权限标识', trigger: 'blur' }],
     title: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
   }
 
+  // 扁平化后的菜单列表（用于统计和搜索）
   const flatMenus = computed(() => flattenMenus(menus.value))
+
+  // 所有菜单行的 key 集合（用于展开全部）
   const allRowKeys = computed(() => flatMenus.value.map((m) => m.id))
+
+  // 根据搜索条件过滤后的菜单树
   const displayMenus = computed(() => filterMenus(menus.value, query))
 
+  // 目录数量统计
   const directoryCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Directory).length)
+
+  // 菜单数量统计
   const menuCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Menu).length)
+
+  // 按钮数量统计
   const buttonCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Button).length)
 
+  // 上级菜单选择选项，排除按钮类型和当前编辑的菜单
   const parentOptions = computed<SelectOption[]>(() => {
-    const options: SelectOption[] = [{ label: '根节点', value: 0 }]
-
-    for (const menu of flatMenus.value) {
-      if (menu.type === MenuType.Button || menu.id === formModel.id) {
-        continue
-      }
-
-      options.push({
-        label: `${'　'.repeat(menuLevel(flatMenus.value, menu.id))}${menu.title}`,
-        value: menu.id,
-      })
-    }
-
-    return options
+    return buildMenuParentOptions(flatMenus.value, formModel.id)
   })
 
+  // 判断当前用户是否拥有指定按钮权限码
   function canUse(code: string) {
     return buttonPermissionCodes.value.includes(code)
   }
 
+  // 展开所有菜单行
   function expandAll() {
     expandedRowKeys.value = allRowKeys.value
   }
 
+  // 折叠所有菜单行
   function collapseAll() {
     expandedRowKeys.value = []
   }
 
+  // 处理展开/折叠行变化
   function handleExpandedChange(keys: Array<string | number>) {
     expandedRowKeys.value = keys
   }
 
+  // 重置菜单表单为默认值
   function resetForm() {
-    Object.assign(formModel, defaultFormModel())
+    Object.assign(formModel, defaultMenuFormModel())
   }
 
+  // 从服务端加载菜单树数据
   async function loadMenus() {
     loading.value = true
     try {
@@ -194,12 +119,14 @@ export function useMenuPage() {
     }
   }
 
+  // 打开创建根级菜单的弹窗
   function openCreateRoot() {
     formMode.value = 'create'
     resetForm()
     formVisible.value = true
   }
 
+  // 打开创建子菜单的弹窗，自动设置上级菜单和默认类型
   function openCreateChild(row: AdminMenu) {
     formMode.value = 'create'
     resetForm()
@@ -209,56 +136,30 @@ export function useMenuPage() {
     formVisible.value = true
   }
 
+  // 打开编辑菜单的弹窗，将当前行数据填充到表单
   function openEdit(row: AdminMenu) {
     formMode.value = 'edit'
-    Object.assign(formModel, {
-      id: row.id,
-      parent_id: row.parent_id,
-      type: row.type,
-      code: row.code,
-      title: row.title,
-      path: row.path,
-      component: row.component,
-      icon: row.icon,
-      sort: row.sort,
-      status: row.status,
-      remark: row.remark,
-    })
+    Object.assign(formModel, toMenuFormModel(row))
     formVisible.value = true
   }
 
-  function normalizedPayload() {
-    const isButton = formModel.type === MenuType.Button
-
-    return {
-      parent_id: formModel.parent_id,
-      type: formModel.type,
-      title: formModel.title.trim(),
-      path: isButton ? '' : formModel.path.trim(),
-      component: isButton ? '' : formModel.component.trim(),
-      icon: formModel.icon.trim(),
-      sort: formModel.sort,
-      status: formModel.status,
-      remark: formModel.remark.trim(),
-    }
-  }
-
+  // 提交菜单表单（新建或更新）
   async function handleSubmit() {
     await formRef.value?.validate()
     saving.value = true
     try {
-      const payload = normalizedPayload()
+      const payload = buildMenuPayload(formModel)
 
       if (formMode.value === 'create') {
         await createMenu({
           ...payload,
           code: formModel.code.trim(),
         })
-        successText.value = '菜单创建成功'
+        showSuccess('菜单创建成功')
         message.success('菜单创建成功')
       } else {
         await updateMenu(formModel.id, payload)
-        successText.value = '菜单信息已更新'
+        showSuccess('菜单信息已更新')
         message.success('菜单信息已更新')
       }
 
@@ -269,16 +170,18 @@ export function useMenuPage() {
     }
   }
 
+  // 切换菜单的启用/禁用状态
   async function handleToggleStatus(row: AdminMenu, status: MenuStatus) {
     await updateMenuStatus(row.id, { status })
-    successText.value = `菜单已${status === MenuStatus.Enabled ? '启用' : '禁用'}`
+    showSuccess(`菜单已${status === MenuStatus.Enabled ? '启用' : '禁用'}`)
     message.success('菜单状态已更新')
     await loadMenus()
   }
 
+  // 删除指定菜单
   async function handleDelete(row: AdminMenu) {
     await deleteMenu(row.id)
-    successText.value = '菜单已删除'
+    showSuccess('菜单已删除')
     message.success('菜单已删除')
     await loadMenus()
 
@@ -287,18 +190,20 @@ export function useMenuPage() {
     }
   }
 
+  // 重置搜索条件
   function handleResetQuery() {
-    query.keyword = ''
-    query.type = 0
-    query.status = MenuStatus.Enabled
+    Object.assign(query, defaultMenuQuery())
   }
 
+  // 组件挂载时自动加载菜单列表
   onMounted(loadMenus)
 
   return {
     buttonCount,
     canUse,
+    closeSuccess,
     collapseAll,
+    componentOptions: routeComponentOptions,
     directoryCount,
     displayMenus,
     expandAll,

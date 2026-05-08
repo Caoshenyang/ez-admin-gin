@@ -26,7 +26,7 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="rounded-lg" :bordered="false" content-style="height: 100%;">
+  <NCard class="rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column;">
     <div class="flex h-full flex-col overflow-hidden">
       <div class="mb-4">
         <h2 class="text-lg font-bold text-[#111827]">角色列表</h2>

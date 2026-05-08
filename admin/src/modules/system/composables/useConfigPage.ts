@@ -1,33 +1,29 @@
 import type { DataTableColumns, FormRules } from 'naive-ui'
 import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
-import { h, ref } from 'vue'
+import { h } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { useStatusToggle } from '@/composables/useStatusToggle'
+import { displayText } from '@/utils/format'
 import { createConfig, getConfigs, updateConfig, updateConfigStatus } from '../api/config'
 import { ConfigStatus, type ConfigItem, type ConfigListQuery } from '../types/config'
+import {
+  buildConfigCreatePayload,
+  buildConfigUpdatePayload,
+  defaultConfigFormModel,
+  defaultConfigListQuery,
+  toConfigFormModel,
+  type ConfigFormModel,
+} from './config-page.utils'
 
-export interface ConfigFormModel {
-  id: number
-  group_code: string
-  key: string
-  name: string
-  value: string
-  sort: number
-  status: ConfigStatus
-  remark: string
-}
-
-function defaultFormModel(): ConfigFormModel {
-  return { id: 0, group_code: '', key: '', name: '', value: '', sort: 0, status: ConfigStatus.Enabled, remark: '' }
-}
-
+// 系统配置管理页面组合式函数，封装配置列表、创建、编辑、状态切换等逻辑
 export function useConfigPage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const successText = ref('')
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const {
     items: configs,
@@ -40,15 +36,11 @@ export function useConfigPage() {
     handlePageChange,
     handlePageSizeChange,
   } = useRemotePagination<ConfigItem, ConfigListQuery>(getConfigs, {
-    page: 1,
-    page_size: 10,
-    keyword: '',
-    group_code: '',
-    status: 0,
+    ...defaultConfigListQuery(),
   })
 
   const { formRef, formVisible, formMode, formModel, saving, rules, openCreate, openEdit, handleSubmit } =
-    useModalForm<ConfigFormModel>(defaultFormModel, {
+    useModalForm<ConfigFormModel>(defaultConfigFormModel, {
       rules: {
         group_code: [{ required: true, message: '请输入配置分组', trigger: 'blur' }],
         key: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
@@ -59,18 +51,23 @@ export function useConfigPage() {
 
   const { handleToggleStatus } = useStatusToggle(updateConfigStatus, {
     onSuccess: async () => {
-      successText.value = '配置状态已更新'
+      showSuccess('配置状态已更新')
       await load()
     },
   })
 
+  const openEditForm = (row: ConfigItem) => {
+    openEdit(toConfigFormModel(row))
+  }
+
+  // 配置列表表格列定义
   const columns: DataTableColumns<ConfigItem> = [
     {
       title: '分组',
       key: 'group_code',
       width: 140,
       render(row) {
-        return h(NTag, { size: 'small', bordered: false, type: 'info' }, { default: () => row.group_code })
+        return h(NTag, { size: 'small', bordered: false, type: 'info' }, { default: () => displayText(row.group_code) })
       },
     },
     {
@@ -78,17 +75,26 @@ export function useConfigPage() {
       key: 'key',
       width: 200,
       ellipsis: { tooltip: true },
+      render(row) {
+        return displayText(row.key)
+      },
     },
     {
       title: '名称',
       key: 'name',
       width: 160,
+      render(row) {
+        return displayText(row.name)
+      },
     },
     {
       title: '值',
       key: 'value',
       minWidth: 180,
       ellipsis: { tooltip: true },
+      render(row) {
+        return displayText(row.value)
+      },
     },
     {
       title: '排序',
@@ -124,7 +130,7 @@ export function useConfigPage() {
                 canUse('system:config:update')
                   ? h(
                       NButton,
-                      { size: 'small', ghost: true, type: 'info', onClick: () => openEdit(row) },
+                      { size: 'small', ghost: true, type: 'info', onClick: () => openEditForm(row) },
                       { default: () => '编辑' },
                     )
                   : null,
@@ -154,22 +160,15 @@ export function useConfigPage() {
     },
   ]
 
+  // 提交配置表单（新建或更新）
   async function submitForm() {
-    const payload = {
-      group_code: formModel.group_code,
-      name: formModel.name,
-      value: formModel.value,
-      sort: formModel.sort,
-      status: formModel.status,
-      remark: formModel.remark,
-    }
     if (formMode.value === 'create') {
-      await createConfig({ ...payload, key: formModel.key })
-      successText.value = '配置创建成功'
+      await createConfig(buildConfigCreatePayload(formModel))
+      showSuccess('配置创建成功')
       message.success('配置创建成功')
     } else {
-      await updateConfig(formModel.id, payload)
-      successText.value = '配置已更新'
+      await updateConfig(formModel.id, buildConfigUpdatePayload(formModel))
+      showSuccess('配置已更新')
       message.success('配置更新成功')
     }
     await load()
@@ -177,6 +176,7 @@ export function useConfigPage() {
 
   return {
     canUse,
+    closeSuccess,
     columns,
     configs,
     formMode,
@@ -191,6 +191,7 @@ export function useConfigPage() {
     load,
     loading,
     openCreate,
+    openEdit: openEditForm,
     query,
     rules,
     saving,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NButton, NDrawer, NDrawerContent, NTag } from 'naive-ui'
 
+import { displayText } from '@/utils/format'
 import type { OperationLogItem } from '../types/operation-log'
 import {
   formatTimeFull,
@@ -8,7 +9,7 @@ import {
   getModule,
   getRiskLevel,
   riskMeta,
-} from '../composables/useOperationLogPage'
+} from '../composables/operation-log-page.utils'
 
 defineProps<{
   detailRow: OperationLogItem | null
@@ -51,7 +52,7 @@ defineEmits<{
           <div class="detail-section__head">请求概览</div>
           <div class="detail-kv">
             <div class="detail-kv__label">请求地址</div>
-            <div class="detail-kv__value font-mono text-[13px]">{{ detailRow.method }} {{ detailRow.path }}</div>
+            <div class="detail-kv__value font-mono text-[13px]">{{ displayText(detailRow.method) }} {{ displayText(detailRow.path) }}</div>
           </div>
           <div class="detail-kv">
             <div class="detail-kv__label">路由模板</div>
@@ -91,15 +92,15 @@ defineEmits<{
 
         <div class="detail-terminal">
           <div class="detail-terminal__head">请求上下文</div>
-          <div class="detail-terminal__line">{{ detailRow.query || '无查询参数' }}</div>
-          <div class="detail-terminal__line detail-terminal__line--dim">UA: {{ detailRow.user_agent || '-' }}</div>
+          <div class="detail-terminal__line">{{ displayText(detailRow.query, '无查询参数') }}</div>
+          <div class="detail-terminal__line detail-terminal__line--dim">UA: {{ displayText(detailRow.user_agent) }}</div>
         </div>
 
         <div v-if="!detailRow.success" class="detail-error">
           <div class="detail-error__head">失败原因</div>
           <div class="detail-error__body">
             <span class="detail-error__code">HTTP {{ detailRow.status_code }}</span>
-            <span class="detail-error__msg">{{ detailRow.error_message || '未知错误' }}</span>
+            <span class="detail-error__msg">{{ displayText(detailRow.error_message, '未知错误') }}</span>
           </div>
         </div>
       </div>

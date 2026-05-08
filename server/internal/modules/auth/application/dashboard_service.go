@@ -5,7 +5,6 @@ import (
 	"time"
 
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
-	authinfra "ez-admin-gin/server/internal/modules/auth/infra"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
 	platformDatabase "ez-admin-gin/server/internal/platform/database"
@@ -16,10 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// DashboardService 聚合仪表盘所需的用户信息、健康检查、统计指标和最近记录。
 type DashboardService struct {
 	cfg   *platformConfig.Config
 	db    *gorm.DB
-	repo  *authinfra.Repository
+	repo  DashboardRepository
 	redis *goredis.Client
 	log   *zap.Logger
 }
@@ -27,7 +27,7 @@ type DashboardService struct {
 func NewDashboardService(
 	cfg *platformConfig.Config,
 	db *gorm.DB,
-	repo *authinfra.Repository,
+	repo DashboardRepository,
 	redis *goredis.Client,
 	log *zap.Logger,
 ) *DashboardService {
@@ -40,6 +40,7 @@ func NewDashboardService(
 	}
 }
 
+// Dashboard 聚合仪表盘所需的用户信息、健康检查、统计指标和最近记录。
 func (s *DashboardService) Dashboard(userID uint, fallbackUsername string) (authdomain.DashboardResponse, error) {
 	if err := platformDatabase.Ping(s.db); err != nil {
 		return authdomain.DashboardResponse{}, errorsx.ServiceUnavailable("数据库不可用", err)

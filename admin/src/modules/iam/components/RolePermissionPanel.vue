@@ -1,8 +1,9 @@
+<!-- RolePermissionPanel 展示并编辑指定角色的 Casbin 权限策略列表。 -->
 <script setup lang="ts">
 import type { SelectOption, TreeOption } from 'naive-ui'
 import { NButton, NCard, NCheckbox, NInput, NSelect, NTabPane, NTabs, NTag, NTree } from 'naive-ui'
 
-import type { PermissionRow, PermissionTab } from '../composables/useRolePage'
+import type { PermissionRow, PermissionTab } from '../types/role-page'
 import type { RoleItem } from '../types/role'
 
 defineProps<{
@@ -29,7 +30,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 </script>
 
 <template>
-  <NCard class="min-h-0 rounded-lg" :bordered="false" content-style="height: 100%; padding: 0;">
+  <NCard class="min-h-0 rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column; padding: 0;">
     <div class="flex h-full flex-col overflow-hidden">
       <div class="border-b border-[#E5E7EB] px-5 py-5">
         <div class="flex items-start justify-between gap-4">

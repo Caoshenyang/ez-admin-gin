@@ -1,3 +1,4 @@
+// Package infra 实现附件的数据访问层。
 package infra
 
 import (
@@ -9,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository 封装附件表的数据访问操作。
 type Repository struct {
 	db *gorm.DB
 }
@@ -17,6 +19,7 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+// List 联表查询附件和文件信息，按条件分页返回视图列表。
 func (r *Repository) List(query attachmentdomain.ListQuery, page int, pageSize int) ([]attachmentdomain.View, int64, error) {
 	queryDB := r.listBase(query)
 
@@ -42,16 +45,19 @@ func (r *Repository) List(query attachmentdomain.ListQuery, page int, pageSize i
 	return items, total, nil
 }
 
+// Create 在指定事务中插入一条新的附件记录。
 func (r *Repository) Create(tx *gorm.DB, item *attachmentdomain.Entity) error {
 	return r.dbOr(tx).Create(item).Error
 }
 
+// FindByID 在指定事务中按主键查找附件实体。
 func (r *Repository) FindByID(tx *gorm.DB, id uint) (attachmentdomain.Entity, error) {
 	var item attachmentdomain.Entity
 	err := r.dbOr(tx).First(&item, id).Error
 	return item, err
 }
 
+// FindViewByID 按 ID 联表查询附件和文件的完整视图。
 func (r *Repository) FindViewByID(id uint) (attachmentdomain.View, error) {
 	var item attachmentdomain.View
 	err := r.db.Table("sys_attachment AS a").
@@ -76,6 +82,7 @@ func (r *Repository) FindViewByID(id uint) (attachmentdomain.View, error) {
 	return item, nil
 }
 
+// UpdateBase 更新附件的基本字段（显示名称、分类、业务类型、状态、备注）。
 func (r *Repository) UpdateBase(tx *gorm.DB, item *attachmentdomain.Entity, req attachmentdomain.UpdateRequest) error {
 	item.DisplayName = req.DisplayName
 	item.Category = req.Category
@@ -92,6 +99,7 @@ func (r *Repository) UpdateBase(tx *gorm.DB, item *attachmentdomain.Entity, req 
 	}).Error
 }
 
+// UpdateStatus 更新附件的状态字段。
 func (r *Repository) UpdateStatus(tx *gorm.DB, item *attachmentdomain.Entity, status model.SystemAttachmentStatus) error {
 	item.Status = status
 	return r.dbOr(tx).Model(item).Update("status", status).Error

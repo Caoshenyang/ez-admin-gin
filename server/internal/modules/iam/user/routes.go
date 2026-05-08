@@ -14,8 +14,9 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
+	service := NewService(ServiceOptions{DB: opts.DB})
 	userapi.RegisterRoutes(group, userapi.RouteOptions{
-		DB:  opts.DB,
-		Log: opts.Log,
+		Service: service,
+		Log:     opts.Log,
 	})
 }

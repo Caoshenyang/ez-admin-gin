@@ -12,7 +12,8 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
-	h := newSetupHandler(opts.DB, opts.Log)
+	service := NewAppService(ServiceOptions{DB: opts.DB})
+	h := newSetupHandler(service, opts.Log)
 
 	api := r.Group("/api/v1")
 	setupGroup := api.Group("/setup")

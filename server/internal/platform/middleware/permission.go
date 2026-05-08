@@ -33,6 +33,7 @@ func Permission(db *gorm.DB, enforcer *authzPlatform.Enforcer, log *zap.Logger) 
 		}
 		act := c.Request.Method
 
+		// 多角色取并集，任一角色通过即放行。
 		for _, roleCode := range roleCodes {
 			allowed, err := enforcer.Enforce(roleCode, obj, act)
 			if err != nil {

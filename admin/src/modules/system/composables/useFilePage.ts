@@ -5,10 +5,13 @@ import { h, ref } from 'vue'
 
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
-import { formatSize, formatTime } from '@/utils/format'
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
+import { displayText, formatSize, formatTime } from '@/utils/format'
 import { getFiles, uploadFile } from '../api/file'
 import type { FileItem, FileListQuery } from '../types/file'
+import { defaultFileListQuery } from './file-page.utils'
 
+// 文件扩展名筛选选项
 const extFilterOptions = [
   { label: '类型：全部', value: '' },
   { label: '图片', value: '.png' },
@@ -18,12 +21,14 @@ const extFilterOptions = [
   { label: 'Word', value: '.docx' },
 ]
 
+// 图片文件扩展名列表
 const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']
 
+// 文件管理页面组合式函数，封装文件列表、上传、复制链接等逻辑
 export function useFilePage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const successText = ref('')
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const uploading = ref(false)
 
   const {
@@ -37,13 +42,10 @@ export function useFilePage() {
     handlePageChange,
     handlePageSizeChange,
   } = useRemotePagination<FileItem, FileListQuery>(getFiles, {
-    page: 1,
-    page_size: 10,
-    keyword: '',
-    ext: '',
-    status: 0,
+    ...defaultFileListQuery(),
   })
 
+  // 复制文件URL到剪贴板
   function copyURL(row: FileItem) {
     navigator.clipboard.writeText(row.url).then(
       () => message.success('链接已复制'),
@@ -51,6 +53,7 @@ export function useFilePage() {
     )
   }
 
+  // 处理文件上传，调用接口上传后刷新列表
   async function handleUpload({ file }: { file: UploadFileInfo }) {
     if (!file.file) return
 
@@ -59,7 +62,7 @@ export function useFilePage() {
       const formData = new FormData()
       formData.append('file', file.file)
       await uploadFile(formData)
-      successText.value = `文件 ${file.name} 上传成功`
+      showSuccess(`文件 ${file.name} 上传成功`)
       message.success('文件上传成功')
       await load()
     } catch {
@@ -69,6 +72,7 @@ export function useFilePage() {
     }
   }
 
+  // 文件列表表格列定义
   const columns: DataTableColumns<FileItem> = [
     {
       title: '文件',
@@ -88,8 +92,8 @@ export function useFilePage() {
             ],
           ),
           h('div', { class: 'min-w-0 leading-5' }, [
-            h('p', { class: 'truncate font-medium text-[#111827]' }, row.original_name),
-            h('p', { class: 'truncate text-xs text-[#6B7280]' }, row.mime_type),
+            h('p', { class: 'truncate font-medium text-[#111827]' }, displayText(row.original_name)),
+            h('p', { class: 'truncate text-xs text-[#6B7280]' }, displayText(row.mime_type)),
           ]),
         ])
       },
@@ -99,7 +103,7 @@ export function useFilePage() {
       key: 'ext',
       width: 100,
       render(row) {
-        return h(NTag, { size: 'small', bordered: false }, { default: () => row.ext })
+        return h(NTag, { size: 'small', bordered: false }, { default: () => displayText(row.ext) })
       },
     },
     {
@@ -143,6 +147,7 @@ export function useFilePage() {
 
   return {
     canUse,
+    closeSuccess,
     columns,
     extFilterOptions,
     files,

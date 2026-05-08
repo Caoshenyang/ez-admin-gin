@@ -5,12 +5,13 @@ import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, NSwit
 import FormModalHeader from '@/components/FormModalHeader.vue'
 import { MenuStatus, MenuType } from '@/modules/iam/types/menu'
 
-import type { MenuFormModel } from '../composables/useMenuPage'
+import type { MenuFormModel } from '../types/menu-page'
 
 defineProps<{
   formMode: 'create' | 'edit'
   formTypeOptions: SelectOption[]
   parentOptions: SelectOption[]
+  componentOptions: SelectOption[]
   rules: FormRules
   saving: boolean
   show: boolean
@@ -94,7 +95,13 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
         label="组件路径"
         path="component"
       >
-        <NInput v-model:value="formModel.component" placeholder="system/UserView" />
+        <NSelect
+          v-model:value="formModel.component"
+          filterable
+          tag
+          :options="componentOptions"
+          placeholder="system/UserView"
+        />
       </NFormItem>
 
       <NFormItem label="图标 / 排序">

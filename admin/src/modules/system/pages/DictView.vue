@@ -9,6 +9,7 @@ import { useDictPage } from '../composables/useDictPage'
 
 const {
   canUse,
+  closeSuccess,
   dictItemTotal,
   dictItems,
   dictTypeTotal,
@@ -65,7 +66,7 @@ const {
         </NButton>
       </div>
 
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[560px]" @close="successText = ''">
+      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[560px]" @close="closeSuccess">
         {{ successText }}
       </NAlert>
 

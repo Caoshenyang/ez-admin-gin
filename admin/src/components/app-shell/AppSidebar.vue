@@ -1,3 +1,4 @@
+<!-- AppSidebar 渲染侧栏菜单树，高亮当前路由并支持展开/折叠。 -->
 <script setup lang="ts">
 import type { MenuOption } from 'naive-ui'
 import { NLayoutSider, NMenu, NScrollbar } from 'naive-ui'

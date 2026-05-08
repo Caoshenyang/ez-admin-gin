@@ -1,3 +1,4 @@
+// OperationLogItem 类型定义。
 export interface OperationLogItem {
   id: number
   user_id: number
@@ -15,6 +16,7 @@ export interface OperationLogItem {
   created_at: string
 }
 
+// OperationLogListQuery 类型定义。
 export interface OperationLogListQuery {
   page: number
   page_size: number
@@ -24,6 +26,7 @@ export interface OperationLogListQuery {
   success?: string
 }
 
+// OperationLogListResponse 类型定义。
 export interface OperationLogListResponse {
   items: OperationLogItem[]
   total: number

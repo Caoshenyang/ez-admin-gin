@@ -14,6 +14,7 @@ import { getDashboardSummary } from '../api/dashboard'
 import { authMenus } from '@/router/dynamic-menu'
 import { DashboardLoginStatus, type DashboardData } from '../types/dashboard'
 import { MenuType, type AuthMenu } from '@/modules/iam/types/menu'
+import { displayText } from '@/utils/format'
 
 interface MetricCard {
   label: string
@@ -198,6 +199,7 @@ const focusFacts = computed(() => {
   ]
 })
 
+// flattenPageMenus 函数。
 function flattenPageMenus(menus: AuthMenu[]) {
   const result: AuthMenu[] = []
 
@@ -212,10 +214,12 @@ function flattenPageMenus(menus: AuthMenu[]) {
   return result
 }
 
+// findMenuPathByTitle 函数。
 function findMenuPathByTitle(menus: AuthMenu[], title: string) {
   return menus.find((menu) => menu.title === title)?.path || ''
 }
 
+// getQuickLinkDescription 函数。
 function getQuickLinkDescription(title: string) {
   const descriptionMap: Record<string, string> = {
     系统状态: '检查当前环境、数据库和 Redis 状态',
@@ -232,36 +236,45 @@ function getQuickLinkDescription(title: string) {
   return descriptionMap[title] || '进入对应系统页面继续处理业务'
 }
 
+// formatMetricValue 函数。
 function formatMetricValue(value?: number) {
   return typeof value === 'number' ? new Intl.NumberFormat('zh-CN').format(value) : '--'
 }
 
+// formatDateTime 函数。
 function formatDateTime(value: string) {
   return value ? new Date(value).toLocaleString() : '-'
 }
 
+// formatRoutePath 函数。
 function formatRoutePath(path: string) {
   return path.replace(/^\/api\/v1/, '') || path
 }
 
+// getHealthTagType 函数。
 function getHealthTagType(value: string) {
   return value === 'ok' ? 'success' : value === 'pending' ? 'default' : 'error'
 }
 
+// getStatusTagType 函数。
 function getStatusTagType(success: boolean) {
   return success ? 'success' : 'error'
 }
 
+// getLoginStatusTagType 函数。
 function getLoginStatusTagType(status: number) {
   return status === DashboardLoginStatus.Success ? 'success' : 'error'
 }
 
+// getLoginStatusLabel 函数。
 function getLoginStatusLabel(status: number) {
   return status === DashboardLoginStatus.Success ? '成功' : '失败'
 }
 
+// getErrorMessage 函数。
 function getErrorMessage(error: unknown) {
   if (typeof error === 'object' && error !== null) {
+    // response 函数。
     const response = (error as { response?: { data?: { message?: string } } }).response
     if (typeof response?.data?.message === 'string' && response.data.message) {
       return response.data.message
@@ -271,6 +284,7 @@ function getErrorMessage(error: unknown) {
   return '工作台数据获取失败，请稍后重试。'
 }
 
+// loadDashboard 函数。
 async function loadDashboard() {
   loading.value = true
   errorMessage.value = ''
@@ -285,6 +299,7 @@ async function loadDashboard() {
   }
 }
 
+// navigateTo 函数。
 function navigateTo(path: string) {
   if (!path) {
     return
@@ -421,7 +436,7 @@ onMounted(() => {
 
               <div class="mt-5 flex flex-wrap items-center gap-2 text-sm text-[#64748b]">
                 <span class="rounded-full bg-white/82 px-3 py-1.5">
-                  当前身份 {{ dashboard?.current_user.username || 'waiting' }}
+                  当前身份 {{ displayText(dashboard?.current_user.username, 'waiting') }}
                 </span>
                 <span class="rounded-full bg-white/82 px-3 py-1.5">
                   健康页 {{ healthPath ? '已接入' : '未开放' }}
@@ -505,7 +520,7 @@ onMounted(() => {
                 </NTag>
                 <NTag size="small" round :bordered="false">{{ item.method }}</NTag>
                 <span class="truncate text-sm font-medium text-[#111827]">
-                  {{ item.username || '系统' }} · {{ formatRoutePath(item.path) }}
+                  {{ displayText(item.username, '系统') }} · {{ formatRoutePath(item.path) }}
                 </span>
               </div>
               <span class="text-sm text-[#64748B]">{{ formatDateTime(item.created_at) }}</span>
@@ -542,7 +557,7 @@ onMounted(() => {
               <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="text-sm font-semibold text-[#111827]">{{ item.username }}</span>
+                    <span class="text-sm font-semibold text-[#111827]">{{ displayText(item.username) }}</span>
                     <NTag
                       :type="getLoginStatusTagType(item.status)"
                       size="small"
@@ -553,10 +568,10 @@ onMounted(() => {
                     </NTag>
                   </div>
                   <p class="mt-1 truncate text-sm text-[#64748B]">
-                    {{ item.message || '登录状态已记录' }}
+                    {{ displayText(item.message, '登录状态已记录') }}
                   </p>
                 </div>
-                <span class="text-xs text-[#94A3B8]">{{ item.ip || '-' }}</span>
+                <span class="text-xs text-[#94A3B8]">{{ displayText(item.ip) }}</span>
               </div>
               <p class="mt-3 text-xs text-[#94A3B8]">{{ formatDateTime(item.created_at) }}</p>
             </article>
@@ -582,7 +597,7 @@ onMounted(() => {
               :key="item.id"
               class="rounded-2xl border border-[#e5e7eb] px-4 py-3"
             >
-              <p class="text-sm font-semibold text-[#111827]">{{ item.title }}</p>
+              <p class="text-sm font-semibold text-[#111827]">{{ displayText(item.title) }}</p>
               <p class="mt-2 text-xs uppercase tracking-[0.18em] text-[#94A3B8]">
                 updated {{ formatDateTime(item.updated_at) }}
               </p>

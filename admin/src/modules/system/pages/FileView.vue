@@ -8,6 +8,7 @@ import { useFilePage } from '../composables/useFilePage'
 
 const {
   canUse,
+  closeSuccess,
   columns,
   extFilterOptions,
   files,
@@ -44,7 +45,7 @@ const {
         </NUpload>
       </div>
 
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="successText = ''">
+      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}
       </NAlert>
 

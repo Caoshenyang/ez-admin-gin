@@ -1,3 +1,4 @@
+// Package bootstrap 负责服务启动阶段的路由注册、中间件装配和 Swagger 初始化。
 package bootstrap
 
 import (

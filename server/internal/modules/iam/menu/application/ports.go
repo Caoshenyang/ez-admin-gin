@@ -8,8 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// MenuTransactor 是菜单模块使用的事务管理器类型别名。
 type MenuTransactor = database.Transactor
 
+// MenuRepository 定义菜单聚合根的数据访问接口。
 type MenuRepository interface {
 	List() ([]model.Menu, error)
 	FindByID(db *gorm.DB, menuID uint) (model.Menu, error)

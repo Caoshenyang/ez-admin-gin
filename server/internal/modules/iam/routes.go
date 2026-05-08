@@ -6,9 +6,9 @@ import (
 	postmodule "ez-admin-gin/server/internal/modules/iam/post"
 	rolemodule "ez-admin-gin/server/internal/modules/iam/role"
 	usermodule "ez-admin-gin/server/internal/modules/iam/user"
+	"ez-admin-gin/server/internal/modules/modulekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
-	"ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -23,12 +23,12 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
-	api := r.Group("/api/v1")
-	system := api.Group("/system")
-	system.Use(middleware.Auth(opts.Token, opts.Log))
-	system.Use(middleware.LoadActor(opts.DB, opts.Log))
-	system.Use(middleware.OperationLog(opts.DB, opts.Log))
-	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))
+	system := modulekit.NewProtectedSystemGroup(r, modulekit.ProtectedSystemGroupOptions{
+		Log:        opts.Log,
+		DB:         opts.DB,
+		Token:      opts.Token,
+		Permission: opts.Permission,
+	})
 
 	usermodule.RegisterRoutes(system, usermodule.RouteOptions{
 		DB:  opts.DB,

@@ -1,3 +1,4 @@
+<!-- UserRoleModal 弹窗分配用户角色，禁止修改当前登录用户自身的角色。 -->
 <script setup lang="ts">
 import { CloseOutline } from '@vicons/ionicons5'
 import type { SelectOption } from 'naive-ui'

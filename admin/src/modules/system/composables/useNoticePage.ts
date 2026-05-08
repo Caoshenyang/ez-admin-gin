@@ -1,32 +1,28 @@
 import type { DataTableColumns, FormRules } from 'naive-ui'
 import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
-import { h, ref } from 'vue'
+import { h } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { useStatusToggle } from '@/composables/useStatusToggle'
-import { formatTime } from '@/utils/format'
+import { displayText, formatTime } from '@/utils/format'
 import { createNotice, getNotices, updateNotice, updateNoticeStatus } from '../api/notice'
 import { NoticeStatus, type NoticeItem, type NoticeListQuery } from '../types/notice'
+import {
+  buildNoticePayload,
+  defaultNoticeFormModel,
+  defaultNoticeListQuery,
+  toNoticeFormModel,
+  type NoticeFormModel,
+} from './notice-page.utils'
 
-export interface NoticeFormModel {
-  id: number
-  title: string
-  content: string
-  sort: number
-  status: NoticeStatus
-  remark: string
-}
-
-function defaultFormModel(): NoticeFormModel {
-  return { id: 0, title: '', content: '', sort: 0, status: NoticeStatus.Enabled, remark: '' }
-}
-
+// 公告管理页面组合式函数，封装公告列表、创建、编辑、状态切换等逻辑
 export function useNoticePage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const successText = ref('')
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const {
     items: notices,
@@ -39,24 +35,26 @@ export function useNoticePage() {
     handlePageChange,
     handlePageSizeChange,
   } = useRemotePagination<NoticeItem, NoticeListQuery>(getNotices, {
-    page: 1,
-    page_size: 10,
-    keyword: '',
-    status: 0,
+    ...defaultNoticeListQuery(),
   })
 
   const { formRef, formVisible, formMode, formModel, saving, rules, openCreate, openEdit, handleSubmit } =
-    useModalForm<NoticeFormModel>(defaultFormModel, {
+    useModalForm<NoticeFormModel>(defaultNoticeFormModel, {
       rules: { title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }] } as FormRules,
     })
 
+  const openEditForm = (row: NoticeItem) => {
+    openEdit(toNoticeFormModel(row))
+  }
+
   const { handleToggleStatus } = useStatusToggle(updateNoticeStatus, {
     onSuccess: async () => {
-      successText.value = '公告状态已更新'
+      showSuccess('公告状态已更新')
       await load()
     },
   })
 
+  // 公告列表表格列定义
   const columns: DataTableColumns<NoticeItem> = [
     {
       title: '标题',
@@ -64,7 +62,7 @@ export function useNoticePage() {
       width: 220,
       ellipsis: { tooltip: true },
       render(row) {
-        return h('span', { class: 'font-semibold text-[#111827]' }, row.title)
+        return h('span', { class: 'font-semibold text-[#111827]' }, displayText(row.title))
       },
     },
     {
@@ -73,7 +71,7 @@ export function useNoticePage() {
       minWidth: 240,
       ellipsis: { tooltip: true },
       render(row) {
-        return h('span', { class: 'text-[#374151]' }, row.content || '-')
+        return h('span', { class: 'text-[#374151]' }, displayText(row.content))
       },
     },
     {
@@ -120,7 +118,7 @@ export function useNoticePage() {
                 canUse('system:notice:update')
                   ? h(
                       NButton,
-                      { size: 'small', ghost: true, type: 'info', onClick: () => openEdit(row) },
+                      { size: 'small', ghost: true, type: 'info', onClick: () => openEditForm(row) },
                       { default: () => '编辑' },
                     )
                   : null,
@@ -150,26 +148,15 @@ export function useNoticePage() {
     },
   ]
 
+  // 提交公告表单（新建或更新）
   async function submitForm() {
     if (formMode.value === 'create') {
-      await createNotice({
-        title: formModel.title,
-        content: formModel.content,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      successText.value = '公告创建成功'
+      await createNotice(buildNoticePayload(formModel))
+      showSuccess('公告创建成功')
       message.success('公告创建成功')
     } else {
-      await updateNotice(formModel.id, {
-        title: formModel.title,
-        content: formModel.content,
-        sort: formModel.sort,
-        status: formModel.status,
-        remark: formModel.remark,
-      })
-      successText.value = '公告已更新'
+      await updateNotice(formModel.id, buildNoticePayload(formModel))
+      showSuccess('公告已更新')
       message.success('公告更新成功')
     }
     await load()
@@ -177,6 +164,7 @@ export function useNoticePage() {
 
   return {
     canUse,
+    closeSuccess,
     columns,
     formMode,
     formModel,
@@ -191,6 +179,7 @@ export function useNoticePage() {
     loading,
     notices,
     openCreate,
+    openEdit: openEditForm,
     query,
     rules,
     saving,

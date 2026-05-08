@@ -4,7 +4,7 @@ import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NForm, NFormItem, NIcon, NInput, NInputNumber, NModal, NSelect } from 'naive-ui'
 
 import { STATUS_FORM_OPTIONS } from '@/constants/status'
-import type { ConfigFormModel } from '../composables/useConfigPage'
+import type { ConfigFormModel } from '../composables/config-page.utils'
 
 defineProps<{
   formMode: 'create' | 'edit'

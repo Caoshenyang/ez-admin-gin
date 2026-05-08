@@ -1,10 +1,13 @@
+// 角色状态常量：启用、禁用
 export const RoleStatus = {
   Enabled: 1,
   Disabled: 2,
 } as const
 
+// 角色状态联合类型
 export type RoleStatus = (typeof RoleStatus)[keyof typeof RoleStatus]
 
+// 角色列表项数据结构
 export interface RoleItem {
   id: number
   code: string
@@ -21,6 +24,7 @@ export interface RoleItem {
   updated_at: string
 }
 
+// 角色列表查询参数
 export interface RoleListQuery {
   page: number
   page_size: number
@@ -28,6 +32,7 @@ export interface RoleListQuery {
   status?: RoleStatus | 0
 }
 
+// 角色列表响应数据
 export interface RoleListResponse {
   items: RoleItem[]
   total: number
@@ -35,6 +40,7 @@ export interface RoleListResponse {
   page_size: number
 }
 
+// 创建角色的请求载荷
 export interface CreateRolePayload {
   code: string
   name: string
@@ -43,6 +49,7 @@ export interface CreateRolePayload {
   remark: string
 }
 
+// 更新角色的请求载荷（不含code字段）
 export interface UpdateRolePayload {
   name: string
   sort: number
@@ -50,19 +57,23 @@ export interface UpdateRolePayload {
   remark: string
 }
 
+// 更新角色状态的请求载荷
 export interface UpdateRoleStatusPayload {
   status: RoleStatus
 }
 
+// API权限项数据结构
 export interface RolePermissionItem {
   path: string
   method: string
 }
 
+// 更新角色API权限的请求载荷
 export interface UpdateRolePermissionsPayload {
   permissions: RolePermissionItem[]
 }
 
+// 更新角色菜单权限的请求载荷
 export interface UpdateRoleMenusPayload {
   menu_ids: number[]
 }

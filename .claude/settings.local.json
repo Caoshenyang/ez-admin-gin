@@ -82,7 +82,11 @@
       "Bash(ls -la admin/src/modules/iam/composables/)",
       "Bash(ls -la admin/src/modules/system/components/)",
       "Bash(ls -la admin/src/modules/system/composables/)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(xxd \"D:/A/ez-admin-gin/server/internal/platform/datascope/datascope.go\")",
+      "Bash(python *)",
+      "Bash(git stash *)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -2,22 +2,18 @@ package api
 
 import (
 	noticeapp "ez-admin-gin/server/internal/modules/system/notice/application"
-	noticeinfra "ez-admin-gin/server/internal/modules/system/notice/infra"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type RouteOptions struct {
-	DB  *gorm.DB
-	Log *zap.Logger
+	Service *noticeapp.Service
+	Log     *zap.Logger
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
-	repo := noticeinfra.NewRepository(opts.DB)
-	service := noticeapp.NewService(opts.DB, repo)
-	handler := NewHandler(service, opts.Log)
+	handler := NewHandler(opts.Service, opts.Log)
 
 	group.GET("/notices", handler.List)
 	group.POST("/notices", handler.Create)

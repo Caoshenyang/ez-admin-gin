@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
+// useAdminShellStore 管理后台布局的侧栏菜单高亮、展开状态和工作标签页。
 export interface WorkTab {
   title: string
   to: string
@@ -36,6 +37,7 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
       return
     }
 
+    // 合并而非替换，防止路由切换时折叠用户手动展开的菜单。
     const merged = new Set(expandedMenuKeys.value)
     for (const key of keys) {
       merged.add(key)
@@ -52,6 +54,7 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
 
   function closeTab(path: string) {
     openTabs.value = openTabs.value.filter((tab) => tab.to !== path)
+    // 至少保留工作台标签页，防止标签栏为空。
     if (openTabs.value.length === 0) {
       openTabs.value = [dashboardTab]
     }
@@ -69,6 +72,7 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
     openTabs.value = [dashboardTab]
   }
 
+  // refreshRoute 通过递增 nonce 强制路由组件重新挂载，实现页面刷新。
   function refreshRoute(path: string) {
     routeRefreshNonce.value = {
       ...routeRefreshNonce.value,
