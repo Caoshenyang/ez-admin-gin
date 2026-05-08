@@ -2,15 +2,8 @@
 import type { FormInst, FormRules, UploadFileInfo } from 'naive-ui'
 import { NButton, NForm, NFormItem, NInput, NModal, NSelect, NUpload } from 'naive-ui'
 
-import type { AttachmentStatus } from '../types/attachment'
-
-interface UploadFormModel {
-  display_name: string
-  category: string
-  biz_type: string
-  status: AttachmentStatus
-  remark: string
-}
+import { STATUS_FORM_OPTIONS } from '@/constants/status'
+import type { AttachmentUploadFormModel } from '../types/attachment-page'
 
 defineProps<{
   fileList: UploadFileInfo[]
@@ -26,7 +19,7 @@ defineEmits<{
 }>()
 
 const formRef = defineModel<FormInst | null>('formRef')
-const formModel = defineModel<UploadFormModel>('model', { required: true })
+const formModel = defineModel<AttachmentUploadFormModel>('model', { required: true })
 </script>
 
 <template>
@@ -53,7 +46,7 @@ const formModel = defineModel<UploadFormModel>('model', { required: true })
       </div>
 
       <NFormItem label="状态" path="status">
-        <NSelect v-model:value="formModel.status" :options="[{ label: '启用', value: 1 }, { label: '禁用', value: 2 }]" />
+        <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
       </NFormItem>
 
       <NFormItem label="备注" path="remark">

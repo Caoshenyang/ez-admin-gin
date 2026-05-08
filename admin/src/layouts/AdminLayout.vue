@@ -193,17 +193,19 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <NLayout class="h-screen overflow-hidden bg-[#F5F7FA]" has-sider>
+  <NLayout class="h-screen overflow-hidden bg-[#F6F8FB]" has-sider>
     <AppSidebar
       :active-menu-key="shellStore.activeMenuKey"
+      :collapsed="shellStore.sidebarCollapsed"
       :expanded-menu-keys="shellStore.expandedMenuKeys"
       :menu-options="naiveMenuOptions"
       @navigate="navigateTo"
       @select="handleMenuUpdate"
       @expand="handleMenuExpand"
+      @toggle="shellStore.toggleSidebar()"
     />
 
-    <NLayout class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F5F7FA]">
+    <NLayout class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F6F8FB]">
       <AppHeader
         :breadcrumb-text="breadcrumbText"
         :display-name="displayName"
@@ -224,7 +226,7 @@ onBeforeUnmount(() => {
 
       <NLayoutContent
         class="admin-layout-content min-h-0 flex-1"
-        content-style="padding: 32px; background: #F5F7FA;"
+        content-style="padding: 24px; background: #F6F8FB;"
         :native-scrollbar="false"
       >
         <RouterView v-slot="{ Component, route: currentRoute }">

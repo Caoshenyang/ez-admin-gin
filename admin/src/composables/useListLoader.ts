@@ -1,4 +1,4 @@
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import type { Ref } from 'vue'
 import type { ListQuery } from '@/types/pagination'
 
@@ -14,7 +14,7 @@ export function useListLoader<T, Q extends ListQuery>(
   const items: Ref<T[]> = ref([]) as Ref<T[]>
   const loading = ref(false)
 
-  const query = { ...defaultQuery } as Q
+  const query = reactive({ ...defaultQuery }) as Q
 
   async function load() {
     loading.value = true

@@ -1,72 +1,37 @@
 import axios from 'axios'
-import type { FormInst, FormRules, UploadFileInfo } from 'naive-ui'
+import type { FormInst, UploadFileInfo } from 'naive-ui'
 import { computed, ref } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
 import { useStatusToggle } from '@/composables/useStatusToggle'
+import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { createAttachment, getAttachments, updateAttachment, updateAttachmentStatus } from '../api/attachment'
-import { AttachmentStatus, type AttachmentItem, type AttachmentListQuery, type UpdateAttachmentPayload } from '../types/attachment'
-
-// 上传表单数据模型
-interface UploadFormModel {
-  display_name: string
-  category: string
-  biz_type: string
-  status: AttachmentStatus
-  remark: string
-}
-
-// 编辑表单数据模型，继承自更新载荷并增加 id 字段
-interface EditFormModel extends UpdateAttachmentPayload {
-  id: number
-}
-
-// 上传表单校验规则
-const uploadRules: FormRules = {
-  display_name: [{ max: 255, message: '附件名称不能超过 255 个字符', trigger: ['blur', 'input'] }],
-  category: [{ max: 64, message: '附件分类不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  biz_type: [{ max: 64, message: '业务类型不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  remark: [{ max: 255, message: '备注不能超过 255 个字符', trigger: ['blur', 'input'] }],
-}
-
-// 编辑表单校验规则
-const editRules: FormRules = {
-  display_name: [{ required: true, message: '请输入附件名称', trigger: ['blur', 'input'] }],
-  category: [{ max: 64, message: '附件分类不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  biz_type: [{ max: 64, message: '业务类型不能超过 64 个字符', trigger: ['blur', 'input'] }],
-  remark: [{ max: 255, message: '备注不能超过 255 个字符', trigger: ['blur', 'input'] }],
-}
-
-// 文件扩展名筛选选项
-const extFilterOptions = [
-  { label: '类型：全部', value: '' },
-  { label: '图片', value: '.png' },
-  { label: 'PDF', value: '.pdf' },
-  { label: 'Excel', value: '.xlsx' },
-  { label: 'Word', value: '.docx' },
-]
-
-// 生成编辑表单的默认值
-function defaultEditForm(): EditFormModel {
-  return { id: 0, display_name: '', category: '', biz_type: '', status: AttachmentStatus.Enabled, remark: '' }
-}
-
-// 生成上传表单的默认值
-function defaultUploadForm(): UploadFormModel {
-  return { display_name: '', category: '', biz_type: '', status: AttachmentStatus.Enabled, remark: '' }
-}
+import type { AttachmentItem, AttachmentListQuery } from '../types/attachment'
+import type { AttachmentEditFormModel, AttachmentUploadFormModel } from '../types/attachment-page'
+import {
+  attachmentEditRules,
+  attachmentExtFilterOptions,
+  attachmentUploadRules,
+  buildAttachmentEditPayload,
+  buildAttachmentUploadPayload,
+  defaultAttachmentEditForm,
+  defaultAttachmentQuery,
+  defaultAttachmentUploadForm,
+  toAttachmentEditFormModel,
+} from './attachment-page.utils'
 
 // 附件管理页面组合式函数，封装附件列表、上传、编辑、状态切换等逻辑
 export function useAttachmentPage() {
   const { canUse } = usePermission()
+  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const uploadModalVisible = ref(false)
   const selectedUploadFile = ref<File | null>(null)
   const uploadFileList = ref<UploadFileInfo[]>([])
   const uploadFormRef = ref<FormInst | null>(null)
   const saving = ref(false)
-  const uploadFormModel = ref<UploadFormModel>(defaultUploadForm())
+  const uploadFormModel = ref<AttachmentUploadFormModel>(defaultAttachmentUploadForm())
 
   const {
     formRef: editFormRef,
@@ -76,7 +41,7 @@ export function useAttachmentPage() {
     rules,
     openEdit: openEditModal,
     handleSubmit: handleEditSubmit,
-  } = useModalForm<EditFormModel>(defaultEditForm, { rules: editRules })
+  } = useModalForm<AttachmentEditFormModel>(defaultAttachmentEditForm, { rules: attachmentEditRules })
 
   const {
     items: attachments,
@@ -89,16 +54,15 @@ export function useAttachmentPage() {
     handlePageChange,
     handlePageSizeChange,
   } = useRemotePagination<AttachmentItem, AttachmentListQuery>(getAttachments, {
-    page: 1,
-    page_size: 10,
-    keyword: '',
-    category: '',
-    biz_type: '',
-    ext: '',
-    status: 0,
+    ...defaultAttachmentQuery(),
   })
 
-  const { handleToggleStatus } = useStatusToggle(updateAttachmentStatus, { onSuccess: load })
+  const { handleToggleStatus } = useStatusToggle(updateAttachmentStatus, {
+    onSuccess: async () => {
+      showSuccess('附件状态已更新')
+      await load()
+    },
+  })
 
   // 是否有附件数据行
   const hasRows = computed(() => attachments.value.length > 0)
@@ -110,7 +74,7 @@ export function useAttachmentPage() {
 
   // 重置上传弹窗的表单和文件状态
   function resetUploadModal() {
-    uploadFormModel.value = defaultUploadForm()
+    uploadFormModel.value = defaultAttachmentUploadForm()
     uploadFileList.value = []
     selectedUploadFile.value = null
   }
@@ -135,15 +99,10 @@ export function useAttachmentPage() {
 
     saving.value = true
     try {
-      await createAttachment(selectedUploadFile.value, {
-        display_name: uploadFormModel.value.display_name.trim() || undefined,
-        category: uploadFormModel.value.category.trim() || undefined,
-        biz_type: uploadFormModel.value.biz_type.trim() || undefined,
-        status: uploadFormModel.value.status,
-        remark: uploadFormModel.value.remark.trim() || undefined,
-      })
+      await createAttachment(selectedUploadFile.value, buildAttachmentUploadPayload(uploadFormModel.value))
       uploadModalVisible.value = false
       resetUploadModal()
+      showSuccess('附件上传成功')
       await load()
     } finally {
       saving.value = false
@@ -152,13 +111,8 @@ export function useAttachmentPage() {
 
   // 提交编辑附件信息
   async function submitEdit() {
-    await updateAttachment(editFormModel.id, {
-      display_name: editFormModel.display_name.trim(),
-      category: editFormModel.category.trim(),
-      biz_type: editFormModel.biz_type.trim(),
-      status: editFormModel.status,
-      remark: editFormModel.remark.trim(),
-    })
+    await updateAttachment(editFormModel.id, buildAttachmentEditPayload(editFormModel))
+    showSuccess('附件信息已更新')
     await load()
   }
 
@@ -176,12 +130,13 @@ export function useAttachmentPage() {
   return {
     attachments,
     canUse,
+    closeSuccess,
     editFormModel,
     editFormRef,
     editModalVisible,
     editRules: rules,
     editSaving,
-    extFilterOptions,
+    extFilterOptions: attachmentExtFilterOptions,
     handleEditSubmit,
     handlePageChange,
     handlePageSizeChange,
@@ -198,8 +153,9 @@ export function useAttachmentPage() {
     saving,
     submitEdit,
     submitUpload,
+    successText,
     total,
-    uploadRules,
+    uploadRules: attachmentUploadRules,
     uploadFileList,
     uploadFormModel,
     uploadFormRef,

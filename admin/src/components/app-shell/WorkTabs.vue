@@ -138,20 +138,20 @@ onBeforeUnmount(() => {
             v-for="tab in tabs"
             :key="tab.to"
             type="button"
-            class="admin-tab-chip"
-            :class="{ 'admin-tab-chip--active': activePath === tab.to }"
+            class="admin-tab-item"
+            :class="{ 'admin-tab-item--active': activePath === tab.to }"
             @click="emit('navigate', tab.to)"
             @contextmenu.prevent="handleTabContext($event, tab)"
             @auxclick="handleTabAuxClick($event, tab)"
           >
-            <span v-if="!tab.closable" class="admin-tab-chip__pin" />
+            <span v-if="!tab.closable" class="admin-tab-item__dot" />
             <span class="truncate">{{ tab.title }}</span>
             <span
               v-if="tab.closable"
-              class="admin-tab-chip__close"
+              class="admin-tab-item__close"
               @click.stop="emit('closeTab', tab.to)"
             >
-              <NIcon :component="CloseOutline" :size="14" />
+              <NIcon :component="CloseOutline" :size="13" />
             </span>
           </button>
         </div>
@@ -194,10 +194,10 @@ onBeforeUnmount(() => {
 <style scoped>
 .admin-tabs-bar {
   display: flex;
-  min-height: 42px;
+  height: 44px;
   align-items: center;
   gap: 0;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #E5EAF3;
   background: #ffffff;
   padding: 0 12px;
 }
@@ -238,7 +238,7 @@ onBeforeUnmount(() => {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .fade-enter-from,
@@ -251,60 +251,88 @@ onBeforeUnmount(() => {
   min-width: 100%;
   align-items: center;
   gap: 8px;
-  padding: 7px 4px;
+  padding: 6px 0;
 }
 
-.admin-tab-chip {
+.admin-tab-item {
   display: inline-flex;
   min-width: 0;
-  max-width: 220px;
+  max-width: 180px;
   align-items: center;
-  gap: 6px;
-  border: 1px solid #d9dee8;
-  border-radius: 999px;
-  background: #f9fafb;
-  padding: 0 12px;
-  height: 28px;
-  color: #374151;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0 14px;
+  height: 32px;
+  color: #475569;
+  font-size: 13px;
   cursor: pointer;
   transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    color 0.2s ease;
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+  white-space: nowrap;
 }
 
-.admin-tab-chip--active {
-  border-color: #18a058;
-  background: #18a058;
-  color: #ffffff;
-  font-weight: 600;
+.admin-tab-item:hover {
+  background: #F1F5F9;
+  border-color: #E5EAF3;
+  color: #2563EB;
 }
 
-.admin-tab-chip__pin {
+.admin-tab-item--active {
+  background: #EFF6FF;
+  border-color: transparent;
+  color: #2563EB;
+  font-weight: 500;
+}
+
+.admin-tab-item--active:hover {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
+.admin-tab-item__dot {
   display: inline-flex;
   width: 5px;
   height: 5px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.45;
+  opacity: 0.35;
   flex-shrink: 0;
 }
 
-.admin-tab-chip--active .admin-tab-chip__pin {
-  opacity: 0.7;
+.admin-tab-item--active .admin-tab-item__dot {
+  opacity: 0.6;
 }
 
-.admin-tab-chip__close {
+.admin-tab-item__close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 16px;
   height: 16px;
-  border-radius: 999px;
+  border-radius: 4px;
+  margin-right: -2px;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
 }
 
-.admin-tab-chip__close:hover {
-  background: rgba(255, 255, 255, 0.18);
+.admin-tab-item:hover .admin-tab-item__close,
+.admin-tab-item--active .admin-tab-item__close {
+  opacity: 0.45;
+}
+
+.admin-tab-item__close:hover {
+  opacity: 1 !important;
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.admin-tab-item--active .admin-tab-item__close:hover {
+  background: rgba(37, 99, 235, 0.12);
 }
 
 .admin-tabs-actions {
@@ -312,6 +340,6 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   align-items: center;
   gap: 4px;
-  margin-left: 4px;
+  margin-left: 8px;
 }
 </style>

@@ -2,11 +2,8 @@
 import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NForm, NFormItem, NInput, NModal, NSelect } from 'naive-ui'
 
-import type { UpdateAttachmentPayload } from '../types/attachment'
-
-interface EditFormModel extends UpdateAttachmentPayload {
-  id: number
-}
+import { STATUS_FORM_OPTIONS } from '@/constants/status'
+import type { AttachmentEditFormModel } from '../types/attachment-page'
 
 defineProps<{
   rules: FormRules
@@ -20,7 +17,7 @@ defineEmits<{
 }>()
 
 const formRef = defineModel<FormInst | null>('formRef')
-const formModel = defineModel<EditFormModel>('model', { required: true })
+const formModel = defineModel<AttachmentEditFormModel>('model', { required: true })
 </script>
 
 <template>
@@ -40,7 +37,7 @@ const formModel = defineModel<EditFormModel>('model', { required: true })
       </div>
 
       <NFormItem label="状态" path="status">
-        <NSelect v-model:value="formModel.status" :options="[{ label: '启用', value: 1 }, { label: '禁用', value: 2 }]" />
+        <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
       </NFormItem>
 
       <NFormItem label="备注" path="remark">

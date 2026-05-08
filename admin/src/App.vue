@@ -8,11 +8,11 @@ import {
   dateZhCN,
   zhCN,
 } from 'naive-ui'
-import { RouterView } from 'vue-router'
+import { themeOverrides } from './styles/theme'
 </script>
 
 <template>
-  <n-config-provider :locale="zhCN" :date-locale="dateZhCN">
+  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
     <n-loading-bar-provider>
       <n-dialog-provider>
         <n-notification-provider>

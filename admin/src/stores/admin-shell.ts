@@ -19,6 +19,7 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
   const expandedMenuKeys = ref<string[]>([])
   const openTabs = ref<WorkTab[]>([dashboardTab])
   const routeRefreshNonce = ref<Record<string, number>>({})
+  const sidebarCollapsed = ref(false)
 
   const tabMap = computed(() => {
     return new Map(openTabs.value.map((tab) => [tab.to, tab]))
@@ -84,17 +85,23 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
     return `${path}::${routeRefreshNonce.value[path] ?? 0}`
   }
 
+  function toggleSidebar() {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+
   function reset() {
     activeMenuKey.value = ''
     expandedMenuKeys.value = []
     openTabs.value = [dashboardTab]
     routeRefreshNonce.value = {}
+    sidebarCollapsed.value = false
   }
 
   return {
     activeMenuKey,
     expandedMenuKeys,
     openTabs,
+    sidebarCollapsed,
     ensureExpandedMenuKeys,
     ensureTab,
     closeAllTabs,
@@ -105,5 +112,6 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
     reset,
     setActiveMenuKey,
     setExpandedMenuKeys,
+    toggleSidebar,
   }
 })

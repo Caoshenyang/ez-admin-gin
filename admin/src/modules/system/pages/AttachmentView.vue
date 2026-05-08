@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-import { useMessage } from 'naive-ui'
+import { NAlert, NButton } from 'naive-ui'
 
 import { STATUS_FILTER_OPTIONS } from '@/constants/status'
 import AttachmentEditModal from '../components/AttachmentEditModal.vue'
@@ -9,11 +8,10 @@ import AttachmentTable from '../components/AttachmentTable.vue'
 import AttachmentUploadModal from '../components/AttachmentUploadModal.vue'
 import { useAttachmentPage } from '../composables/useAttachmentPage'
 
-const message = useMessage()
-
 const {
   attachments,
   canUse,
+  closeSuccess,
   editFormModel,
   editFormRef,
   editModalVisible,
@@ -36,6 +34,7 @@ const {
   saving,
   submitEdit,
   submitUpload,
+  successText,
   total,
   uploadFileList,
   uploadFormModel,
@@ -47,32 +46,22 @@ const {
 
 // copyURL 函数。
 function copyURL(url: string) {
-  navigator.clipboard.writeText(url).then(
-    () => message.success('链接已复制'),
-    () => message.error('复制失败'),
-  )
+  void navigator.clipboard.writeText(url)
 }
 
 // handleUploadSubmit 函数。
 async function handleUploadSubmit() {
-  try {
-    await submitUpload()
-    message.success('附件上传成功')
-  } catch (error) {
-    message.error(formatSubmitUploadError(error))
-  }
+  await submitUpload()
 }
 
 // handleEditSubmitAction 函数。
 async function handleEditSubmitAction() {
   await handleEditSubmit(submitEdit)
-  message.success('附件信息已更新')
 }
 
 // handleStatusChange 函数。
 async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0], status: Parameters<typeof handleToggleStatus>[1]) {
   await handleToggleStatus(row, status)
-  message.success('附件状态已更新')
 }
 </script>
 
@@ -89,6 +78,10 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
           上传附件
         </NButton>
       </div>
+
+      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
+        {{ successText }}
+      </NAlert>
 
       <AttachmentFilterBar
         :biz-type="query.biz_type ?? ''"

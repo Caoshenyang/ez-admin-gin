@@ -2,8 +2,8 @@ package api
 
 import (
 	authservicekit "ez-admin-gin/server/internal/modules/auth/servicekit"
+	"ez-admin-gin/server/internal/modules/modulekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
-	"ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -28,9 +28,11 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	auth := api.Group("/auth")
 	auth.POST("/login", login.Login)
 
-	protectedAuth := auth.Group("")
-	protectedAuth.Use(middleware.Auth(opts.Token, opts.Log))
-	protectedAuth.Use(middleware.LoadActor(opts.DB, opts.Log))
+	protectedAuth := modulekit.NewProtectedAuthGroup(auth, modulekit.ProtectedAuthGroupOptions{
+		Log:   opts.Log,
+		DB:    opts.DB,
+		Token: opts.Token,
+	})
 	protectedAuth.GET("/me", me.Me)
 	protectedAuth.GET("/account", account.Profile)
 	protectedAuth.POST("/account/profile", account.UpdateProfile)

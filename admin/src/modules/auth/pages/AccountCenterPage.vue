@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import axios from 'axios'
-import type { FormInst, FormRules } from 'naive-ui'
 import {
   NAlert,
   NButton,
@@ -9,185 +7,25 @@ import {
   NFormItem,
   NInput,
   NTag,
-  useMessage,
 } from 'naive-ui'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { useAccountCenterPage } from '../composables/useAccountCenterPage'
 
-import {
-  getAccountProfile,
-  updateAccountPassword,
-  updateAccountProfile,
-} from '../api/auth'
-import type { AccountProfileResponse } from '../types/auth'
-import { updateAuthUserInfo } from '@/utils/auth'
-
-interface ProfileFormModel {
-  nickname: string
-}
-
-interface PasswordFormModel {
-  oldPassword: string
-  newPassword: string
-  confirmPassword: string
-}
-
-const message = useMessage()
-const loading = ref(false)
-const profileSaving = ref(false)
-const passwordSaving = ref(false)
-const profile = ref<AccountProfileResponse | null>(null)
-
-const profileFormRef = ref<FormInst | null>(null)
-const passwordFormRef = ref<FormInst | null>(null)
-
-const profileFormModel = reactive<ProfileFormModel>({
-  nickname: '',
-})
-
-const passwordFormModel = reactive<PasswordFormModel>({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: '',
-})
-
-const profileRules: FormRules = {
-  nickname: [
-    { required: true, message: '请输入昵称', trigger: ['blur', 'input'] },
-    { max: 64, message: '昵称不能超过 64 个字符', trigger: ['blur', 'input'] },
-  ],
-}
-
-const passwordRules: FormRules = {
-  oldPassword: [{ required: true, message: '请输入当前密码', trigger: ['blur', 'input'] }],
-  newPassword: [
-    { required: true, message: '请输入新密码', trigger: ['blur', 'input'] },
-    { min: 8, message: '新密码至少 8 位', trigger: ['blur', 'input'] },
-    { max: 72, message: '新密码不能超过 72 位', trigger: ['blur', 'input'] },
-  ],
-  confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: ['blur', 'input'] },
-    {
-      validator: () => {
-        if (passwordFormModel.confirmPassword !== passwordFormModel.newPassword) {
-          return new Error('两次输入的新密码不一致')
-        }
-
-        return true
-      },
-      trigger: ['blur', 'input'],
-    },
-  ],
-}
-
-const roleText = computed(() => {
-  if (!profile.value || profile.value.role_codes.length === 0) {
-    return '未绑定角色'
-  }
-
-  return profile.value.role_codes.join(' / ')
-})
-
-const dataScopeText = computed(() => {
-  const summary = profile.value?.data_scope
-  if (!summary) {
-    return '加载中'
-  }
-  if (summary.allow_all) {
-    return '全部数据'
-  }
-  if (summary.require_self) {
-    return '仅本人数据'
-  }
-  if (summary.include_dept_tree) {
-    return '本部门及下级部门数据'
-  }
-  if (summary.include_department) {
-    return '本部门数据'
-  }
-  if (summary.custom_department_ids.length > 0) {
-    return `自定义部门范围（${summary.custom_department_ids.length} 个部门）`
-  }
-
-  return '未配置数据范围'
-})
-
-// loadProfile 函数。
-async function loadProfile() {
-  loading.value = true
-  try {
-    const result = await getAccountProfile()
-    profile.value = result
-    profileFormModel.nickname = result.nickname
-  } catch (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '加载账户资料失败'
-      : '加载账户资料失败'
-
-    message.error(errorMessage)
-  } finally {
-    loading.value = false
-  }
-}
-
-// handleSaveProfile 函数。
-async function handleSaveProfile() {
-  try {
-    await profileFormRef.value?.validate()
-  } catch {
-    return
-  }
-
-  profileSaving.value = true
-  try {
-    const result = await updateAccountProfile({
-      nickname: profileFormModel.nickname.trim(),
-    })
-    profile.value = result
-    updateAuthUserInfo({ nickname: result.nickname })
-    message.success('账户资料已更新')
-  } catch (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '更新账户资料失败'
-      : '更新账户资料失败'
-
-    message.error(errorMessage)
-  } finally {
-    profileSaving.value = false
-  }
-}
-
-// handleChangePassword 函数。
-async function handleChangePassword() {
-  try {
-    await passwordFormRef.value?.validate()
-  } catch {
-    return
-  }
-
-  passwordSaving.value = true
-  try {
-    await updateAccountPassword({
-      old_password: passwordFormModel.oldPassword,
-      new_password: passwordFormModel.newPassword,
-    })
-    passwordFormModel.oldPassword = ''
-    passwordFormModel.newPassword = ''
-    passwordFormModel.confirmPassword = ''
-    message.success('登录密码已更新')
-  } catch (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '修改密码失败'
-      : '修改密码失败'
-
-    message.error(errorMessage)
-  } finally {
-    passwordSaving.value = false
-  }
-}
-
-onMounted(() => {
-  void loadProfile()
-})
+const {
+  dataScopeText,
+  handleChangePassword,
+  handleSaveProfile,
+  loading,
+  passwordFormModel,
+  passwordFormRef,
+  passwordRules,
+  passwordSaving,
+  profile,
+  profileFormModel,
+  profileFormRef,
+  profileRules,
+  profileSaving,
+  roleText,
+} = useAccountCenterPage()
 </script>
 
 <template>

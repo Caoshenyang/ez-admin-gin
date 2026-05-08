@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import axios from 'axios'
-import type { FormInst, FormRules } from 'naive-ui'
 import {
   NAlert,
   NButton,
@@ -9,113 +7,23 @@ import {
   NForm,
   NFormItem,
   NInput,
-  useMessage,
 } from 'naive-ui'
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
-import { login } from '../api/auth'
+import { useLoginPage } from '../composables/useLoginPage'
 import BrandLogo from '@/components/brand/BrandLogo.vue'
-import { hasAccessToken, setAuthSession } from '@/utils/auth'
 
-const router = useRouter()
-const message = useMessage()
-
-const formRef = ref<FormInst | null>(null)
-const submitting = ref(false)
-
-const productFeatures = [
-  '权限模型：用户 / 角色 / 菜单 / 按钮',
-  '工作标签：多页面切换、刷新、关闭其他',
-  '审计能力：登录日志、操作日志、风险等级',
-  '工程友好：Gin API + Vue 页面快速扩展',
-]
-
-// createCaptcha 生成 4 位随机验证码文本（仅前端占位展示）。
-function createCaptcha() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 4 }, () => {
-    const index = Math.floor(Math.random() * alphabet.length)
-    return alphabet[index]
-  }).join('')
-}
-
-const captchaText = ref(createCaptcha())
-
-// 登录表单模型。用户名和密码先默认填充，方便当前阶段联调。
-const formModel = reactive({
-  username: 'admin',
-  password: 'Admin@123456',
-  captcha: '',
-  rememberLogin: true,
-})
-
-const rules: FormRules = {
-  username: [
-    {
-      required: true,
-      message: '请输入用户名',
-      trigger: ['blur', 'input'],
-    },
-  ],
-  password: [
-    {
-      required: true,
-      message: '请输入密码',
-      trigger: ['blur', 'input'],
-    },
-  ],
-}
-
-const footerText = computed(() => {
-  return `© ${new Date().getFullYear()} EZ Admin · Naive UI Admin Template`
-})
-
-// refreshCaptcha 刷新验证码文本并清空用户已输入的验证码。
-function refreshCaptcha() {
-  captchaText.value = createCaptcha()
-  formModel.captcha = ''
-}
-
-// handleForgotPassword 点击"忘记密码"的回调，当前版本仅做提示。
-function handleForgotPassword() {
-  message.info('当前版本先保留入口，后面再接入找回密码流程')
-}
-
-// 如果本地已经有 Token，就直接跳到工作台。
-if (hasAccessToken()) {
-  void router.replace('/dashboard')
-}
-
-// handleSubmit 提交登录表单，校验通过后调用登录接口，成功后跳转到工作台。
-async function handleSubmit() {
-  try {
-    await formRef.value?.validate()
-  } catch {
-    return
-  }
-
-  submitting.value = true
-
-  try {
-    const result = await login({
-      username: formModel.username.trim(),
-      password: formModel.password,
-    })
-
-    setAuthSession(result, formModel.rememberLogin)
-    message.success('登录成功')
-    await router.push('/dashboard')
-  } catch (error) {
-    const errorMessage = axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '登录失败，请稍后重试'
-      : '登录失败，请稍后重试'
-
-    message.error(errorMessage)
-  } finally {
-    submitting.value = false
-  }
-}
+const {
+  captchaText,
+  footerText,
+  formModel,
+  formRef,
+  handleForgotPassword,
+  handleSubmit,
+  productFeatures,
+  refreshCaptcha,
+  rules,
+  submitting,
+} = useLoginPage()
 </script>
 
 <template>
