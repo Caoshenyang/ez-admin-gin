@@ -1,11 +1,30 @@
 ---
 title: 部署验证与复用说明
-description: "围绕当前 pack.sh、setup-server.sh、update-server.sh、compose.server.yml 和 ez-admin.service，讲清打包、部署、更新和复用。"
+description: "从打包、上传、首次部署、更新到最小验收，讲清 EZ Admin Gin 当前默认部署主线到底怎么走。"
 ---
 
 # 部署验证与复用说明
 
-当前仓库的部署方式已经不是“只给几个零散命令”，而是围绕一条明确的服务器链路组织好的：
+如果你只想抓住当前仓库的默认上线主线，这一页就是整组部署文档的起点。
+
+它不负责把所有细节都讲完，而是先帮你把下面四件事拉直：
+
+1. 当前推荐的部署路线到底是什么
+2. 首次部署和日常更新为什么要分开
+3. 最小验收应该怎么做
+4. 后面更细的内容应该分别去哪里看
+
+::: tip 🎯 本节目标
+读完后，你应该能判断：
+
+1. 当前仓库默认推荐哪一种服务器部署形态
+2. 第一次上线时需要准备什么、按什么顺序做
+3. 上线完成后，怎样用一套最小检查确认“真的可用”
+:::
+
+## 先看结论：当前默认部署主线是什么
+
+当前仓库默认推荐的不是“全容器化一把梭”，而是一条更务实的服务器部署路线：
 
 ```text
 本地打包
@@ -17,221 +36,256 @@ description: "围绕当前 pack.sh、setup-server.sh、update-server.sh、compos
 后续执行 update-server.sh
 ```
 
-这一页就沿着这条真实链路来讲。
-
-::: tip 🎯 本节目标
-读完后，你应该能顺着当前仓库已有脚本，把项目从本地源码推进到“服务器可访问、可更新、可复用”的状态。
-:::
-
-## 先看当前真实部署文件
-
-和部署最直接相关的文件主要有：
-
-```text
-scripts/pack.sh
-scripts/pack.ps1
-scripts/setup-server.sh
-scripts/update-server.sh
-deploy/compose.server.yml
-deploy/ez-admin.service
-deploy/nginx/nginx-native.conf
-deploy/nginx/nginx-native-ssl.conf
-```
-
-它们的职责分工是：
-
-| 文件 | 当前作用 |
-| --- | --- |
-| `pack.sh / pack.ps1` | 本地打包后端、前端和部署文件 |
-| `setup-server.sh` | 首次部署初始化 |
-| `update-server.sh` | 后续版本更新 |
-| `compose.server.yml` | PostgreSQL、Redis、Nginx 容器 |
-| `ez-admin.service` | 后端 systemd 服务 |
-| `nginx-native*.conf` | 宿主机网络模式下的 Nginx 反代配置 |
-
-## 第一步：本地打包到底打出了什么
-
-当前 `scripts/pack.sh` 会按下面顺序做事：
-
-1. 编译 Linux `amd64` 后端二进制
-2. 构建前端静态资源
-3. 复制部署配置与脚本
-4. 生成 `deploy-package.tar.gz`
-
-最终打包目录里主要会有：
-
-- `server`
-- `dist/`
-- `compose.server.yml`
-- `.env.example`
-- `ez-admin.service`
-- `setup-server.sh`
-- `update-server.sh`
-- `configs/`
-- `nginx/`
-
-这说明当前部署包不是“只打后端”或“只打前端”，而是一个已经可以直接传服务器的完整运行包。
-
-## 第二步：首次部署时真正发生了什么
-
-当前服务器首次部署的主入口是：
-
-- `setup-server.sh`
-
-它做的事情比“启动一下服务”更多，真实顺序是：
-
-1. 创建部署目录和数据目录
-2. 把 `dist/` 转成 `web/`
-3. 把 `nginx-native.conf` 挪到正确位置
-4. 第一次把 `.env.example` 变成 `.env`
-5. 安装并加载 `ez-admin.service`
-6. 如果还是占位值，就自动生成 JWT 密钥
-7. 启动 `compose.server.yml`
-8. 等数据库就绪
-9. 启动后端 systemd 服务
-10. 调用 `/api/v1/setup/init` 创建管理员
-
-也就是说，当前首次部署脚本已经在帮你把：
-
-- 文件整理
-- 基础服务启动
-- 后端启动
-- 管理员初始化
-
-串成一条完整闭环。
-
-## 第三步：当前服务器运行结构是什么样
-
-部署完成后，系统运行结构可以理解成：
+对应的服务器运行结构是：
 
 ```text
 宿主机 systemd
-  └─ /opt/ez-admin/server
+  └─ Go 后端二进制
 
 Docker Compose
-  ├─ postgres
-  ├─ redis
-  └─ nginx
+  ├─ PostgreSQL
+  ├─ Redis
+  └─ Nginx
 ```
 
-这里最重要的判断是：
+也就是说：
 
-- 后端不是容器运行
-- 数据库、缓存、Nginx 才是容器运行
+- 后端跑在宿主机
+- PostgreSQL、Redis、Nginx 跑在容器里
+- Nginx 作为统一公网入口
 
-这也解释了为什么：
+这就是当前文档接下来几页默认讲的那条主线。
 
-- 后端日志看 `journalctl`
-- 容器状态看 `docker compose ps`
+## 这条主线为什么是默认推荐
 
-而不是统一只看 Docker。
+因为它更适合当前仓库的目标读者：
 
-## 为什么 `compose.server.yml` 里的 Nginx 用 `host` 网络
+- 一台云服务器就要把项目稳定上线
+- 希望更新和排障都尽量直观
+- 不想在第一版就先把精力花在复杂容器编排上
 
-当前 Nginx 选择的是：
+它的优点很实际：
 
-- `network_mode: host`
+- 打包物边界清晰
+- 后端日志直接看 `journalctl`
+- 基础服务统一看 `docker compose`
+- 更新时主要替换二进制和前端静态资源
 
-这样它就能直接用：
+::: info 这页不讲什么
+这一页只讲当前默认主线。  
+如果你想比较不同部署形态，再去看 [部署变体说明](./deployment-variants)。
+:::
 
-- `127.0.0.1:8080`
+## 部署前至少要知道的三件事
 
-去反代宿主机上的后端服务，而不用再额外折腾容器到宿主机的特殊网络映射。
+### 1. 当前部署包不是“只打后端”
 
-这是一种非常务实的服务器部署写法，尤其适合当前这种“后端在宿主机，基础设施在容器”的混合结构。
+仓库里的打包脚本会把这一组运行必需品一起整理出来：
 
-## 第四步：后续更新为什么不能再跑 `setup-server.sh`
+```text
+server
+dist/
+compose.server.yml
+.env.example
+ez-admin.service
+setup-server.sh
+update-server.sh
+configs/
+nginx/
+```
 
-因为 `setup-server.sh` 的定位是：
+这意味着你上传到服务器的不是几段零散命令，而是一份完整运行包。
 
-- 首次部署脚本
+### 2. 首次部署和日常更新是两条不同链路
 
-它会处理：
+当前仓库有两份核心脚本：
 
-- `.env` 初建
-- JWT 密钥首次生成
-- 管理员初始化
-
-后续更新时，应该走的是：
-
+- `setup-server.sh`
 - `update-server.sh`
 
-当前更新脚本只做两件事：
+它们不是名字不同而已，而是职责不同：
 
-1. 更新前端静态文件
-2. 重启后端服务
+| 脚本 | 什么时候用 | 主要职责 |
+| --- | --- | --- |
+| `setup-server.sh` | 第一次部署 | 建目录、准备 `.env`、启动基础服务、注册 systemd、初始化管理员 |
+| `update-server.sh` | 后续更新 | 更新静态资源、重启后端服务 |
 
-这正是它安全的地方，因为它不会乱动你已经存在的：
+这也是当前默认主线最重要的工程约束之一：
 
-- 数据卷
-- 容器环境
-- `.env`
-- 管理员数据
+> 首次部署脚本只做一次，后续发版不要反复跑。
 
-## 现在怎样判断部署是否成功
+### 3. 当前上线主线已经把管理员初始化串进去了
 
-当前部署完成后，最小验证建议按下面顺序做：
+现在首次部署不是“服务起来后你再手动想办法创建管理员”，而是这条链路：
 
-1. `docker compose -f /opt/ez-admin/compose.server.yml ps`
-2. `sudo systemctl status ez-admin`
-3. 浏览器打开服务器 IP 或域名
-4. 用管理员账号登录
-5. 随便进入一个系统页，确认页面和接口都可用
+```text
+启动 compose.server.yml
+  ↓
+等待数据库就绪
+  ↓
+启动后端 systemd 服务
+  ↓
+调用 /api/v1/setup/init
+```
 
-如果你想更稳一点，再补两步：
+所以你真正需要关心的是：
 
-6. 打开一个需要按钮权限的页面，确认按钮显隐正常
-7. 查看操作日志和登录日志，确认部署后链路真的在工作
+- 环境变量有没有配对
+- 数据库是否真的就绪
+- 初始化接口有没有执行成功
 
-## 当前 HTTPS 是怎样接进去的
+而不是重新发明一套初始化流程。
 
-仓库现在已经给了两类 Nginx 配置：
+## 一条最小可执行部署清单
 
-- 非 SSL：`deploy/nginx/nginx-native.conf`
-- SSL：`deploy/nginx/nginx-native-ssl.conf`
-
-这意味着本章当前的真实做法不是临场手写配置，而是：
-
-> 先用非 SSL 跑通，再按证书路径切到 SSL 配置文件。
-
-如果你使用 Cloudflare，这条链路会更顺，因为当前文档和配置默认就是围绕它来写的。
-
-## 复用到新项目时，最值得保留的是什么
-
-本章的复用价值不只是”再部署一次”，而是：
-
-- 打包脚本可复用
-- 部署目录结构可复用
-- systemd 服务方式可复用
-- Docker Compose 基础设施可复用
-
-所以如果后面你基于这个仓库开新项目，最应该保留的往往不是某一条命令，而是这整条部署链路的分层方式。
-
-## 当前这条链路特别适合哪类项目
-
-它非常适合：
-
-- 单体后台
-- 小团队交付
-- 自己掌控服务器
-- 想快速上线但不想一开始就上复杂 K8s 体系
-
-也就是说，这套部署方式的重点不是“炫技”，而是：
-
-> 让一个真实后台底座能更稳地完成首版上线。
-
-## 一份快速部署清单
-
-你可以直接按下面这份清单执行：
+如果你现在就要把它部署到一台服务器，建议按下面顺序做：
 
 1. 本地执行 `bash scripts/pack.sh` 或 `.\scripts\pack.ps1`
-2. 上传部署包到服务器
-3. 解压到 `/opt/ez-admin`
-4. 首次运行 `sudo bash /opt/ez-admin/setup-server.sh`
-5. 后续更新运行 `sudo bash /opt/ez-admin/update-server.sh`
-6. 用浏览器和日志命令完成最小验收
+2. 把部署包上传到服务器
+3. 解压到部署目录，例如 `/opt/ez-admin`
+4. 首次执行 `sudo bash /opt/ez-admin/setup-server.sh`
+5. 部署完成后立刻做最小验收
+6. 后续更新时只执行 `sudo bash /opt/ez-admin/update-server.sh`
+
+::: warning ⚠️ 第一次部署前先确认两类值
+至少先确认这两类配置没有继续保留默认占位值：
+
+- JWT 密钥
+- 数据库密码
+
+否则服务可能能跑起来，但并不适合进入真实环境。
+:::
+
+## 上线后最小验收怎么做
+
+建议把部署验证固定成下面这组动作。
+
+### 第一步：看基础服务状态
+
+```bash
+docker compose -f /opt/ez-admin/compose.server.yml ps
+```
+
+期望结果：
+
+- PostgreSQL、Redis、Nginx 都是运行状态
+
+如果这里异常：
+
+- 先回到 [Compose 与服务运行结构](./compose-and-service-layout)
+
+### 第二步：看后端服务状态
+
+```bash
+sudo systemctl status ez-admin
+```
+
+期望结果：
+
+- `ez-admin` 处于 `active (running)`
+
+如果这里异常：
+
+- 优先看 `journalctl -u ez-admin -f`
+
+### 第三步：看入口是否可访问
+
+最少做下面两件事：
+
+1. 浏览器打开服务器 IP 或域名
+2. 打开登录页并尝试管理员登录
+
+期望结果：
+
+- 页面能正常打开
+- 登录能成功
+- 进入后台后菜单和系统页可访问
+
+### 第四步：补一条业务链路验证
+
+为了确认不是“只打开了首页”，建议至少再做一条轻量业务验证：
+
+- 打开一个系统管理页
+- 执行一次查询或轻操作
+- 再看登录日志或操作日志是否有记录
+
+这样你就能确认：
+
+- 前端静态资源正常
+- API 代理正常
+- 权限链路正常
+- 审计链路也在工作
+
+## 这一页和后面几页怎么配合
+
+这一页是“总入口”，不打算把所有部署细节都压在一起。
+
+后面建议按这个顺序继续读：
+
+### 想看服务器运行结构
+
+下一页读 [Compose 与服务运行结构](./compose-and-service-layout)
+
+适合你关心这些问题时看：
+
+- 为什么后端不跑在 Docker 里
+- 为什么 Nginx 用 `host` 网络
+- 为什么数据库和 Redis 只绑定到 `127.0.0.1`
+
+### 想看配置、迁移和管理员初始化
+
+下一页读 [环境变量与初始化数据](./env-and-init-data)
+
+适合你关心这些问题时看：
+
+- 哪些环境变量必须改
+- 迁移自动做了什么
+- 管理员什么时候创建
+
+### 想看入口层与 HTTPS
+
+下一页读 [Nginx 与 HTTPS 入口层](./nginx-and-https)
+
+适合你关心这些问题时看：
+
+- 前端刷新为什么不会 404
+- `/api/`、`/uploads/` 为什么都走 Nginx
+- SSL 证书怎样接入
+
+### 想看后续更新和回滚
+
+继续读 [更新与回滚策略](./update-and-rollback)
+
+适合你关心这些问题时看：
+
+- 后续更新到底该跑哪个脚本
+- 为什么不能每次都跑 `setup-server.sh`
+- 出问题时怎样回退更稳
+
+## 什么时候应该暂时离开这条主线
+
+如果你现在发现自己真正关心的是下面这些问题，那就不应该继续只盯着这一页：
+
+- “这一组部署文件分别干嘛？”
+  读 [Docker 部署文件参考](../../reference/deploy-artifacts-reference)
+
+- “到底有哪些 `EZ_*` 环境变量？”
+  读 [环境变量参考](../../reference/environment-variables-reference)
+
+- “当前到底预置了哪些初始化数据？”
+  读 [初始化数据参考](../../reference/init-data-reference)
+
+- “如果我要改部署形态，是否必须继续沿当前主线？”
+  读 [部署变体说明](./deployment-variants)
+
+## 一句话小结
+
+如果把当前默认部署路线压缩成一句话，可以记成：
+
+> 打包上传是一条线，首次部署是一条线，后续更新又是一条线；先把这三条线分清，部署这件事就会稳很多。
 
 ## 下一步
 
-- 想先补环境变量和迁移初始化这层背景，回到 [环境变量与初始化数据](./env-and-init-data)
-- 想继续查更细的部署文件含义，可以读 [部署产物参考](../../reference/deploy-artifacts-reference)
+- 继续看真实服务器运行拓扑：读 [Compose 与服务运行结构](./compose-and-service-layout)
+- 继续看环境变量、迁移和管理员初始化：读 [环境变量与初始化数据](./env-and-init-data)
+- 想直接看部署文件清单：读 [Docker 部署文件参考](../../reference/deploy-artifacts-reference)

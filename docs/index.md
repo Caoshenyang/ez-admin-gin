@@ -15,6 +15,9 @@ hero:
       text: 从这里开始
       link: /guide/
     - theme: alt
+      text: 部署与运维
+      link: /deploy/
+    - theme: alt
       text: 从零搭建
       link: /tutorial/
     - theme: alt

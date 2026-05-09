@@ -26,7 +26,8 @@ EZ Admin Gin 当前已经收敛成一条稳定主线：登录、权限、菜单�
 
 1. 先跑起项目
 2. 再看 [项目结构](/guide/project-structure)
-3. 然后根据需要进入 [从零搭建教程](/tutorial/) 或 [参考手册](/reference/)
+3. 如果你准备直接上线，进入 [部署与运维](/deploy/)
+4. 然后再根据需要进入 [从零搭建教程](/tutorial/) 或 [参考手册](/reference/)
 
 ## 📋 环境要求
 

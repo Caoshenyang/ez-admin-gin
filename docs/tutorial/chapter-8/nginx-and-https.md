@@ -172,6 +172,149 @@ Nginx
 
 而不是整个 Nginx 入口逻辑都要推倒重来。
 
+## 如果你按 Cloudflare 这条主线接入域名
+
+如果你准备直接复用当前仓库默认的 HTTPS 路线，可以按下面顺序做。
+
+### 第一步：先把域名托管到 Cloudflare
+
+1. 登录 [Cloudflare](https://dash.cloudflare.com)，添加你的域名
+2. 选择 Free 计划即可
+3. 按 Cloudflare 提示去域名注册商处修改 NS
+4. 等待托管生效
+
+接着先加一条最基础的 DNS 记录：
+
+- Type：`A`
+- Name：`@`
+- IPv4：你的服务器公网 IP
+- Proxy status：先用 `DNS only`
+
+期望结果：
+
+- `ping 你的域名` 能解析到服务器 IP
+- `http://你的域名` 至少已经能打到当前服务器入口
+
+### 第二步：先把 SSL 模式设对
+
+进入：
+
+- `Cloudflare -> 你的域名 -> SSL/TLS -> Overview`
+
+把加密模式设成：
+
+- `Full（完全）`
+
+::: warning ⚠️ 不要选 Flexible
+如果这里选成 `Flexible`，而你的 Nginx 又已经在做 HTTPS 入口，很容易出现循环跳转。你后面看到 `ERR_TOO_MANY_REDIRECTS`，优先先回来看这里。
+:::
+
+### 第三步：生成 Cloudflare 源站证书
+
+进入：
+
+- `Cloudflare -> SSL/TLS -> Origin Server`
+
+然后：
+
+1. 点击 `Create Certificate`
+2. 默认 `RSA 2048`
+3. 有效期可以直接选长期，例如 `15 years`
+4. 生成后保存：
+   - Origin Certificate
+   - Private Key
+
+### 第四步：把证书放到服务器
+
+当前仓库默认的 SSL 配置会从下面两个路径读取证书：
+
+- `/opt/ez-admin/ssl/cert.pem`
+- `/opt/ez-admin/ssl/key.pem`
+
+所以你需要先在服务器上准备这个目录，然后把 Cloudflare 生成的内容写进去。
+
+```bash
+sudo mkdir -p /opt/ez-admin/ssl
+
+# 粘贴 Cloudflare Origin Certificate
+sudo tee /opt/ez-admin/ssl/cert.pem <<'EOF'
+-----BEGIN CERTIFICATE-----
+这里替换成你的证书内容
+-----END CERTIFICATE-----
+EOF
+
+# 粘贴 Cloudflare Private Key
+sudo tee /opt/ez-admin/ssl/key.pem <<'EOF'
+-----BEGIN PRIVATE KEY-----
+这里替换成你的私钥内容
+-----END PRIVATE KEY-----
+EOF
+```
+
+期望结果：
+
+- `/opt/ez-admin/ssl/cert.pem` 存在
+- `/opt/ez-admin/ssl/key.pem` 存在
+
+### 第五步：切到 SSL 配置
+
+当前主线下应使用：
+
+- `deploy/nginx/nginx-native-ssl.conf`
+
+也就是说，HTTP 跑通后，再把服务器上的 Nginx 配置切到 SSL 版本，而不是一开始同时排查域名、代理和证书三层问题。
+
+### 第六步：再把 DNS 代理打开
+
+确认 SSL 已经能正常工作后，再回到 Cloudflare，把 DNS 记录改成：
+
+- `Proxy status: Proxied`
+
+也就是打开橙色云朵。
+
+期望结果：
+
+- `https://你的域名` 可以正常访问
+- 浏览器显示锁头
+
+## 为什么有时 HTTP 会自动跳到 HTTPS
+
+如果你开启了 Cloudflare 代理，HTTP 请求经常会“看起来自己跳到 HTTPS”，这通常不是你 Nginx 配错了，而是 Cloudflare 在边缘侧已经做了跳转。
+
+最常见的情况是：
+
+- Cloudflare 开启了 `Always Use HTTPS`
+
+你可以在这里确认：
+
+- `Cloudflare -> SSL/TLS -> Edge Certificates`
+
+::: info 这属于正常现象
+开启橙色云朵后，即使你不在 Nginx 里额外写一层 HTTP 跳转，Cloudflare 也可能已经在边缘节点把请求 301 到 HTTPS。
+:::
+
+## Cloudflare 这条路线最常见的两个坑
+
+### 1. `ERR_TOO_MANY_REDIRECTS`
+
+优先检查：
+
+- Cloudflare 的 SSL 模式是不是 `Flexible`
+
+如果是，改成：
+
+- `Full（完全）`
+
+### 2. 证书文件明明有，但 HTTPS 还是起不来
+
+优先检查：
+
+1. 服务器上的证书路径是不是：
+   - `/opt/ez-admin/ssl/cert.pem`
+   - `/opt/ez-admin/ssl/key.pem`
+2. 当前 Nginx 用的是不是 SSL 版本配置
+3. 证书和私钥内容是不是成对匹配
+
 ## 安全头为什么也值得保留
 
 当前 Nginx 配置里默认已经带了几组基础安全头，例如：

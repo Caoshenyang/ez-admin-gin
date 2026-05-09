@@ -84,6 +84,7 @@ export default defineConfig({
     },
     nav: [
       { text: '从这里开始', link: '/guide/', activeMatch: '^/guide/' },
+      { text: '部署与运维', link: '/deploy/', activeMatch: '^/deploy/' },
       { text: '从零搭建', link: '/tutorial/', activeMatch: '^/tutorial/' },
       { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' },
       { text: '更新日志', link: '/guide/changelog', activeMatch: '^/guide/changelog$' }
@@ -104,7 +105,8 @@ export default defineConfig({
             { text: '快速启动', link: '/guide/' },
             { text: '项目结构', link: '/guide/project-structure' },
             { text: '企业级架构升级', link: '/guide/enterprise-architecture' },
-            { text: 'Go vs Java 工程结构', link: '/guide/java-to-go-structure' }
+            { text: 'Go vs Java 工程结构', link: '/guide/java-to-go-structure' },
+            { text: '部署篇页面规划', link: '/guide/deployment-document-plan' }
           ]
         },
         {
@@ -112,6 +114,34 @@ export default defineConfig({
           items: [
             { text: '更新日志', link: '/guide/changelog' },
             { text: '路线图', link: '/guide/roadmap' }
+          ]
+        }
+      ],
+      '/deploy/': [
+        {
+          text: '部署与运维',
+          items: [
+            { text: '部署首页', link: '/deploy/' },
+            { text: '部署验证与复用说明', link: '/tutorial/chapter-8/deployment-and-reuse' },
+            { text: 'Compose 与服务运行结构', link: '/tutorial/chapter-8/compose-and-service-layout' },
+            { text: '环境变量与初始化数据', link: '/tutorial/chapter-8/env-and-init-data' },
+            { text: 'Nginx 与 HTTPS 入口层', link: '/tutorial/chapter-8/nginx-and-https' },
+            { text: '部署变体说明', link: '/tutorial/chapter-8/deployment-variants' },
+            { text: '更新与回滚策略', link: '/tutorial/chapter-8/update-and-rollback' },
+            { text: '回滚分级策略', link: '/tutorial/chapter-8/rollback-strategy-levels' },
+            { text: '部署排障 FAQ', link: '/tutorial/chapter-8/deployment-troubleshooting-faq' },
+            { text: '长期运维 FAQ', link: '/tutorial/chapter-8/operations-maintenance-faq' },
+            { text: '新项目复用清单', link: '/tutorial/chapter-8/project-reuse-checklist' }
+          ]
+        },
+        {
+          text: '部署参考',
+          items: [
+            { text: '环境变量参考', link: '/reference/environment-variables-reference' },
+            { text: '初始化数据参考', link: '/reference/init-data-reference' },
+            { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' },
+            { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
+            { text: 'SSH 隧道连接服务器数据库', link: '/reference/ssh-tunnel-database' }
           ]
         }
       ],
