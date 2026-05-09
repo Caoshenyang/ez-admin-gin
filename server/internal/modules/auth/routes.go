@@ -29,9 +29,12 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Token:  opts.Token,
 	})
 	authapi.RegisterRoutes(r, authapi.RouteOptions{
-		Log:      opts.Log,
-		DB:       opts.DB,
-		Token:    opts.Token,
-		Services: services,
+		Log:          opts.Log,
+		DB:           opts.DB,
+		Redis:        opts.Redis,
+		Token:        opts.Token,
+		Services:     services,
+		RateLimitMax: opts.Config.RateLimit.LoginMaxRequests,
+		RateLimitSec: opts.Config.RateLimit.LoginWindowSec,
 	})
 }

@@ -22,6 +22,10 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 		stdlog.Fatalf("load config: %v", err)
 	}
 
+	if err := cfg.ValidateProduction(); err != nil {
+		stdlog.Fatalf("config validation: %v", err)
+	}
+
 	log, err := platformLogger.New(cfg.Log)
 	if err != nil {
 		stdlog.Fatalf("create logger: %v", err)

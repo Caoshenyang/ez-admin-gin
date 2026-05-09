@@ -80,7 +80,16 @@ export function getTokenType() {
 }
 
 export function hasAccessToken() {
-  return getAccessToken() !== ''
+  if (getAccessToken() === '') {
+    return false
+  }
+
+  const userInfo = getAuthUserInfo()
+  if (!userInfo?.expiresAt) {
+    return false
+  }
+
+  return Date.parse(userInfo.expiresAt) > Date.now()
 }
 
 export function getAuthUserInfo() {

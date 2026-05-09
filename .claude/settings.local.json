@@ -86,7 +86,13 @@
       "Bash(xxd \"D:/A/ez-admin-gin/server/internal/platform/datascope/datascope.go\")",
       "Bash(python *)",
       "Bash(git stash *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npx vite:*)",
+      "Bash(do sed:*)",
+      "Bash(find . -name '*FilterBar.vue' -exec sed -i 's|<NCard :bordered=\"\"false\"\" class=\"\"rounded-lg\"\">|<div class=\"\"ez-toolbar\"\">|g' {} +)",
+      "Bash(find . -name '*FilterBar.vue' -exec sed -i 's|<NCard :bordered=\"\"false\"\" class=\"\"rounded-\\\\[18px\\\\]\"\">|<div class=\"\"ez-toolbar\"\">|g' {} +)",
+      "Bash(find . -name '*FilterBar.vue' -exec sed -i 's|</NCard>|</div>|g' {} +)",
+      "Bash(find ./server/internal/modules -name \"*.go\" -exec grep -l \"Auth\\\\|Permission\\\\|middleware\" {})"
     ]
   }
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	platformConfig "ez-admin-gin/server/internal/platform/config"
+	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -62,6 +63,9 @@ func GinLogger(log *zap.Logger) gin.HandlerFunc {
 			zap.String("client_ip", c.ClientIP()),
 			zap.String("user_agent", c.Request.UserAgent()),
 			zap.Duration("latency", time.Since(start)),
+		}
+		if requestID := platformMiddleware.GetRequestID(c.Request.Context()); requestID != "" {
+			fields = append(fields, zap.String("request_id", requestID))
 		}
 		if len(c.Errors) > 0 {
 			fields = append(fields, zap.String("errors", c.Errors.String()))

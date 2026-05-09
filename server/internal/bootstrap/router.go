@@ -10,6 +10,7 @@ import (
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
 	appLogger "ez-admin-gin/server/internal/platform/logger"
+	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"
@@ -30,7 +31,12 @@ type RouterOptions struct {
 // NewRouter 创建 Gin 引擎，并按模块聚合路由。
 func NewRouter(opts RouterOptions) *gin.Engine {
 	r := gin.New()
-	r.Use(appLogger.GinLogger(opts.Log), appLogger.GinRecovery(opts.Log))
+	r.Use(
+		platformMiddleware.CORS(opts.Config.CORS, opts.Config.App.Env),
+		platformMiddleware.RequestID(),
+		appLogger.GinLogger(opts.Log),
+		appLogger.GinRecovery(opts.Log),
+	)
 
 	if opts.Config.Upload.MaxSizeMB > 0 {
 		r.MaxMultipartMemory = opts.Config.Upload.MaxSizeMB << 20

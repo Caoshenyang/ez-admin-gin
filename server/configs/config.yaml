@@ -55,7 +55,9 @@ log:
 
 
 auth:
-  # JWT 签名密钥；本地开发可以先写在配置文件中，生产环境应改用环境变量覆盖。
+  # !! 生产环境必须修改 !! 通过环境变量 EZ_AUTH_JWT_SECRET 覆盖。
+  # 生成方法：openssl rand -hex 32
+  # 若 env=prod 且值包含 "change-me"，服务将拒绝启动。
   jwt_secret: "ez-admin-dev-secret-change-me-please-32"
   # access_token 有效期，单位秒。这里先设置为 2 小时。
   access_token_ttl: 7200
@@ -65,6 +67,18 @@ auth:
 swagger:
   # 是否启用 Swagger UI，生产环境建议关闭。
   enabled: true
+
+cors:
+  # 允许的跨域来源列表，生产环境必须配置为实际前端域名。
+  # 开发模式下 localhost:* 自动放行，无需手动添加。
+  # 示例：allowed_origins: ["https://admin.example.com"]
+  allowed_origins: []
+
+rate_limit:
+  # 登录接口限流：每 IP 在窗口期内最大请求数。
+  login_max_requests: 10
+  # 登录接口限流：滑动窗口时间，单位秒。
+  login_window_sec: 60
 
 upload:
   # 文件保存目录，相对于 server/ 目录。

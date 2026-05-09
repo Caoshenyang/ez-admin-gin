@@ -4,17 +4,22 @@ import (
 	authservicekit "ez-admin-gin/server/internal/modules/auth/servicekit"
 	"ez-admin-gin/server/internal/modules/modulekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
+	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
+	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type RouteOptions struct {
-	Log      *zap.Logger
-	DB       *gorm.DB
-	Token    *authnPlatform.Manager
-	Services authservicekit.Services
+	Log           *zap.Logger
+	DB            *gorm.DB
+	Redis         *goredis.Client
+	Token         *authnPlatform.Manager
+	Services      authservicekit.Services
+	RateLimitMax  int
+	RateLimitSec  int
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
@@ -26,7 +31,10 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
-	auth.POST("/login", login.Login)
+	auth.POST("/login",
+		platformMiddleware.LoginRateLimit(opts.Redis, opts.RateLimitMax, opts.RateLimitSec),
+		login.Login,
+	)
 
 	protectedAuth := modulekit.NewProtectedAuthGroup(auth, modulekit.ProtectedAuthGroupOptions{
 		Log:   opts.Log,

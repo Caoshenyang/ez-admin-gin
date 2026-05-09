@@ -9,14 +9,16 @@ import (
 
 // Config 汇总整个服务端会读取的配置段。
 type Config struct {
-	App      AppConfig      `mapstructure:"app"`
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	Redis    RedisConfig    `mapstructure:"redis"`
-	Auth     AuthConfig     `mapstructure:"auth"`
-	Upload   UploadConfig   `mapstructure:"upload"`
-	Log      LogConfig      `mapstructure:"log"`
-	Swagger  SwaggerConfig  `mapstructure:"swagger"`
+	App       AppConfig       `mapstructure:"app"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Database  DatabaseConfig  `mapstructure:"database"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	Auth      AuthConfig      `mapstructure:"auth"`
+	Upload    UploadConfig    `mapstructure:"upload"`
+	Log       LogConfig       `mapstructure:"log"`
+	Swagger   SwaggerConfig   `mapstructure:"swagger"`
+	CORS      CORSConfig      `mapstructure:"cors"`
+	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
 }
 
 type SwaggerConfig struct {
@@ -77,6 +79,15 @@ type UploadConfig struct {
 	AllowedExts []string `mapstructure:"allowed_exts"`
 }
 
+type CORSConfig struct {
+	AllowedOrigins []string `mapstructure:"allowed_origins"`
+}
+
+type RateLimitConfig struct {
+	LoginMaxRequests int `mapstructure:"login_max_requests"`
+	LoginWindowSec   int `mapstructure:"login_window_sec"`
+}
+
 func Load() (*Config, error) {
 	v := viper.New()
 	v.SetConfigName("config")
@@ -100,6 +111,16 @@ func Load() (*Config, error) {
 	}
 
 	return &cfg, nil
+}
+
+// ValidateProduction 对生产环境必须检查的安全项做校验。
+func (c *Config) ValidateProduction() error {
+	if c.App.Env == "prod" {
+		if strings.Contains(c.Auth.JWTSecret, "change-me") || strings.Contains(c.Auth.JWTSecret, "dev-secret") {
+			return fmt.Errorf("production environment detected but auth.jwt_secret contains a default value; please set EZ_AUTH_JWT_SECRET to a secure random string")
+		}
+	}
+	return nil
 }
 
 func setDefaults(v *viper.Viper) {
@@ -137,6 +158,9 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("upload.max_size_mb", 10)
 	v.SetDefault("upload.allowed_exts", []string{".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".docx", ".xlsx"})
 	v.SetDefault("swagger.enabled", true)
+	v.SetDefault("cors.allowed_origins", []string{})
+	v.SetDefault("rate_limit.login_max_requests", 10)
+	v.SetDefault("rate_limit.login_window_sec", 60)
 }
 
 func bindEnvs(v *viper.Viper) {
@@ -175,6 +199,9 @@ func bindEnvs(v *viper.Viper) {
 		"upload.max_size_mb",
 		"upload.allowed_exts",
 		"swagger.enabled",
+		"cors.allowed_origins",
+		"rate_limit.login_max_requests",
+		"rate_limit.login_window_sec",
 	}
 
 	for _, key := range keys {
