@@ -2,7 +2,6 @@
 <script setup lang="ts">
 import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import type { DropdownProps, MenuOption, ScrollbarProps } from 'naive-ui'
-import type { CSSProperties } from 'vue'
 import { NButton, NIcon, NLayoutSider, NMenu, NScrollbar, NTooltip } from 'naive-ui'
 
 import BrandLogo from '@/components/brand/BrandLogo.vue'
@@ -21,19 +20,6 @@ const emit = defineEmits<{
   toggle: []
 }>()
 
-const menuDropdownProps: DropdownProps = {
-  themeOverrides: {
-    borderRadius: '18px',
-    optionHeightLarge: '50px',
-    optionTextColorInverted: 'rgba(255, 255, 255, 0.72)',
-    optionTextColorHoverInverted: '#FFFFFF',
-    optionTextColorActiveInverted: '#5EEAD4',
-    optionTextColorChildActiveInverted: '#5EEAD4',
-    optionColorHoverInverted: 'rgba(255, 255, 255, 0.08)',
-    optionColorActiveInverted: 'rgba(20, 184, 166, 0.18)',
-  },
-}
-
 const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides']> = {
   width: '4px',
   height: '4px',
@@ -41,11 +27,6 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
   color: 'rgba(255, 255, 255, 0.16)',
   colorHover: 'rgba(20, 184, 166, 0.32)',
   railColor: 'transparent',
-}
-
-const sidebarVerticalRailStyle: CSSProperties = {
-  right: '1px',
-  left: 'auto',
 }
 </script>
 
@@ -87,7 +68,6 @@ const sidebarVerticalRailStyle: CSSProperties = {
         :collapsed-width="72"
         :collapsed-icon-size="22"
         :accordion="false"
-        :dropdown-props="menuDropdownProps"
         inverted
         @update:value="(key) => emit('select', key)"
         @update:expanded-keys="(keys) => emit('expand', keys)"

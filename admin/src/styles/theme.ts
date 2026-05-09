@@ -99,6 +99,16 @@ export const themeOverrides: GlobalThemeOverrides = {
     arrowIconColorInverted: 'rgba(255, 255, 255, 0.5)',
     arrowColorChildActiveInverted: '#5EEAD4',
     arrowColorChildActiveHoverInverted: '#5EEAD4',
+    peers: {
+      Dropdown: {
+        optionTextColorInverted: 'rgba(255, 255, 255, 0.72)',
+        optionTextColorHoverInverted: '#FFFFFF',
+        optionTextColorActiveInverted: '#5EEAD4',
+        optionTextColorChildActiveInverted: '#5EEAD4',
+        optionColorHoverInverted: 'rgba(255, 255, 255, 0.08)',
+        optionColorActiveInverted: 'rgba(20, 184, 166, 0.18)',
+      },
+    },
   },
   Layout: {
     headerBorderColor: '#E6ECF3',
