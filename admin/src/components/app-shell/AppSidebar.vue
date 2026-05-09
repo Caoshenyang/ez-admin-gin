@@ -41,7 +41,6 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
   color: 'rgba(255, 255, 255, 0.16)',
   colorHover: 'rgba(20, 184, 166, 0.32)',
   railColor: 'transparent',
-  railInsetVerticalRight: '1px',
 }
 
 const sidebarVerticalRailStyle: CSSProperties = {
