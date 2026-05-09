@@ -4,8 +4,7 @@ export interface MetricCard {
   label: string
   value: string
   hint: string
-  accent: string
-  iconBg: string
+  iconClass: string
   panelClass: string
   icon: Component
 }

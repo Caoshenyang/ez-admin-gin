@@ -30,9 +30,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">文件管理</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">上传和管理系统附件，支持图片和常见文档格式。</p>
+                  <div class="ez-page-header">
+            <h1>文件管理</h1>
+          <p>上传和管理系统附件，支持图片和常见文档格式。</p>
         </div>
 
         <NUpload v-if="canUse('system:file:upload')" :show-file-list="false" :custom-request="handleUpload" :disabled="uploading">

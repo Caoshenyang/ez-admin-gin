@@ -36,9 +36,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">公告管理</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">管理系统公告，支持按标题搜索和状态筛选。</p>
+                  <div class="ez-page-header">
+            <h1>公告管理</h1>
+          <p>管理系统公告，支持按标题搜索和状态筛选。</p>
         </div>
 
         <NButton v-if="canUse('system:notice:create')" type="primary" @click="openCreate">

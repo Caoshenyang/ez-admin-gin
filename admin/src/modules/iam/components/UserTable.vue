@@ -3,7 +3,6 @@ import { EllipsisHorizontal } from '@vicons/ionicons5'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import {
   NButton,
-  NCard,
   NDataTable,
   NDropdown,
   NIcon,
@@ -49,8 +48,8 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 180,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.username)),
-        h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.nickname)),
+        h('p', { class: 'font-semibold text-[#0F172A]' }, displayText(row.username)),
+        h('p', { class: 'text-xs text-[#64748B]' }, displayText(row.nickname)),
       ])
     },
   },
@@ -60,7 +59,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 180,
     render(row) {
       if (row.department_id === 0) {
-        return h('span', { class: 'text-sm text-[#9CA3AF]' }, '未分配')
+        return h('span', { class: 'text-sm text-[#94A3B8]' }, '未分配')
       }
 
       return h(
@@ -76,7 +75,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 220,
     render(row) {
       if (row.role_ids.length === 0) {
-        return h('span', { class: 'text-sm text-[#9CA3AF]' }, '未分配')
+        return h('span', { class: 'text-sm text-[#94A3B8]' }, '未分配')
       }
 
       return h(NSpace, { size: 6 }, {
@@ -92,7 +91,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 220,
     render(row) {
       if (row.post_ids.length === 0) {
-        return h('span', { class: 'text-sm text-[#9CA3AF]' }, '未绑定')
+        return h('span', { class: 'text-sm text-[#94A3B8]' }, '未绑定')
       }
 
       return h(NSpace, { size: 6 }, {
@@ -198,10 +197,10 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
-    <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3">
+  <div class="ez-table-card min-h-0 flex-1">
+    <div class="ez-table-bar">
       <NSpace :size="12">
-        <span class="text-sm text-[#6B7280]">已选 {{ selectedCount }} 项</span>
+        <span>已选 {{ selectedCount }} 项</span>
         <NButton text :disabled="selectedCount === 0">批量禁用</NButton>
         <NButton text :disabled="selectedCount === 0">批量删除</NButton>
       </NSpace>
@@ -214,7 +213,6 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 
     <NDataTable
       remote
-      class="user-table"
       :columns="columns"
       :data="users"
       :loading="loading"
@@ -225,7 +223,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
       @update:checked-row-keys="(keys) => emit('checkedRowKeysChange', keys)"
     />
 
-    <div class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3 text-sm text-[#6B7280]">
+    <div class="ez-table-footer">
       <span>共 {{ displayTotal }} 条，已选择 {{ selectedCount }} 条</span>
       <NPagination
         :page="page"
@@ -237,21 +235,5 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
         @update:page-size="(pageSize) => emit('pageSizeChange', pageSize)"
       />
     </div>
-  </NCard>
+  </div>
 </template>
-
-<style scoped>
-.user-table :deep(.n-data-table-th) {
-  font-weight: 700;
-  color: #374151;
-  background: #fff;
-}
-
-.user-table :deep(.n-data-table-td) {
-  color: #374151;
-}
-
-.user-table :deep(.n-data-table-tr:hover .n-data-table-td) {
-  background: #f8fbff;
-}
-</style>

@@ -24,7 +24,7 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="role-modal" style="width: 560px; max-width: calc(100vw - 32px)" @update:show="(value) => $emit('update:show', value)">
+  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-md" @update:show="(value) => $emit('update:show', value)">
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增角色' : '编辑角色'"
@@ -33,7 +33,7 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
       />
     </template>
 
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="80">
+    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="left" label-width="80" class="ez-modal-form">
       <NFormItem label="角色编码" path="code">
         <NInput v-model:value="formModel.code" placeholder="demo_operator" :disabled="formMode === 'edit'" />
       </NFormItem>
@@ -52,23 +52,10 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
     </NForm>
 
     <template #footer>
-      <div class="flex justify-end gap-3">
+      <div class="ez-modal-footer">
         <NButton @click="$emit('update:show', false)">取消</NButton>
         <NButton type="primary" :loading="saving" @click="$emit('submit')">保存</NButton>
       </div>
     </template>
   </NModal>
 </template>
-
-<style scoped>
-.role-modal :deep(.n-card) {
-  overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid #dfe9f5;
-  box-shadow: 0 24px 72px rgba(15, 23, 42, 0.16);
-}
-
-.role-modal :deep(.n-card-header) {
-  padding: 0;
-}
-</style>

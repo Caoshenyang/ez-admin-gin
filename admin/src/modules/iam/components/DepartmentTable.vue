@@ -29,8 +29,8 @@ const columns: DataTableColumns<DepartmentItem> = [
     minWidth: 260,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.name)),
-        h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.code)),
+        h('p', { class: 'font-semibold text-[#0F172A]' }, displayText(row.name)),
+        h('p', { class: 'text-xs text-[#64748B]' }, displayText(row.code)),
       ])
     },
   },
@@ -126,7 +126,7 @@ const columns: DataTableColumns<DepartmentItem> = [
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
+  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <NDataTable
       class="department-table"
       :columns="columns"

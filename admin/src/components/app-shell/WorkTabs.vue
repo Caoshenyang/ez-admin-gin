@@ -197,7 +197,7 @@ onBeforeUnmount(() => {
   height: 44px;
   align-items: center;
   gap: 0;
-  border-bottom: 1px solid #E5EAF3;
+  border-bottom: 1px solid var(--ez-border);
   background: #ffffff;
   padding: 0 12px;
 }
@@ -277,20 +277,20 @@ onBeforeUnmount(() => {
 
 .admin-tab-item:hover {
   background: #F1F5F9;
-  border-color: #E5EAF3;
-  color: #2563EB;
+  border-color: var(--ez-border);
+  color: #0D8B82;
 }
 
 .admin-tab-item--active {
-  background: #EFF6FF;
-  border-color: transparent;
-  color: #2563EB;
+  background: rgba(20, 184, 166, 0.10);
+  border: 1px solid rgba(20, 184, 166, 0.16);
+  color: #0F766E;
   font-weight: 500;
 }
 
 .admin-tab-item--active:hover {
-  background: #DBEAFE;
-  color: #2563EB;
+  background: rgba(20, 184, 166, 0.08);
+  color: #0D8B82;
 }
 
 .admin-tab-item__dot {
@@ -327,12 +327,12 @@ onBeforeUnmount(() => {
 }
 
 .admin-tab-item__close:hover {
-  opacity: 1 !important;
-  background: rgba(37, 99, 235, 0.1);
+  opacity: 1;
+  background: rgba(20, 184, 166, 0.12);
 }
 
 .admin-tab-item--active .admin-tab-item__close:hover {
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(20, 184, 166, 0.15);
 }
 
 .admin-tabs-actions {

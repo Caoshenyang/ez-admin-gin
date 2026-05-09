@@ -52,9 +52,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">角色权限</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">维护角色本身，以及角色拥有的菜单、按钮和接口权限。</p>
+                  <div class="ez-page-header">
+            <h1>角色权限</h1>
+          <p>维护角色本身，以及角色拥有的菜单、按钮和接口权限。</p>
         </div>
 
         <NSpace>

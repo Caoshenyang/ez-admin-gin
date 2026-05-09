@@ -31,9 +31,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">岗位管理</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">收口岗位基础信息，给用户归属、协作流程和扩展模块提供统一的岗位字典。</p>
+                  <div class="ez-page-header">
+            <h1>岗位管理</h1>
+          <p>收口岗位基础信息，给用户归属、协作流程和扩展模块提供统一的岗位字典。</p>
         </div>
 
         <NButton v-if="canUse('system:post:create')" type="primary" @click="openCreate">

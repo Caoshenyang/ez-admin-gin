@@ -41,7 +41,7 @@ const columns: DataTableColumns<AdminMenu> = [
       const cfg = typeConfig[row.type]
 
       return h('span', { class: 'inline-flex items-center gap-2' }, [
-        h('span', { class: 'font-medium text-[#111827]' }, displayText(row.title)),
+        h('span', { class: 'font-medium text-[#0F172A]' }, displayText(row.title)),
         h(
           NTag,
           { size: 'small', bordered: false, round: false, type: cfg.type },
@@ -185,9 +185,9 @@ function rowKey(row: AdminMenu) {
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
+  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <TableStatsBar>
-      <span class="text-xs text-[#6B7280]">
+      <span class="text-xs text-[#64748B]">
         共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单 {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }}
       </span>
       <template #actions>
@@ -213,24 +213,3 @@ function rowKey(row: AdminMenu) {
     />
   </NCard>
 </template>
-
-<style scoped>
-.menu-table :deep(.n-data-table-th) {
-  font-weight: 700;
-  color: #374151;
-  background: #fff;
-}
-
-.menu-table :deep(.n-data-table-td) {
-  color: #374151;
-}
-
-.menu-table :deep(.n-data-table-tr:hover .n-data-table-td) {
-  background: #f8fbff;
-}
-
-.menu-table :deep(.n-data-table-td .n-data-table-td__content) {
-  display: inline-flex;
-  align-items: center;
-}
-</style>

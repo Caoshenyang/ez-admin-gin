@@ -48,12 +48,12 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
       return h('div', { class: 'flex items-center gap-3' }, [
         h(
           'div',
-          { class: 'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[#EEF2FF] text-[#4F46E5]' },
+          { class: 'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[18px] bg-[#EEF2FF] text-[#4F46E5]' },
           [h(NIcon, { size: 18 }, { default: () => h(AttachOutline) })],
         ),
         h('div', { class: 'min-w-0 leading-5' }, [
-          h('p', { class: 'truncate font-medium text-[#111827]' }, displayText(row.display_name)),
-          h('p', { class: 'truncate text-xs text-[#6B7280]' }, displayText(row.original_name)),
+          h('p', { class: 'truncate font-medium text-[#0F172A]' }, displayText(row.display_name)),
+          h('p', { class: 'truncate text-xs text-[#64748B]' }, displayText(row.original_name)),
         ]),
       ])
     },
@@ -162,7 +162,7 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
 </script>
 
 <template>
-  <NCard :bordered="false" class="flex-1 overflow-hidden rounded-lg">
+  <NCard :bordered="false" class="flex-1 overflow-hidden rounded-[18px]">
     <div class="flex h-full flex-col">
       <NDataTable :columns="columns" :data="attachments" :loading="loading" :bordered="false" flex-height class="flex-1" />
 

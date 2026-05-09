@@ -41,7 +41,6 @@ const {
   uploadFormRef,
   uploadModalVisible,
   uploadRules,
-  formatSubmitUploadError,
 } = useAttachmentPage()
 
 // copyURL 函数。
@@ -69,9 +68,9 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">附件中心</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">复用底层文件上传链路，把附件整理成可分类、可检索、可业务复用的统一资源。</p>
+                  <div class="ez-page-header">
+            <h1>附件中心</h1>
+          <p>复用底层文件上传链路，把附件整理成可分类、可检索、可业务复用的统一资源。</p>
         </div>
 
         <NButton v-if="canUse('system:attachment:upload')" type="primary" @click="openUploadModal">

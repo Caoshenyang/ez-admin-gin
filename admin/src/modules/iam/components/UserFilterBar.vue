@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NCard, NInput, NSelect, NSpace } from 'naive-ui'
+import { NButton, NInput, NSelect, NSpace } from 'naive-ui'
 
 defineProps<{
   keyword: string
@@ -20,8 +20,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <NCard :bordered="false" class="rounded-lg">
-    <NSpace align="center" :wrap="true">
+  <div class="ez-toolbar">
+    <NSpace align="center" :wrap="true" :size="12">
       <NInput
         :value="keyword"
         clearable
@@ -45,5 +45,5 @@ const emit = defineEmits<{
       <NButton type="primary" @click="emit('search')">查询</NButton>
       <NButton @click="emit('reset')">重置</NButton>
     </NSpace>
-  </NCard>
+  </div>
 </template>

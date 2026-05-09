@@ -23,7 +23,7 @@ const formModel = defineModel<PostFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="post-modal" style="width: 640px; max-width: calc(100vw - 32px)" @update:show="(value) => $emit('update:show', value)">
+  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-lg" @update:show="(value) => $emit('update:show', value)">
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增岗位' : '编辑岗位'"
@@ -55,23 +55,10 @@ const formModel = defineModel<PostFormModel>('model', { required: true })
     </NForm>
 
     <template #footer>
-      <div class="flex justify-end gap-3">
+      <div class="ez-modal-footer">
         <NButton quaternary @click="$emit('update:show', false)">取消</NButton>
         <NButton type="primary" :loading="saving" @click="$emit('submit')">保存</NButton>
       </div>
     </template>
   </NModal>
 </template>
-
-<style scoped>
-.post-modal :deep(.n-card) {
-  overflow: hidden;
-  border-radius: 20px;
-  border: 1px solid #dfe9f5;
-  box-shadow: 0 24px 72px rgba(15, 23, 42, 0.16);
-}
-
-.post-modal :deep(.n-card-header) {
-  padding: 0;
-}
-</style>

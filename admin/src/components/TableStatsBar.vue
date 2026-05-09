@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <div class="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-2.5">
+  <div class="ez-table-bar">
     <div>
       <slot />
     </div>

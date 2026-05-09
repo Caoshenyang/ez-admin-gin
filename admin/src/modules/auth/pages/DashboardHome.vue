@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton, NCard, NEmpty, NIcon, NTag } from 'naive-ui'
+import { NAlert, NButton, NCard, NEmpty, NTag } from 'naive-ui'
 import OverviewPanel from '../components/OverviewPanel.vue'
 import QuickEntry from '../components/QuickEntry.vue'
 import StatCard from '../components/StatCard.vue'
@@ -42,7 +42,7 @@ const {
       v-if="errorMessage"
       type="error"
       title="工作台同步失败"
-      class="rounded-[14px]"
+      class="rounded-[16px]"
       :bordered="false"
     >
       {{ errorMessage }}
@@ -51,10 +51,10 @@ const {
     <!-- 欢迎区 -->
     <section class="flex items-center justify-between gap-4">
       <div>
-        <h1 class="text-[26px] font-semibold text-[#0F172A]">
+        <h1 class="text-[28px] font-bold text-[#0F172A]">
           {{ currentUserLabel }}，{{ currentDateLabel }}
         </h1>
-        <p class="mt-1 text-[14px] text-[#64748B]">
+        <p class="mt-1.5 text-[14px] text-[#64748B]">
           {{ heroStatusText }}
         </p>
       </div>
@@ -89,15 +89,14 @@ const {
         :label="item.label"
         :value="item.value"
         :hint="item.hint"
-        :accent="item.accent"
-        :icon-bg="item.iconBg"
+        :icon-class="item.iconClass"
         :icon="item.icon"
       />
     </section>
 
     <!-- 系统概览 + 快捷入口 -->
     <section class="grid gap-5 xl:grid-cols-[1fr_340px]">
-      <NCard class="dash-card" :bordered="false" content-style="padding: 0;">
+      <NCard class="ez-card-elevated" :bordered="false" content-class="ez-card-content-reset">
         <OverviewPanel
           :hero-icon="heroIcon"
           :health-items="healthItems"
@@ -107,14 +106,14 @@ const {
         />
       </NCard>
 
-      <NCard class="dash-card" :bordered="false">
+      <NCard class="ez-card-elevated" :bordered="false">
         <QuickEntry :links="quickLinks" @navigate="navigateTo" />
       </NCard>
     </section>
 
     <!-- 最近操作 + 登录/公告 -->
     <section class="grid gap-5 xl:grid-cols-[1fr_400px]">
-      <NCard class="dash-card">
+      <NCard class="ez-card-elevated">
         <template #header>
           <span class="dash-card-title">最近操作</span>
         </template>
@@ -159,7 +158,7 @@ const {
       </NCard>
 
       <section class="grid gap-5">
-        <NCard class="dash-card">
+        <NCard class="ez-card-elevated">
           <template #header>
             <span class="dash-card-title">最近登录</span>
           </template>
@@ -204,7 +203,7 @@ const {
           <NEmpty v-else description="还没有登录记录" />
         </NCard>
 
-        <NCard class="dash-card">
+        <NCard class="ez-card-elevated">
           <template #header>
             <span class="dash-card-title">最新公告</span>
           </template>
@@ -238,26 +237,22 @@ const {
   gap: 24px;
 }
 
-.dash-card {
-  border: 1px solid #E5EAF3 !important;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06) !important;
-}
-
 .dash-card-title {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: #0F172A;
 }
 
 .dash-log-row {
   border-radius: 12px;
-  border: 1px solid #E5EAF3;
+  border: 1px solid #E6ECF3;
   padding: 12px 14px;
-  transition: border-color 0.14s ease;
+  transition: all 0.2s ease;
 }
 
 .dash-log-row:hover {
   border-color: #CBD5E1;
+  background: #FAFBFD;
 }
 
 .dash-log-row--flat {
@@ -266,6 +261,6 @@ const {
 }
 
 .dash-log-row--flat:hover {
-  background: #EFF6FF;
+  background: #F4FDFA;
 }
 </style>

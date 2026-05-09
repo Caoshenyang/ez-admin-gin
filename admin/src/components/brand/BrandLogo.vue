@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import brandLogoUrl from '@/assets/brand-logo.svg'
 
 interface Props {
@@ -10,7 +8,7 @@ interface Props {
   subtitle?: string
   title?: string
   variant?: 'light' | 'dark'
-  width?: number | string
+  width?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -21,14 +19,6 @@ const props = withDefaults(defineProps<Props>(), {
   title: 'EZ Admin',
   variant: 'light',
   width: 132,
-})
-
-const logoStyle = computed(() => {
-  const width = typeof props.width === 'number' ? `${props.width}px` : props.width
-
-  return {
-    width,
-  }
 })
 </script>
 
@@ -41,7 +31,7 @@ const logoStyle = computed(() => {
       class="flex max-w-full items-center"
       :class="direction === 'inline' ? 'gap-3' : 'flex-col gap-3'"
     >
-      <img :src="brandLogoUrl" alt="EZ Admin 品牌 Logo" class="block h-auto max-w-full" :style="logoStyle">
+      <img :src="brandLogoUrl" :width="props.width" alt="EZ Admin 品牌 Logo" class="block h-auto max-w-full">
 
       <span
         v-if="showTitle"

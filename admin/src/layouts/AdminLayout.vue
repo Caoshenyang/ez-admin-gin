@@ -193,7 +193,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <NLayout class="h-screen overflow-hidden bg-[#F6F8FB]" has-sider>
+  <NLayout class="h-screen overflow-hidden bg-[var(--ez-page-bg)]" has-sider>
     <AppSidebar
       :active-menu-key="shellStore.activeMenuKey"
       :collapsed="shellStore.sidebarCollapsed"
@@ -205,7 +205,7 @@ onBeforeUnmount(() => {
       @toggle="shellStore.toggleSidebar()"
     />
 
-    <NLayout class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#F6F8FB]">
+    <NLayout class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--ez-page-bg)]">
       <AppHeader
         :breadcrumb-text="breadcrumbText"
         :display-name="displayName"
@@ -224,21 +224,13 @@ onBeforeUnmount(() => {
         @close-all="handleCloseAllTabs"
       />
 
-      <NLayoutContent
-        class="admin-layout-content min-h-0 flex-1"
-        content-style="padding: 24px; background: #F6F8FB;"
-        :native-scrollbar="false"
-      >
-        <RouterView v-slot="{ Component, route: currentRoute }">
-          <component :is="Component" :key="shellStore.getRouteViewKey(currentRoute.fullPath)" />
-        </RouterView>
+      <NLayoutContent class="min-h-0 flex-1" :native-scrollbar="false">
+        <div class="ez-content-surface">
+          <RouterView v-slot="{ Component, route: currentRoute }">
+            <component :is="Component" :key="shellStore.getRouteViewKey(currentRoute.fullPath)" />
+          </RouterView>
+        </div>
       </NLayoutContent>
     </NLayout>
   </NLayout>
 </template>
-
-<style scoped>
-.admin-layout-content {
-  overflow: auto;
-}
-</style>

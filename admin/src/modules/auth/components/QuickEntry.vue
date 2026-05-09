@@ -16,7 +16,7 @@ const emit = defineEmits<{
 <template>
   <div>
     <div class="flex items-center justify-between">
-      <p class="text-[15px] font-semibold text-[#0F172A]">快捷入口</p>
+      <p class="text-[16px] font-semibold text-[#0F172A]">快捷入口</p>
       <NTag round :bordered="false" type="info" size="small">{{ links.length }} 项</NTag>
     </div>
 
@@ -47,34 +47,34 @@ const emit = defineEmits<{
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  border: 1px solid #E5EAF3;
+  border: 1px solid #E6ECF3;
   border-radius: 14px;
   background: #ffffff;
-  padding: 12px 14px;
+  padding: 14px 16px;
   text-align: left;
   cursor: pointer;
   transition:
-    border-color 0.14s ease,
-    background-color 0.14s ease,
-    box-shadow 0.14s ease;
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .quick-entry:hover {
-  background: #F8FAFC;
-  border-color: rgba(37, 99, 235, 0.25);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.06);
+  background: #F4FDFA;
+  border-color: rgba(20, 184, 166, 0.22);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.06);
 }
 
 .quick-entry__arrow {
   flex-shrink: 0;
   color: #94A3B8;
   transition:
-    color 0.14s ease,
-    transform 0.14s ease;
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .quick-entry:hover .quick-entry__arrow {
-  color: #2563EB;
-  transform: translateX(2px);
+  color: #14B8A6;
+  transform: translateX(4px);
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NButton, NCard, NInput, NSelect } from 'naive-ui'
+import { NButton, NInput, NSelect } from 'naive-ui'
 
 import { methodOptions, successOptions } from '../composables/operation-log-page.utils'
 
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <NCard :bordered="false" class="rounded-lg">
+  <div class="ez-toolbar">
     <div class="grid gap-3 xl:grid-cols-[180px_150px_minmax(0,1fr)_150px_auto]">
       <NInput
         :value="props.username"
@@ -44,5 +44,5 @@ const emit = defineEmits<{
         <NButton @click="emit('reset')">重置</NButton>
       </div>
     </div>
-  </NCard>
+  </div>
 </template>

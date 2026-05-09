@@ -46,9 +46,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">菜单管理</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">维护侧边栏目录、页面菜单和页面内按钮权限。</p>
+                  <div class="ez-page-header">
+            <h1>菜单管理</h1>
+          <p>维护侧边栏目录、页面菜单和页面内按钮权限。</p>
         </div>
 
         <NButton v-if="canUse('system:menu:create')" type="primary" @click="openCreateRoot">

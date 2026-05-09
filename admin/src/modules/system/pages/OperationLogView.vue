@@ -5,7 +5,6 @@ import OperationLogTable from '../components/OperationLogTable.vue'
 import { useOperationLogPage } from '../composables/useOperationLogPage'
 
 const {
-  closeDetail,
   detailRow,
   detailVisible,
   handleDetailVisibleChange,
@@ -25,9 +24,9 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div>
-        <h1 class="text-[26px] font-bold text-[#111827]">操作日志</h1>
-        <p class="mt-1 text-sm text-[#6B7280]">追踪后台接口操作行为，快速查看风险等级、执行结果和具体请求细节。</p>
+              <div class="ez-page-header">
+          <h1>操作日志</h1>
+        <p>追踪后台接口操作行为，快速查看风险等级、执行结果和具体请求细节。</p>
       </div>
 
       <OperationLogFilterBar

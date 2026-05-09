@@ -42,7 +42,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'created_at',
     width: 180,
     render(row) {
-      return h('span', { class: 'text-[#374151]' }, formatTime(row.created_at))
+      return h('span', { class: 'text-[#334155]' }, formatTime(row.created_at))
     },
   },
   {
@@ -50,7 +50,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'username',
     width: 120,
     render(row) {
-      return h('span', { class: 'font-semibold text-[#111827]' }, displayText(row.username))
+      return h('span', { class: 'font-semibold text-[#0F172A]' }, displayText(row.username))
     },
   },
   {
@@ -58,7 +58,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'path',
     width: 120,
     render(row) {
-      return h('span', { class: 'text-[#374151]' }, getModule(row.path))
+      return h('span', { class: 'text-[#334155]' }, getModule(row.path))
     },
   },
   {
@@ -75,7 +75,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     minWidth: 180,
     ellipsis: { tooltip: true },
     render(row) {
-      return h('span', { class: 'text-[#374151]' }, getAction(row))
+      return h('span', { class: 'text-[#334155]' }, getAction(row))
     },
   },
   {
@@ -116,9 +116,9 @@ const columns: DataTableColumns<OperationLogItem> = [
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="padding: 0;">
+  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <TableStatsBar>
-      <span class="text-sm text-[#6B7280]">共 {{ total }} 条</span>
+      <span class="text-sm text-[#64748B]">共 {{ total }} 条</span>
       <template #actions>
         <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
       </template>
@@ -136,7 +136,7 @@ const columns: DataTableColumns<OperationLogItem> = [
       :bordered="false"
     />
 
-    <div class="flex items-center justify-between border-t border-[#E5E7EB] px-4 py-3 text-sm text-[#6B7280]">
+    <div class="flex items-center justify-between border-t border-[#E6ECF3] px-4 py-3 text-sm text-[#64748B]">
       <span>共 {{ total }} 条</span>
       <NPagination
         :page="page"
@@ -150,22 +150,3 @@ const columns: DataTableColumns<OperationLogItem> = [
     </div>
   </NCard>
 </template>
-
-<style scoped>
-.operation-table :deep(.n-data-table-th) {
-  font-weight: 700;
-  color: #4b5563;
-  background: #f9fafb;
-  font-size: 13px;
-}
-
-.operation-table :deep(.n-data-table-td) {
-  color: #374151;
-  font-size: 14px;
-  padding: 10px 16px;
-}
-
-.operation-table :deep(.n-data-table-tr:hover .n-data-table-td) {
-  filter: brightness(0.985);
-}
-</style>

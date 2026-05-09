@@ -6,8 +6,7 @@ defineProps<{
   label: string
   value: string
   hint: string
-  accent: string
-  iconBg: string
+  iconClass: string
   icon: Component
 }>()
 </script>
@@ -17,15 +16,12 @@ defineProps<{
     <div class="flex items-start justify-between">
       <div>
         <p class="text-[13px] font-medium text-[#94A3B8]">{{ label }}</p>
-        <p class="mt-2 text-[32px] font-semibold tracking-tight text-[#0F172A]">
+        <p class="mt-2 text-[32px] font-bold tracking-tight text-[#0F172A]">
           {{ value }}
         </p>
       </div>
-      <div
-        class="stat-card__icon"
-        :style="{ background: iconBg, color: accent }"
-      >
-        <NIcon :component="icon" :size="20" />
+      <div class="stat-card__icon" :class="iconClass">
+        <NIcon :component="icon" :size="22" />
       </div>
     </div>
     <p class="mt-3 text-[12px] text-[#94A3B8]">{{ hint }}</p>
@@ -35,19 +31,19 @@ defineProps<{
 <style scoped>
 .stat-card {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 24px;
-  border: 1px solid #E5EAF3;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+  border: 1px solid #E6ECF3;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
   transition:
-    border-color 0.14s ease,
-    box-shadow 0.14s ease,
-    transform 0.14s ease;
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .stat-card:hover {
-  border-color: rgba(37, 99, 235, 0.25);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  border-color: rgba(20, 184, 166, 0.22);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
   transform: translateY(-2px);
 }
 
@@ -55,8 +51,8 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 14px;
   flex-shrink: 0;
 }

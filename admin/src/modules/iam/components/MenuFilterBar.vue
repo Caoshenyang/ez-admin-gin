@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NCard, NInput, NSelect, NSpace } from 'naive-ui'
+import { NButton, NInput, NSelect, NSpace } from 'naive-ui'
 
 import { MenuStatus, MenuType } from '@/modules/iam/types/menu'
 
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <NCard :bordered="false" class="rounded-lg">
+  <div class="ez-toolbar">
     <NSpace align="center" :wrap="true">
       <NInput
         :value="props.keyword"
@@ -34,5 +34,5 @@ const emit = defineEmits<{
       <NSelect :value="props.status" :options="statusOptions" class="w-40" @update:value="emit('update:status', $event as 0 | MenuStatus)" />
       <NButton @click="emit('reset')">重置</NButton>
     </NSpace>
-  </NCard>
+  </div>
 </template>

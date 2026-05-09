@@ -46,7 +46,7 @@ const defaultMenuIcon = AppsOutline
 
 // builtinMenuCodeIconMap 内置菜单编码到图标的映射，优先级最高。
 const builtinMenuCodeIconMap: Record<string, MenuIconComponent> = {
-  dashboard: GridOutline,
+  dashboard: AppsOutline,
   system: SettingsOutline,
   'system:health': PulseOutline,
   'system:user': PeopleOutline,
@@ -75,7 +75,7 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   build: BuildOutline,
   cog: CogOutline,
   config: BuildOutline,
-  dashboard: GridOutline,
+  dashboard: AppsOutline,
   directory: AlbumsOutline,
   document: DocumentTextOutline,
   edit: DocumentTextOutline,
@@ -87,9 +87,9 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   grid: GridOutline,
   health: PulseOutline,
   history: TimeOutline,
-  home: GridOutline,
-  layout: GridOutline,
-  layoutdashboard: GridOutline,
+  home: AppsOutline,
+  layout: AppsOutline,
+  layoutdashboard: AppsOutline,
   layers: LayersOutline,
   list: ListOutline,
   log: ListOutline,
@@ -129,7 +129,7 @@ const builtinMenuOptions: AdminMenuOption[] = [
     menuCode: 'dashboard',
     menuType: MenuType.Menu,
     routePath: '/dashboard',
-    icon: renderMenuIcon(GridOutline),
+    icon: renderMenuIcon(AppsOutline),
   },
 ]
 
@@ -283,9 +283,13 @@ function resolveMenuIcon(code: string, icon: string) {
 // renderMenuIcon 将图标组件包装为 Naive UI 菜单所需的渲染函数。
 function renderMenuIcon(icon: MenuIconComponent) {
   return () =>
-    h(NIcon, null, {
-      default: () => h(icon),
-    })
+    h(
+      NIcon,
+      null,
+      {
+        default: () => h(icon),
+      },
+    )
 }
 
 // normalizeMenuIcon 将后端 icon 字段标准化：去空格、转小写、移除非字母数字字符。

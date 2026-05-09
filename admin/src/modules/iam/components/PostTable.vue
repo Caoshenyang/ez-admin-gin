@@ -16,14 +16,13 @@ defineEmits<{
 </script>
 
 <template>
-  <NCard class="min-h-0 flex-1 rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column; padding: 0;">
-    <div class="flex items-center justify-end border-b border-[#E5E7EB] px-4 py-3">
+  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-fill">
+    <div class="flex items-center justify-end border-b border-[#E6ECF3] px-4 py-3">
       <NButton text type="primary" @click="$emit('refresh')">刷新</NButton>
     </div>
 
     <NDataTable
       class="h-full"
-      style="height: 100%"
       :columns="columns"
       :data="items"
       :loading="loading"

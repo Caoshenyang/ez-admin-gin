@@ -33,9 +33,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">部门管理</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">维护组织树结构，为用户归属与数据权限提供稳定边界。</p>
+                  <div class="ez-page-header">
+            <h1>部门管理</h1>
+          <p>维护组织树结构，为用户归属与数据权限提供稳定边界。</p>
         </div>
 
         <NButton v-if="canUse('system:department:create')" type="primary" @click="openCreate">

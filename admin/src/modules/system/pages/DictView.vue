@@ -56,9 +56,9 @@ const {
   <main class="admin-page">
     <section class="admin-page-section">
       <div class="flex items-center justify-between gap-4">
-        <div>
-          <h1 class="text-[26px] font-bold text-[#111827]">字典管理</h1>
-          <p class="mt-1 text-sm text-[#6B7280]">先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。</p>
+                  <div class="ez-page-header">
+            <h1>字典管理</h1>
+          <p>先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。</p>
         </div>
 
         <NButton v-if="canUse('system:dict:type:create')" type="primary" @click="openTypeCreate">

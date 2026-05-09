@@ -21,12 +21,12 @@ defineProps<{
         <NIcon :component="heroIcon" :size="18" />
       </div>
       <div>
-        <p class="text-[15px] font-semibold text-[#0F172A]">系统概览</p>
+        <p class="text-[16px] font-semibold text-[#0F172A]">系统概览</p>
         <p class="mt-0.5 text-[12px] text-[#94A3B8]">{{ statusText }}</p>
       </div>
     </div>
 
-    <!-- 6-cell info grid -->
+    <!-- info grid -->
     <div class="overview-panel__grid">
       <div
         v-for="item in healthItems"
@@ -58,43 +58,48 @@ defineProps<{
 
 <style scoped>
 .overview-panel {
-  padding: 24px;
-  background: linear-gradient(135deg, #EFF6FF 0%, #F6F8FB 50%, #F0FDF4 100%);
-  border-radius: 16px;
+  padding: 28px;
+  background: linear-gradient(135deg, #F4FDFA 0%, #F8FBFF 100%);
+  border-radius: 18px;
 }
 
 .overview-panel__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
-  background: #2563EB;
+  background: linear-gradient(135deg, #14B8A6 0%, #0D8B82 100%);
   color: #ffffff;
   flex-shrink: 0;
 }
 
 .overview-panel__grid {
   display: grid;
-  margin-top: 20px;
+  margin-top: 22px;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .overview-cell {
   background: #ffffff;
   border-radius: 14px;
-  padding: 14px 16px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+  padding: 16px 18px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: box-shadow 0.2s ease;
+}
+
+.overview-cell:hover {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
 }
 
 .overview-cell__label {
   font-size: 12px;
-  color: #475569;
+  color: #64748B;
 }
 
 .overview-cell__value {

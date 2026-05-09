@@ -26,11 +26,11 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="rounded-lg" :bordered="false" content-style="display: flex; height: 100%; min-height: 0; flex-direction: column;">
+  <NCard class="ez-card min-h-0 rounded-lg" :bordered="false" content-class="ez-card-content-fill">
     <div class="flex h-full flex-col overflow-hidden">
       <div class="mb-4">
-        <h2 class="text-lg font-bold text-[#111827]">角色列表</h2>
-        <p class="mt-1 text-xs text-[#6B7280]">点击左侧角色后，在右侧维护权限。</p>
+        <h2 class="text-lg font-bold text-[#0F172A]">角色列表</h2>
+        <p class="mt-1 text-xs text-[#64748B]">点击左侧角色后，在右侧维护权限。</p>
       </div>
 
       <NSpace vertical :size="10" class="mb-4">
@@ -51,14 +51,14 @@ const query = defineModel<RoleListQuery>('query', { required: true })
           @click="$emit('select', role)"
         >
           <span class="flex items-center justify-between gap-2">
-            <span class="min-w-0 truncate text-base font-bold text-[#111827]">
+            <span class="min-w-0 truncate text-base font-bold text-[#0F172A]">
               {{ role.name }}
             </span>
             <NTag :type="statusType(role.status)" :bordered="false" size="small">
               {{ role.status === 1 ? '启用' : '禁用' }}
             </NTag>
           </span>
-          <span class="mt-1 block text-left text-xs text-[#6B7280]">
+          <span class="mt-1 block text-left text-xs text-[#64748B]">
             {{ role.code }} · 菜单 {{ role.menu_ids.length }} · 接口 {{ role.permissions.length }}
           </span>
           <span class="mt-2 flex items-center gap-2">

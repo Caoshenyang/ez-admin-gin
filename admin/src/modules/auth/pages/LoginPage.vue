@@ -32,7 +32,7 @@ const {
       class="mx-auto grid h-full max-w-[1180px] items-center gap-6 xl:grid-cols-[minmax(0,560px)_400px] xl:justify-between xl:gap-8"
     >
       <section
-        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[#111827] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
+        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[#0F172A] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
       >
         <div>
           <BrandLogo
@@ -59,11 +59,11 @@ const {
         <NCard
           class="rounded-2xl shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
           :bordered="false"
-          content-style="padding: 20px;"
+          content-class="login-card-content"
         >
           <div class="mb-2.5">
-            <h2 class="mb-1 text-[23px] font-bold text-[#111827]">登录控制台</h2>
-            <p class="text-sm text-[#6B7280]">请使用管理员账号继续</p>
+            <h2 class="mb-1 text-[23px] font-bold text-[#0F172A]">登录控制台</h2>
+            <p class="text-sm text-[#64748B]">请使用管理员账号继续</p>
           </div>
 
           <NForm
@@ -151,7 +151,7 @@ const {
           </NAlert>
         </NCard>
 
-        <p class="px-1 text-[12px] text-[#9CA3AF]">{{ footerText }}</p>
+        <p class="px-1 text-[12px] text-[#94A3B8]">{{ footerText }}</p>
       </section>
     </section>
   </main>
@@ -203,5 +203,9 @@ const {
   --n-border-radius: 8px;
   --n-font-size: 13px;
   --n-padding: 8px 10px;
+}
+
+.login-card-content {
+  padding: 20px;
 }
 </style>

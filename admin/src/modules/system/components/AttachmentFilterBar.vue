@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NCard, NInput, NSelect, NSpace } from 'naive-ui'
+import { NButton, NInput, NSelect, NSpace } from 'naive-ui'
 
 defineProps<{
   bizType: string
@@ -24,7 +24,7 @@ defineEmits<{
 </script>
 
 <template>
-  <NCard :bordered="false" class="rounded-lg">
+  <div class="ez-toolbar">
     <NSpace align="center" :wrap="true">
       <NInput :value="keyword" clearable placeholder="附件名称 / 原始文件名" class="w-64" @update:value="(value) => $emit('update:keyword', value)" @keyup.enter="$emit('search')" />
       <NInput :value="category" clearable placeholder="附件分类" class="w-40" @update:value="(value) => $emit('update:category', value)" @keyup.enter="$emit('search')" />
@@ -34,5 +34,5 @@ defineEmits<{
       <NButton type="primary" @click="$emit('search')">查询</NButton>
       <NButton quaternary @click="$emit('reset')">重置</NButton>
     </NSpace>
-  </NCard>
+  </div>
 </template>
