@@ -5,7 +5,25 @@ description: 部署方式总览、适用场景与文件结构
 
 # 部署概览
 
-EZ Admin 提供两种主要部署方式：**服务器二进制部署**和 **Docker 全容器化部署**。根据你的服务器环境和运维习惯选择即可。
+EZ Admin 提供多种部署方式，覆盖本地开发到生产上线。本文帮你快速选择合适的方案，并了解部署目录和脚本的作用。
+
+## 如何选择部署方式
+
+| 你的场景 | 推荐方案 | 配置文件 |
+|---------|---------|---------|
+| 本地开发（macOS / Linux） | Docker Compose 本地环境 | `compose.local.yml` |
+| 本地开发（Windows） | Docker Compose 本地环境 | `compose.local.win.yml` |
+| 一台 VPS / 云服务器上线 | 服务器二进制部署（推荐） | `compose.server.yml` |
+| 全容器化部署 | Docker 部署 | `compose.deploy.yml` |
+| 需要域名和 HTTPS | 域名与 HTTPS | `nginx-native-ssl.conf` |
+| 准备正式上线 | 生产环境检查清单 | — |
+| 已部署，需要更新 | 更新与回滚 | — |
+
+::: tip 新用户推荐
+如果你是第一次把 EZ Admin 部署到服务器，优先阅读 [服务器二进制部署](/deployment/server-binary-deploy)。
+
+它提供了一键打包脚本和自动初始化，流程最短，也最容易排查问题。
+:::
 
 ## 部署方式对比
 
@@ -17,12 +35,6 @@ EZ Admin 提供两种主要部署方式：**服务器二进制部署**和 **Dock
 | **配置文件** | `compose.server.yml` + `.env` | `compose.deploy.yml` + `.env` |
 | **适用场景** | 有 SSH 访问的 VPS、个人服务器 | Docker Hub 镜像分发、CI/CD 流水线 |
 | **推荐人群** | 个人项目、小团队 | 需要镜像版本管理的场景 |
-
-::: tip 推荐
-新用户优先使用 **服务器二进制部署**。它提供了一键打包脚本和自动初始化，流程最短，也最容易排查问题。
-
-详见 [服务器二进制部署](/deployment/server-binary-deploy)。
-:::
 
 ## 部署文件结构
 
@@ -60,12 +72,10 @@ deploy/
 本地打包 → 上传到服务器 → 配置环境变量 → 启动服务 → 初始化管理员
 ```
 
-后续章节会针对每种方式给出完整步骤。
-
 ## 接下来
 
-- 📦 [服务器二进制部署](/deployment/server-binary-deploy) — 推荐新用户阅读
-- 🐳 [Docker 部署](/deployment/docker-deploy) — 全容器化方案
-- 🌐 [域名与 HTTPS](/deployment/domain-and-https) — 配置域名和证书
-- 🔄 [更新与回滚](/deployment/update-and-rollback) — 版本更新流程
-- ✅ [生产环境检查清单](/deployment/production-checklist) — 上线前必查项
+- [服务器二进制部署](/deployment/server-binary-deploy) — 推荐新用户阅读
+- [Docker 部署](/deployment/docker-deploy) — 全容器化方案
+- [域名与 HTTPS](/deployment/domain-and-https) — 配置域名和证书
+- [更新与回滚](/deployment/update-and-rollback) — 版本更新流程
+- [生产环境检查清单](/deployment/production-checklist) — 上线前必查项

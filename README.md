@@ -106,7 +106,10 @@ ez-admin-gin/
 - [权限体系](https://caoshenyang.github.io/ez-admin-gin/architecture/rbac)
 - [后端开发](https://caoshenyang.github.io/ez-admin-gin/backend/overview)
 - [前端开发](https://caoshenyang.github.io/ez-admin-gin/frontend/overview)
-- [部署方案](https://caoshenyang.github.io/ez-admin-gin/deployment/overview)
+- [部署概览](https://caoshenyang.github.io/ez-admin-gin/deployment/overview)
+- [服务器二进制部署](https://caoshenyang.github.io/ez-admin-gin/deployment/server-binary-deploy)
+- [Docker 部署](https://caoshenyang.github.io/ez-admin-gin/deployment/docker-deploy)
+- [生产环境检查清单](https://caoshenyang.github.io/ez-admin-gin/deployment/production-checklist)
 - [参考手册](https://caoshenyang.github.io/ez-admin-gin/reference/)
 
 ## 权限体系
@@ -121,21 +124,33 @@ ez-admin-gin/
 
 ## Roadmap
 
+已完成：
+
 - [x] JWT 认证 + Casbin RBAC
 - [x] 动态菜单与按钮权限
 - [x] 组织体系（部门/岗位）
 - [x] 五级数据权限
 - [x] 系统模块（用户/角色/菜单/配置/字典/文件/日志/公告）
 - [x] 前端管理台（登录/壳子/动态菜单/管理页面）
-- [x] 多场景部署方案
+- [x] 多场景部署方案（5 种 Docker Compose 变体 + 一键部署脚本）
+
+计划中：
+
 - [ ] 前端主题切换（暗色模式）
 - [ ] 国际化支持
 - [ ] WebSocket 消息推送
 - [ ] 审批工作流
+- [ ] 更多业务模板
 
 ## Contributing
 
-欢迎提交 Issue 和 Pull Request。
+欢迎提交 Issue 和 Pull Request。贡献前建议先阅读：
+
+- [架构设计](https://caoshenyang.github.io/ez-admin-gin/architecture/overview)
+- [后端模块扩展](https://caoshenyang.github.io/ez-admin-gin/backend/module-development)
+- [前端模块扩展](https://caoshenyang.github.io/ez-admin-gin/frontend/overview)
+- [权限码和菜单约定](https://caoshenyang.github.io/ez-admin-gin/reference/permission-code-conventions)
+- [部署文档](https://caoshenyang.github.io/ez-admin-gin/deployment/overview)
 
 ## License
 

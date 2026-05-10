@@ -92,7 +92,10 @@
       "Bash(find . -name '*FilterBar.vue' -exec sed -i 's|<NCard :bordered=\"\"false\"\" class=\"\"rounded-lg\"\">|<div class=\"\"ez-toolbar\"\">|g' {} +)",
       "Bash(find . -name '*FilterBar.vue' -exec sed -i 's|<NCard :bordered=\"\"false\"\" class=\"\"rounded-\\\\[18px\\\\]\"\">|<div class=\"\"ez-toolbar\"\">|g' {} +)",
       "Bash(find . -name '*FilterBar.vue' -exec sed -i 's|</NCard>|</div>|g' {} +)",
-      "Bash(find ./server/internal/modules -name \"*.go\" -exec grep -l \"Auth\\\\|Permission\\\\|middleware\" {})"
+      "Bash(find ./server/internal/modules -name \"*.go\" -exec grep -l \"Auth\\\\|Permission\\\\|middleware\" {})",
+      "Bash(echo \"exit: $?\")",
+      "Bash(conf\" /Users/pzhen/Documents/workspace/csy/ez-admin-gin/docs/deployment/ 2>/dev/null || echo \"No conf blocks found in deployment docs\")",
+      "Bash(grep -rn \"```conf\" /Users/pzhen/Documents/workspace/csy/ez-admin-gin/docs/deployment/ 2>/dev/null || echo \"No conf blocks found in deployment docs\")"
     ]
   }
 }
