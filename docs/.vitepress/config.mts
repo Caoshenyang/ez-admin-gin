@@ -135,7 +135,12 @@ export default defineConfig({
         {
           text: '部署',
           items: [
-            { text: '部署概览', link: '/deployment/overview' }
+            { text: '部署概览', link: '/deployment/overview' },
+            { text: '服务器二进制部署', link: '/deployment/server-binary-deploy' },
+            { text: 'Docker 部署', link: '/deployment/docker-deploy' },
+            { text: '域名与 HTTPS', link: '/deployment/domain-and-https' },
+            { text: '更新与回滚', link: '/deployment/update-and-rollback' },
+            { text: '生产环境检查清单', link: '/deployment/production-checklist' }
           ]
         },
         {
