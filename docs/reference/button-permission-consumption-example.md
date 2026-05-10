@@ -246,5 +246,5 @@ function canUse(code: string) {
 
 - [权限码约定](./permission-code-conventions)
 - [动态菜单组件白名单](./dynamic-menu-component-reference)
-- [第 7 章：动态菜单注册与按钮权限](/tutorial/chapter-7/dynamic-route-registration)
-- [第 7 章：后台壳子、动态菜单与按钮权限](/tutorial/chapter-7/admin-shell-and-dynamic-menu)
+- [路由与菜单](/frontend/route-and-menu)
+- [动态菜单](/architecture/dynamic-menu)

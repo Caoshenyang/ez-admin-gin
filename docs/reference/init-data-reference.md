@@ -278,4 +278,4 @@ curl -X POST http://localhost/api/v1/setup/init \
 - [权限码约定](./permission-code-conventions)
 - [动态菜单组件白名单](./dynamic-menu-component-reference)
 - [数据库建表语句](./database-ddl)
-- [第 8 章：部署与项目复用](../tutorial/chapter-8/)
+- [部署概览](/deployment/overview)

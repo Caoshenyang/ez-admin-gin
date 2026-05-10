@@ -212,5 +212,5 @@ location /uploads/ {
 - [环境变量参考](./environment-variables-reference)
 - [数据库建表语句](./database-ddl)
 - [Nginx 配置参考](./nginx-config-reference)
-- [第 7 章：配置与文件页实现要点](/tutorial/chapter-7/config-and-file-page-detail)
-- [第 8 章：Nginx 与 HTTPS 入口层](/tutorial/chapter-8/nginx-and-https)
+- [前端概览](/frontend/overview)
+- [部署概览](/deployment/overview)

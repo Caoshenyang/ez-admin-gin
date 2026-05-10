@@ -220,6 +220,6 @@ customer:create:button
 
 对应教程页：
 
-- [第 6 章：权限、菜单与迁移接入](/tutorial/chapter-6/permission-menu-migration)
-- [第 7 章：动态菜单注册与按钮权限](/tutorial/chapter-7/dynamic-route-registration)
-- [第 7 章：角色与菜单页实现要点](/tutorial/chapter-7/role-and-menu-page-detail)
+- [数据库迁移](/backend/migration)
+- [路由与菜单](/frontend/route-and-menu)
+- [前端概览](/frontend/overview)

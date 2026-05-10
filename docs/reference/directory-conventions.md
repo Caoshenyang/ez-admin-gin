@@ -237,7 +237,6 @@ module/*
 
 ## 相关教程与参考页
 
-- [第 6 章：核心系统模块](../tutorial/chapter-6/)
-- [第 7 章：前端企业级管理台](../tutorial/chapter-7/)
-- [第 6 章：核心系统模块](../tutorial/chapter-6/)
+- [模块开发](/backend/module-development)
+- [前端概览](/frontend/overview)
 - [模块规范](./module-conventions)

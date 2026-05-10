@@ -243,7 +243,7 @@ EZ_AUTH_JWT_SECRET: ${EZ_AUTH_JWT_SECRET:?JWT_SECRET is required}
 | `${VAR:-default}` | 变量未设置时使用默认值 |
 | `${VAR:?error message}` | 变量未设置时报错退出 |
 
-环境变量的完整清单和覆盖机制见 [环境变量与初始化数据](../tutorial/chapter-8/env-and-init-data)。
+环境变量的完整清单和覆盖机制见 [环境变量参考](./environment-variables-reference)。
 
 ## Nginx 配置文件怎么配套看
 

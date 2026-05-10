@@ -162,8 +162,7 @@ const (
 
 相关页：
 
-- [资源级数据权限接入模式](./module-datascope-patterns)
-- [共享数据权限接入规范](./shared-datascope-integration-conventions)
+- [数据权限](/architecture/data-permission)
 
 ## 总路由接入点别忘了
 
@@ -242,8 +241,8 @@ sys_role_menu
 
 对应教程页：
 
-- [第 6 章：示例业务模块](/tutorial/chapter-6/sample-module)
-- [第 6 章：模块接入验收清单](/tutorial/chapter-6/module-integration-checklist)
+- [模块开发](/backend/module-development)
+- [模块扩展](/architecture/module-extension)
 
 ## 和哪些参考页一起看最顺
 

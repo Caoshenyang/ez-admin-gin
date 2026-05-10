@@ -216,5 +216,4 @@ page, pageSize := app.NormalizePage(query.Page, query.PageSize)
 
 - [模块规范](./module-conventions)
 - [错误码参考](./error-code-reference)
-- [第 6 章：核心系统模块](../tutorial/chapter-6/)
-- [第 6 章：核心系统模块](../tutorial/chapter-6/)
+- [模块开发](/backend/module-development)

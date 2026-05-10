@@ -258,8 +258,4 @@ func applyDataScope(db *gorm.DB) *gorm.DB {
 
 如果你要看完整讲解，而不是快速查阅，直接读第 5 章这几页：
 
-- [角色数据范围与查询作用域](/tutorial/chapter-5/role-data-scope-and-query-scopes)
-- [Actor 上下文与多角色并集](/tutorial/chapter-5/actor-and-grant-merge)
-- [资源级数据权限接入模式](/tutorial/chapter-5/module-datascope-patterns)
-- [真实业务模块的数据权限边界](/tutorial/chapter-5/business-module-datascope-boundaries)
-- [岗位资源的数据权限收紧时机](/tutorial/chapter-5/post-datascope-tightening)
+- [数据权限](/architecture/data-permission)

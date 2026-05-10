@@ -11,8 +11,8 @@ description: "集中记录 EZ Admin Gin 的配置、接口、目录约定、模�
 
 | 参考 | 说明 |
 | --- | --- |
-| [GORM 快速入门](./gorm-quick-start) | GORM 基础用法和本项目中的使用方式 |
-| [Casbin 快速入门](./casbin-quick-start) | Casbin 权限模型和策略配置 |
+| [GORM 快速入门](https://gorm.io/docs/) | GORM 官方文档 |
+| [Casbin 快速入门](https://casbin.org/docs/overview) | Casbin 官方文档 |
 | [接口风格决策](./api-style-decision) | RESTful 接口设计决策和统一响应格式 |
 | [数据权限模型](./data-scope-model) | 五档范围、Actor、并集规则和资源接法 |
 | [环境变量参考](./environment-variables-reference) | `EZ_*` 变量、默认值和部署优先检查项 |

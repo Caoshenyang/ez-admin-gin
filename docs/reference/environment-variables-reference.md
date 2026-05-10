@@ -175,6 +175,4 @@ EZ_* 环境变量覆盖
 
 ## 相关教程页
 
-- [第 8 章：环境变量与初始化数据](/tutorial/chapter-8/env-and-init-data)
-- [第 8 章：部署验证与复用说明](/tutorial/chapter-8/deployment-and-reuse)
-- [第 8 章：长期运维 FAQ](/tutorial/chapter-8/operations-maintenance-faq)
+- [部署概览](/deployment/overview)
