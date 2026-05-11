@@ -2,7 +2,7 @@ import './styles/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { createDiscreteApi, darkTheme } from 'naive-ui'
+import { createDiscreteApi } from 'naive-ui'
 
 import { setMessageHandler } from './api/http'
 import App from './App.vue'

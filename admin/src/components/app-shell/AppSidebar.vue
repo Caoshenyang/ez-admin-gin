@@ -1,7 +1,7 @@
 <!-- AppSidebar 渲染侧栏菜单树，高亮当前路由并支持展开/折叠。 -->
 <script setup lang="ts">
 import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
-import type { DropdownProps, MenuOption, ScrollbarProps } from 'naive-ui'
+import type { MenuOption, ScrollbarProps } from 'naive-ui'
 import { NButton, NIcon, NLayoutSider, NMenu, NScrollbar, NTooltip } from 'naive-ui'
 
 import BrandLogo from '@/components/brand/BrandLogo.vue'

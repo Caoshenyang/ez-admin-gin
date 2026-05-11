@@ -60,6 +60,83 @@ EZ Admin 不是单独的后端模板，也不是只有页面壳子的前端 Demo
 
 ## 快速启动
 
+项目根目录提供了 **Makefile** 作为统一的开发、测试、构建入口。所有常用操作都可以通过 `make <命令>` 执行，不用记忆每个子项目的具体命令。
+
+### 安装 make
+
+::: code-group
+
+```bash [macOS]
+# macOS 自带 make，无需安装
+make --version
+```
+
+```bash [Linux]
+# Debian / Ubuntu
+sudo apt install make
+
+# Fedora / RHEL
+sudo dnf install make
+```
+
+```bash [Windows]
+# 方式一：Chocolatey
+choco install make
+
+# 方式二：Scoop
+scoop install make
+
+# 安装后重启终端，验证
+make --version
+```
+
+:::
+
+::: warning
+Windows 用户如果暂时不想安装 make，也可以直接查看 Makefile 中的等效命令手动执行。
+:::
+
+### 使用 Makefile
+
+```bash
+# 查看所有可用命令
+make help
+```
+
+```bash
+# 1. 启动 PostgreSQL 和 Redis
+make docker-up
+
+# 2. 启动后端（另一个终端）
+make server-dev
+
+# 3. 初始化管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+
+# 4. 启动前端（另一个终端）
+make install && make admin-dev
+```
+
+### 常用命令速查
+
+| 命令 | 说明 |
+|------|------|
+| `make help` | 显示所有可用命令 |
+| `make server-dev` | 启动后端 (`go run .`) |
+| `make admin-dev` | 启动前端 (`pnpm dev`) |
+| `make test` | 运行后端测试 (`go test ./...`) |
+| `make server-vet` | 后端代码检查 (`go vet ./...`) |
+| `make admin-check` | 前端类型检查 + lint |
+| `make lint` | 运行所有 lint (后端 + 前端) |
+| `make build` | 构建后端二进制 + 前端产物 |
+| `make docker-up` | 启动 PostgreSQL + Redis |
+| `make docker-config` | 验证 Docker Compose 配置 |
+| `make docker-build` | 构建 Docker 镜像 |
+
+### 不使用 make 的等效命令
+
 ```bash
 # 1. 启动 PostgreSQL 和 Redis
 docker compose -f deploy/compose.local.yml up -d
@@ -142,15 +219,39 @@ ez-admin-gin/
 - [ ] 审批工作流
 - [ ] 更多业务模板
 
+## CI / 质量门禁
+
+每次 push 和 pull request 都会自动运行以下检查：
+
+| Job | 检查内容 | 阻塞 |
+|-----|---------|------|
+| **Backend** | `go mod tidy` 一致性、`go vet`、`go test` | 是 |
+| **Frontend** | TypeScript 类型检查、ESLint + oxlint、生产构建 | 是 |
+| **Docker** | compose.local / compose.prod / compose.server 配置校验 | 是 |
+| **Security** | Gitleaks 密钥扫描、govulncheck Go 漏洞检查 | 密钥扫描阻塞，漏洞扫描仅告警 |
+
+> **govulncheck 为非阻塞**：当前项目依赖链较复杂，部分已知漏洞可能需要依赖上游修复，因此仅作为告警。后续稳定后可改为阻塞。
+
+本地模拟 CI：
+
+```bash
+# 后端
+cd server && go mod tidy && git diff --exit-code go.mod go.sum
+cd server && go vet ./... && go test ./...
+
+# 前端
+cd admin && pnpm install --frozen-lockfile && pnpm type-check && pnpm lint && pnpm build
+
+# Docker
+docker compose -f deploy/compose.local.yml config --quiet
+docker compose -f deploy/compose.prod.yml config --quiet
+```
+
 ## Contributing
 
-欢迎提交 Issue 和 Pull Request。贡献前建议先阅读：
+欢迎通过 Issue 反馈 Bug、提出建议或分享使用心得。
 
-- [架构设计](https://caoshenyang.github.io/ez-admin-gin/architecture/overview)
-- [后端模块扩展](https://caoshenyang.github.io/ez-admin-gin/backend/module-development)
-- [前端模块扩展](https://caoshenyang.github.io/ez-admin-gin/frontend/overview)
-- [权限码和菜单约定](https://caoshenyang.github.io/ez-admin-gin/reference/permission-code-conventions)
-- [部署文档](https://caoshenyang.github.io/ez-admin-gin/deployment/overview)
+目前暂不接受 Pull Request，主要原因是项目还处于架构快速迭代阶段，代码结构和接口设计调整较频繁，外部 PR 容易产生冲突。等架构稳定后会开放 PR，感谢理解。
 
 ## License
 

@@ -95,7 +95,17 @@
       "Bash(find ./server/internal/modules -name \"*.go\" -exec grep -l \"Auth\\\\|Permission\\\\|middleware\" {})",
       "Bash(echo \"exit: $?\")",
       "Bash(conf\" /Users/pzhen/Documents/workspace/csy/ez-admin-gin/docs/deployment/ 2>/dev/null || echo \"No conf blocks found in deployment docs\")",
-      "Bash(grep -rn \"```conf\" /Users/pzhen/Documents/workspace/csy/ez-admin-gin/docs/deployment/ 2>/dev/null || echo \"No conf blocks found in deployment docs\")"
+      "Bash(grep -rn \"```conf\" /Users/pzhen/Documents/workspace/csy/ez-admin-gin/docs/deployment/ 2>/dev/null || echo \"No conf blocks found in deployment docs\")",
+      "Bash(make --version)",
+      "Bash(go version *)",
+      "Bash(pnpm --version)",
+      "Bash(docker --version)",
+      "Bash(task --version)",
+      "Bash(pnpm type-check *)",
+      "Bash(pnpm lint *)",
+      "Bash(docker compose *)",
+      "Bash(git diff *)",
+      "Bash(echo \"tidy is clean: $?\")"
     ]
   }
 }
