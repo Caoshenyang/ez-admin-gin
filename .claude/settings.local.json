@@ -105,7 +105,14 @@
       "Bash(pnpm lint *)",
       "Bash(docker compose *)",
       "Bash(git diff *)",
-      "Bash(echo \"tidy is clean: $?\")"
+      "Bash(echo \"tidy is clean: $?\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('docs/swagger.json'\\)\\); print\\(list\\(d.get\\('paths',{}\\).keys\\(\\)\\)[:15]\\)\")",
+      "Bash(go run *)",
+      "Bash(psql -h localhost -U ez_admin -d postgres -c \"SELECT 1 FROM pg_database WHERE datname='ez_admin_test'\")",
+      "Bash(docker exec ez-admin-postgres *)",
+      "Bash(go clean *)",
+      "Bash(make server-test *)",
+      "Bash(where make *)"
     ]
   }
 }

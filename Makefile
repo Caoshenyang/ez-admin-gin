@@ -50,12 +50,33 @@ docs-dev: ## 启动文档站
 # ---------- 测试 ----------
 
 .PHONY: test
-test: server-test ## 运行所有测试 (后端)
+test: server-test test-contract ## 运行所有测试 (后端 unit + 契约)
 	@echo ">>> 后端测试完成"
 
 .PHONY: server-test
-server-test: ## 运行后端测试 (go test ./...)
-	cd $(SERVER_DIR) && $(GO) test ./...
+server-test: ## 运行后端测试 (go test ./..., 不含集成测试)
+	cd $(SERVER_DIR) && $(GO) test ./... -timeout 60s
+
+.PHONY: test-api
+test-api: ## 运行 API 黑盒集成测试 (需要 DB + Redis)
+	cd $(SERVER_DIR) && $(GO) test -tags integration -v -timeout 120s ./tests/api/...
+
+.PHONY: test-rbac
+test-rbac: ## 运行 RBAC 权限流程测试 (需要 DB + Redis)
+	cd $(SERVER_DIR) && $(GO) test -tags integration -v -timeout 120s ./tests/rbac/...
+
+.PHONY: test-contract
+test-contract: ## 运行 OpenAPI 契约测试 (不需要 DB/Redis)
+	cd $(SERVER_DIR) && $(GO) test -v -timeout 60s ./tests/contract/...
+
+.PHONY: test-integration
+test-integration: ## 运行所有集成测试 (API + RBAC, 需要 DB + Redis)
+	cd $(SERVER_DIR) && $(GO) test -tags integration -v -timeout 180s ./tests/api/... ./tests/rbac/...
+
+.PHONY: test-e2e
+test-e2e: ## 运行 E2E 测试 (需要前端 + 后端运行中; TODO: 需安装 Playwright)
+	@echo ">>> E2E 测试尚未配置，请先安装 Playwright"
+	@exit 1
 
 # ---------- 代码检查 ----------
 

@@ -1,0 +1,58 @@
+app:
+  name: ez-admin-test
+  env: test
+
+server:
+  addr: ":0"
+
+database:
+  driver: postgres
+  host: localhost
+  port: 5432
+  user: ez_admin
+  password: ez_admin_123456
+  name: ez_admin_test
+  max_idle_conns: 5
+  max_open_conns: 10
+  conn_max_lifetime: 600
+
+redis:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 1
+  max_retries: 3
+  min_idle_conns: 2
+  pool_size: 5
+
+log:
+  level: warn
+  format: console
+  filename: ""
+  max_size: 10
+  max_backups: 1
+  max_age: 1
+  compress: false
+
+auth:
+  jwt_secret: "test-secret-key-at-least-32-chars-long!"
+  access_token_ttl: 3600
+  issuer: "ez-admin-test"
+
+swagger:
+  enabled: false
+
+cors:
+  allowed_origins: []
+
+rate_limit:
+  login_max_requests: 100
+  login_window_sec: 60
+
+upload:
+  dir: uploads
+  public_path: /uploads
+  max_size_mb: 10
+  allowed_exts:
+    - .jpg
+    - .png
