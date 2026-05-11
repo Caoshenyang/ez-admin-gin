@@ -89,7 +89,7 @@ jobs:
         env:
           EZ_DATABASE_NAME: ez_admin_test
           EZ_REDIS_DB: 1
-        run: go test -tags integration -v -timeout 120s ./tests/api/...
+        run: go test -tags integration -v -timeout 180s ./tests/api/... ./tests/rbac/...
 
   # ─── 前端 ───
   frontend:

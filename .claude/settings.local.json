@@ -112,7 +112,10 @@
       "Bash(docker exec ez-admin-postgres *)",
       "Bash(go clean *)",
       "Bash(make server-test *)",
-      "Bash(where make *)"
+      "Bash(where make *)",
+      "Bash(make test-api *)",
+      "Bash(make test-rbac *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

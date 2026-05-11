@@ -42,13 +42,14 @@ var testdataFS embed.FS
 
 // TestApp holds a fully-bootstrapped test application and its dependencies.
 type TestApp struct {
-	Engine *gin.Engine
-	Config *platformConfig.Config
-	DB     *gorm.DB
-	Redis  *goredis.Client
-	Token  *authnPlatform.Manager
-	Log    *zap.Logger
-	Server *httptest.Server
+	Engine    *gin.Engine
+	Config    *platformConfig.Config
+	DB        *gorm.DB
+	Redis     *goredis.Client
+	Token     *authnPlatform.Manager
+	Enforcer  *authzPlatform.Enforcer
+	Log       *zap.Logger
+	Server    *httptest.Server
 }
 
 // NewTestApp bootstraps a complete test application.
@@ -83,14 +84,44 @@ func NewTestApp(t *testing.T) *TestApp {
 	srv := httptest.NewServer(engine)
 
 	return &TestApp{
-		Engine: engine,
-		Config: cfg,
-		DB:     db,
-		Redis:  rdb,
-		Token:  token,
-		Log:    log,
-		Server: srv,
+		Engine:   engine,
+		Config:   cfg,
+		DB:       db,
+		Redis:    rdb,
+		Token:    token,
+		Enforcer: enforcer,
+		Log:      log,
+		Server:   srv,
 	}
+}
+
+// CleanupTestData removes test-generated departments, roles, users, and casbin rules
+// that are not part of the seed data. This enables test isolation without
+// requiring a full database reset between tests.
+func (app *TestApp) CleanupTestData(t *testing.T) {
+	t.Helper()
+
+	// Delete casbin rules for non-super_admin roles.
+	app.DB.Exec("DELETE FROM casbin_rule WHERE ptype = 'p' AND v0 != 'super_admin'")
+	// Delete role-data-scope bindings for non-seed roles.
+	app.DB.Exec("DELETE FROM sys_role_data_scope WHERE role_id > 1")
+	// Delete role-menu bindings for non-seed roles.
+	app.DB.Exec("DELETE FROM sys_role_menu WHERE role_id > 1")
+	// Delete user-role bindings for non-seed users (ID > 1).
+	app.DB.Exec("DELETE FROM sys_user_role WHERE user_id > 1")
+	// Delete user-post bindings for non-seed users.
+	app.DB.Exec("DELETE FROM sys_user_post WHERE user_id > 1")
+	// Delete roles that are not the built-in super_admin (ID = 1).
+	app.DB.Exec("DELETE FROM sys_role WHERE id > 1")
+	// Delete users that are not the seed admin (ID = 1).
+	app.DB.Exec("DELETE FROM sys_user WHERE id > 1")
+	// Delete all departments (none in seed data).
+	app.DB.Exec("DELETE FROM sys_department")
+	// Delete all menus (none in seed data).
+	app.DB.Exec("DELETE FROM sys_menu")
+
+	// Reload policies to clear stale entries from memory.
+	app.ReloadPolicies(t)
 }
 
 // Close releases all resources held by the test application.
@@ -188,6 +219,351 @@ func (app *TestApp) NewRequest(method, path string, body io.Reader) *http.Reques
 		panic(err)
 	}
 	return req
+}
+
+// SeedRestrictedUser creates a test role with no permissions and a test user
+// assigned to that role. Returns the user's access token.
+//
+// This enables RBAC tests where a user has limited (or zero) API permissions.
+func (app *TestApp) SeedRestrictedUser(t *testing.T, adminToken, username, password, nickname string) string {
+	t.Helper()
+
+	// 1. Create a role with no permissions via API.
+	roleBody := `{"code":"test_no_perm","name":"Test No Permission","sort":99,"data_scope":"self","status":1}`
+	roleReq := app.AuthRequest(http.MethodPost, "/api/v1/system/roles", adminToken, strings.NewReader(roleBody))
+	roleResp, err := app.Do(roleReq)
+	if err != nil {
+		t.Fatalf("create role request failed: %v", err)
+	}
+	defer roleResp.Body.Close()
+
+	if roleResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(roleResp.Body)
+		t.Fatalf("create role failed: status %d, body: %s", roleResp.StatusCode, string(body))
+	}
+
+	var roleResult struct {
+		Code int `json:"code"`
+		Data struct {
+			ID uint `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(roleResp.Body).Decode(&roleResult); err != nil {
+		t.Fatalf("decode role response: %v", err)
+	}
+	roleID := roleResult.Data.ID
+	if roleID == 0 {
+		t.Fatal("created role has ID 0")
+	}
+
+	// 2. Create a user assigned to the new role via API.
+	userBody := fmt.Sprintf(
+		`{"username":"%s","password":"%s","nickname":"%s","department_id":0,"status":1,"role_ids":[%d]}`,
+		username, password, nickname, roleID,
+	)
+	userReq := app.AuthRequest(http.MethodPost, "/api/v1/system/users", adminToken, strings.NewReader(userBody))
+	userResp, err := app.Do(userReq)
+	if err != nil {
+		t.Fatalf("create user request failed: %v", err)
+	}
+	defer userResp.Body.Close()
+
+	if userResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(userResp.Body)
+		t.Fatalf("create user failed: status %d, body: %s", userResp.StatusCode, string(body))
+	}
+
+	// 3. Login as the new user and return the token.
+	return app.LoginAs(t, username, password)
+}
+
+// SeedUserWithPermissions creates a test role with specific API permissions and
+// a test user assigned to that role. Returns the user's access token.
+//
+// permissions is a list of {path, method} pairs that will be granted to the role.
+func (app *TestApp) SeedUserWithPermissions(t *testing.T, adminToken, username, password, nickname, roleCode, roleName string, permissions [][2]string) string {
+	t.Helper()
+
+	// 1. Create a role.
+	roleBody := fmt.Sprintf(
+		`{"code":"%s","name":"%s","sort":98,"data_scope":"self","status":1}`,
+		roleCode, roleName,
+	)
+	roleReq := app.AuthRequest(http.MethodPost, "/api/v1/system/roles", adminToken, strings.NewReader(roleBody))
+	roleResp, err := app.Do(roleReq)
+	if err != nil {
+		t.Fatalf("create role request failed: %v", err)
+	}
+	defer roleResp.Body.Close()
+
+	if roleResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(roleResp.Body)
+		t.Fatalf("create role failed: status %d, body: %s", roleResp.StatusCode, string(body))
+	}
+
+	var roleResult struct {
+		Code int `json:"code"`
+		Data struct {
+			ID uint `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(roleResp.Body).Decode(&roleResult); err != nil {
+		t.Fatalf("decode role response: %v", err)
+	}
+	roleID := roleResult.Data.ID
+	if roleID == 0 {
+		t.Fatal("created role has ID 0")
+	}
+
+	// 2. Assign permissions to the role.
+	permItems := make([]string, 0, len(permissions))
+	for _, p := range permissions {
+		permItems = append(permItems, fmt.Sprintf(`{"path":"%s","method":"%s"}`, p[0], p[1]))
+	}
+	permBody := fmt.Sprintf(`{"permissions":[%s]}`, strings.Join(permItems, ","))
+	permReq := app.AuthRequest(http.MethodPost, fmt.Sprintf("/api/v1/system/roles/%d/permissions", roleID), adminToken, strings.NewReader(permBody))
+	permResp, err := app.Do(permReq)
+	if err != nil {
+		t.Fatalf("update permissions request failed: %v", err)
+	}
+	defer permResp.Body.Close()
+
+	if permResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(permResp.Body)
+		t.Fatalf("update permissions failed: status %d, body: %s", permResp.StatusCode, string(body))
+	}
+
+	// 3. Create a user assigned to the role.
+	userBody := fmt.Sprintf(
+		`{"username":"%s","password":"%s","nickname":"%s","department_id":0,"status":1,"role_ids":[%d]}`,
+		username, password, nickname, roleID,
+	)
+	userReq := app.AuthRequest(http.MethodPost, "/api/v1/system/users", adminToken, strings.NewReader(userBody))
+	userResp, err := app.Do(userReq)
+	if err != nil {
+		t.Fatalf("create user request failed: %v", err)
+	}
+	defer userResp.Body.Close()
+
+	if userResp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(userResp.Body)
+		t.Fatalf("create user failed: status %d, body: %s", userResp.StatusCode, string(body))
+	}
+
+	// 4. Login as the new user.
+	return app.LoginAs(t, username, password)
+}
+
+// SeedDepartment creates a single department via API. Returns the department ID.
+func (app *TestApp) SeedDepartment(t *testing.T, adminToken string, parentID uint, name, code string) uint {
+	t.Helper()
+
+	body := fmt.Sprintf(
+		`{"parent_id":%d,"name":"%s","code":"%s","sort":0,"status":1}`,
+		parentID, name, code,
+	)
+	req := app.AuthRequest(http.MethodPost, "/api/v1/system/departments", adminToken, strings.NewReader(body))
+	resp, err := app.Do(req)
+	if err != nil {
+		t.Fatalf("create department request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		t.Fatalf("create department failed: status %d, body: %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		Code int `json:"code"`
+		Data struct {
+			ID uint `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("decode department response: %v", err)
+	}
+	if result.Data.ID == 0 {
+		t.Fatal("created department has ID 0")
+	}
+	return result.Data.ID
+}
+
+// SeedScopedUser creates a role with a specific data_scope and a user in a
+// given department. The role also gets the specified API permissions.
+// Returns the user's access token.
+func (app *TestApp) SeedScopedUser(t *testing.T, adminToken, username, password, nickname, roleCode, roleName string, dataScope string, departmentID uint, permissions [][2]string) string {
+	t.Helper()
+
+	// 1. Create a role with the specified data_scope.
+	roleBody := fmt.Sprintf(
+		`{"code":"%s","name":"%s","sort":97,"data_scope":"%s","status":1}`,
+		roleCode, roleName, dataScope,
+	)
+	roleReq := app.AuthRequest(http.MethodPost, "/api/v1/system/roles", adminToken, strings.NewReader(roleBody))
+	roleResp, err := app.Do(roleReq)
+	if err != nil {
+		t.Fatalf("create role request failed: %v", err)
+	}
+	defer roleResp.Body.Close()
+
+	if roleResp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(roleResp.Body)
+		t.Fatalf("create role failed: status %d, body: %s", roleResp.StatusCode, string(respBody))
+	}
+
+	var roleResult struct {
+		Code int `json:"code"`
+		Data struct {
+			ID uint `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(roleResp.Body).Decode(&roleResult); err != nil {
+		t.Fatalf("decode role response: %v", err)
+	}
+	roleID := roleResult.Data.ID
+	if roleID == 0 {
+		t.Fatal("created role has ID 0")
+	}
+
+	// 2. Assign permissions to the role.
+	if len(permissions) > 0 {
+		permItems := make([]string, 0, len(permissions))
+		for _, p := range permissions {
+			permItems = append(permItems, fmt.Sprintf(`{"path":"%s","method":"%s"}`, p[0], p[1]))
+		}
+		permBody := fmt.Sprintf(`{"permissions":[%s]}`, strings.Join(permItems, ","))
+		permReq := app.AuthRequest(http.MethodPost, fmt.Sprintf("/api/v1/system/roles/%d/permissions", roleID), adminToken, strings.NewReader(permBody))
+		permResp, err := app.Do(permReq)
+		if err != nil {
+			t.Fatalf("update permissions request failed: %v", err)
+		}
+		defer permResp.Body.Close()
+
+		if permResp.StatusCode != http.StatusOK {
+			respBody, _ := io.ReadAll(permResp.Body)
+			t.Fatalf("update permissions failed: status %d, body: %s", permResp.StatusCode, string(respBody))
+		}
+	}
+
+	// 3. Create a user in the specified department with this role.
+	userBody := fmt.Sprintf(
+		`{"username":"%s","password":"%s","nickname":"%s","department_id":%d,"status":1,"role_ids":[%d]}`,
+		username, password, nickname, departmentID, roleID,
+	)
+	userReq := app.AuthRequest(http.MethodPost, "/api/v1/system/users", adminToken, strings.NewReader(userBody))
+	userResp, err := app.Do(userReq)
+	if err != nil {
+		t.Fatalf("create user request failed: %v", err)
+	}
+	defer userResp.Body.Close()
+
+	if userResp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(userResp.Body)
+		t.Fatalf("create user failed: status %d, body: %s", userResp.StatusCode, string(respBody))
+	}
+
+	// 4. Login as the new user.
+	return app.LoginAs(t, username, password)
+}
+
+// SeedCustomDeptUser creates a role with data_scope=custom_dept and explicitly specified
+// department IDs, then creates a user assigned to that role. Returns the user's access token.
+func (app *TestApp) SeedCustomDeptUser(t *testing.T, adminToken, username, password, nickname, roleCode, roleName string, customDeptIDs []uint, userDeptID uint, permissions [][2]string) string {
+	t.Helper()
+
+	// 1. Build custom_department_ids JSON array.
+	deptIDStrs := make([]string, len(customDeptIDs))
+	for i, id := range customDeptIDs {
+		deptIDStrs[i] = fmt.Sprintf("%d", id)
+	}
+	roleBody := fmt.Sprintf(
+		`{"code":"%s","name":"%s","sort":96,"data_scope":"custom_dept","custom_department_ids":[%s],"status":1}`,
+		roleCode, roleName, strings.Join(deptIDStrs, ","),
+	)
+	roleReq := app.AuthRequest(http.MethodPost, "/api/v1/system/roles", adminToken, strings.NewReader(roleBody))
+	roleResp, err := app.Do(roleReq)
+	if err != nil {
+		t.Fatalf("create custom_dept role request failed: %v", err)
+	}
+	defer roleResp.Body.Close()
+
+	if roleResp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(roleResp.Body)
+		t.Fatalf("create custom_dept role failed: status %d, body: %s", roleResp.StatusCode, string(respBody))
+	}
+
+	var roleResult struct {
+		Code int `json:"code"`
+		Data struct {
+			ID uint `json:"id"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(roleResp.Body).Decode(&roleResult); err != nil {
+		t.Fatalf("decode custom_dept role response: %v", err)
+	}
+	roleID := roleResult.Data.ID
+	if roleID == 0 {
+		t.Fatal("created custom_dept role has ID 0")
+	}
+
+	// 2. Assign permissions to the role.
+	if len(permissions) > 0 {
+		permItems := make([]string, 0, len(permissions))
+		for _, p := range permissions {
+			permItems = append(permItems, fmt.Sprintf(`{"path":"%s","method":"%s"}`, p[0], p[1]))
+		}
+		permBody := fmt.Sprintf(`{"permissions":[%s]}`, strings.Join(permItems, ","))
+		permReq := app.AuthRequest(http.MethodPost, fmt.Sprintf("/api/v1/system/roles/%d/permissions", roleID), adminToken, strings.NewReader(permBody))
+		permResp, err := app.Do(permReq)
+		if err != nil {
+			t.Fatalf("update custom_dept role permissions request failed: %v", err)
+		}
+		defer permResp.Body.Close()
+
+		if permResp.StatusCode != http.StatusOK {
+			respBody, _ := io.ReadAll(permResp.Body)
+			t.Fatalf("update custom_dept role permissions failed: status %d, body: %s", permResp.StatusCode, string(respBody))
+		}
+	}
+
+	// 3. Create a user in the specified department with this role.
+	userBody := fmt.Sprintf(
+		`{"username":"%s","password":"%s","nickname":"%s","department_id":%d,"status":1,"role_ids":[%d]}`,
+		username, password, nickname, userDeptID, roleID,
+	)
+	userReq := app.AuthRequest(http.MethodPost, "/api/v1/system/users", adminToken, strings.NewReader(userBody))
+	userResp, err := app.Do(userReq)
+	if err != nil {
+		t.Fatalf("create custom_dept user request failed: %v", err)
+	}
+	defer userResp.Body.Close()
+
+	if userResp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(userResp.Body)
+		t.Fatalf("create custom_dept user failed: status %d, body: %s", userResp.StatusCode, string(respBody))
+	}
+
+	// 4. Login as the new user.
+	return app.LoginAs(t, username, password)
+}
+
+// DecodeResponse decodes a JSON response body into the provided target.
+func (app *TestApp) DecodeResponse(t *testing.T, resp *http.Response, target any) {
+	t.Helper()
+	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+}
+
+// ReloadPolicies reloads Casbin policies from the database into the in-memory
+// enforcer. Call this after creating roles or updating permissions via the API
+// so that subsequent requests use the latest policy state.
+func (app *TestApp) ReloadPolicies(t *testing.T) {
+	t.Helper()
+	if err := app.Enforcer.ReloadPolicy(); err != nil {
+		t.Fatalf("reload casbin policies: %v", err)
+	}
 }
 
 // --- internal helpers ---

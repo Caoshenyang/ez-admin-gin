@@ -87,8 +87,10 @@ func Merge(grants []Grant, isSuperAdmin bool) Summary {
 	return summary
 }
 
-// UserQueryScope 为“用户列表/详情”这类既有部门归属、又可退化到本人数据的资源生成查询作用域。
+// UserQueryScope 为"用户列表/详情"这类既有部门归属、又可退化到本人数据的资源生成查询作用域。
 func UserQueryScope(db *gorm.DB, actor Actor, departmentColumn string, ownerColumn string) func(*gorm.DB) *gorm.DB {
+	cleanDB := newCleanSession(db)
+
 	return func(tx *gorm.DB) *gorm.DB {
 		summary := Merge(actor.Grants, actor.IsSuperAdmin)
 		if summary.AllowAll {
@@ -104,7 +106,7 @@ func UserQueryScope(db *gorm.DB, actor Actor, departmentColumn string, ownerColu
 		}
 
 		if summary.IncludeDeptTree && actor.DepartmentID != 0 && departmentColumn != "" {
-			departmentIDs, err := expandDepartmentTree(db, []uint{actor.DepartmentID})
+			departmentIDs, err := expandDepartmentTree(cleanDB, []uint{actor.DepartmentID})
 			if err != nil {
 				tx.AddError(err)
 				return tx
@@ -134,16 +136,18 @@ func UserQueryScope(db *gorm.DB, actor Actor, departmentColumn string, ownerColu
 	}
 }
 
-// DepartmentQueryScope 为“部门树/部门列表”这类以部门自身为资源的数据生成查询作用域。
-// 当角色范围是 self 时，这里退化为“当前用户所在部门”，避免部门管理完全看不到自己的归属部门。
+// DepartmentQueryScope 为"部门树/部门列表"这类以部门自身为资源的数据生成查询作用域。
+// 当角色范围是 self 时，这里退化为"当前用户所在部门"，避免部门管理完全看不到自己的归属部门。
 func DepartmentQueryScope(db *gorm.DB, actor Actor, departmentIDColumn string) func(*gorm.DB) *gorm.DB {
+	cleanDB := newCleanSession(db)
+
 	return func(tx *gorm.DB) *gorm.DB {
 		summary := Merge(actor.Grants, actor.IsSuperAdmin)
 		if summary.AllowAll {
 			return tx
 		}
 
-		departmentIDs, err := accessibleDepartmentIDs(db, actor, summary)
+		departmentIDs, err := accessibleDepartmentIDs(cleanDB, actor, summary)
 		if err != nil {
 			tx.AddError(err)
 			return tx
@@ -154,6 +158,13 @@ func DepartmentQueryScope(db *gorm.DB, actor Actor, departmentIDColumn string) f
 
 		return tx.Where(fmt.Sprintf("%s IN ?", departmentIDColumn), departmentIDs)
 	}
+}
+
+// newCleanSession creates a fresh GORM session with no inherited chain conditions.
+// This prevents scope conditions (Model, Where, etc.) from leaking into sub-queries
+// that target different tables (e.g., sys_department lookups inside a sys_user scope).
+func newCleanSession(db *gorm.DB) *gorm.DB {
+	return db.Session(&gorm.Session{NewDB: true})
 }
 
 func accessibleDepartmentIDs(db *gorm.DB, actor Actor, summary Summary) ([]uint, error) {

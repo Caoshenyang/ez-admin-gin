@@ -41,3 +41,8 @@ func (e *Enforcer) Enforce(sub string, obj string, act string) (bool, error) {
 	}
 	return allowed, nil
 }
+
+// ReloadPolicy re-reads all policies from the database into memory.
+func (e *Enforcer) ReloadPolicy() error {
+	return e.inner.LoadPolicy()
+}

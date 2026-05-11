@@ -3,6 +3,8 @@ package contract
 import (
 	"encoding/json"
 	"os"
+	"sort"
+	"strings"
 	"testing"
 )
 
@@ -101,6 +103,185 @@ func TestSwaggerInfo(t *testing.T) {
 	}
 }
 
-// TODO: TestResponseSchemaConsistency — verify real HTTP responses match OpenAPI schema.
-// This requires running the server against a test database and comparing the response
-// JSON structure against the schema definitions in swagger.json. Deferred to next phase.
+// TestResponseSchemaEnvelope verifies that every 200 response references the
+// httpx.Body envelope, ensuring consistent API response structure.
+func TestResponseSchemaEnvelope(t *testing.T) {
+	spec := mustParseSwagger(t)
+
+	for path, methods := range spec.Paths {
+		for method, op := range methods {
+			// setup/init uses a generic schema, not httpx.Body.
+			if path == "/setup/init" {
+				continue
+			}
+			opMap, ok := op.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			responses, _ := opMap["responses"].(map[string]interface{})
+			resp200, _ := responses["200"].(map[string]interface{})
+			if resp200 == nil {
+				t.Errorf("%s %s: missing 200 response", strings.ToUpper(method), path)
+				continue
+			}
+			schema, _ := resp200["schema"].(map[string]interface{})
+			if schema == nil {
+				t.Errorf("%s %s: 200 response has no schema", strings.ToUpper(method), path)
+				continue
+			}
+			if !schemaRefsBody(schema) {
+				t.Errorf("%s %s: 200 response schema does not reference httpx.Body", strings.ToUpper(method), path)
+			}
+		}
+	}
+}
+
+// schemaRefsBody checks if a schema directly or via allOf references httpx.Body.
+func schemaRefsBody(schema map[string]interface{}) bool {
+	if ref, ok := schema["$ref"].(string); ok && strings.HasSuffix(ref, "httpx.Body") {
+		return true
+	}
+	allOf, _ := schema["allOf"].([]interface{})
+	for _, item := range allOf {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if ref, ok := itemMap["$ref"].(string); ok && strings.HasSuffix(ref, "httpx.Body") {
+			return true
+		}
+	}
+	return false
+}
+
+// TestDefinitionsReachable verifies that every $ref in paths and definitions
+// points to an existing definition in the spec.
+func TestDefinitionsReachable(t *testing.T) {
+	spec := mustParseSwagger(t)
+
+	defs := make(map[string]bool)
+	for name := range spec.Definitions {
+		defs["#/definitions/"+name] = true
+	}
+
+	var missing []string
+	visitRefs(spec.Paths, func(ref string) {
+		if strings.HasPrefix(ref, "#/definitions/") && !defs[ref] {
+			missing = append(missing, ref)
+		}
+	})
+	visitRefs(spec.Definitions, func(ref string) {
+		if strings.HasPrefix(ref, "#/definitions/") && !defs[ref] {
+			missing = append(missing, ref)
+		}
+	})
+
+	if len(missing) > 0 {
+		unique := make(map[string]bool)
+		for _, m := range missing {
+			unique[m] = true
+		}
+		sorted := make([]string, 0, len(unique))
+		for m := range unique {
+			sorted = append(sorted, m)
+		}
+		sort.Strings(sorted)
+		t.Errorf("unresolved $ref references: %v", sorted)
+	}
+}
+
+// TestKeyEndpointDataSchemas verifies that important read endpoints have typed
+// data schemas in their 200 response (not just a bare httpx.Body reference).
+func TestKeyEndpointDataSchemas(t *testing.T) {
+	spec := mustParseSwagger(t)
+
+	endpoints := []struct {
+		path       string
+		method     string
+		wantDataRef string
+	}{
+		{"/auth/login", "post", "domain.LoginResponse"},
+		{"/auth/me", "get", "domain.MeResponse"},
+		{"/auth/account", "get", "domain.AccountProfileResponse"},
+	}
+
+	for _, ep := range endpoints {
+		methods, ok := spec.Paths[ep.path]
+		if !ok {
+			t.Errorf("path %s not found", ep.path)
+			continue
+		}
+		op, ok := methods[ep.method]
+		if !ok {
+			t.Errorf("method %s not found for path %s", ep.method, ep.path)
+			continue
+		}
+		opMap, _ := op.(map[string]interface{})
+		responses, _ := opMap["responses"].(map[string]interface{})
+		resp200, _ := responses["200"].(map[string]interface{})
+		schema, _ := resp200["schema"].(map[string]interface{})
+		if schema == nil {
+			t.Errorf("%s %s: 200 response has no schema", ep.method, ep.path)
+			continue
+		}
+
+		dataRef := extractDataRef(schema)
+		if dataRef == "" {
+			t.Errorf("%s %s: 200 response has no typed data schema (expected a data.$ref)", ep.method, ep.path)
+		}
+	}
+}
+
+// --- helpers ---
+
+type swaggerSpec struct {
+	Paths       map[string]map[string]interface{} `json:"paths"`
+	Definitions map[string]interface{}             `json:"definitions"`
+}
+
+func mustParseSwagger(t *testing.T) swaggerSpec {
+	t.Helper()
+	data, err := os.ReadFile(swaggerPath)
+	if err != nil {
+		t.Fatalf("read swagger.json: %v", err)
+	}
+	var spec swaggerSpec
+	if err := json.Unmarshal(data, &spec); err != nil {
+		t.Fatalf("parse swagger.json: %v", err)
+	}
+	return spec
+}
+
+// extractDataRef extracts the $ref from a "data" property inside an allOf schema.
+func extractDataRef(schema map[string]interface{}) string {
+	allOf, _ := schema["allOf"].([]interface{})
+	for _, item := range allOf {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		props, _ := itemMap["properties"].(map[string]interface{})
+		data, _ := props["data"].(map[string]interface{})
+		if ref, ok := data["$ref"].(string); ok {
+			return ref
+		}
+	}
+	return ""
+}
+
+// visitRefs walks a JSON structure and calls fn for every $ref string found.
+func visitRefs(v interface{}, fn func(string)) {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		if ref, ok := val["$ref"].(string); ok {
+			fn(ref)
+		}
+		for _, child := range val {
+			visitRefs(child, fn)
+		}
+	case []interface{}:
+		for _, child := range val {
+			visitRefs(child, fn)
+		}
+	}
+}
