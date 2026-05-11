@@ -37,6 +37,7 @@ log:
 auth:
   jwt_secret: "test-secret-key-at-least-32-chars-long!"
   access_token_ttl: 3600
+  refresh_token_ttl: 86400
   issuer: "ez-admin-test"
 
 swagger:
@@ -48,6 +49,8 @@ cors:
 rate_limit:
   login_max_requests: 100
   login_window_sec: 60
+  login_lockout_threshold: 10
+  login_lockout_sec: 60
 
 upload:
   dir: uploads

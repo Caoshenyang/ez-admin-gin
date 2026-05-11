@@ -18,6 +18,7 @@ type RouteOptions struct {
 	DB     *gorm.DB
 	Redis  *goredis.Client
 	Token  *authnPlatform.Manager
+	Session authnPlatform.SessionStore
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
@@ -27,14 +28,19 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		DB:     opts.DB,
 		Redis:  opts.Redis,
 		Token:  opts.Token,
+		Session: opts.Session,
 	})
 	authapi.RegisterRoutes(r, authapi.RouteOptions{
-		Log:          opts.Log,
-		DB:           opts.DB,
-		Redis:        opts.Redis,
-		Token:        opts.Token,
-		Services:     services,
-		RateLimitMax: opts.Config.RateLimit.LoginMaxRequests,
-		RateLimitSec: opts.Config.RateLimit.LoginWindowSec,
+		Log:                opts.Log,
+		DB:                 opts.DB,
+		Redis:              opts.Redis,
+		Token:              opts.Token,
+		Session:            opts.Session,
+		Services:           services,
+		RateLimitMax:       opts.Config.RateLimit.LoginMaxRequests,
+		RateLimitSec:       opts.Config.RateLimit.LoginWindowSec,
+		RefreshTTLSec:      opts.Config.Auth.RefreshTokenTTL,
+		LockoutMaxFailures: opts.Config.RateLimit.LoginLockoutThreshold,
+		LockoutSec:         opts.Config.RateLimit.LoginLockoutSec,
 	})
 }

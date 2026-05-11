@@ -57,9 +57,10 @@ type RedisConfig struct {
 }
 
 type AuthConfig struct {
-	JWTSecret      string `mapstructure:"jwt_secret"`
-	AccessTokenTTL int    `mapstructure:"access_token_ttl"`
-	Issuer         string `mapstructure:"issuer"`
+	JWTSecret       string `mapstructure:"jwt_secret"`
+	AccessTokenTTL  int    `mapstructure:"access_token_ttl"`
+	RefreshTokenTTL int    `mapstructure:"refresh_token_ttl"`
+	Issuer          string `mapstructure:"issuer"`
 }
 
 type LogConfig struct {
@@ -84,8 +85,10 @@ type CORSConfig struct {
 }
 
 type RateLimitConfig struct {
-	LoginMaxRequests int `mapstructure:"login_max_requests"`
-	LoginWindowSec   int `mapstructure:"login_window_sec"`
+	LoginMaxRequests      int `mapstructure:"login_max_requests"`
+	LoginWindowSec        int `mapstructure:"login_window_sec"`
+	LoginLockoutThreshold int `mapstructure:"login_lockout_threshold"`
+	LoginLockoutSec       int `mapstructure:"login_lockout_sec"`
 }
 
 func Load() (*Config, error) {
@@ -115,11 +118,26 @@ func Load() (*Config, error) {
 
 // ValidateProduction 对生产环境必须检查的安全项做校验。
 func (c *Config) ValidateProduction() error {
-	if c.App.Env == "prod" {
-		if strings.Contains(c.Auth.JWTSecret, "change-me") || strings.Contains(c.Auth.JWTSecret, "dev-secret") {
-			return fmt.Errorf("production environment detected but auth.jwt_secret contains a default value; please set EZ_AUTH_JWT_SECRET to a secure random string")
-		}
+	if c.App.Env != "prod" {
+		return nil
 	}
+
+	if strings.Contains(c.Auth.JWTSecret, "change-me") || strings.Contains(c.Auth.JWTSecret, "dev-secret") {
+		return fmt.Errorf("production: auth.jwt_secret contains a default value; set EZ_AUTH_JWT_SECRET to a secure random string")
+	}
+
+	if len(c.CORS.AllowedOrigins) == 0 {
+		return fmt.Errorf("production: cors.allowed_origins is empty; set EZ_CORS_ALLOWED_ORIGINS to your frontend domain(s)")
+	}
+
+	if c.Swagger.Enabled {
+		return fmt.Errorf("production: swagger.enabled must be false; disable EZ_SWAGGER_ENABLED")
+	}
+
+	if c.Upload.MaxSizeMB > 50 {
+		return fmt.Errorf("production: upload.max_size_mb (%d) exceeds safety limit of 50 MB", c.Upload.MaxSizeMB)
+	}
+
 	return nil
 }
 
@@ -152,6 +170,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("redis.pool_size", 10)
 	v.SetDefault("auth.jwt_secret", "ez-admin-dev-secret-change-me-please-32")
 	v.SetDefault("auth.access_token_ttl", 7200)
+	v.SetDefault("auth.refresh_token_ttl", 604800)
 	v.SetDefault("auth.issuer", "ez-admin")
 	v.SetDefault("upload.dir", "uploads")
 	v.SetDefault("upload.public_path", "/uploads")
@@ -161,6 +180,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("cors.allowed_origins", []string{})
 	v.SetDefault("rate_limit.login_max_requests", 10)
 	v.SetDefault("rate_limit.login_window_sec", 60)
+	v.SetDefault("rate_limit.login_lockout_threshold", 5)
+	v.SetDefault("rate_limit.login_lockout_sec", 300)
 }
 
 func bindEnvs(v *viper.Viper) {
@@ -193,6 +214,7 @@ func bindEnvs(v *viper.Viper) {
 		"redis.pool_size",
 		"auth.jwt_secret",
 		"auth.access_token_ttl",
+		"auth.refresh_token_ttl",
 		"auth.issuer",
 		"upload.dir",
 		"upload.public_path",
@@ -202,6 +224,8 @@ func bindEnvs(v *viper.Viper) {
 		"cors.allowed_origins",
 		"rate_limit.login_max_requests",
 		"rate_limit.login_window_sec",
+		"rate_limit.login_lockout_threshold",
+		"rate_limit.login_lockout_sec",
 	}
 
 	for _, key := range keys {

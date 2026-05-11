@@ -13,21 +13,27 @@ import (
 )
 
 type RouteOptions struct {
-	Log           *zap.Logger
-	DB            *gorm.DB
-	Redis         *goredis.Client
-	Token         *authnPlatform.Manager
-	Services      authservicekit.Services
-	RateLimitMax  int
-	RateLimitSec  int
+	Log                 *zap.Logger
+	DB                  *gorm.DB
+	Redis               *goredis.Client
+	Token               *authnPlatform.Manager
+	Session             authnPlatform.SessionStore
+	Services            authservicekit.Services
+	RateLimitMax        int
+	RateLimitSec        int
+	RefreshTTLSec       int
+	LockoutMaxFailures  int
+	LockoutSec          int
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
-	login := NewLoginHandler(opts.Services.Login, opts.Log)
+	login := NewLoginHandler(opts.Services.Login, opts.RefreshTTLSec, opts.Redis, opts.LockoutMaxFailures, opts.LockoutSec, opts.Log)
 	me := NewMeHandler(opts.Services.Me, opts.Log)
 	account := NewAccountHandler(opts.Services.Account, opts.Log)
 	menus := NewMenuHandler(opts.Services.Menu, opts.Log)
 	dashboard := NewDashboardHandler(opts.Services.Dashboard, opts.Log)
+
+	refreshService := opts.Services.Refresh
 
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
@@ -35,6 +41,9 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		platformMiddleware.LoginRateLimit(opts.Redis, opts.RateLimitMax, opts.RateLimitSec),
 		login.Login,
 	)
+
+	auth.POST("/refresh", NewRefreshHandler(refreshService, opts.RefreshTTLSec, opts.Log).Refresh)
+	auth.POST("/logout", NewLogoutHandler(refreshService, opts.Log).Logout)
 
 	protectedAuth := modulekit.NewProtectedAuthGroup(auth, modulekit.ProtectedAuthGroupOptions{
 		Log:   opts.Log,

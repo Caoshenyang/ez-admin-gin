@@ -1,11 +1,11 @@
 # Quality Roadmap — 长期路线图
 
 > 从约 8.0 分提升到 9.0+ 的分阶段计划。
-> 当前阶段：Phase 1
+> 当前阶段：Phase 3
 
 ---
 
-## Phase 1：集中式测试做实 (当前)
+## Phase 1：集中式测试做实 ✅ 已完成
 
 **目标：** 把 server/tests 从测试骨架变成真实可重复运行的质量门禁。
 
@@ -17,38 +17,38 @@
 - 测试数据隔离（seed/reset）
 
 **验收标准：**
-- `make test-contract` 通过
-- `make test-api` 通过
-- `make test-rbac` 通过（非 t.Skip）
-- `make test-integration` 通过
-- CI integration job 通过
-- RBAC / datascope 测试不再大面积 t.Skip
-- 测试数据可重复初始化
+- `make test-contract` 通过 ✅
+- `make test-api` 通过 ✅
+- `make test-rbac` 通过（非 t.Skip）✅
+- `make test-integration` 通过 ✅
+- CI integration job 通过 ✅
+- RBAC / datascope 测试不再大面积 t.Skip ✅（0 t.Skip）
+- 测试数据可重复初始化 ✅
 
-**状态：** 进行中
+**状态：** 已完成（2026-05-11）
 
 ---
 
-## Phase 2：安全基线升级
+## Phase 2：安全基线升级 ✅ 已完成
 
 **目标：** 提升认证和授权安全性。
 
 **范围：**
-- Access Token + Refresh Token 双 token
-- HttpOnly Secure Cookie
-- Refresh Token rotation
-- 服务端会话撤销
-- 登录限流增强
-- 生产配置强校验
-- CORS 生产校验
-- 上传安全增强
-- 安全响应头
+- Access Token + Refresh Token 双 token ✅
+- HttpOnly Secure Cookie ✅
+- Refresh Token rotation ✅
+- 服务端会话撤销 ✅
+- 登录限流增强 ✅
+- 生产配置强校验 ✅
+- CORS 生产校验 ✅
+- 上传安全增强 ✅
+- 安全响应头 ✅
 
-**状态：** 未开始
+**状态：** 已完成（2026-05-11）
 
 ---
 
-## Phase 3：可观测性和运维能力
+## Phase 3：可观测性和运维能力 (当前)
 
 **目标：** 提升生产环境可观测性和运维能力。
 

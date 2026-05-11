@@ -15,6 +15,7 @@ import (
 // Services 聚合 auth 模块在 HTTP 层需要用到的应用服务，减少路由层重复拼装。
 type Services struct {
 	Login     *authapp.LoginService
+	Refresh   *authapp.RefreshService
 	Me        *authapp.MeService
 	Account   *authapp.AccountService
 	Menu      *authapp.MenuService
@@ -27,6 +28,7 @@ type ServiceOptions struct {
 	DB     *gorm.DB
 	Redis  *goredis.Client
 	Token  *authnPlatform.Manager
+	Session authnPlatform.SessionStore
 }
 
 // NewServices 收拢 auth 模块服务构造，统一 repository / transactor / token / redis 依赖装配。
@@ -35,7 +37,8 @@ func NewServices(opts ServiceOptions) Services {
 	transactor := platformDatabase.NewTransactor(opts.DB)
 
 	return Services{
-		Login:     authapp.NewLoginService(repo, opts.Token, opts.Log),
+		Login:     authapp.NewLoginService(repo, opts.Token, opts.Session, opts.Log),
+		Refresh:   authapp.NewRefreshService(opts.Session, opts.Token, repo),
 		Me:        authapp.NewMeService(),
 		Account:   authapp.NewAccountService(transactor, repo),
 		Menu:      authapp.NewMenuService(repo),

@@ -72,7 +72,7 @@ server/tests/
 
 ## 当前测试清单
 
-### 真实可跑（非 t.Skip）— 共 34 个
+### 真实可跑（非 t.Skip）— 共 35 个
 
 **server/tests/api/auth_api_test.go (4):**
 - TestLoginSuccess
@@ -112,7 +112,7 @@ server/tests/
 - TestDefinitionsReachable
 - TestKeyEndpointDataSchemas
 
-**server/tests/rbac/permission_flow_test.go (12):**
+**server/tests/rbac/permission_flow_test.go (13):**
 - API 权限测试 (5):
   - TestUnauthenticatedAccessToSystemEndpoint
   - TestPermissionDeniedWithoutRole
@@ -126,13 +126,15 @@ server/tests/
   - TestDataScopeDeptAndChildren
   - TestDataScopeCustomDept
   - TestDataScopeDefaultDeny
+- 多角色权限合并 (1):
+  - TestMultiRolePermissionUnion
 
-### t.Skip / TODO（待实现）— 共 1 个
+### t.Skip / TODO — 0 个
 
-**server/tests/rbac/permission_flow_test.go:**
-- TestMultiRolePermissionUnion — 阻塞：API 不支持追加角色
+无。
 
 ### 已修复的业务代码 Bug
 
 1. **expandDepartmentTree GORM scope 泄漏** — 已通过 newCleanSession 修复（ADR-006）
 2. **Casbin 策略缓存不自动刷新** — 已通过 ReloadPolicy() 规避（ADR-005）
+3. **test-integration 并行包执行导致偶发失败** — 已通过 Makefile 添加 -p 1 修复

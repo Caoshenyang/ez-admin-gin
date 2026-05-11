@@ -113,6 +113,25 @@ func BuildResponse(item model.SystemFile) Response {
 	}
 }
 
+// extToMIME maps file extensions to their expected MIME type prefixes.
+// Used to cross-validate uploaded file content against declared extension.
+var extToMIME = map[string]string{
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".webp": "image/webp",
+	".pdf":  "application/pdf",
+	".txt":  "text/plain",
+	".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
+
+// ExpectedMIME returns the expected MIME type for a given extension, or empty string if unknown.
+func ExpectedMIME(ext string) string {
+	return extToMIME[NormalizeExt(ext)]
+}
+
 func ValidateAllowedExt(ext string, allowedExts []string) error {
 	ext = NormalizeExt(ext)
 	if ext == "" {

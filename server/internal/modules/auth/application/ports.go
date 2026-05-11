@@ -1,10 +1,12 @@
 package application
 
 import (
+	"context"
+	"time"
+
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
 	"ez-admin-gin/server/internal/platform/database"
 	"ez-admin-gin/server/internal/platform/model"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -15,8 +17,17 @@ type TokenIssuer interface {
 	GenerateAccessToken(userID uint, username string) (string, time.Time, error)
 }
 
+// SessionStore manages refresh token sessions (create, validate, revoke).
+type SessionStore interface {
+	Create(ctx context.Context, userID uint) (string, error)
+	Validate(ctx context.Context, token string) (uint, error)
+	Revoke(ctx context.Context, token string) error
+	RevokeAllForUser(ctx context.Context, userID uint) error
+}
+
 type LoginRepository interface {
 	FindUserByUsername(username string) (model.User, error)
+	FindUserByIDSimple(userID uint) (model.User, error)
 	CreateLoginLog(record *model.LoginLog) error
 	IsNotFound(err error) bool
 }

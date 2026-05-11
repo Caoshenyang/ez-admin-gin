@@ -1,17 +1,13 @@
 import axios from 'axios'
-import type { AxiosError } from 'axios'
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 import router from '../router'
-import { clearAuthSession, getAuthorizationHeader } from '../utils/auth'
+import { clearAuthSession, getAuthorizationHeader, refreshAccessToken } from '../utils/auth'
 
-// 不需要 Authorization 请求头的公开接口路径。
-const publicApiPaths = new Set(['/auth/login', '/setup/init'])
+const publicApiPaths = new Set(['/auth/login', '/setup/init', '/auth/refresh'])
 
-// http 预配置的 Axios 实例，统一管理 baseURL、超时和拦截器。
 const http = axios.create({
-  // 通过 Vite 代理转发到本地后端。
   baseURL: '/api/v1',
-  // timeout 请求超时时间（毫秒）。
   timeout: 10000,
 })
 
@@ -31,15 +27,26 @@ http.interceptors.request.use((config) => {
   return config
 })
 
-// 记录是否正在跳转登录页，防止多个 401 并发时重复跳转。
 let isRedirectingToLogin = false
 
-// 响应拦截器：统一处理 401、403、网络错误和 5xx。
+// Pending refresh promise — ensures only one refresh request at a time.
+let pendingRefresh: Promise<string> | null = null
+
+function getOrStartRefresh(): Promise<string> {
+  if (pendingRefresh) {
+    return pendingRefresh
+  }
+  pendingRefresh = refreshAccessToken().finally(() => {
+    pendingRefresh = null
+  })
+  return pendingRefresh
+}
+
+// 响应拦截器：统一处理 401（含自动刷新）、403、网络错误和 5xx。
 http.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     if (!error.response) {
-      // 网络异常（断网 / 超时）
       showMessage('网络异常，请检查网络连接后重试')
       return Promise.reject(error)
     }
@@ -47,11 +54,23 @@ http.interceptors.response.use(
     const { status, config } = error.response
 
     if (status === 401) {
-      // 登录接口本身返回 401 时不跳转，只向上抛出。
-      if (config.url === '/auth/login') {
+      // Login and refresh endpoints returning 401 should not trigger refresh.
+      if (config.url === '/auth/login' || config.url === '/auth/refresh') {
         return Promise.reject(error)
       }
 
+      // Try to refresh the access token.
+      const newToken = await getOrStartRefresh()
+      if (newToken) {
+        // Retry the original request with the new token.
+        const retryConfig: InternalAxiosRequestConfig = {
+          ...config,
+          headers: { ...config.headers, Authorization: `Bearer ${newToken}` },
+        }
+        return http.request(retryConfig)
+      }
+
+      // Refresh failed — clear session and redirect to login.
       clearAuthSession()
 
       if (!isRedirectingToLogin) {
@@ -78,8 +97,6 @@ http.interceptors.response.use(
   },
 )
 
-// 简单的消息展示机制，避免在 http 模块中直接依赖 Naive UI 实例。
-// 由 main.ts 中通过 setMessageHandler 注入实际的 NMessage 调用。
 let messageHandler: ((msg: string) => void) | null = null
 
 export function setMessageHandler(handler: (msg: string) => void) {

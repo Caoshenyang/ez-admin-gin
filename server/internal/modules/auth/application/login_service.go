@@ -1,4 +1,3 @@
-// Package application 实现 auth 模块的业务逻辑：登录、菜单查询、账户管理和仪表盘。
 package application
 
 import (
@@ -15,65 +14,81 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// LoginResult holds the login response and refresh token (set as cookie by handler).
+type LoginResult struct {
+	Response     authdomain.LoginResponse
+	RefreshToken string
+}
+
 // LoginService 处理用户登录认证与登录日志记录。
 type LoginService struct {
-	repo  LoginRepository
-	token TokenIssuer
-	log   *zap.Logger
+	repo    LoginRepository
+	token   TokenIssuer
+	session SessionStore
+	log     *zap.Logger
 }
 
-func NewLoginService(repo LoginRepository, token TokenIssuer, log *zap.Logger) *LoginService {
-	return &LoginService{repo: repo, token: token, log: log}
+func NewLoginService(repo LoginRepository, token TokenIssuer, session SessionStore, log *zap.Logger) *LoginService {
+	return &LoginService{repo: repo, token: token, session: session, log: log}
 }
 
-// Login 校验用户名密码，成功后签发 Access Token 并记录登录日志。
+// Login 校验用户名密码，成功后签发 Access Token、创建 Refresh Session 并记录登录日志。
 func (s *LoginService) Login(
 	ctx context.Context,
 	req authdomain.LoginRequest,
 	ip string,
 	userAgent string,
-) (authdomain.LoginResponse, error) {
+) (LoginResult, error) {
 	req, err := authdomain.NormalizeLoginRequest(req)
 	if err != nil {
 		s.RecordLogin(ctx, 0, "", model.LoginLogStatusFailed, "用户名和密码不能为空", ip, userAgent)
-		return authdomain.LoginResponse{}, err
+		return LoginResult{}, err
 	}
 
 	user, err := s.repo.FindUserByUsername(req.Username)
 	if err != nil {
 		if s.repo.IsNotFound(err) {
 			s.RecordLogin(ctx, 0, req.Username, model.LoginLogStatusFailed, "用户名或密码错误", ip, userAgent)
-			return authdomain.LoginResponse{}, errorsx.Unauthorized("用户名或密码错误")
+			return LoginResult{}, errorsx.Unauthorized("用户名或密码错误")
 		}
 
 		s.RecordLogin(ctx, 0, req.Username, model.LoginLogStatusFailed, "登录失败", ip, userAgent)
-		return authdomain.LoginResponse{}, errorsx.Internal("登录失败", err)
+		return LoginResult{}, errorsx.Internal("登录失败", err)
 	}
 
 	if user.Status != model.UserStatusEnabled {
 		s.RecordLogin(ctx, user.ID, user.Username, model.LoginLogStatusFailed, "用户已被禁用", ip, userAgent)
-		return authdomain.LoginResponse{}, errorsx.Forbidden("用户已被禁用")
+		return LoginResult{}, errorsx.Forbidden("用户已被禁用")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		s.RecordLogin(ctx, user.ID, user.Username, model.LoginLogStatusFailed, "用户名或密码错误", ip, userAgent)
-		return authdomain.LoginResponse{}, errorsx.Unauthorized("用户名或密码错误")
+		return LoginResult{}, errorsx.Unauthorized("用户名或密码错误")
 	}
 
 	accessToken, expiresAt, err := s.token.GenerateAccessToken(user.ID, user.Username)
 	if err != nil {
 		s.RecordLogin(ctx, user.ID, user.Username, model.LoginLogStatusFailed, "登录失败", ip, userAgent)
-		return authdomain.LoginResponse{}, errorsx.Internal("登录失败", err)
+		return LoginResult{}, errorsx.Internal("登录失败", err)
+	}
+
+	refreshToken, err := s.session.Create(ctx, user.ID)
+	if err != nil {
+		s.RecordLogin(ctx, user.ID, user.Username, model.LoginLogStatusFailed, "登录失败", ip, userAgent)
+		return LoginResult{}, errorsx.Internal("登录失败", err)
 	}
 
 	s.RecordLogin(ctx, user.ID, user.Username, model.LoginLogStatusSuccess, "登录成功", ip, userAgent)
-	return authdomain.LoginResponse{
-		UserID:      user.ID,
-		Username:    user.Username,
-		Nickname:    user.Nickname,
-		AccessToken: accessToken,
-		TokenType:   "Bearer",
-		ExpiresAt:   expiresAt.UTC().Format(time.RFC3339),
+	return LoginResult{
+		Response: authdomain.LoginResponse{
+			UserID:      user.ID,
+			Username:    user.Username,
+			Nickname:    user.Nickname,
+			AccessToken: accessToken,
+			TokenType:   "Bearer",
+			ExpiresAt:   expiresAt.UTC().Format(time.RFC3339),
+		},
+		RefreshToken: refreshToken,
 	}, nil
 }
 

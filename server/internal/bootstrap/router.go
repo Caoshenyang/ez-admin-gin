@@ -25,6 +25,7 @@ type RouterOptions struct {
 	DB         *gorm.DB
 	Redis      *goredis.Client
 	Token      *authnPlatform.Manager
+	Session    authnPlatform.SessionStore
 	Permission *authzPlatform.Enforcer
 }
 
@@ -33,6 +34,7 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 	r := gin.New()
 	r.Use(
 		platformMiddleware.CORS(opts.Config.CORS, opts.Config.App.Env),
+		platformMiddleware.SecurityHeaders(),
 		platformMiddleware.RequestID(),
 		appLogger.GinLogger(opts.Log),
 		appLogger.GinRecovery(opts.Log),
@@ -53,6 +55,7 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		DB:     opts.DB,
 		Redis:  opts.Redis,
 		Token:  opts.Token,
+		Session: opts.Session,
 	})
 	setupModule.RegisterRoutes(r, setupModule.RouteOptions{
 		Log: opts.Log,

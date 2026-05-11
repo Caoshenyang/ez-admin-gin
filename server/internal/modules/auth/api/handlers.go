@@ -2,6 +2,8 @@
 package api
 
 import (
+	"net/http"
+
 	authapp "ez-admin-gin/server/internal/modules/auth/application"
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
@@ -9,16 +11,28 @@ import (
 	"ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
+	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 type LoginHandler struct {
-	service *authapp.LoginService
-	log     *zap.Logger
+	service          *authapp.LoginService
+	refreshTTLSec    int
+	rdb              *goredis.Client
+	lockoutMaxFails  int
+	lockoutSec       int
+	log              *zap.Logger
 }
 
-func NewLoginHandler(service *authapp.LoginService, log *zap.Logger) *LoginHandler {
-	return &LoginHandler{service: service, log: log}
+func NewLoginHandler(service *authapp.LoginService, refreshTTLSec int, rdb *goredis.Client, lockoutMaxFails int, lockoutSec int, log *zap.Logger) *LoginHandler {
+	return &LoginHandler{
+		service:         service,
+		refreshTTLSec:   refreshTTLSec,
+		rdb:             rdb,
+		lockoutMaxFails: lockoutMaxFails,
+		lockoutSec:      lockoutSec,
+		log:             log,
+	}
 }
 
 // Login godoc
@@ -39,13 +53,26 @@ func (h *LoginHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Check if the username is temporarily locked.
+	if middleware.IsUsernameLocked(c.Request.Context(), h.rdb, req.Username) {
+		h.service.RecordLogin(c.Request.Context(), 0, req.Username, 2, "账号已锁定", c.ClientIP(), c.Request.UserAgent())
+		httpx.Error(c, errorsx.TooManyRequests("登录失败次数过多，账号已被临时锁定，请稍后再试"), h.log)
+		return
+	}
+
 	result, err := h.service.Login(c.Request.Context(), req, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
+		// Record the failed attempt for account lockout tracking.
+		middleware.RecordLoginFailure(c.Request.Context(), h.rdb, req.Username, h.lockoutMaxFails, h.lockoutSec)
 		httpx.WriteError(c, err, "登录失败", h.log)
 		return
 	}
 
-	httpx.Success(c, result)
+	// Clear failure counter on successful login.
+	middleware.ClearLoginFailures(c.Request.Context(), h.rdb, req.Username)
+
+	setRefreshTokenCookie(c, result.RefreshToken, h.refreshTTLSec)
+	httpx.Success(c, result.Response)
 }
 
 type MeHandler struct {
@@ -179,6 +206,73 @@ func (h *AccountHandler) UpdatePassword(c *gin.Context) {
 	}
 
 	httpx.Success(c, gin.H{"updated": true})
+}
+
+const refreshTokenCookieName = "ez_admin_rt"
+
+type RefreshHandler struct {
+	service       *authapp.RefreshService
+	refreshTTLSec int
+	log           *zap.Logger
+}
+
+func NewRefreshHandler(service *authapp.RefreshService, refreshTTLSec int, log *zap.Logger) *RefreshHandler {
+	return &RefreshHandler{service: service, refreshTTLSec: refreshTTLSec, log: log}
+}
+
+// Refresh godoc
+// @Summary      刷新 Access Token
+// @Tags         认证
+// @Success      200  {object}  httpx.Body{data=authdomain.LoginResponse}
+// @Failure      401  {object}  httpx.Body
+// @Router       /auth/refresh [post]
+func (h *RefreshHandler) Refresh(c *gin.Context) {
+	refreshToken, err := c.Cookie(refreshTokenCookieName)
+	if err != nil || refreshToken == "" {
+		httpx.Error(c, errorsx.Unauthorized("缺少 refresh token"), h.log)
+		return
+	}
+
+	result, err := h.service.Refresh(c.Request.Context(), refreshToken)
+	if err != nil {
+		clearRefreshTokenCookie(c)
+		httpx.WriteError(c, err, "刷新令牌失败", h.log)
+		return
+	}
+
+	setRefreshTokenCookie(c, result.RefreshToken, h.refreshTTLSec)
+	httpx.Success(c, result.Response)
+}
+
+type LogoutHandler struct {
+	service *authapp.RefreshService
+	log     *zap.Logger
+}
+
+func NewLogoutHandler(service *authapp.RefreshService, log *zap.Logger) *LogoutHandler {
+	return &LogoutHandler{service: service, log: log}
+}
+
+// Logout godoc
+// @Summary      退出登录
+// @Tags         认证
+// @Success      200  {object}  httpx.Body
+// @Router       /auth/logout [post]
+func (h *LogoutHandler) Logout(c *gin.Context) {
+	refreshToken, _ := c.Cookie(refreshTokenCookieName)
+	_ = h.service.Logout(c.Request.Context(), refreshToken)
+	clearRefreshTokenCookie(c)
+	httpx.Success(c, gin.H{"logged_out": true})
+}
+
+func setRefreshTokenCookie(c *gin.Context, token string, maxAge int) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(refreshTokenCookieName, token, maxAge, "/api/v1/auth", "", true, true)
+}
+
+func clearRefreshTokenCookie(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(refreshTokenCookieName, "", -1, "/api/v1/auth", "", true, true)
 }
 
 type MenuHandler struct {
