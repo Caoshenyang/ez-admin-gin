@@ -69,3 +69,70 @@
 **影响范围：** 所有使用 `data_scope=dept_and_children` 的用户在查询用户列表时触发 500 错误。`data_scope=dept` 在 DepartmentQueryScope 下的子部门查询同样受影响。
 
 **修复：** 在 `UserQueryScope` 和 `DepartmentQueryScope` 入口处，用 `newCleanSession(db)` 创建一个 `Session(&gorm.Session{NewDB: true})` 的干净 session。所有子查询（`expandDepartmentTree`、`accessibleDepartmentIDs`）使用此 cleanDB 执行，彻底隔离 GORM 链条件。修复后通过 `TestDataScopeDeptAndChildren` 真实测试验证。
+
+---
+
+## ADR-007：Refresh Token 存储在 Redis 而非数据库
+
+**状态：** 已采纳
+
+**原因：** Refresh token 需要高频读写和自动过期，Redis 的 TTL 原生支持比数据库定时清理更高效。项目已有 go-redis 集成。
+
+**决策：**
+- Refresh token 存储在 Redis（key: `refresh_token:{sha256(token)}`）
+- 辅助索引 `user_sessions:{user_id}` 支持全量会话撤销
+- Access token 黑名单也存储在 Redis（短 TTL = access token 剩余寿命）
+- 不增加数据库表
+
+---
+
+## ADR-008：Access Token 保持在 Authorization Header，Refresh Token 在 HttpOnly Cookie
+
+**状态：** 已采纳
+
+**原因：**
+- Access token 保持无状态（Authorization header）兼容现有 API 测试和客户端
+- Refresh token 放在 HttpOnly Secure Cookie 中，前端 JS 无法读取，防止 XSS 窃取
+- 前端通过 `withCredentials: true` 自动发送 cookie
+
+**决策：**
+- 登录返回：access token 在 JSON body，refresh token 在 Set-Cookie header
+- 刷新返回：新 access token 在 JSON body，新 refresh token 在 Set-Cookie header（rotation）
+- 登出：清除 cookie + 黑名单 access token
+
+---
+
+## ADR-009：TokenBlacklistChecker 通过可选接口注入 Auth Middleware
+
+**状态：** 已采纳
+
+**原因：** Auth middleware 签名需要向后兼容——测试环境中可能没有 Redis（contract tests）。
+
+**决策：** `middleware.Auth(tokenManager, blacklist, log)` — blacklist 为 nil 时跳过黑名单检查。所有调用点传入 `*RefreshTokenStore`（nil-safe）。
+
+---
+
+## ADR-010：Kubernetes 健康探针分离 liveness 和 readiness
+
+**状态：** 已采纳
+
+**原因：** Kubernetes 需要区分进程存活（liveness）和服务就绪（readiness）。如果只提供一个探针检查依赖，当 DB/Redis 短暂不可用时 K8s 会重启 pod，而不是暂时摘除流量。
+
+**决策：**
+- `/healthz`（liveness）：仅检查进程存活，始终返回 200
+- `/readyz`（readiness）：检查 DB + Redis 连通性，任一失败返回 503
+- `/health` 保留为向后兼容，行为等同 `/readyz`
+
+---
+
+## ADR-011：Prometheus 指标使用 promauto 自动注册
+
+**状态：** 已采纳
+
+**原因：** 项目使用标准 Prometheus client_golang 库。promauto 包在 init 时自动注册指标到默认 registry，避免手动注册的样板代码。
+
+**决策：**
+- `http_requests_total`：CounterVec，按 method/path/status 分标签
+- `http_request_duration_seconds`：HistogramVec，按 method/path 分标签
+- 使用 `promhttp.Handler()` 暴露 `/metrics` 端点
+- Metrics 中间件跳过 `/metrics` 路径自身，避免递归计数

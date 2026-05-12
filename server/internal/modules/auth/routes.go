@@ -21,12 +21,18 @@ type RouteOptions struct {
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
+	var refreshStore *authnPlatform.RefreshTokenStore
+	if opts.Token.RefreshStore() != nil {
+		refreshStore = opts.Token.RefreshStore()
+	}
+
 	services := authservicekit.NewServices(authservicekit.ServiceOptions{
-		Config: opts.Config,
-		Log:    opts.Log,
-		DB:     opts.DB,
-		Redis:  opts.Redis,
-		Token:  opts.Token,
+		Config:       opts.Config,
+		Log:          opts.Log,
+		DB:           opts.DB,
+		Redis:        opts.Redis,
+		Token:        opts.Token,
+		RefreshStore: refreshStore,
 	})
 	authapi.RegisterRoutes(r, authapi.RouteOptions{
 		Log:          opts.Log,
@@ -36,5 +42,7 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Services:     services,
 		RateLimitMax: opts.Config.RateLimit.LoginMaxRequests,
 		RateLimitSec: opts.Config.RateLimit.LoginWindowSec,
+		Env:          opts.Config.App.Env,
+		Blacklist:    refreshStore,
 	})
 }

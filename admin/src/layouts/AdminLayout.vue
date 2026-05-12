@@ -25,6 +25,7 @@ import {
   clearAuthSession,
   getAuthUserInfo,
 } from '../utils/auth'
+import { logout } from '../modules/auth/api/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -152,7 +153,7 @@ function handleRefresh() {
 }
 
 // handleUserAction 函数。
-function handleUserAction(key: string | number) {
+async function handleUserAction(key: string | number) {
   if (key === 'account-profile') {
     navigateTo('/account/profile')
     return
@@ -162,6 +163,11 @@ function handleUserAction(key: string | number) {
     return
   }
 
+  try {
+    await logout()
+  } catch {
+    // 退出登录 API 失败时忽略（token 可能已过期）
+  }
   clearAuthSession()
   shellStore.reset()
   resetDynamicRoutes()

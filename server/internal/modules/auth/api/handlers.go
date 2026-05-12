@@ -39,13 +39,51 @@ func (h *LoginHandler) Login(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.Login(c.Request.Context(), req, c.ClientIP(), c.Request.UserAgent())
+	result, _, err := h.service.Login(c.Request.Context(), req, c.ClientIP(), c.Request.UserAgent())
 	if err != nil {
 		httpx.WriteError(c, err, "登录失败", h.log)
 		return
 	}
 
 	httpx.Success(c, result)
+}
+
+// LoginWithRefresh 处理登录请求并签发双 token（access + refresh cookie）。
+func (h *LoginHandler) LoginWithRefresh(env string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req LoginRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			h.service.RecordLogin(c.Request.Context(), 0, "", 2, "用户名和密码不能为空", c.ClientIP(), c.Request.UserAgent())
+			httpx.Error(c, errorsx.BadRequest("用户名和密码不能为空"), h.log)
+			return
+		}
+
+		result, refreshToken, err := h.service.Login(c.Request.Context(), req, c.ClientIP(), c.Request.UserAgent())
+		if err != nil {
+			httpx.WriteError(c, err, "登录失败", h.log)
+			return
+		}
+
+		if refreshToken != "" {
+			setRefreshTokenCookie(c, refreshToken, env)
+		}
+		httpx.Success(c, result)
+	}
+}
+
+func setRefreshTokenCookie(c *gin.Context, token string, env string) {
+	secure := env == "prod"
+	maxAge := 7 * 86400
+	c.SetCookie("ez_admin_refresh_token", token, maxAge, "/api/v1/auth", "", secure, true)
+}
+
+func clearRefreshTokenCookie(c *gin.Context) {
+	c.SetCookie("ez_admin_refresh_token", "", -1, "/api/v1/auth", "", false, true)
+}
+
+func readRefreshTokenCookie(c *gin.Context) string {
+	token, _ := c.Cookie("ez_admin_refresh_token")
+	return token
 }
 
 type MeHandler struct {

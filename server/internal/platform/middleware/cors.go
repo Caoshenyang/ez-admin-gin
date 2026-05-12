@@ -41,6 +41,7 @@ func CORS(cfg platformConfig.CORSConfig, env string) gin.HandlerFunc {
 			return
 		}
 
+		c.Header("Vary", "Origin")
 		c.Header("Access-Control-Allow-Origin", origin)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")

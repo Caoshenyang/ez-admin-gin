@@ -165,6 +165,14 @@ func (app *TestApp) SeedAdmin(t *testing.T, username, password, nickname string)
 func (app *TestApp) LoginAs(t *testing.T, username, password string) string {
 	t.Helper()
 
+	token, _ := app.LoginWithCookies(t, username, password)
+	return token
+}
+
+// LoginWithCookies logs in and returns the access token and response cookies (for refresh token).
+func (app *TestApp) LoginWithCookies(t *testing.T, username, password string) (string, []*http.Cookie) {
+	t.Helper()
+
 	body := fmt.Sprintf(`{"username":"%s","password":"%s"}`, username, password)
 	req, _ := http.NewRequest(http.MethodPost, app.URL("/api/v1/auth/login"), strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -191,7 +199,7 @@ func (app *TestApp) LoginAs(t *testing.T, username, password string) string {
 	if result.Data.AccessToken == "" {
 		t.Fatal("login returned empty access_token")
 	}
-	return result.Data.AccessToken
+	return result.Data.AccessToken, resp.Cookies()
 }
 
 // AuthRequest wraps an HTTP request with a Bearer token header.

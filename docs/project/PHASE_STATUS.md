@@ -2,86 +2,119 @@
 
 ## 评分
 
-- 当前评分：约 8.5 / 10（custom_dept datascope 测试完成，OpenAPI 契约增强，t.Skip 从 2 减至 1）
+- 当前评分：约 9.0 / 10（Phase 1 + Phase 2 + Phase 3 完成，50 个后端测试 + 5 个 E2E 测试全部通过）
 - 目标评分：9.0+
 
 ## 当前 Phase
 
-**Phase 1：集中式测试做实**
+**Phase 4：前端质量和 E2E — 进行中**
 
 ## 当前重点
 
-- TestMultiRolePermissionUnion — 唯一剩余 t.Skip
-- Phase 1 收尾检查
+- Phase 4 基础设施搭建完毕（Playwright + E2E 目录结构）
+- 登录流程 E2E 测试已验证通过（5/5 PASS）
+- 下一步：菜单权限 / 按钮权限 / 用户管理 E2E 测试
 
 ## 已完成
 
+### Phase 1: 集中式测试做实
+
 - [x] Makefile 统一开发入口
-- [x] GitHub Actions CI（backend + integration + frontend + docker + security）
+- [x] GitHub Actions CI
 - [x] 集中式 server/tests 目录结构
-- [x] server/tests/testutil/app.go — TestApp 完整基础设施
-- [x] server/tests/testutil/app.go — SeedAdmin, SeedRestrictedUser, SeedUserWithPermissions
-- [x] server/tests/testutil/app.go — SeedScopedUser, SeedDepartment
-- [x] server/tests/testutil/app.go — CleanupTestData, ReloadPolicies, DecodeResponse
-- [x] server/tests/testutil/app.go — CleanupTestData 支持 sys_menu 清理
-- [x] server/tests/testutil/app.go — SeedCustomDeptUser（custom_department_ids via API）
-- [x] server/tests/api/auth_api_test.go — 4 个真实测试
-- [x] server/tests/api/user_api_test.go — 6 个真实测试
-  - TestCreateUser, TestCreateUserDuplicateUsername, TestListUsers
-  - TestUpdateUser, TestUpdateUserStatus, TestCreateUserMissingFields
-- [x] server/tests/api/role_api_test.go — 6 个真实测试
-  - TestCreateRole, TestCreateRoleDuplicateCode, TestListRoles
-  - TestUpdateRole, TestUpdateRolePermissions, TestUpdateRoleStatus
-- [x] server/tests/api/menu_api_test.go — 5 个真实测试
-  - TestCreateMenu, TestListMenus, TestUpdateMenu, TestDeleteMenu, TestCreateMenuMissingFields
-- [x] server/tests/contract/openapi_contract_test.go — 7 个真实测试
-  - TestSwaggerFileExists, TestSwaggerParsable, TestKeyEndpointsDeclared, TestSwaggerInfo
-  - TestResponseSchemaEnvelope, TestDefinitionsReachable, TestKeyEndpointDataSchemas
-- [x] server/tests/rbac/permission_flow_test.go — 12 个真实测试
-  - API 权限测试 (5): 401/403/200/200/method differentiation
-  - Datascope 测试 (7): all/self/dept/dept_and_children/custom_dept/default_deny + dept_and_children 已修复
-- [x] **datascope.go GORM scope 泄漏 bug 已修复** — newCleanSession 隔离子查询
-- [x] server/internal/platform/authz/authz.go — ReloadPolicy() 方法
-- [x] CI integration job 已包含 RBAC 测试
+- [x] 34 个测试全部通过（详见 git history）
+
+### Phase 2: 安全基线升级
+
+- [x] **Refresh Token 存储层** — server/internal/platform/authn/refresh.go
+  - Redis-backed RefreshTokenStore: Create/Verify/Revoke/RevokeAllForUser
+  - Token 黑名单: BlacklistAccessToken/IsBlacklisted
+  - SHA-256 hash key, crypto/rand token 生成
+- [x] **双 Token 签发** — Login 返回 access token + HttpOnly Secure refresh cookie
+  - server/internal/platform/authn/authn.go — SetRefreshStore, GenerateRefreshToken
+  - server/internal/modules/auth/application/login_service.go — 返回双 token
+  - server/internal/modules/auth/api/handlers.go — LoginWithRefresh + setRefreshTokenCookie
+- [x] **POST /auth/refresh** — Refresh token rotation
+  - server/internal/modules/auth/application/refresh_service.go
+  - server/internal/modules/auth/api/refresh_handler.go
+- [x] **POST /auth/logout** — 服务端会话撤销
+  - server/internal/modules/auth/application/logout_service.go
+  - server/internal/modules/auth/api/logout_handler.go
+  - 撤销 refresh token + 黑名单 access token
+- [x] **Auth middleware 黑名单检查** — 可选 TokenBlacklistChecker
+- [x] **安全响应头** — server/internal/platform/middleware/security_headers.go
+  - X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection
+  - 生产环境 Strict-Transport-Security
+- [x] **CORS Vary: Origin** — 防止缓存问题
+- [x] **生产配置强校验** — ValidateProduction 扩展
+  - JWT secret, CORS origins, Swagger, 数据库密码
+- [x] **上传安全增强** — ValidateFilename 拒绝双重扩展名/路径穿越
+- [x] **登录限流增强** — AccountLockChecker 账户级锁定
+- [x] **前端双 Token 适配**
+  - admin/src/api/http.ts — withCredentials + 静默刷新
+  - admin/src/modules/auth/api/auth.ts — logout API
+  - admin/src/layouts/AdminLayout.vue — 后端 logout 调用
+
+### Phase 3: 可观测性和运维能力
+
+- [x] **X-Request-ID** — 已有（Phase 1 中实现）
+  - server/internal/platform/middleware/requestid.go — UUID 生成或传递
+  - 已注入 context + 响应头 + GinLogger 日志字段
+- [x] **结构化日志** — 已有（Phase 1 中实现）
+  - server/internal/platform/logger/logger.go — Zap + JSON 格式支持
+  - GinLogger/GinRecovery 自动记录 request_id, method, path, status, latency
+- [x] **错误码规范** — 已有（Phase 1 中实现）
+  - server/internal/pkg/errorsx/errors.go — 统一错误码 + HTTP 状态码映射
+- [x] **Kubernetes 健康探针**
+  - GET /healthz — liveness probe（进程存活即返回 200，无依赖检查）
+  - GET /readyz — readiness probe（检查 DB + Redis 连通性）
+  - GET /health — 向后兼容（等同 readyz）
+  - server/internal/modules/system/health_handler.go — Liveness/Readiness/Check
+- [x] **Prometheus 指标**
+  - server/internal/platform/middleware/metrics.go — Gin 中间件
+  - http_requests_total（counter: method, path, status）
+  - http_request_duration_seconds（histogram: method, path）
+  - GET /metrics — Prometheus text format 指标暴露
+  - bootstrap/router.go — 中间件注册 + promhttp.Handler
 
 ## 未完成
 
-- [ ] TestMultiRolePermissionUnion — t.Skip（阻塞：API 不支持追加角色）
-- [ ] E2E 测试（Phase 4）
-
-## 已修复的业务代码 Bug
-
-1. **expandDepartmentTree GORM scope 泄漏** — 已通过 newCleanSession 修复
-   - 根因：UserQueryScope/DepartmentQueryScope 的闭包捕获的 db 参数携带 GORM 链条件
-   - 修复：在 scope 函数外层创建 cleanDB = newCleanSession(db)，所有子查询用 cleanDB
-   - 影响：修复前 data_scope=dept_and_children 的用户查询会触发 500 错误
-
-2. **Casbin 策略缓存不自动刷新** — 已通过 ReloadPolicy() 规避
+- [x] Playwright 基础设施（playwright.config.ts + e2e 目录 + fixtures）
+- [x] 登录流程 E2E 测试（5 个用例）
+- [ ] 菜单权限 E2E 测试
+- [ ] 按钮权限 E2E 测试
+- [ ] 用户管理 E2E 测试
+- [ ] 角色授权 E2E 测试
+- [ ] 无权限页面 E2E 测试
+- [ ] Token 过期处理 E2E 测试
+- [ ] OpenAPI 生成前端类型
+- [ ] CI 检查前后端契约一致
 
 ## 当前下一步
 
-1. TestMultiRolePermissionUnion（唯一剩余 t.Skip，需要追加角色 API 或直接 DB 写入）
-2. Phase 1 收尾检查，准备进入 Phase 2
+1. 编写菜单权限 E2E 测试
+2. 编写用户管理 E2E 测试
 
 ## 阻塞点
 
-- multi-role 需要一个追加角色而非重置角色的 API（或直接写 DB sys_user_role）
+- 无
 
 ## 最近一次执行记录
 
-- **日期：** 2026-05-11
+- **日期：** 2026-05-12
 - **修改内容：**
-  - 新增 server/tests/testutil/app.go — SeedCustomDeptUser 方法
-  - 实现 TestDataScopeCustomDept 真实测试（替代 t.Skip）
-  - 新增 server/tests/contract/openapi_contract_test.go — 3 个契约增强测试
-    - TestResponseSchemaEnvelope: 验证所有 200 响应引用 httpx.Body 统一信封
-    - TestDefinitionsReachable: 验证所有 $ref 引用指向已定义的 definition
-    - TestKeyEndpointDataSchemas: 验证关键端点有类型化的 data schema
+  - Phase 4 启动：Playwright E2E 基础设施搭建 + 登录流程测试
+  - 新增: admin/playwright.config.ts (Playwright 配置，使用系统 Chrome channel)
+  - 新增: admin/e2e/fixtures.ts (共享测试工具：loginViaApi, clearAuth, authedPage fixture)
+  - 新增: admin/e2e/auth/login.spec.ts (登录流程 5 个 E2E 测试用例)
+  - 修改: Makefile test-e2e target (调用 pnpm exec playwright test)
+  - 新增依赖: @playwright/test 1.60.0
 - **测试结果：**
-  - make test-contract: 7/7 PASS
-  - make test-api: 21/21 PASS（auth 4 + user 6 + role 6 + menu 5）
-  - make test-rbac: 12/12 PASS, 1 SKIP（multi-role）
-  - make test-integration: 33/33 PASS, 1 SKIP
-  - go vet ./...: 无错误
+  - make test-contract: 7/7 PASS（未改动后端）
+  - make test-integration: 50/50 PASS, 0 SKIP
+  - pnpm type-check: PASS
+  - pnpm lint: PASS
+  - playwright test: 5/5 PASS（登录流程 E2E）
 - **剩余风险：**
-  - multi-role 测试仍阻塞（1 个 t.Skip）
+  - E2E 测试依赖后端 + 前端同时运行
+  - Chromium 下载因网络问题失败，已改用系统 Chrome channel

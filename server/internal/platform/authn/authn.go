@@ -1,6 +1,7 @@
 package authn
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -26,6 +27,7 @@ type Manager struct {
 	secret         []byte
 	issuer         string
 	accessTokenTTL time.Duration
+	refreshStore   *RefreshTokenStore
 	now            func() time.Time
 }
 
@@ -74,6 +76,29 @@ func (m *Manager) GenerateAccessToken(userID uint, username string) (string, tim
 	}
 
 	return tokenString, expiresAt, nil
+}
+
+// SetRefreshStore sets the refresh token store. Pass nil to disable refresh token generation.
+func (m *Manager) SetRefreshStore(store *RefreshTokenStore) {
+	m.refreshStore = store
+}
+
+// GenerateRefreshToken creates a new refresh token via the RefreshTokenStore.
+func (m *Manager) GenerateRefreshToken(ctx context.Context, userID uint, username string) (string, error) {
+	if m.refreshStore == nil {
+		return "", nil
+	}
+	return m.refreshStore.Create(ctx, userID, username)
+}
+
+// RefreshStore returns the underlying RefreshTokenStore (may be nil).
+func (m *Manager) RefreshStore() *RefreshTokenStore {
+	return m.refreshStore
+}
+
+// AccessTokenTTL returns the configured access token TTL.
+func (m *Manager) AccessTokenTTL() time.Duration {
+	return m.accessTokenTTL
 }
 
 // ParseAccessToken 解析并校验 JWT，验证签名算法和 issuer。

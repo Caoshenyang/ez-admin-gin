@@ -71,12 +71,11 @@ test-contract: ## 运行 OpenAPI 契约测试 (不需要 DB/Redis)
 
 .PHONY: test-integration
 test-integration: ## 运行所有集成测试 (API + RBAC, 需要 DB + Redis)
-	cd $(SERVER_DIR) && $(GO) test -tags integration -v -timeout 180s ./tests/api/... ./tests/rbac/...
+	cd $(SERVER_DIR) && $(GO) test -p 1 -tags integration -v -timeout 180s ./tests/api/... ./tests/rbac/...
 
 .PHONY: test-e2e
-test-e2e: ## 运行 E2E 测试 (需要前端 + 后端运行中; TODO: 需安装 Playwright)
-	@echo ">>> E2E 测试尚未配置，请先安装 Playwright"
-	@exit 1
+test-e2e: ## 运行 E2E 测试 (需要前端 + 后端运行中)
+	cd $(ADMIN_DIR) && pnpm exec playwright test
 
 # ---------- 代码检查 ----------
 

@@ -130,6 +130,9 @@ func (s *Service) validateUploadFile(fileHeader *multipart.FileHeader) error {
 	}
 
 	ext := filedomain.NormalizeExt(filepath.Ext(fileHeader.Filename))
+	if err := filedomain.ValidateFilename(fileHeader.Filename); err != nil {
+		return err
+	}
 	return filedomain.ValidateAllowedExt(ext, s.cfg.AllowedExts)
 }
 

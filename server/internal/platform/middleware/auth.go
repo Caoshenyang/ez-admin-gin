@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"strings"
 
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
@@ -16,8 +17,13 @@ const (
 	currentUsernameKey = "current_username"
 )
 
+// TokenBlacklistChecker checks if an access token has been revoked.
+type TokenBlacklistChecker interface {
+	IsBlacklisted(ctx context.Context, tokenString string) bool
+}
+
 // Auth 校验 Authorization 请求头，并把当前用户信息写入 Gin 上下文。
-func Auth(tokenManager *authnPlatform.Manager, log *zap.Logger) gin.HandlerFunc {
+func Auth(tokenManager *authnPlatform.Manager, blacklist TokenBlacklistChecker, log *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString, ok := bearerToken(c.GetHeader("Authorization"))
 		if !ok {
@@ -32,6 +38,12 @@ func Auth(tokenManager *authnPlatform.Manager, log *zap.Logger) gin.HandlerFunc 
 				log.Warn("parse access token failed", zap.Error(err))
 			}
 
+			httpx.Error(c, errorsx.Unauthorized("登录已过期，请重新登录"), log)
+			c.Abort()
+			return
+		}
+
+		if blacklist != nil && blacklist.IsBlacklisted(c.Request.Context(), tokenString) {
 			httpx.Error(c, errorsx.Unauthorized("登录已过期，请重新登录"), log)
 			c.Abort()
 			return

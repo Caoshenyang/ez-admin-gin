@@ -61,6 +61,8 @@ auth:
   jwt_secret: "ez-admin-dev-secret-change-me-please-32"
   # access_token 有效期，单位秒。这里先设置为 2 小时。
   access_token_ttl: 7200
+  # refresh_token 有效期，单位秒。默认 7 天。
+  refresh_token_ttl: 604800
   # Token 签发方，后续解析时会校验。
   issuer: "ez-admin"
 

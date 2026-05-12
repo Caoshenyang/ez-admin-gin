@@ -32,3 +32,8 @@ export async function updateAccountPassword(payload: UpdateAccountPasswordReques
   const response = await http.post<ApiResponse<{ updated: boolean }>>('/auth/account/password', payload)
   return response.data.data
 }
+
+// logout 调用后端退出登录接口，撤销 refresh token 并黑名单 access token。
+export async function logout() {
+  await http.post('/auth/logout')
+}

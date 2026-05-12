@@ -20,10 +20,14 @@ type RouteOptions struct {
 	Services      authservicekit.Services
 	RateLimitMax  int
 	RateLimitSec  int
+	Env           string
+	Blacklist     platformMiddleware.TokenBlacklistChecker
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	login := NewLoginHandler(opts.Services.Login, opts.Log)
+	refresh := NewRefreshHandler(opts.Services.Refresh, opts.Env, opts.Log)
+	logout := NewLogoutHandler(opts.Services.Logout, opts.Log)
 	me := NewMeHandler(opts.Services.Me, opts.Log)
 	account := NewAccountHandler(opts.Services.Account, opts.Log)
 	menus := NewMenuHandler(opts.Services.Menu, opts.Log)
@@ -33,14 +37,17 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	auth := api.Group("/auth")
 	auth.POST("/login",
 		platformMiddleware.LoginRateLimit(opts.Redis, opts.RateLimitMax, opts.RateLimitSec),
-		login.Login,
+		login.LoginWithRefresh(opts.Env),
 	)
+	auth.POST("/refresh", refresh.Refresh)
 
 	protectedAuth := modulekit.NewProtectedAuthGroup(auth, modulekit.ProtectedAuthGroupOptions{
-		Log:   opts.Log,
-		DB:    opts.DB,
-		Token: opts.Token,
+		Log:       opts.Log,
+		DB:        opts.DB,
+		Token:     opts.Token,
+		Blacklist: opts.Blacklist,
 	})
+	protectedAuth.POST("/logout", logout.Logout)
 	protectedAuth.GET("/me", me.Me)
 	protectedAuth.GET("/account", account.Profile)
 	protectedAuth.POST("/account/profile", account.UpdateProfile)

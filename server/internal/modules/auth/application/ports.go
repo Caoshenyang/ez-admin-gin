@@ -1,6 +1,8 @@
 package application
 
 import (
+	"context"
+
 	authdomain "ez-admin-gin/server/internal/modules/auth/domain"
 	"ez-admin-gin/server/internal/platform/database"
 	"ez-admin-gin/server/internal/platform/model"
@@ -13,6 +15,7 @@ type AuthTransactor = database.Transactor
 
 type TokenIssuer interface {
 	GenerateAccessToken(userID uint, username string) (string, time.Time, error)
+	GenerateRefreshToken(ctx context.Context, userID uint, username string) (string, error)
 }
 
 type LoginRepository interface {

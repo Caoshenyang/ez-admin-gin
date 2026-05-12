@@ -34,7 +34,13 @@ func newHealthHandler(
 	}
 }
 
-func (h *healthHandler) Check(c *gin.Context) {
+// Liveness always returns 200 if the process is up. No dependency checks.
+func (h *healthHandler) Liveness(c *gin.Context) {
+	httpx.Success(c, gin.H{"status": "ok"})
+}
+
+// Readiness checks DB and Redis connectivity. Returns 503 if any dependency is down.
+func (h *healthHandler) Readiness(c *gin.Context) {
 	if err := platformDatabase.Ping(h.db); err != nil {
 		h.log.Error("database health check failed", zap.Error(err))
 		httpx.Error(c, errorsx.ServiceUnavailable("数据库不可用", err), h.log)
@@ -48,8 +54,13 @@ func (h *healthHandler) Check(c *gin.Context) {
 	}
 
 	httpx.Success(c, gin.H{
-		"env":      h.cfg.App.Env,
+		"status":   "ok",
 		"database": "ok",
 		"redis":    "ok",
 	})
+}
+
+// Check is the legacy /health handler (equivalent to Readiness for backward compat).
+func (h *healthHandler) Check(c *gin.Context) {
+	h.Readiness(c)
 }

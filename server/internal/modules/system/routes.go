@@ -12,6 +12,7 @@ import (
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
+	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"
@@ -26,11 +27,14 @@ type RouteOptions struct {
 	Redis      *goredis.Client
 	Token      *authnPlatform.Manager
 	Permission *authzPlatform.Enforcer
+	Blacklist  platformMiddleware.TokenBlacklistChecker
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	health := newHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
 
+	r.GET("/healthz", health.Liveness)
+	r.GET("/readyz", health.Readiness)
 	r.GET("/health", health.Check)
 
 	system := modulekit.NewProtectedSystemGroup(r, modulekit.ProtectedSystemGroupOptions{
@@ -38,6 +42,7 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		DB:         opts.DB,
 		Token:      opts.Token,
 		Permission: opts.Permission,
+		Blacklist:  opts.Blacklist,
 	})
 
 	system.GET("/health", health.Check)

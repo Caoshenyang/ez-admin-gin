@@ -15,13 +15,14 @@ type ProtectedSystemGroupOptions struct {
 	DB         *gorm.DB
 	Token      *authnPlatform.Manager
 	Permission *authzPlatform.Enforcer
+	Blacklist  middleware.TokenBlacklistChecker
 }
 
 func NewProtectedSystemGroup(r *gin.Engine, opts ProtectedSystemGroupOptions) *gin.RouterGroup {
 	api := r.Group("/api/v1")
 	system := api.Group("/system")
 	// 这里收口后台受保护分组的公共中间件，避免 IAM/System 顶层路由重复拷贝一份。
-	system.Use(middleware.Auth(opts.Token, opts.Log))
+	system.Use(middleware.Auth(opts.Token, opts.Blacklist, opts.Log))
 	system.Use(middleware.LoadActor(opts.DB, opts.Log))
 	system.Use(middleware.OperationLog(opts.DB, opts.Log))
 	system.Use(middleware.Permission(opts.DB, opts.Permission, opts.Log))

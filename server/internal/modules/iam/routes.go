@@ -9,6 +9,7 @@ import (
 	"ez-admin-gin/server/internal/modules/modulekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
+	"ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -20,6 +21,7 @@ type RouteOptions struct {
 	DB         *gorm.DB
 	Token      *authnPlatform.Manager
 	Permission *authzPlatform.Enforcer
+	Blacklist  middleware.TokenBlacklistChecker
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
@@ -28,6 +30,7 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		DB:         opts.DB,
 		Token:      opts.Token,
 		Permission: opts.Permission,
+		Blacklist:  opts.Blacklist,
 	})
 
 	usermodule.RegisterRoutes(system, usermodule.RouteOptions{

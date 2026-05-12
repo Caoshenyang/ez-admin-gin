@@ -2,6 +2,8 @@
 package bootstrap
 
 import (
+	"time"
+
 	authModule "ez-admin-gin/server/internal/modules/auth"
 	iamModule "ez-admin-gin/server/internal/modules/iam"
 	setupModule "ez-admin-gin/server/internal/modules/setup"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	goredis "github.com/redis/go-redis/v9"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -33,10 +36,14 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 	r := gin.New()
 	r.Use(
 		platformMiddleware.CORS(opts.Config.CORS, opts.Config.App.Env),
+		platformMiddleware.SecurityHeaders(opts.Config.App.Env),
 		platformMiddleware.RequestID(),
+		platformMiddleware.Metrics(),
 		appLogger.GinLogger(opts.Log),
 		appLogger.GinRecovery(opts.Log),
 	)
+
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	if opts.Config.Upload.MaxSizeMB > 0 {
 		r.MaxMultipartMemory = opts.Config.Upload.MaxSizeMB << 20
@@ -45,6 +52,13 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 
 	if opts.Config.Swagger.Enabled {
 		RegisterSwagger(r)
+	}
+
+	// Create RefreshTokenStore and attach to Token manager.
+	var refreshStore *authnPlatform.RefreshTokenStore
+	if opts.Redis != nil && opts.Config.Auth.RefreshTokenTTL > 0 {
+		refreshStore = authnPlatform.NewRefreshTokenStore(opts.Redis, time.Duration(opts.Config.Auth.RefreshTokenTTL)*time.Second)
+		opts.Token.SetRefreshStore(refreshStore)
 	}
 
 	authModule.RegisterRoutes(r, authModule.RouteOptions{
@@ -63,6 +77,7 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		DB:         opts.DB,
 		Token:      opts.Token,
 		Permission: opts.Permission,
+		Blacklist:  refreshStore,
 	})
 	systemModule.RegisterRoutes(r, systemModule.RouteOptions{
 		Config:     opts.Config,
@@ -71,6 +86,7 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		Redis:      opts.Redis,
 		Token:      opts.Token,
 		Permission: opts.Permission,
+		Blacklist:  refreshStore,
 	})
 
 	return r

@@ -1,12 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/gin-gonic/gin"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 // LoginRateLimit 返回一个基于 Redis 滑动窗口的 Gin 限流中间件。
@@ -28,7 +29,6 @@ func LoginRateLimit(rdb *goredis.Client, maxRequests int, windowSec int) gin.Han
 
 		results, err := pipe.Exec(ctx)
 		if err != nil {
-			// Redis 不可用时放行请求，避免影响正常登录。
 			c.Next()
 			return
 		}
@@ -44,4 +44,48 @@ func LoginRateLimit(rdb *goredis.Client, maxRequests int, windowSec int) gin.Han
 
 		c.Next()
 	}
+}
+
+// AccountLockChecker provides account-level login rate limiting via Redis.
+type AccountLockChecker struct {
+	rdb         *goredis.Client
+	maxAttempts int
+	lockoutSec  int
+}
+
+// NewAccountLockChecker creates a new AccountLockChecker.
+func NewAccountLockChecker(rdb *goredis.Client, maxAttempts int, lockoutSec int) *AccountLockChecker {
+	return &AccountLockChecker{rdb: rdb, maxAttempts: maxAttempts, lockoutSec: lockoutSec}
+}
+
+// IsLocked checks if the account is currently locked due to too many failed attempts.
+func (a *AccountLockChecker) IsLocked(ctx context.Context, username string) bool {
+	if a.rdb == nil || a.maxAttempts <= 0 {
+		return false
+	}
+	key := fmt.Sprintf("ratelimit:login_account:%s", username)
+	val, err := a.rdb.Get(ctx, key).Int()
+	if err != nil {
+		return false
+	}
+	return val >= a.maxAttempts
+}
+
+// RecordFailure increments the failure counter for an account.
+func (a *AccountLockChecker) RecordFailure(ctx context.Context, username string) {
+	if a.rdb == nil || a.maxAttempts <= 0 {
+		return
+	}
+	key := fmt.Sprintf("ratelimit:login_account:%s", username)
+	a.rdb.Incr(ctx, key)
+	a.rdb.Expire(ctx, key, time.Duration(a.lockoutSec)*time.Second)
+}
+
+// ClearAttempts resets the failure counter for an account on successful login.
+func (a *AccountLockChecker) ClearAttempts(ctx context.Context, username string) {
+	if a.rdb == nil {
+		return
+	}
+	key := fmt.Sprintf("ratelimit:login_account:%s", username)
+	a.rdb.Del(ctx, key)
 }

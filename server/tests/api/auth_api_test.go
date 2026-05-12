@@ -71,6 +71,23 @@ func TestLoginSuccess(t *testing.T) {
 	if loginData.Username != "admin" {
 		t.Errorf("username = %q, want %q", loginData.Username, "admin")
 	}
+
+	// Verify refresh token cookie is set (HttpOnly, Secure depends on env).
+	var hasRefreshCookie bool
+	for _, c := range resp.Cookies() {
+		if c.Name == "ez_admin_refresh_token" {
+			hasRefreshCookie = true
+			if !c.HttpOnly {
+				t.Error("refresh token cookie should be HttpOnly")
+			}
+			if c.Value == "" {
+				t.Error("refresh token cookie value is empty")
+			}
+		}
+	}
+	if !hasRefreshCookie {
+		t.Error("expected ez_admin_refresh_token cookie to be set")
+	}
 }
 
 func TestLoginWrongPassword(t *testing.T) {

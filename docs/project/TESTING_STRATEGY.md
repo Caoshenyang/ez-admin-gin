@@ -59,6 +59,7 @@ server/tests/
 | CleanupTestData | 清理测试产生的角色/用户/部门/菜单/Casbin 策略 |
 | ReloadPolicies | 刷新 Casbin 内存策略 |
 | LoginAs | 以指定用户登录并返回 token |
+| LoginWithCookies | 以指定用户登录并返回 token + cookies（含 refresh token） |
 | AuthRequest | 构造带 Bearer token 的请求 |
 | DecodeResponse | JSON 响应解码 |
 
@@ -72,13 +73,28 @@ server/tests/
 
 ## 当前测试清单
 
-### 真实可跑（非 t.Skip）— 共 34 个
+### 真实可跑（非 t.Skip）— 共 50 个后端 + 5 个 E2E
+
+**admin/e2e/auth/login.spec.ts (5):**
+- Login Flow: redirects to login page when not authenticated
+- Login Flow: shows error on wrong password
+- Login Flow: logs in successfully and redirects to dashboard
+- Login Flow: already logged in user is redirected to dashboard from /login
+- Login Flow: form validation shows errors for empty fields
 
 **server/tests/api/auth_api_test.go (4):**
 - TestLoginSuccess
 - TestLoginWrongPassword
 - TestUnauthorizedAccessWithoutToken
 - TestUnauthorizedAccessWithInvalidToken
+
+**server/tests/api/auth_refresh_test.go (6):**
+- TestRefreshSuccess
+- TestRefreshWithInvalidToken
+- TestRefreshWithoutCookie
+- TestRefreshRotation
+- TestLogoutSuccess
+- TestLogoutRevokesAccessToken
 
 **server/tests/api/user_api_test.go (6):**
 - TestCreateUser
@@ -103,6 +119,11 @@ server/tests/
 - TestDeleteMenu
 - TestCreateMenuMissingFields
 
+**server/tests/api/health_api_test.go (3):**
+- TestHealthzReturnsOK
+- TestReadyzReturnsOK
+- TestMetricsEndpoint
+
 **server/tests/contract/openapi_contract_test.go (7):**
 - TestSwaggerFileExists
 - TestSwaggerParsable
@@ -112,7 +133,7 @@ server/tests/
 - TestDefinitionsReachable
 - TestKeyEndpointDataSchemas
 
-**server/tests/rbac/permission_flow_test.go (12):**
+**server/tests/rbac/permission_flow_test.go (13):**
 - API 权限测试 (5):
   - TestUnauthenticatedAccessToSystemEndpoint
   - TestPermissionDeniedWithoutRole
@@ -126,11 +147,12 @@ server/tests/
   - TestDataScopeDeptAndChildren
   - TestDataScopeCustomDept
   - TestDataScopeDefaultDeny
+- 多角色权限联合测试 (1):
+  - TestMultiRolePermissionUnion
 
-### t.Skip / TODO（待实现）— 共 1 个
+### t.Skip / TODO — 0 个
 
-**server/tests/rbac/permission_flow_test.go:**
-- TestMultiRolePermissionUnion — 阻塞：API 不支持追加角色
+（Phase 1 全部完成，无剩余 t.Skip）
 
 ### 已修复的业务代码 Bug
 

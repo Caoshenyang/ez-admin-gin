@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -126,4 +127,31 @@ func ValidateAllowedExt(ext string, allowedExts []string) error {
 	}
 
 	return errorsx.BadRequest("不支持上传该文件类型")
+}
+
+var dangerousExtensions = []string{".php", ".jsp", ".asp", ".aspx", ".cgi", ".pl", ".sh", ".bat", ".cmd", ".exe", ".html", ".htm", ".js", ".svg", ".vbs", ".ps1"}
+
+// ValidateFilename rejects dangerous filenames with double extensions, path traversal, or dangerous extensions.
+func ValidateFilename(filename string) error {
+	base := filepath.Base(filename)
+	if base != filename {
+		return errorsx.BadRequest("文件名不合法")
+	}
+
+	name := filename
+	for {
+		ext := filepath.Ext(name)
+		if ext == "" {
+			break
+		}
+		lower := strings.ToLower(ext)
+		for _, d := range dangerousExtensions {
+			if lower == d {
+				return errorsx.BadRequest("不支持上传该文件类型")
+			}
+		}
+		name = strings.TrimSuffix(name, ext)
+	}
+
+	return nil
 }
