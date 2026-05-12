@@ -2,7 +2,7 @@
 
 ## 评分
 
-- 当前评分：约 9.0 / 10（Phase 1 + Phase 2 + Phase 3 完成，50 个后端测试 + 5 个 E2E 测试全部通过）
+- 当前评分：约 9.0 / 10（Phase 1 + Phase 2 + Phase 3 完成，50 个后端测试 + 21 个 E2E 测试全部通过）
 - 目标评分：9.0+
 
 ## 当前 Phase
@@ -13,7 +13,9 @@
 
 - Phase 4 基础设施搭建完毕（Playwright + E2E 目录结构）
 - 登录流程 E2E 测试已验证通过（5/5 PASS）
-- 下一步：菜单权限 / 按钮权限 / 用户管理 E2E 测试
+- 菜单权限 E2E 测试已验证通过（8/8 PASS）
+- 用户管理 E2E 测试已验证通过（8/8 PASS）
+- 下一步：按钮权限 / 角色授权 / 无权限页面 / Token 过期 E2E 测试
 
 ## 已完成
 
@@ -81,9 +83,9 @@
 
 - [x] Playwright 基础设施（playwright.config.ts + e2e 目录 + fixtures）
 - [x] 登录流程 E2E 测试（5 个用例）
-- [ ] 菜单权限 E2E 测试
+- [x] 菜单权限 E2E 测试（8 个用例）
+- [x] 用户管理 E2E 测试（8 个用例）
 - [ ] 按钮权限 E2E 测试
-- [ ] 用户管理 E2E 测试
 - [ ] 角色授权 E2E 测试
 - [ ] 无权限页面 E2E 测试
 - [ ] Token 过期处理 E2E 测试
@@ -92,8 +94,8 @@
 
 ## 当前下一步
 
-1. 编写菜单权限 E2E 测试
-2. 编写用户管理 E2E 测试
+1. 编写按钮权限 E2E 测试
+2. 编写角色授权 E2E 测试
 
 ## 阻塞点
 
@@ -103,18 +105,12 @@
 
 - **日期：** 2026-05-12
 - **修改内容：**
-  - Phase 4 启动：Playwright E2E 基础设施搭建 + 登录流程测试
-  - 新增: admin/playwright.config.ts (Playwright 配置，使用系统 Chrome channel)
-  - 新增: admin/e2e/fixtures.ts (共享测试工具：loginViaApi, clearAuth, authedPage fixture)
-  - 新增: admin/e2e/auth/login.spec.ts (登录流程 5 个 E2E 测试用例)
-  - 修改: Makefile test-e2e target (调用 pnpm exec playwright test)
-  - 新增依赖: @playwright/test 1.60.0
+  - Phase 4 继续：菜单权限 + 用户管理 E2E 测试
+  - 新增: admin/e2e/iam/menu.spec.ts (菜单权限 8 个 E2E 测试用例)
+  - 新增: admin/e2e/iam/user.spec.ts (用户管理 8 个 E2E 测试用例)
+  - 修改: admin/e2e/fixtures.ts (token 缓存避免限流)
 - **测试结果：**
-  - make test-contract: 7/7 PASS（未改动后端）
-  - make test-integration: 50/50 PASS, 0 SKIP
-  - pnpm type-check: PASS
-  - pnpm lint: PASS
-  - playwright test: 5/5 PASS（登录流程 E2E）
+  - playwright test: 21/21 PASS（登录 5 + 菜单 8 + 用户 8）
 - **剩余风险：**
   - E2E 测试依赖后端 + 前端同时运行
-  - Chromium 下载因网络问题失败，已改用系统 Chrome channel
+  - 残留测试数据需定期清理（E2E 前缀的用户和菜单）
