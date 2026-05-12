@@ -134,3 +134,47 @@ export function getAuthorizationHeader() {
 
   return `${getTokenType()} ${accessToken}`
 }
+
+// refreshAccessToken uses the HttpOnly refresh cookie to obtain a new access token.
+// Returns the new access token on success, or empty string on failure.
+export async function refreshAccessToken(): Promise<string> {
+  try {
+    const resp = await fetch('/api/v1/auth/refresh', { method: 'POST' })
+    if (!resp.ok) {
+      return ''
+    }
+    const envelope = await resp.json()
+    const data = envelope?.data
+    if (!data?.access_token) {
+      return ''
+    }
+
+    // Update stored access token and user info.
+    const storage = currentUserInfoStorage() ?? localStorage
+    storage.setItem(ACCESS_TOKEN_KEY, data.access_token)
+    storage.setItem(TOKEN_TYPE_KEY, data.token_type || 'Bearer')
+    storage.setItem(
+      USER_INFO_KEY,
+      JSON.stringify({
+        userId: data.user_id,
+        username: data.username,
+        nickname: data.nickname,
+        expiresAt: data.expires_at,
+      } satisfies AuthUserInfo),
+    )
+    notifyAuthUserInfoUpdated()
+    return data.access_token
+  } catch {
+    return ''
+  }
+}
+
+// logout calls the server logout endpoint to revoke the refresh cookie, then clears local state.
+export async function logout(): Promise<void> {
+  try {
+    await fetch('/api/v1/auth/logout', { method: 'POST' })
+  } catch {
+    // Swallow errors — local state is cleared regardless.
+  }
+  clearAuthSession()
+}

@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"io/fs"
 	stdlog "log"
+	"time"
 
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
@@ -67,6 +68,12 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 		log.Fatal("create token manager", zap.Error(err))
 	}
 
+	refreshTTL := time.Duration(cfg.Auth.RefreshTokenTTL) * time.Second
+	if refreshTTL <= 0 {
+		refreshTTL = 7 * 24 * time.Hour
+	}
+	sessionStore := authnPlatform.NewRedisSessionStore(redisClient, refreshTTL)
+
 	permissionEnforcer, err := authzPlatform.NewEnforcer(db, rbacModelPath)
 	if err != nil {
 		log.Fatal("create permission enforcer", zap.Error(err))
@@ -78,6 +85,7 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 		DB:         db,
 		Redis:      redisClient,
 		Token:      tokenManager,
+		Session:    sessionStore,
 		Permission: permissionEnforcer,
 	})
 

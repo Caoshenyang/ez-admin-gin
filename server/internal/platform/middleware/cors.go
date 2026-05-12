@@ -11,8 +11,8 @@ import (
 
 // CORS 返回一个跨域中间件，根据配置决定允许的来源。
 func CORS(cfg platformConfig.CORSConfig, env string) gin.HandlerFunc {
-	// 开发模式下默认允许所有 localhost 来源。
 	allowAllLocalhost := env != "prod"
+	isProd := env == "prod"
 
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
@@ -29,7 +29,10 @@ func CORS(cfg platformConfig.CORSConfig, env string) gin.HandlerFunc {
 
 		if !allowed {
 			for _, o := range cfg.AllowedOrigins {
-				if o == origin || o == "*" {
+				if isProd && o == "*" {
+					continue
+				}
+				if o == origin || (!isProd && o == "*") {
 					allowed = true
 					break
 				}

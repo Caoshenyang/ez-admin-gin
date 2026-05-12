@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,6 +34,7 @@ func NewLocalStorage(cfg platformConfig.UploadConfig) *LocalStorage {
 }
 
 // SaveUploadedFile 将上传文件按日期目录存储，同时计算 SHA-256 校验。
+// 通过 http.DetectContentType 交叉验证文件实际内容与扩展名是否一致。
 func (s *LocalStorage) SaveUploadedFile(fileHeader *multipart.FileHeader) (filedomain.SavedUploadedFile, error) {
 	src, err := fileHeader.Open()
 	if err != nil {
@@ -39,9 +42,17 @@ func (s *LocalStorage) SaveUploadedFile(fileHeader *multipart.FileHeader) (filed
 	}
 	defer src.Close()
 
+	ext := filedomain.NormalizeExt(filepath.Ext(fileHeader.Filename))
+	if err := validateMIMEType(src, ext); err != nil {
+		return filedomain.SavedUploadedFile{}, err
+	}
+	// Reset reader after MIME detection consumed the first 512 bytes.
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return filedomain.SavedUploadedFile{}, err
+	}
+
 	now := time.Now()
 	dateDir := now.Format("20060102")
-	ext := filedomain.NormalizeExt(filepath.Ext(fileHeader.Filename))
 	randomPart, err := randomHex(8)
 	if err != nil {
 		return filedomain.SavedUploadedFile{}, err
@@ -84,6 +95,41 @@ func (s *LocalStorage) SaveUploadedFile(fileHeader *multipart.FileHeader) (filed
 		URL:          url,
 		AbsolutePath: absolutePath,
 	}, nil
+}
+
+// validateMIMEType reads the first 512 bytes and cross-validates detected content
+// type against the expected MIME type for the given extension.
+func validateMIMEType(src io.ReadSeeker, ext string) error {
+	expected := filedomain.ExpectedMIME(ext)
+	if expected == "" {
+		return nil // Unknown extensions skip MIME validation.
+	}
+
+	buf := make([]byte, 512)
+	n, err := src.Read(buf)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("read file header for MIME detection: %w", err)
+	}
+
+	detected := http.DetectContentType(buf[:n])
+	if !mimeTypeMatch(detected, expected) {
+		return errors.New("文件实际内容与扩展名不匹配，请检查文件是否被篡改")
+	}
+
+	return nil
+}
+
+// mimeTypeMatch checks if the detected MIME type is compatible with the expected one.
+// For binary formats (Office documents), detected may be "application/zip" which is acceptable.
+func mimeTypeMatch(detected, expected string) bool {
+	if detected == expected {
+		return true
+	}
+	// Office documents (.docx, .xlsx) are ZIP-based; http.DetectContentType reports "application/zip".
+	if detected == "application/zip" && strings.HasPrefix(expected, "application/vnd.openxmlformats") {
+		return true
+	}
+	return false
 }
 
 // Delete 删除指定路径的物理文件。

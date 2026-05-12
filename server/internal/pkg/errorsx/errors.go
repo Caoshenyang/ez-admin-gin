@@ -14,6 +14,7 @@ const (
 	CodeBadRequest         Code = 40000
 	CodeUnauthorized       Code = 40100
 	CodeForbidden          Code = 40300
+	CodeTooManyRequests    Code = 42900
 	CodeNotFound           Code = 40400
 	CodeTooManyRequests    Code = 42900
 	CodeServiceUnavailable Code = 50300
@@ -58,6 +59,11 @@ func BadRequest(message string) *Error {
 // Unauthorized 返回 401 Unauthorized 错误。
 func Unauthorized(message string) *Error {
 	return New(http.StatusUnauthorized, CodeUnauthorized, message)
+}
+
+// TooManyRequests 返回 429 Too Many Requests 错误。
+func TooManyRequests(message string) *Error {
+	return New(http.StatusTooManyRequests, CodeTooManyRequests, message)
 }
 
 // Forbidden 返回 403 Forbidden 错误。

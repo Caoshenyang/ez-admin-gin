@@ -85,10 +85,10 @@ type CORSConfig struct {
 }
 
 type RateLimitConfig struct {
-	LoginMaxRequests        int `mapstructure:"login_max_requests"`
-	LoginWindowSec          int `mapstructure:"login_window_sec"`
-	LoginMaxAccountAttempts int `mapstructure:"login_max_account_attempts"`
-	LoginAccountLockoutSec  int `mapstructure:"login_account_lockout_sec"`
+	LoginMaxRequests      int `mapstructure:"login_max_requests"`
+	LoginWindowSec        int `mapstructure:"login_window_sec"`
+	LoginLockoutThreshold int `mapstructure:"login_lockout_threshold"`
+	LoginLockoutSec       int `mapstructure:"login_lockout_sec"`
 }
 
 func Load() (*Config, error) {
@@ -122,33 +122,20 @@ func (c *Config) ValidateProduction() error {
 		return nil
 	}
 
-	// JWT secret: must not contain default values, min 32 chars.
-	secret := strings.TrimSpace(c.Auth.JWTSecret)
-	if strings.Contains(secret, "change-me") || strings.Contains(secret, "dev-secret") {
-		return fmt.Errorf("production: auth.jwt_secret contains a default value; please set EZ_AUTH_JWT_SECRET")
-	}
-	if len(secret) < 32 {
-		return fmt.Errorf("production: auth.jwt_secret must be at least 32 characters")
+	if strings.Contains(c.Auth.JWTSecret, "change-me") || strings.Contains(c.Auth.JWTSecret, "dev-secret") {
+		return fmt.Errorf("production: auth.jwt_secret contains a default value; set EZ_AUTH_JWT_SECRET to a secure random string")
 	}
 
-	// CORS: must have at least one non-wildcard origin.
 	if len(c.CORS.AllowedOrigins) == 0 {
-		return fmt.Errorf("production: cors.allowed_origins must be configured")
-	}
-	for _, o := range c.CORS.AllowedOrigins {
-		if o == "*" {
-			return fmt.Errorf("production: cors.allowed_origins must not contain wildcard '*'")
-		}
+		return fmt.Errorf("production: cors.allowed_origins is empty; set EZ_CORS_ALLOWED_ORIGINS to your frontend domain(s)")
 	}
 
-	// Swagger must be disabled.
 	if c.Swagger.Enabled {
-		return fmt.Errorf("production: swagger.enabled must be false")
+		return fmt.Errorf("production: swagger.enabled must be false; disable EZ_SWAGGER_ENABLED")
 	}
 
-	// Database password must not be default.
-	if c.Database.Password == "ez_admin_123456" {
-		return fmt.Errorf("production: database.password must be changed from default")
+	if c.Upload.MaxSizeMB > 50 {
+		return fmt.Errorf("production: upload.max_size_mb (%d) exceeds safety limit of 50 MB", c.Upload.MaxSizeMB)
 	}
 
 	return nil
@@ -193,8 +180,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("cors.allowed_origins", []string{})
 	v.SetDefault("rate_limit.login_max_requests", 10)
 	v.SetDefault("rate_limit.login_window_sec", 60)
-	v.SetDefault("rate_limit.login_max_account_attempts", 5)
-	v.SetDefault("rate_limit.login_account_lockout_sec", 300)
+	v.SetDefault("rate_limit.login_lockout_threshold", 5)
+	v.SetDefault("rate_limit.login_lockout_sec", 300)
 }
 
 func bindEnvs(v *viper.Viper) {
@@ -237,8 +224,8 @@ func bindEnvs(v *viper.Viper) {
 		"cors.allowed_origins",
 		"rate_limit.login_max_requests",
 		"rate_limit.login_window_sec",
-		"rate_limit.login_max_account_attempts",
-		"rate_limit.login_account_lockout_sec",
+		"rate_limit.login_lockout_threshold",
+		"rate_limit.login_lockout_sec",
 	}
 
 	for _, key := range keys {

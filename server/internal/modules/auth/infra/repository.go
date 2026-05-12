@@ -28,6 +28,13 @@ func (r *Repository) FindUserByUsername(username string) (model.User, error) {
 	return user, err
 }
 
+// FindUserByIDSimple 根据ID查询用户（无事务参数，用于 refresh service）。
+func (r *Repository) FindUserByIDSimple(userID uint) (model.User, error) {
+	var user model.User
+	err := r.db.First(&user, userID).Error
+	return user, err
+}
+
 // CreateLoginLog 写入一条登录日志记录。
 func (r *Repository) CreateLoginLog(record *model.LoginLog) error {
 	return r.db.Create(record).Error

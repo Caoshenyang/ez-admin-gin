@@ -115,7 +115,10 @@
       "Bash(where make *)",
       "Bash(make test-api *)",
       "Bash(make test-rbac *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(make test-contract *)",
+      "Bash(make test-integration *)",
+      "Bash(docker exec ez-admin-redis *)"
     ]
   }
 }

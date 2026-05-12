@@ -81,6 +81,10 @@ rate_limit:
   login_max_requests: 10
   # 登录接口限流：滑动窗口时间，单位秒。
   login_window_sec: 60
+  # 账号锁定：连续登录失败多少次后锁定用户名。
+  login_lockout_threshold: 5
+  # 账号锁定：锁定持续时间，单位秒。
+  login_lockout_sec: 300
 
 upload:
   # 文件保存目录，相对于 server/ 目录。
