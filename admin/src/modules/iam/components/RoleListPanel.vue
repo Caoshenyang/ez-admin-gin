@@ -59,7 +59,7 @@ const query = defineModel<RoleListQuery>('query', { required: true })
             </NTag>
           </span>
           <span class="mt-1 block text-left text-xs text-[#64748B]">
-            {{ role.code }} · 菜单 {{ role.menu_ids.length }} · 接口 {{ role.permissions.length }}
+            {{ role.code }} · 菜单 {{ (role.menu_ids ?? []).length }} · 接口 {{ (role.permissions ?? []).length }}
           </span>
           <span class="mt-2 flex items-center gap-2">
             <NButton v-if="canUse('system:role:update')" size="tiny" @click.stop="$emit('edit', role)">编辑</NButton>

@@ -21,8 +21,6 @@ import (
 	"strings"
 	"testing"
 
-	"time"
-
 	"ez-admin-gin/server/internal/bootstrap"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
@@ -73,7 +71,6 @@ func NewTestApp(t *testing.T) *TestApp {
 	rdb := mustConnectRedis(t, cfg, log)
 	token := mustCreateTokenManager(t, cfg)
 	enforcer := mustCreateEnforcer(t, db)
-	sessionStore := authnPlatform.NewRedisSessionStore(rdb, 24*time.Hour)
 
 	engine := bootstrap.NewRouter(bootstrap.RouterOptions{
 		Config:     cfg,
@@ -81,7 +78,6 @@ func NewTestApp(t *testing.T) *TestApp {
 		DB:         db,
 		Redis:      rdb,
 		Token:      token,
-		Session:    sessionStore,
 		Permission: enforcer,
 	})
 

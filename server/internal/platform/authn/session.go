@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	refreshTokenBytes  = 32
-	refreshTokenPrefix = "session:refresh:"
-	userSessionsPrefix = "session:user:"
+	sessionTokenBytes  = 32
+	sessionTokenPrefix = "session:refresh:"
+	sessionUserPrefix  = "session:user:"
 )
 
 // SessionStore manages refresh token sessions.
@@ -39,14 +39,14 @@ func NewRedisSessionStore(rdb *goredis.Client, ttl time.Duration) *RedisSessionS
 }
 
 func (s *RedisSessionStore) Create(ctx context.Context, userID uint) (string, error) {
-	raw, err := generateRandomToken(refreshTokenBytes)
+	raw, err := generateRandomToken(sessionTokenBytes)
 	if err != nil {
 		return "", fmt.Errorf("generate refresh token: %w", err)
 	}
 
 	hash := sha256Hex(raw)
-	sessionKey := refreshTokenPrefix + hash
-	userKey := userSessionsPrefix + strconv.FormatUint(uint64(userID), 10)
+	sessionKey := sessionTokenPrefix + hash
+	userKey := sessionUserPrefix + strconv.FormatUint(uint64(userID), 10)
 
 	pipe := s.rdb.Pipeline()
 	pipe.Set(ctx, sessionKey, strconv.FormatUint(uint64(userID), 10), s.ttl)
@@ -61,7 +61,7 @@ func (s *RedisSessionStore) Create(ctx context.Context, userID uint) (string, er
 
 func (s *RedisSessionStore) Validate(ctx context.Context, token string) (uint, error) {
 	hash := sha256Hex(token)
-	val, err := s.rdb.Get(ctx, refreshTokenPrefix+hash).Result()
+	val, err := s.rdb.Get(ctx, sessionTokenPrefix+hash).Result()
 	if err != nil {
 		return 0, fmt.Errorf("refresh token not found or expired")
 	}
@@ -74,12 +74,12 @@ func (s *RedisSessionStore) Validate(ctx context.Context, token string) (uint, e
 
 func (s *RedisSessionStore) Revoke(ctx context.Context, token string) error {
 	hash := sha256Hex(token)
-	s.rdb.Del(ctx, refreshTokenPrefix+hash)
+	s.rdb.Del(ctx, sessionTokenPrefix+hash)
 	return nil
 }
 
 func (s *RedisSessionStore) RevokeAllForUser(ctx context.Context, userID uint) error {
-	userKey := userSessionsPrefix + strconv.FormatUint(uint64(userID), 10)
+	userKey := sessionUserPrefix + strconv.FormatUint(uint64(userID), 10)
 	hashes, err := s.rdb.SMembers(ctx, userKey).Result()
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (s *RedisSessionStore) RevokeAllForUser(ctx context.Context, userID uint) e
 	}
 	keys := make([]string, len(hashes))
 	for i, h := range hashes {
-		keys[i] = refreshTokenPrefix + h
+		keys[i] = sessionTokenPrefix + h
 	}
 	s.rdb.Del(ctx, keys...)
 	s.rdb.Del(ctx, userKey)

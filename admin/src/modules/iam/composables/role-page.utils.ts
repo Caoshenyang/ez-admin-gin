@@ -86,7 +86,7 @@ export function flattenRoleMenus(items: AdminMenu[]) {
 
 export function toPermissionRows(role: RoleItem): PermissionRow[] {
   // 权限面板需要本地行 ID，切换角色时在这里一次性补齐。
-  return role.permissions.map((permission, index) => ({
+  return (role.permissions ?? []).map((permission, index) => ({
     id: index + 1,
     path: permission.path,
     method: permission.method,

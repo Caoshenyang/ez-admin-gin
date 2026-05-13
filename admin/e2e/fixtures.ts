@@ -18,6 +18,7 @@ async function fetchAdminToken(): Promise<string> {
   })
   const body = await response.json()
   if (!response.ok || !body.data?.access_token) {
+    cachedToken = null
     throw new Error(`Login failed: ${response.status} ${JSON.stringify(body)}`)
   }
   cachedToken = body.data.access_token
@@ -59,7 +60,6 @@ export async function loginViaApi(page: Page, username: string, password: string
   const accessToken = body.data?.access_token
   expect(accessToken).toBeTruthy()
 
-  // Navigate to app origin first so localStorage is accessible
   await page.goto('/')
   await page.evaluate((token: string) => {
     localStorage.setItem('ez-admin-access-token', token)
@@ -83,3 +83,13 @@ export async function clearAuth(page: Page) {
     sessionStorage.clear()
   })
 }
+
+export async function getAdminToken(): Promise<string> {
+  return fetchAdminToken()
+}
+
+export async function getAdminTokenViaPage(page: Page): Promise<string> {
+  return fetchAdminToken()
+}
+
+export { API_BASE }

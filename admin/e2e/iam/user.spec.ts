@@ -1,14 +1,12 @@
-import { test, expect } from '../fixtures'
+import { test, expect, getAdminToken, API_BASE } from '../fixtures'
 
-const API_BASE = process.env.E2E_API_URL ?? 'http://localhost:8080/api/v1'
 const uid = () => Date.now().toString(36)
 
 test.describe('User Management', () => {
   test.beforeEach(async ({ authedPage: page }) => {
     await page.goto('/system/users')
     await page.waitForURL('**/system/users')
-    // Wait for table data to load
-    await expect(page.locator('.n-data-table').getByText('admin').first()).toBeVisible()
+    await expect(page.locator('.n-data-table')).toBeVisible()
   })
 
   test('displays user management page with correct header', async ({ authedPage: page }) => {
@@ -30,6 +28,8 @@ test.describe('User Management', () => {
   })
 
   test('shows admin user in the list', async ({ authedPage: page }) => {
+    await page.getByPlaceholder('用户名 / 手机号').fill('admin')
+    await page.getByRole('button', { name: '查询' }).click()
     await expect(page.locator('.n-data-table').getByText('admin').first()).toBeVisible()
   })
 
@@ -39,7 +39,6 @@ test.describe('User Management', () => {
 
     await page.getByRole('button', { name: '+ 新增用户' }).click()
     await expect(page.locator('.n-modal')).toBeVisible()
-    // Modal heading is inside .n-modal
     await expect(page.locator('.n-modal').getByText('新增用户')).toBeVisible()
 
     await page.getByPlaceholder('请输入用户名').fill(username)
@@ -53,10 +52,24 @@ test.describe('User Management', () => {
   })
 
   test('opens edit modal with existing data', async ({ authedPage: page }) => {
-    const row = page.locator('.n-data-table').locator('tr', { hasText: 'admin' }).first()
+    const token = await getAdminToken()
+    const id = uid()
+    const username = `e2e_edit_${id}`
+
+    await page.request.post(`${API_BASE}/system/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        username, password: 'E2eEdit@123', nickname: `编辑测试_${id}`, status: 1,
+      },
+    })
+
+    await page.getByPlaceholder('用户名 / 手机号').fill(username)
+    await page.getByRole('button', { name: '查询' }).click()
+    await expect(page.locator('.n-data-table').getByText(username)).toBeVisible()
+
+    const row = page.locator('.n-data-table').locator('tr', { hasText: username })
     await row.getByRole('button', { name: '编辑' }).click()
     await expect(page.locator('.n-modal')).toBeVisible()
-    // Edit mode: username field is hidden, only nickname is shown
     await expect(page.locator('.n-modal').getByText('编辑用户')).toBeVisible()
     const nicknameInput = page.locator('.n-modal').getByPlaceholder('请输入昵称')
     await expect(nicknameInput).toHaveValue(/./)
@@ -66,7 +79,7 @@ test.describe('User Management', () => {
     const id = uid()
     const username = `e2e_status_${id}`
 
-    const token = await getAdminToken(page)
+    const token = await getAdminToken()
     const resp = await page.request.post(`${API_BASE}/system/users`, {
       headers: { Authorization: `Bearer ${token}` },
       data: {
@@ -75,7 +88,6 @@ test.describe('User Management', () => {
     })
     expect(resp.ok()).toBeTruthy()
 
-    // Toggle via API directly to avoid NInput fill() issues
     const createBody = await resp.json()
     const userId = createBody.data?.id
     const toggleResp = await page.request.post(`${API_BASE}/system/users/${userId}/status`, {
@@ -91,11 +103,3 @@ test.describe('User Management', () => {
     await expect(table.getByRole('button', { name: /启用|禁用/ }).first()).toBeVisible()
   })
 })
-
-async function getAdminToken(page: import('@playwright/test').Page): Promise<string> {
-  const response = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { username: 'admin', password: 'Admin@123456' },
-  })
-  const body = await response.json()
-  return body.data?.access_token
-}

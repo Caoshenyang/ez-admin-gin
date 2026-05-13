@@ -78,7 +78,7 @@ cors:
 
 rate_limit:
   # 登录接口限流：每 IP 在窗口期内最大请求数。
-  login_max_requests: 10
+  login_max_requests: 200
   # 登录接口限流：滑动窗口时间，单位秒。
   login_window_sec: 60
   # 账号锁定：连续登录失败多少次后锁定用户名。

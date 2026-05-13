@@ -120,7 +120,7 @@ export function useRolePage() {
       return
     }
 
-    checkedMenuIDs.value = [...role.menu_ids]
+    checkedMenuIDs.value = [...(role.menu_ids ?? [])]
     permissionRows.value = toPermissionRows(role)
   })
 

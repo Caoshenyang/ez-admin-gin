@@ -14,7 +14,6 @@ const (
 	CodeBadRequest         Code = 40000
 	CodeUnauthorized       Code = 40100
 	CodeForbidden          Code = 40300
-	CodeTooManyRequests    Code = 42900
 	CodeNotFound           Code = 40400
 	CodeTooManyRequests    Code = 42900
 	CodeServiceUnavailable Code = 50300
@@ -84,9 +83,4 @@ func ServiceUnavailable(message string, err error) *Error {
 // Internal 返回 500 Internal Server Error 错误。
 func Internal(message string, err error) *Error {
 	return Wrap(err, http.StatusInternalServerError, CodeInternal, message)
-}
-
-// TooManyRequests 返回 429 Too Many Requests 错误。
-func TooManyRequests(message string) *Error {
-	return New(http.StatusTooManyRequests, CodeTooManyRequests, message)
 }

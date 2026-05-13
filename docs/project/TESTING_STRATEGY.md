@@ -73,14 +73,54 @@ server/tests/
 
 ## 当前测试清单
 
-### 真实可跑（非 t.Skip）— 共 50 个后端 + 5 个 E2E
+### 真实可跑（非 t.Skip）— 共 50 个后端 + 21 个 E2E（已验证）+ 16 个 E2E（待验证）
 
-**admin/e2e/auth/login.spec.ts (5):**
+**admin/e2e/auth/login.spec.ts (5) — 已验证:**
 - Login Flow: redirects to login page when not authenticated
 - Login Flow: shows error on wrong password
 - Login Flow: logs in successfully and redirects to dashboard
 - Login Flow: already logged in user is redirected to dashboard from /login
 - Login Flow: form validation shows errors for empty fields
+
+**admin/e2e/iam/menu.spec.ts (8) — 已验证:**
+- Menu Permission: displays menu management page with correct header
+- Menu Permission: shows create root directory button for admin
+- Menu Permission: displays menu table with seed data columns
+- Menu Permission: shows seed menu items in table
+- Menu Permission: creates a new root directory menu
+- Menu Permission: opens edit modal with correct data
+- Menu Permission: deletes a menu item
+- Menu Permission: action buttons are visible for admin user
+
+**admin/e2e/iam/user.spec.ts (8) — 已验证:**
+- User Management: displays user management page with correct header
+- User Management: shows create user button for admin
+- User Management: displays user table with columns
+- User Management: shows admin user in the list
+- User Management: creates a new user
+- User Management: opens edit modal with existing data
+- User Management: toggles user status via API
+- User Management: action buttons visible for admin
+
+**admin/e2e/iam/button-permission.spec.ts (7) — 待验证:**
+- Button Permission / Admin: admin sees create role button
+- Button Permission / Admin: admin sees edit button on role cards
+- Button Permission / Admin: admin sees status toggle on non-super-admin roles
+- Button Permission / Admin: admin sees save permission button
+- Button Permission / Restricted: user without create permission does not see create button
+- Button Permission / Restricted: user without update permission does not see edit button
+- Button Permission / Restricted: user without status permission does not see status toggle
+
+**admin/e2e/iam/role.spec.ts (9) — 待验证:**
+- Role Authorization: displays role page with correct header
+- Role Authorization: shows super_admin role in role list
+- Role Authorization: super admin role shows protected tag
+- Role Authorization: creates a new role
+- Role Authorization: opens edit modal with existing data
+- Role Authorization: toggles role status via UI
+- Role Authorization: permission panel shows menu tree for selected role
+- Role Authorization: assigns menu permissions to a role
+- Role Authorization: adds API permission row
 
 **server/tests/api/auth_api_test.go (4):**
 - TestLoginSuccess

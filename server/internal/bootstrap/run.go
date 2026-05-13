@@ -72,7 +72,6 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 	if refreshTTL <= 0 {
 		refreshTTL = 7 * 24 * time.Hour
 	}
-	sessionStore := authnPlatform.NewRedisSessionStore(redisClient, refreshTTL)
 
 	permissionEnforcer, err := authzPlatform.NewEnforcer(db, rbacModelPath)
 	if err != nil {
@@ -85,7 +84,6 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 		DB:         db,
 		Redis:      redisClient,
 		Token:      tokenManager,
-		Session:    sessionStore,
 		Permission: permissionEnforcer,
 	})
 
