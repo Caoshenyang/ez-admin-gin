@@ -2,7 +2,7 @@
 
 ## 评分
 
-- 当前评分：约 9.0 / 10（Phase 1 + Phase 2 + Phase 3 完成，50 个后端测试 + 21 个 E2E 测试全部通过）
+- 当前评分：约 9.2 / 10（Phase 1–4 核心完成，50 个后端测试 + 43 个 E2E 测试全部通过）
 - 目标评分：9.0+
 
 ## 当前 Phase
@@ -11,13 +11,9 @@
 
 ## 当前重点
 
-- Phase 4 基础设施搭建完毕（Playwright + E2E 目录结构）
-- 登录流程 E2E 测试已验证通过（5/5 PASS）
-- 菜单权限 E2E 测试已验证通过（8/8 PASS）
-- 用户管理 E2E 测试已验证通过（8/8 PASS）
-- 按钮权限 E2E 测试已编写（7 个用例，待验证）
-- 角色授权 E2E 测试已编写（9 个用例，待验证）
-- 下一步：启动前后端验证测试 → 无权限页面 / Token 过期 E2E 测试
+- Phase 4 核心测试用例全部完成
+- 43 个 E2E 测试全部通过
+- 下一步：OpenAPI 生成前端类型 + CI 检查前后端契约一致
 
 ## 已完成
 
@@ -81,24 +77,27 @@
   - GET /metrics — Prometheus text format 指标暴露
   - bootstrap/router.go — 中间件注册 + promhttp.Handler
 
-## 未完成
+### Phase 4: 前端质量和 E2E
 
 - [x] Playwright 基础设施（playwright.config.ts + e2e 目录 + fixtures）
 - [x] 登录流程 E2E 测试（5 个用例）
 - [x] 菜单权限 E2E 测试（8 个用例）
 - [x] 用户管理 E2E 测试（8 个用例）
-- [x] 按钮权限 E2E 测试（已编写，待验证）
-- [x] 角色授权 E2E 测试（已编写，待验证）
-- [ ] 无权限页面 E2E 测试
-- [ ] Token 过期处理 E2E 测试
+- [x] 按钮权限 E2E 测试（7 个用例）
+- [x] 角色授权 E2E 测试（9 个用例）
+- [x] 无权限页面 E2E 测试（3 个用例）
+- [x] Token 过期处理 E2E 测试（3 个用例）
+- [x] **Casbin 策略自动刷新** — UpdatePermissions 后调用 ReloadPolicy()
+
+## 未完成
+
 - [ ] OpenAPI 生成前端类型
 - [ ] CI 检查前后端契约一致
 
 ## 当前下一步
 
-1. 启动前后端，验证按钮权限 + 角色授权 E2E 测试（37 个用例）
-2. 编写无权限页面 E2E 测试
-3. 编写 Token 过期处理 E2E 测试
+1. OpenAPI 生成前端类型
+2. CI 检查前后端契约一致
 
 ## 阻塞点
 
@@ -108,16 +107,21 @@
 
 - **日期：** 2026-05-13
 - **修改内容：**
-  - Phase 4 继续：按钮权限 + 角色授权 E2E 测试
-  - 新增: admin/e2e/iam/button-permission.spec.ts (按钮权限 7 个 E2E 测试用例)
-    - Admin 用户可见所有按钮（4 个正向用例）
-    - 受限用户不可见未授权按钮（3 个反向用例）
-  - 新增: admin/e2e/iam/role.spec.ts (角色授权 9 个 E2E 测试用例)
-    - 角色页面展示、super_admin 保护、角色 CRUD、权限分配
-  - 修改: admin/playwright.config.ts (channel: 'chrome' 使用本地 Chrome)
+  - **修复 Bug：** Casbin 策略更新后未自动 ReloadPolicy，导致运行时权限变更不生效
+    - server/internal/modules/iam/role/application/service.go — 注入 PolicyReloader，UpdatePermissions 后调用 ReloadPolicy()
+    - server/internal/modules/iam/role/application/ports.go — 新增 PolicyReloader 接口
+    - server/internal/modules/iam/role/services.go — ServiceOptions 增加 Enforcer 字段
+    - server/internal/modules/iam/role/routes.go — RouteOptions 增加 Enforcer 字段
+    - server/internal/modules/iam/routes.go — 向 role 模块传递 Enforcer
+  - **修复 E2E 测试：** 角色状态切换断言从不存在的 "成功" 改为匹配实际消息
+    - admin/e2e/iam/role.spec.ts — 修复 getByText(/成功/) → getByText(/已禁用|已启用/)
+  - **新增 E2E 测试：**
+    - admin/e2e/iam/no-permission.spec.ts（3 个用例：侧边栏无权限菜单、URL 重定向、API 403）
+    - admin/e2e/iam/token-expired.spec.ts（3 个用例：过期 token 跳转、正常访问、清除 token）
+  - **Playwright 配置：** 移除 channel: 'chrome' 使用 Playwright 内置 Chromium
 - **测试结果：**
-  - 待验证（需启动前后端后运行）
+  - 后端 contract tests 通过
+  - E2E 测试 43/43 全部通过（37.9s）
 - **剩余风险：**
   - E2E 测试依赖后端 + 前端同时运行
   - 残留测试数据需定期清理（E2E 前缀的用户、角色和菜单）
-  - 按钮权限受限用户测试需要通过 API 创建角色并分配菜单，可能受后端权限校验影响

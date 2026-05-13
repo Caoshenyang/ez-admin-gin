@@ -38,8 +38,9 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Log: opts.Log,
 	})
 	rolemodule.RegisterRoutes(system, rolemodule.RouteOptions{
-		DB:  opts.DB,
-		Log: opts.Log,
+		DB:       opts.DB,
+		Log:      opts.Log,
+		Enforcer: opts.Permission,
 	})
 	departmentmodule.RegisterRoutes(system, departmentmodule.RouteOptions{
 		DB:  opts.DB,

@@ -86,7 +86,7 @@ test.describe('Role Authorization', () => {
     await card.getByRole('button', { name: '禁用' }).click()
     await page.getByRole('button', { name: '确认' }).click()
 
-    await expect(page.getByText(/成功/)).toBeVisible()
+    await expect(page.locator('.n-alert').getByText(/已禁用|已启用/)).toBeVisible()
     await expect(card.getByRole('button', { name: '启用' })).toBeVisible()
   })
 

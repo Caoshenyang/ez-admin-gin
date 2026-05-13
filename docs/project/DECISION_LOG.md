@@ -136,3 +136,17 @@
 - `http_request_duration_seconds`：HistogramVec，按 method/path 分标签
 - 使用 `promhttp.Handler()` 暴露 `/metrics` 端点
 - Metrics 中间件跳过 `/metrics` 路径自身，避免递归计数
+
+---
+
+## ADR-012：Casbin 策略变更后自动 ReloadPolicy
+
+**状态：** 已采纳
+
+**原因：** `UpdatePermissions` 和 `UpdateMenus` 只将新策略写入数据库，但 Casbin Enforcer 在启动时一次性加载策略到内存。运行时通过 API 更新权限后，内存策略不刷新，导致新权限不立即生效。E2E 测试中受限用户因 403 无法访问已授权的 API。
+
+**决策：**
+- 在 `role/application` 层定义 `PolicyReloader` 接口（`ReloadPolicy() error`）
+- `Service` 注入 `PolicyReloader`，在 `UpdatePermissions` 事务提交后调用 `ReloadPolicy()`
+- 通过依赖链 `routes → services → application` 传递 `*authz.Enforcer`
+- `UpdateMenus` 不需要 ReloadPolicy（菜单权限不经过 Casbin）

@@ -2,6 +2,8 @@
 package application
 
 import (
+	"fmt"
+
 	roledomain "ez-admin-gin/server/internal/modules/iam/role/domain"
 	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
@@ -12,12 +14,13 @@ import (
 
 // Service 提供角色的业务操作服务。
 type Service struct {
-	tx   RoleTransactor
-	repo RoleRepository
+	tx       RoleTransactor
+	repo     RoleRepository
+	enforcer PolicyReloader
 }
 
-func NewService(tx RoleTransactor, repo RoleRepository) *Service {
-	return &Service{tx: tx, repo: repo}
+func NewService(tx RoleTransactor, repo RoleRepository, enforcer PolicyReloader) *Service {
+	return &Service{tx: tx, repo: repo, enforcer: enforcer}
 }
 
 // List 分页查询角色列表，并附带每个角色的权限和菜单信息。
@@ -179,6 +182,10 @@ func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.Permis
 	})
 	if err != nil {
 		return nil, "", err
+	}
+
+	if err := s.enforcer.ReloadPolicy(); err != nil {
+		return nil, "", fmt.Errorf("reload casbin policy: %w", err)
 	}
 
 	return normalizedPermissions, roleCode, nil

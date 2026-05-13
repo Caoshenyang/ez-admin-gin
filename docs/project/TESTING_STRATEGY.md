@@ -73,7 +73,7 @@ server/tests/
 
 ## 当前测试清单
 
-### 真实可跑（非 t.Skip）— 共 50 个后端 + 21 个 E2E（已验证）+ 16 个 E2E（待验证）
+### 真实可跑（非 t.Skip）— 共 50 个后端 + 43 个 E2E（全部通过）
 
 **admin/e2e/auth/login.spec.ts (5) — 已验证:**
 - Login Flow: redirects to login page when not authenticated
@@ -102,7 +102,7 @@ server/tests/
 - User Management: toggles user status via API
 - User Management: action buttons visible for admin
 
-**admin/e2e/iam/button-permission.spec.ts (7) — 待验证:**
+**admin/e2e/iam/button-permission.spec.ts (7) — 已验证:**
 - Button Permission / Admin: admin sees create role button
 - Button Permission / Admin: admin sees edit button on role cards
 - Button Permission / Admin: admin sees status toggle on non-super-admin roles
@@ -111,7 +111,7 @@ server/tests/
 - Button Permission / Restricted: user without update permission does not see edit button
 - Button Permission / Restricted: user without status permission does not see status toggle
 
-**admin/e2e/iam/role.spec.ts (9) — 待验证:**
+**admin/e2e/iam/role.spec.ts (9) — 已验证:**
 - Role Authorization: displays role page with correct header
 - Role Authorization: shows super_admin role in role list
 - Role Authorization: super admin role shows protected tag
@@ -121,6 +121,16 @@ server/tests/
 - Role Authorization: permission panel shows menu tree for selected role
 - Role Authorization: assigns menu permissions to a role
 - Role Authorization: adds API permission row
+
+**admin/e2e/iam/no-permission.spec.ts (3) — 已验证:**
+- No Permission Page: restricted user does not see unauthorized menu in sidebar
+- No Permission Page: restricted user navigating to unauthorized route is redirected to dashboard
+- No Permission Page: API request without permission shows error message
+
+**admin/e2e/iam/token-expired.spec.ts (3) — 已验证:**
+- Token Expiration: expired access token triggers redirect to login page
+- Token Expiration: valid token allows normal page access
+- Token Expiration: removing token redirects to login on next navigation
 
 **server/tests/api/auth_api_test.go (4):**
 - TestLoginSuccess
