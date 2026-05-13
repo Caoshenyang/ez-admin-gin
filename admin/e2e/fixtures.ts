@@ -88,7 +88,7 @@ export async function getAdminToken(): Promise<string> {
   return fetchAdminToken()
 }
 
-export async function getAdminTokenViaPage(page: Page): Promise<string> {
+export async function getAdminTokenViaPage(_page: Page): Promise<string> {
   return fetchAdminToken()
 }
 

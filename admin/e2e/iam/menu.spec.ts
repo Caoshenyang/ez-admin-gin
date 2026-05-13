@@ -1,8 +1,6 @@
 import { test, expect } from '../fixtures'
 
 const uid = () => Date.now().toString(36)
-const API_BASE = process.env.E2E_API_URL ?? 'http://localhost:8080/api/v1'
-
 test.describe('Menu Permission', () => {
   test.beforeEach(async ({ authedPage: page }) => {
     await page.goto('/system/menus')

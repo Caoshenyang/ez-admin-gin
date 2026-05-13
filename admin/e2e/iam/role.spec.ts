@@ -110,7 +110,7 @@ test.describe('Role Authorization', () => {
       data: { code: roleCode, name: roleName, status: 1, sort: 0 },
     })
     const createBody = await createResp.json()
-    const roleId = createBody.data?.id
+    void createBody.data?.id
 
     await page.reload()
     await page.waitForURL('**/system/roles')
