@@ -70,6 +70,7 @@ server/tests/
 - rbac tests 必须跑（已加入 CI integration job）
 - e2e smoke 准备好后再加入
 - 不成熟测试不得伪装成完成
+- 前端 API 类型必须与 swagger.json 同步（CI 中自动检查）
 
 ## 当前测试清单
 

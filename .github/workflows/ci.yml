@@ -114,6 +114,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check API types in sync
+        run: |
+          pnpm generate:api
+          if ! git diff --exit-code src/api/generated.ts; then
+            echo "::error::Generated API types are out of sync — run 'pnpm generate:api' in admin/ and commit"
+            exit 1
+          fi
+
       - name: Type check
         run: pnpm type-check
 

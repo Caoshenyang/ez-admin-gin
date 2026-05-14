@@ -80,7 +80,7 @@ test-e2e: ## 运行 E2E 测试 (需要前端 + 后端运行中)
 # ---------- 代码检查 ----------
 
 .PHONY: lint
-lint: server-vet admin-check ## 运行所有 lint (后端 vet + 前端检查)
+lint: server-vet admin-check check-types ## 运行所有 lint (后端 vet + 前端检查 + 契约一致性)
 	@echo ">>> 所有 lint 完成"
 
 .PHONY: server-vet
@@ -94,6 +94,14 @@ server-mod: ## 后端 go mod tidy (检查依赖一致性)
 .PHONY: admin-check
 admin-check: ## 前端类型检查 + lint
 	cd $(ADMIN_DIR) && $(PNPM) type-check && $(PNPM) lint
+
+.PHONY: generate-types
+generate-types: ## 从 Swagger spec 生成前端 TypeScript 类型
+	cd $(ADMIN_DIR) && $(PNPM) generate:api
+
+.PHONY: check-types
+check-types: ## 检查生成的 API 类型是否与 Swagger spec 同步
+	cd $(ADMIN_DIR) && $(PNPM) check:api-types
 
 # ---------- 构建 ----------
 

@@ -2,12 +2,12 @@
 
 ## 评分
 
-- 当前评分：约 9.2 / 10（Phase 1–4 核心完成，50 个后端测试 + 43 个 E2E 测试全部通过）
+- 当前评分：约 9.2 / 10（Phase 1–4 完成，50 个后端测试 + 43 个 E2E 测试全部通过）
 - 目标评分：9.0+
 
 ## 当前 Phase
 
-**Phase 4：前端质量和 E2E — 进行中**
+**Phase 4：前端质量和 E2E — 已完成**
 
 ## 当前重点
 
@@ -88,16 +88,19 @@
 - [x] 无权限页面 E2E 测试（3 个用例）
 - [x] Token 过期处理 E2E 测试（3 个用例）
 - [x] **Casbin 策略自动刷新** — UpdatePermissions 后调用 ReloadPolicy()
+- [x] **OpenAPI 生成前端类型** — openapi-typescript 从 swagger.json 生成 TypeScript 类型
+  - admin/src/api/generated.ts — 自动生成的 paths + definitions 类型
+  - admin/package.json — generate:api / check:api-types 脚本
+  - Makefile — generate-types / check-types 目标
+- [x] **CI 契约一致性检查** — frontend job 中检查 generated.ts 是否与 swagger.json 同步
 
 ## 未完成
 
-- [ ] OpenAPI 生成前端类型
-- [ ] CI 检查前后端契约一致
+- 无（Phase 4 已全部完成）
 
 ## 当前下一步
 
-1. OpenAPI 生成前端类型
-2. CI 检查前后端契约一致
+1. Phase 5：发布治理和文档成熟（详见 QUALITY_ROADMAP.md）
 
 ## 阻塞点
 
@@ -105,23 +108,16 @@
 
 ## 最近一次执行记录
 
-- **日期：** 2026-05-13
+- **日期：** 2026-05-14
 - **修改内容：**
-  - **修复 Bug：** Casbin 策略更新后未自动 ReloadPolicy，导致运行时权限变更不生效
-    - server/internal/modules/iam/role/application/service.go — 注入 PolicyReloader，UpdatePermissions 后调用 ReloadPolicy()
-    - server/internal/modules/iam/role/application/ports.go — 新增 PolicyReloader 接口
-    - server/internal/modules/iam/role/services.go — ServiceOptions 增加 Enforcer 字段
-    - server/internal/modules/iam/role/routes.go — RouteOptions 增加 Enforcer 字段
-    - server/internal/modules/iam/routes.go — 向 role 模块传递 Enforcer
-  - **修复 E2E 测试：** 角色状态切换断言从不存在的 "成功" 改为匹配实际消息
-    - admin/e2e/iam/role.spec.ts — 修复 getByText(/成功/) → getByText(/已禁用|已启用/)
-  - **新增 E2E 测试：**
-    - admin/e2e/iam/no-permission.spec.ts（3 个用例：侧边栏无权限菜单、URL 重定向、API 403）
-    - admin/e2e/iam/token-expired.spec.ts（3 个用例：过期 token 跳转、正常访问、清除 token）
-  - **Playwright 配置：** 移除 channel: 'chrome' 使用 Playwright 内置 Chromium
+  - **OpenAPI 生成前端类型：** 使用 openapi-typescript v5 从 Swagger 2.0 spec 生成 TypeScript 类型
+    - admin/src/api/generated.ts — 包含所有 paths + definitions 类型（~2040 行）
+    - admin/package.json — 添加 openapi-typescript@^5.4.2 devDep + generate:api / check:api-types 脚本
+    - Makefile — 添加 generate-types / check-types 目标，更新 lint 目标
+    - .github/workflows/ci.yml — frontend job 添加 Check API types in sync 步骤
 - **测试结果：**
-  - 后端 contract tests 通过
-  - E2E 测试 43/43 全部通过（37.9s）
+  - pnpm type-check 通过（生成文件不破坏现有 TypeScript 编译）
+  - pnpm check:api-types 通过（重新生成后无 diff）
+  - 后端 contract tests 7/7 通过
 - **剩余风险：**
-  - E2E 测试依赖后端 + 前端同时运行
-  - 残留测试数据需定期清理（E2E 前缀的用户、角色和菜单）
+  - openapi-typescript v5 为最后支持 Swagger 2.0 的版本，后续如需升级需先迁移到 OpenAPI 3.x
