@@ -16,7 +16,7 @@ const emit = defineEmits<{
 <template>
   <div>
     <div class="flex items-center justify-between">
-      <p class="text-[16px] font-semibold text-[#0F172A]">快捷入口</p>
+      <p class="text-[16px] font-semibold text-[var(--ez-text-main)]">快捷入口</p>
       <NTag round :bordered="false" type="info" size="small">{{ links.length }} 项</NTag>
     </div>
 
@@ -29,8 +29,8 @@ const emit = defineEmits<{
         @click="emit('navigate', item.path)"
       >
         <div class="min-w-0">
-          <p class="text-[14px] font-medium text-[#0F172A]">{{ item.title }}</p>
-          <p class="mt-0.5 truncate text-[13px] text-[#64748B]">{{ item.description }}</p>
+          <p class="text-[14px] font-medium text-[var(--ez-text-main)]">{{ item.title }}</p>
+          <p class="mt-0.5 truncate text-[13px] text-[var(--ez-text-sub)]">{{ item.description }}</p>
         </div>
         <NIcon :component="ChevronForwardOutline" :size="16" class="quick-entry__arrow" />
       </button>
@@ -47,9 +47,9 @@ const emit = defineEmits<{
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  border: 1px solid #E6ECF3;
+  border: 1px solid var(--ez-border);
   border-radius: 14px;
-  background: #ffffff;
+  background: var(--ez-card-bg);
   padding: 14px 16px;
   text-align: left;
   cursor: pointer;
@@ -60,14 +60,14 @@ const emit = defineEmits<{
 }
 
 .quick-entry:hover {
-  background: #F4FDFA;
+  background: var(--ez-brand-soft);
   border-color: rgba(20, 184, 166, 0.22);
   box-shadow: 0 4px 12px rgba(20, 184, 166, 0.06);
 }
 
 .quick-entry__arrow {
   flex-shrink: 0;
-  color: #94A3B8;
+  color: var(--ez-text-light);
   transition:
     color 0.2s ease,
     transform 0.2s ease;

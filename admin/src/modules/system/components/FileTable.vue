@@ -21,8 +21,8 @@ defineEmits<{
 
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
-    <div class="flex items-center justify-between border-b border-[#E6ECF3] px-4 py-3">
-      <span class="text-sm text-[#64748B]">共 {{ total }} 个文件</span>
+    <div class="flex items-center justify-between border-b border-[var(--ez-border)] px-4 py-3">
+      <span class="text-sm text-[var(--ez-text-sub)]">共 {{ total }} 个文件</span>
       <NButton text type="primary" @click="$emit('refresh')">刷新</NButton>
     </div>
 
@@ -36,7 +36,7 @@ defineEmits<{
       :bordered="false"
     />
 
-    <div class="flex items-center justify-between border-t border-[#E6ECF3] px-4 py-3 text-sm text-[#64748B]">
+    <div class="flex items-center justify-between border-t border-[var(--ez-border)] px-4 py-3 text-sm text-[var(--ez-text-sub)]">
       <span>共 {{ total }} 个文件</span>
       <NPagination
         :page="query.page"

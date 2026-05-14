@@ -71,6 +71,29 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.dark {
+  --ez-brand-soft: rgba(20, 184, 166, 0.15);
+  --ez-brand-muted: rgba(20, 184, 166, 0.12);
+  --ez-accent-blue-soft: rgba(37, 99, 235, 0.15);
+  --ez-sidebar-bg: #0B1A2E;
+  --ez-sidebar-bg-deep: #071220;
+  --ez-page-bg: #0C1222;
+  --ez-card-bg: #151E31;
+  --ez-border: #1E293B;
+  --ez-border-light: #1A2536;
+  --ez-text-main: #E2E8F0;
+  --ez-text-sub: #94A3B8;
+  --ez-text-light: #64748B;
+  --ez-success-bg: rgba(20, 184, 166, 0.15);
+  --ez-success-text: #5EEAD4;
+  --ez-warning-bg: rgba(245, 158, 11, 0.15);
+  --ez-warning-text: #FCD34D;
+  --ez-danger-bg: rgba(244, 63, 94, 0.15);
+  --ez-danger-text: #FB7185;
+  --ez-info-bg: rgba(37, 99, 235, 0.15);
+  --ez-info-text: #93C5FD;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -146,14 +169,14 @@ button:not(:disabled),
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .ez-card-elevated {
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -162,7 +185,7 @@ button:not(:disabled),
 
 .ez-card-elevated:hover {
   border-color: rgba(20, 184, 166, 0.18);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
 }
 
 .ez-card-content-reset {
@@ -201,7 +224,7 @@ button:not(:disabled),
   border: 1px solid var(--ez-border);
   border-radius: 18px;
   padding: 20px 24px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
 }
 
 /* ========== Ez Table Card ========== */
@@ -210,7 +233,7 @@ button:not(:disabled),
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -270,12 +293,12 @@ button:not(:disabled),
 .ez-modal-section {
   border: 1px solid var(--ez-border-light);
   border-radius: 16px;
-  background: #ffffff;
+  background: var(--ez-card-bg);
   padding: 18px 18px 4px;
 }
 
 .ez-modal-section--soft {
-  background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  background: linear-gradient(180deg, var(--ez-card-bg) 0%, var(--ez-page-bg) 100%);
 }
 
 .ez-modal-section__head {
@@ -293,7 +316,7 @@ button:not(:disabled),
   margin-top: 4px;
   font-size: 12px;
   line-height: 1.6;
-  color: #6b7280;
+  color: var(--ez-text-sub);
 }
 
 .ez-modal-footer {

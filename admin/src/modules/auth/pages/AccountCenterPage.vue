@@ -42,26 +42,26 @@ const {
         content-class="space-y-6"
       >
         <div v-if="profile" class="grid gap-3 sm:grid-cols-2">
-          <div class="rounded-2xl bg-[#F8FAFC] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[#64748B]">登录账号</p>
-            <p class="mt-1 text-sm font-semibold text-[#0F172A]">{{ profile.username }}</p>
+          <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">登录账号</p>
+            <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">{{ profile.username }}</p>
           </div>
 
-          <div class="rounded-2xl bg-[#F8FAFC] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[#64748B]">所属部门</p>
-            <p class="mt-1 text-sm font-semibold text-[#0F172A]">
+          <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">所属部门</p>
+            <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">
               {{ profile.department_name || `部门 #${profile.department_id}` }}
             </p>
           </div>
 
-          <div class="rounded-2xl bg-[#F8FAFC] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[#64748B]">角色集合</p>
-            <p class="mt-1 text-sm font-semibold text-[#0F172A]">{{ roleText }}</p>
+          <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">角色集合</p>
+            <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">{{ roleText }}</p>
           </div>
 
-          <div class="rounded-2xl bg-[#F8FAFC] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[#64748B]">数据范围</p>
-            <p class="mt-1 text-sm font-semibold text-[#0F172A]">{{ dataScopeText }}</p>
+          <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">数据范围</p>
+            <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">{{ dataScopeText }}</p>
           </div>
         </div>
 
@@ -70,7 +70,7 @@ const {
             {{ profile.status === 1 ? '当前可用' : '当前已禁用' }}
           </NTag>
           <NTag v-if="profile.is_super_admin" type="warning" :bordered="false">超级管理员</NTag>
-          <span class="text-xs text-[#64748B]">最近更新：{{ profile.updated_at }}</span>
+          <span class="text-xs text-[var(--ez-text-sub)]">最近更新：{{ profile.updated_at }}</span>
         </div>
 
         <NForm

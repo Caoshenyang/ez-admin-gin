@@ -48,8 +48,8 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 180,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#0F172A]' }, displayText(row.username)),
-        h('p', { class: 'text-xs text-[#64748B]' }, displayText(row.nickname)),
+        h('p', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.username)),
+        h('p', { class: 'text-xs text-[var(--ez-text-sub)]' }, displayText(row.nickname)),
       ])
     },
   },
@@ -59,7 +59,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 180,
     render(row) {
       if (row.department_id === 0) {
-        return h('span', { class: 'text-sm text-[#94A3B8]' }, '未分配')
+        return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未分配')
       }
 
       return h(
@@ -75,7 +75,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 220,
     render(row) {
       if (row.role_ids.length === 0) {
-        return h('span', { class: 'text-sm text-[#94A3B8]' }, '未分配')
+        return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未分配')
       }
 
       return h(NSpace, { size: 6 }, {
@@ -91,7 +91,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
     minWidth: 220,
     render(row) {
       if (row.post_ids.length === 0) {
-        return h('span', { class: 'text-sm text-[#94A3B8]' }, '未绑定')
+        return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未绑定')
       }
 
       return h(NSpace, { size: 6 }, {

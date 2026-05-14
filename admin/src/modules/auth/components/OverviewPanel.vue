@@ -21,8 +21,8 @@ defineProps<{
         <NIcon :component="heroIcon" :size="18" />
       </div>
       <div>
-        <p class="text-[16px] font-semibold text-[#0F172A]">系统概览</p>
-        <p class="mt-0.5 text-[12px] text-[#94A3B8]">{{ statusText }}</p>
+        <p class="text-[16px] font-semibold text-[var(--ez-text-main)]">系统概览</p>
+        <p class="mt-0.5 text-[12px] text-[var(--ez-text-light)]">{{ statusText }}</p>
       </div>
     </div>
 
@@ -83,7 +83,7 @@ defineProps<{
 }
 
 .overview-cell {
-  background: #ffffff;
+  background: var(--ez-card-bg);
   border-radius: 14px;
   padding: 16px 18px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
@@ -99,18 +99,18 @@ defineProps<{
 
 .overview-cell__label {
   font-size: 12px;
-  color: #64748B;
+  color: var(--ez-text-sub);
 }
 
 .overview-cell__value {
   font-size: 15px;
   font-weight: 600;
-  color: #0F172A;
+  color: var(--ez-text-main);
 }
 
 .overview-cell__hint {
   font-size: 11px;
-  color: #94A3B8;
+  color: var(--ez-text-light);
 }
 
 @media (max-width: 768px) {

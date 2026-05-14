@@ -32,13 +32,13 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 <template>
   <NCard class="ez-card min-h-0 rounded-lg" :bordered="false" content-class="ez-card-content-fill">
     <div class="flex h-full flex-col overflow-hidden">
-      <div class="border-b border-[#E6ECF3] px-5 py-5">
+      <div class="border-b border-[var(--ez-border)] px-5 py-5">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold text-[#0F172A]">菜单与按钮权限</h2>
-            <p class="mt-2 text-sm text-[#64748B]">
+            <h2 class="text-lg font-bold text-[var(--ez-text-main)]">菜单与按钮权限</h2>
+            <p class="mt-2 text-sm text-[var(--ez-text-sub)]">
               当前角色：
-              <span class="font-semibold text-[#0F172A]">
+              <span class="font-semibold text-[var(--ez-text-main)]">
                 {{ selectedRole?.name ?? '未选择' }}
               </span>
               。半选状态表示部分子权限已授权。
@@ -87,7 +87,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 
           <NTabPane name="api" tab="接口权限">
             <div class="mb-3 flex items-center justify-between">
-              <p class="text-sm text-[#64748B]">接口权限按请求路径和方法保存到 Casbin 策略表。</p>
+              <p class="text-sm text-[var(--ez-text-sub)]">接口权限按请求路径和方法保存到 Casbin 策略表。</p>
               <NButton size="small" type="primary" ghost :disabled="!canEditSelectedRole" @click="$emit('addPermission')">
                 + 添加接口
               </NButton>
@@ -132,8 +132,8 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
   margin: 0 20px 20px;
   padding: 16px 18px;
   border-radius: 6px;
-  background: #e9fbf1;
-  color: #18a058;
+  background: var(--ez-brand-soft);
+  color: var(--ez-brand);
   font-weight: 700;
 }
 </style>

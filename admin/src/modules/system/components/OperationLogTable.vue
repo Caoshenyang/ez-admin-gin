@@ -42,7 +42,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'created_at',
     width: 180,
     render(row) {
-      return h('span', { class: 'text-[#334155]' }, formatTime(row.created_at))
+      return h('span', { class: 'text-[var(--ez-text-main)]' }, formatTime(row.created_at))
     },
   },
   {
@@ -50,7 +50,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'username',
     width: 120,
     render(row) {
-      return h('span', { class: 'font-semibold text-[#0F172A]' }, displayText(row.username))
+      return h('span', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.username))
     },
   },
   {
@@ -58,7 +58,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'path',
     width: 120,
     render(row) {
-      return h('span', { class: 'text-[#334155]' }, getModule(row.path))
+      return h('span', { class: 'text-[var(--ez-text-main)]' }, getModule(row.path))
     },
   },
   {
@@ -75,7 +75,7 @@ const columns: DataTableColumns<OperationLogItem> = [
     minWidth: 180,
     ellipsis: { tooltip: true },
     render(row) {
-      return h('span', { class: 'text-[#334155]' }, getAction(row))
+      return h('span', { class: 'text-[var(--ez-text-main)]' }, getAction(row))
     },
   },
   {
@@ -118,7 +118,7 @@ const columns: DataTableColumns<OperationLogItem> = [
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <TableStatsBar>
-      <span class="text-sm text-[#64748B]">共 {{ total }} 条</span>
+      <span class="text-sm text-[var(--ez-text-sub)]">共 {{ total }} 条</span>
       <template #actions>
         <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
       </template>
@@ -136,7 +136,7 @@ const columns: DataTableColumns<OperationLogItem> = [
       :bordered="false"
     />
 
-    <div class="flex items-center justify-between border-t border-[#E6ECF3] px-4 py-3 text-sm text-[#64748B]">
+    <div class="flex items-center justify-between border-t border-[var(--ez-border)] px-4 py-3 text-sm text-[var(--ez-text-sub)]">
       <span>共 {{ total }} 条</span>
       <NPagination
         :page="page"

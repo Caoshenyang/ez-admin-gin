@@ -62,8 +62,8 @@ const {
           content-class="login-card-content"
         >
           <div class="mb-2.5">
-            <h2 class="mb-1 text-[23px] font-bold text-[#0F172A]">登录控制台</h2>
-            <p class="text-sm text-[#64748B]">请使用管理员账号继续</p>
+            <h2 class="mb-1 text-[23px] font-bold text-[var(--ez-text-main)]">登录控制台</h2>
+            <p class="text-sm text-[var(--ez-text-sub)]">请使用管理员账号继续</p>
           </div>
 
           <NForm
@@ -151,7 +151,7 @@ const {
           </NAlert>
         </NCard>
 
-        <p class="px-1 text-[12px] text-[#94A3B8]">{{ footerText }}</p>
+        <p class="px-1 text-[12px] text-[var(--ez-text-light)]">{{ footerText }}</p>
       </section>
     </section>
   </main>

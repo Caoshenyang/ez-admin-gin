@@ -52,8 +52,8 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
           [h(NIcon, { size: 18 }, { default: () => h(AttachOutline) })],
         ),
         h('div', { class: 'min-w-0 leading-5' }, [
-          h('p', { class: 'truncate font-medium text-[#0F172A]' }, displayText(row.display_name)),
-          h('p', { class: 'truncate text-xs text-[#64748B]' }, displayText(row.original_name)),
+          h('p', { class: 'truncate font-medium text-[var(--ez-text-main)]' }, displayText(row.display_name)),
+          h('p', { class: 'truncate text-xs text-[var(--ez-text-sub)]' }, displayText(row.original_name)),
         ]),
       ])
     },
@@ -64,7 +64,7 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
     width: 180,
     // 渲染分类/业务列，拼接分类和业务类型
     render(row) {
-      return h('span', { class: 'text-sm text-[#334155]' }, [displayText(row.category, '未分类'), displayText(row.biz_type, '通用')].join(' / '))
+      return h('span', { class: 'text-sm text-[var(--ez-text-main)]' }, [displayText(row.category, '未分类'), displayText(row.biz_type, '通用')].join(' / '))
     },
   },
   {
@@ -168,7 +168,7 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
 
       <div
         v-if="!loading && !hasRows"
-        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[#D9DEE8] bg-[#FAFBFC]"
+        class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--ez-border)] bg-[var(--ez-page-bg)]"
       >
         <NEmpty description="当前没有附件记录，先上传一份业务附件吧。" />
       </div>

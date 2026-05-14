@@ -39,7 +39,7 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
               {{ selectedType.name }}
             </NTag>
           </div>
-          <p v-if="selectedType" class="mt-1 text-xs text-[#64748B]">
+          <p v-if="selectedType" class="mt-1 text-xs text-[var(--ez-text-sub)]">
             {{ selectedType.code }} · 最近更新 {{ formatTime(selectedType.updated_at) }}
           </p>
         </div>
@@ -93,7 +93,7 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 
       <div
         v-else
-        class="m-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[#D9DEE8] bg-[#FAFBFC]"
+        class="m-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--ez-border)] bg-[var(--ez-page-bg)]"
       >
         <NEmpty description="先从左侧选择一个字典类型，再维护它的字典项。" />
       </div>

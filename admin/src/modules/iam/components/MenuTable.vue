@@ -41,7 +41,7 @@ const columns: DataTableColumns<AdminMenu> = [
       const cfg = typeConfig[row.type]
 
       return h('span', { class: 'inline-flex items-center gap-2' }, [
-        h('span', { class: 'font-medium text-[#0F172A]' }, displayText(row.title)),
+        h('span', { class: 'font-medium text-[var(--ez-text-main)]' }, displayText(row.title)),
         h(
           NTag,
           { size: 'small', bordered: false, round: false, type: cfg.type },
@@ -187,7 +187,7 @@ function rowKey(row: AdminMenu) {
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <TableStatsBar>
-      <span class="text-xs text-[#64748B]">
+      <span class="text-xs text-[var(--ez-text-sub)]">
         共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单 {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }}
       </span>
       <template #actions>

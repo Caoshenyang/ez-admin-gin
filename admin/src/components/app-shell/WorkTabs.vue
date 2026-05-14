@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0;
   border-bottom: 1px solid var(--ez-border);
-  background: #ffffff;
+  background: var(--ez-card-bg);
   padding: 0 12px;
 }
 
@@ -228,12 +228,12 @@ onBeforeUnmount(() => {
 
 .admin-tabs-fade--left {
   left: 0;
-  background: linear-gradient(to right, #ffffff 20%, transparent);
+  background: linear-gradient(to right, var(--ez-card-bg) 20%, transparent);
 }
 
 .admin-tabs-fade--right {
   right: 0;
-  background: linear-gradient(to left, #ffffff 20%, transparent);
+  background: linear-gradient(to left, var(--ez-card-bg) 20%, transparent);
 }
 
 .fade-enter-active,
@@ -265,7 +265,7 @@ onBeforeUnmount(() => {
   background: transparent;
   padding: 0 14px;
   height: 32px;
-  color: #475569;
+  color: var(--ez-text-sub);
   font-size: 13px;
   cursor: pointer;
   transition:
@@ -276,7 +276,7 @@ onBeforeUnmount(() => {
 }
 
 .admin-tab-item:hover {
-  background: #F1F5F9;
+  background: var(--ez-page-bg);
   border-color: var(--ez-border);
   color: #0D8B82;
 }

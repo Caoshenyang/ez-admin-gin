@@ -27,7 +27,7 @@ defineEmits<{
       <template #header>
         <div class="border-b border-[var(--ez-border-light)] bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)] px-6 py-5">
           <div class="flex items-center gap-3">
-            <span class="text-lg font-bold text-[#0F172A]">日志详情</span>
+            <span class="text-lg font-bold text-[var(--ez-text-main)]">日志详情</span>
             <NTag
               v-if="detailRow"
               :bordered="false"
@@ -36,14 +36,14 @@ defineEmits<{
               {{ riskMeta[getRiskLevel(detailRow)].label }}
             </NTag>
           </div>
-          <p v-if="detailRow" class="mt-1 text-xs text-[#64748B]">
+          <p v-if="detailRow" class="mt-1 text-xs text-[var(--ez-text-sub)]">
             {{ formatTimeFull(detailRow.created_at) }} · {{ detailRow.username || '-' }}
           </p>
         </div>
       </template>
 
       <div v-if="detailRow" class="flex flex-col gap-4">
-        <div class="flex flex-col gap-2.5 rounded-[10px] border border-[var(--ez-border-light)] bg-white px-4 py-3.5">
+        <div class="flex flex-col gap-2.5 rounded-[10px] border border-[var(--ez-border-light)] bg-[var(--ez-card-bg)] px-4 py-3.5">
           <div class="text-[12px] font-bold tracking-[0.05em] text-gray-500 uppercase">请求概览</div>
           <div class="flex flex-col gap-0.5">
             <div class="text-[11px] font-semibold text-slate-400">请求地址</div>
@@ -59,7 +59,7 @@ defineEmits<{
           </div>
         </div>
 
-        <div class="flex flex-col gap-2.5 rounded-[10px] border border-[var(--ez-border-light)] bg-white px-4 py-3.5">
+        <div class="flex flex-col gap-2.5 rounded-[10px] border border-[var(--ez-border-light)] bg-[var(--ez-card-bg)] px-4 py-3.5">
           <div class="text-[12px] font-bold tracking-[0.05em] text-gray-500 uppercase">执行结果</div>
           <div class="grid gap-x-4 gap-y-2.5 md:grid-cols-2">
             <div class="flex flex-col gap-0.5">

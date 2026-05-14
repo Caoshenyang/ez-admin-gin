@@ -29,8 +29,8 @@ const columns: DataTableColumns<DepartmentItem> = [
     minWidth: 260,
     render(row) {
       return h('div', { class: 'leading-6' }, [
-        h('p', { class: 'font-semibold text-[#0F172A]' }, displayText(row.name)),
-        h('p', { class: 'text-xs text-[#64748B]' }, displayText(row.code)),
+        h('p', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.name)),
+        h('p', { class: 'text-xs text-[var(--ez-text-sub)]' }, displayText(row.code)),
       ])
     },
   },

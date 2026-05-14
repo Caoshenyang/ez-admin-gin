@@ -51,10 +51,10 @@ const {
     <!-- 欢迎区 -->
     <section class="flex items-center justify-between gap-4">
       <div>
-        <h1 class="text-[28px] font-bold text-[#0F172A]">
+        <h1 class="text-[28px] font-bold text-[var(--ez-text-main)]">
           {{ currentUserLabel }}，{{ currentDateLabel }}
         </h1>
-        <p class="mt-1.5 text-[14px] text-[#64748B]">
+        <p class="mt-1.5 text-[14px] text-[var(--ez-text-sub)]">
           {{ heroStatusText }}
         </p>
       </div>
@@ -140,15 +140,15 @@ const {
                   {{ item.success ? '成功' : '失败' }}
                 </NTag>
                 <NTag size="small" round :bordered="false">{{ item.method }}</NTag>
-                <span class="truncate text-[13px] text-[#475569]">
+                <span class="truncate text-[13px] text-[var(--ez-text-sub)]">
                   {{ displayText(item.username, '系统') }} · {{ formatDashboardRoutePath(item.path) }}
                 </span>
               </div>
-              <span class="text-[12px] text-[#94A3B8]">
+              <span class="text-[12px] text-[var(--ez-text-light)]">
                 {{ formatDashboardDateTime(item.created_at) }}
               </span>
             </div>
-            <div class="mt-2 flex items-center gap-4 text-[12px] text-[#94A3B8]">
+            <div class="mt-2 flex items-center gap-4 text-[12px] text-[var(--ez-text-light)]">
               <span>状态码 {{ item.status_code }}</span>
               <span>耗时 {{ item.latency_ms }} ms</span>
             </div>
@@ -177,7 +177,7 @@ const {
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="text-[13px] font-medium text-[#0F172A]">
+                    <span class="text-[13px] font-medium text-[var(--ez-text-main)]">
                       {{ displayText(item.username) }}
                     </span>
                     <NTag
@@ -189,13 +189,13 @@ const {
                       {{ getLoginStatusLabel(item.status) }}
                     </NTag>
                   </div>
-                  <p class="mt-1 truncate text-[12px] text-[#94A3B8]">
+                  <p class="mt-1 truncate text-[12px] text-[var(--ez-text-light)]">
                     {{ displayText(item.message, '登录状态已记录') }}
                   </p>
                 </div>
-                <span class="text-[12px] text-[#94A3B8]">{{ displayText(item.ip) }}</span>
+                <span class="text-[12px] text-[var(--ez-text-light)]">{{ displayText(item.ip) }}</span>
               </div>
-              <p class="mt-2 text-[12px] text-[#94A3B8]">
+              <p class="mt-2 text-[12px] text-[var(--ez-text-light)]">
                 {{ formatDashboardDateTime(item.created_at) }}
               </p>
             </article>
@@ -219,8 +219,8 @@ const {
               :key="item.id"
               class="dash-log-row"
             >
-              <p class="text-[13px] font-medium text-[#0F172A]">{{ displayText(item.title) }}</p>
-              <p class="mt-1 text-[12px] text-[#94A3B8]">
+              <p class="text-[13px] font-medium text-[var(--ez-text-main)]">{{ displayText(item.title) }}</p>
+              <p class="mt-1 text-[12px] text-[var(--ez-text-light)]">
                 {{ formatDashboardDateTime(item.updated_at) }}
               </p>
             </article>
@@ -240,12 +240,12 @@ const {
 .dash-card-title {
   font-size: 16px;
   font-weight: 600;
-  color: #0F172A;
+  color: var(--ez-text-main);
 }
 
 .dash-log-row {
   border-radius: 12px;
-  border: 1px solid #E6ECF3;
+  border: 1px solid var(--ez-border);
   padding: 12px 14px;
   transition: all 0.2s ease;
 }
@@ -261,6 +261,6 @@ const {
 }
 
 .dash-log-row--flat:hover {
-  background: #F4FDFA;
+  background: var(--ez-brand-soft);
 }
 </style>

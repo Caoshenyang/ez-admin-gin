@@ -15,8 +15,8 @@ defineProps<{
   <div class="stat-card">
     <div class="flex items-start justify-between">
       <div>
-        <p class="text-[13px] font-medium text-[#94A3B8]">{{ label }}</p>
-        <p class="mt-2 text-[32px] font-bold tracking-tight text-[#0F172A]">
+        <p class="text-[13px] font-medium text-[var(--ez-text-light)]">{{ label }}</p>
+        <p class="mt-2 text-[32px] font-bold tracking-tight text-[var(--ez-text-main)]">
           {{ value }}
         </p>
       </div>
@@ -24,16 +24,16 @@ defineProps<{
         <NIcon :component="icon" :size="22" />
       </div>
     </div>
-    <p class="mt-3 text-[12px] text-[#94A3B8]">{{ hint }}</p>
+    <p class="mt-3 text-[12px] text-[var(--ez-text-light)]">{{ hint }}</p>
   </div>
 </template>
 
 <style scoped>
 .stat-card {
-  background: #ffffff;
+  background: var(--ez-card-bg);
   border-radius: 18px;
   padding: 24px;
-  border: 1px solid #E6ECF3;
+  border: 1px solid var(--ez-border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
   transition:
     border-color 0.2s ease,

@@ -17,7 +17,7 @@ defineEmits<{
 
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-fill">
-    <div class="flex items-center justify-end border-b border-[#E6ECF3] px-4 py-3">
+    <div class="flex items-center justify-end border-b border-[var(--ez-border)] px-4 py-3">
       <NButton text type="primary" @click="$emit('refresh')">刷新</NButton>
     </div>
 

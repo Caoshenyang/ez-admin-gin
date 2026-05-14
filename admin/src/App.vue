@@ -5,14 +5,21 @@ import {
   NLoadingBarProvider,
   NMessageProvider,
   NNotificationProvider,
-  dateZhCN,
-  zhCN,
 } from 'naive-ui'
-import { themeOverrides } from './styles/theme'
+import { computed } from 'vue'
+import { darkThemeOverrides, themeOverrides } from './styles/theme'
+import { useLocaleStore } from './stores/locale'
+import { useThemeStore } from './stores/theme'
+
+const themeStore = useThemeStore()
+const localeStore = useLocaleStore()
+
+const naiveTheme = computed(() => themeStore.naiveTheme)
+const overrides = computed(() => (themeStore.isDark ? darkThemeOverrides : themeOverrides))
 </script>
 
 <template>
-  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
+  <n-config-provider :locale="localeStore.naiveLocale" :date-locale="localeStore.naiveDateLocale" :theme="naiveTheme" :theme-overrides="overrides">
     <n-loading-bar-provider>
       <n-dialog-provider>
         <n-notification-provider>
