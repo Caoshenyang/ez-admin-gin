@@ -5,14 +5,12 @@ import { createPinia } from 'pinia'
 import { createDiscreteApi } from 'naive-ui'
 
 import { setMessageHandler } from './api/http'
-import i18n from './i18n'
 import App from './App.vue'
 import router from './router'
 
 const app = createApp(App)
 
 app.use(createPinia())
-app.use(i18n)
 app.use(router)
 
 // 使用 Naive UI 的 createDiscreteApi 在 Vue 组件外展示消息提示。
