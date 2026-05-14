@@ -150,3 +150,36 @@
 - `Service` 注入 `PolicyReloader`，在 `UpdatePermissions` 事务提交后调用 `ReloadPolicy()`
 - 通过依赖链 `routes → services → application` 传递 `*authz.Enforcer`
 - `UpdateMenus` 不需要 ReloadPolicy（菜单权限不经过 Casbin）
+
+---
+
+## ADR-013：暗色模式采用 CSS 变量 + Naive UI darkTheme 双层切换
+
+**状态：** 已采纳
+
+**原因：** 前端已有的 CSS 变量体系（`--ez-*`）和 Naive UI `themeOverrides` 是两套独立的样式通道。暗色模式需要两者同步切换：CSS 变量控制自定义组件和 Tailwind 样式，Naive UI `darkTheme` 控制组件库内置样式。
+
+**决策：**
+- 新建 Pinia theme store（`admin/src/stores/theme.ts`），管理 light/dark/auto 三种模式
+- CSS 变量层：在 `.dark` class 下覆盖所有 `--ez-*` 变量
+- Naive UI 层：`n-config-provider` 条件传入 `darkTheme` + `darkThemeOverrides`
+- 主题偏好持久化到 localStorage，auto 模式监听 `prefers-color-scheme` 系统偏好
+- Header 月亮/太阳图标点击循环切换 light → dark → auto
+- 全局硬编码颜色统一替换为 CSS 变量（约 23 个 Vue 文件）
+- LoginPage 保持浅色设计，不纳入暗色模式
+
+---
+
+## ADR-014：国际化采用 vue-i18n + Pinia locale store
+
+**状态：** 已采纳
+
+**原因：** 前端所有用户可见文本为硬编码中文。引入 i18n 需要同时处理 vue-i18n 翻译和 Naive UI 组件库 locale 切换。
+
+**决策：**
+- 使用 vue-i18n（Composition API 模式，legacy: false）
+- Pinia locale store（`admin/src/stores/locale.ts`）管理当前语言和 Naive UI locale 映射
+- 翻译文件集中放在 `admin/src/i18n/locales/`（zh-CN.ts / en-US.ts）
+- App.vue 的 NConfigProvider locale 绑定到 locale store 的 computed 属性
+- 后端返回的动态数据（菜单标题、角色名称等）暂不翻译
+- 默认语言 zh-CN，localStorage 持久化用户选择
