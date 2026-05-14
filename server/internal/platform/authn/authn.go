@@ -10,6 +10,7 @@ import (
 	"ez-admin-gin/server/internal/platform/config"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // ErrInvalidToken 表示令牌无效或校验失败。
@@ -62,6 +63,7 @@ func (m *Manager) GenerateAccessToken(userID uint, username string) (string, tim
 		UserID:   userID,
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.NewString(),
 			Issuer:    m.issuer,
 			Subject:   fmt.Sprintf("%d", userID),
 			IssuedAt:  jwt.NewNumericDate(now),
