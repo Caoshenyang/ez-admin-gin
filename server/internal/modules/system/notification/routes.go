@@ -29,6 +29,9 @@ func RegisterRoutes(group *gin.RouterGroup, engine *gin.Engine, opts RouteOption
 		Log:     opts.Log,
 	})
 
+	// 启动 Hub 的 Redis 订阅分发
+	hub.Run()
+
 	// WebSocket 端点需要独立注册，因为它不走 Auth 中间件链
 	registerWSRoute(engine, service, hub, opts.Token, opts.Log)
 }
