@@ -302,8 +302,8 @@ export function useDictPage() {
       minWidth: 220,
       render(row) {
         return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.name)),
-          h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.code)),
+          h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
+          h('p', { class: 'text-xs text-[var(--ez-text-muted)]' }, displayText(row.code)),
         ])
       },
     },
@@ -379,8 +379,8 @@ export function useDictPage() {
       minWidth: 220,
       render(row) {
         return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.label)),
-          h('p', { class: 'text-xs text-[#6B7280]' }, `${displayText(row.item_key)} · ${displayText(row.value)}`),
+          h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.label)),
+          h('p', { class: 'text-xs text-[var(--ez-text-muted)]' }, `${displayText(row.item_key)} · ${displayText(row.value)}`),
         ])
       },
     },
@@ -390,7 +390,7 @@ export function useDictPage() {
       width: 120,
       render(row) {
         if (!row.tag_type) {
-          return h('span', { class: 'text-[#9CA3AF]' }, '-')
+          return h('span', { class: 'text-[var(--ez-text-light)]' }, '-')
         }
 
         return h(

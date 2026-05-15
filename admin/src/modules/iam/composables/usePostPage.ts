@@ -58,8 +58,8 @@ export function usePostPage() {
       minWidth: 240,
       render(row) {
         return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[#111827]' }, displayText(row.name)),
-          h('p', { class: 'text-xs text-[#6B7280]' }, displayText(row.code)),
+          h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
+          h('p', { class: 'text-xs text-[var(--ez-text-muted)]' }, displayText(row.code)),
         ])
       },
     },

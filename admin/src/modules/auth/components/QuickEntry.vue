@@ -62,7 +62,7 @@ const emit = defineEmits<{
 .quick-entry:hover {
   background: var(--ez-brand-soft);
   border-color: rgba(20, 184, 166, 0.22);
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.06);
+  box-shadow: var(--ez-shadow-sm);
 }
 
 .quick-entry__arrow {
@@ -74,7 +74,7 @@ const emit = defineEmits<{
 }
 
 .quick-entry:hover .quick-entry__arrow {
-  color: #14B8A6;
+  color: var(--ez-brand);
   transform: translateX(4px);
 }
 </style>

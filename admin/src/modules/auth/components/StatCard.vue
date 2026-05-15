@@ -34,7 +34,7 @@ defineProps<{
   border-radius: 18px;
   padding: 24px;
   border: 1px solid var(--ez-border);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--ez-shadow-md);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -43,7 +43,7 @@ defineProps<{
 
 .stat-card:hover {
   border-color: rgba(20, 184, 166, 0.22);
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  box-shadow: var(--ez-shadow-lg);
   transform: translateY(-2px);
 }
 

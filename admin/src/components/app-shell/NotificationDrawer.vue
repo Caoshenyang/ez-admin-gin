@@ -29,10 +29,10 @@ const typeLabels: Record<number, string> = {
 }
 
 const typeColors: Record<number, string> = {
-  1: '#1890ff',
-  2: '#f5222d',
-  3: '#52c41a',
-  4: '#faad14',
+  1: '#2563EB',
+  2: '#EF4444',
+  3: '#12B981',
+  4: '#F59E0B',
 }
 
 function formatType(type: NotificationType) {
@@ -40,7 +40,7 @@ function formatType(type: NotificationType) {
 }
 
 function typeColor(type: NotificationType) {
-  return typeColors[type] ?? '#999'
+  return typeColors[type] ?? '#94A3B8'
 }
 
 function handleMarkAllRead() {

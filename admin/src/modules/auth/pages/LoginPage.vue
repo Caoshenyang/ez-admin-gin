@@ -27,12 +27,12 @@ const {
 </script>
 
 <template>
-  <main class="h-screen overflow-hidden bg-[#F5F7FA] px-4 py-4 md:px-5 md:py-5">
+  <main class="h-screen overflow-hidden bg-[var(--color-surface-page)] px-4 py-4 md:px-5 md:py-5">
     <section
       class="mx-auto grid h-full max-w-[1180px] items-center gap-6 xl:grid-cols-[minmax(0,560px)_400px] xl:justify-between xl:gap-8"
     >
       <section
-        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[#0F172A] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
+        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[var(--ez-panel-dark)] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
       >
         <div>
           <BrandLogo
@@ -42,7 +42,7 @@ const {
           />
         </div>
 
-        <div class="mt-6 rounded-2xl bg-[#1F2937] p-5 md:p-6">
+        <div class="mt-6 rounded-2xl bg-[var(--ez-panel-dark-secondary)] p-5 md:p-6">
           <ul class="grid list-none gap-4 p-0">
             <li
               v-for="feature in productFeatures"
@@ -106,7 +106,7 @@ const {
 
                 <button
                   type="button"
-                  class="h-8.5 cursor-pointer rounded-lg border border-[#A7F3D0] bg-[#ECFDF5] text-lg font-bold tracking-[0.08em] text-[#18A058]"
+                  class="h-8.5 cursor-pointer rounded-lg border border-[var(--ez-brand-soft)] bg-[var(--ez-brand-soft)] text-lg font-bold tracking-[0.08em] text-[var(--ez-brand)]"
                   @click="refreshCaptcha"
                 >
                   {{ captchaText }}
@@ -121,7 +121,7 @@ const {
 
               <button
                 type="button"
-                class="cursor-pointer border-none bg-transparent p-0 text-sm text-[#2080F0]"
+                class="cursor-pointer border-none bg-transparent p-0 text-sm text-[var(--ez-link)]"
                 @click="handleForgotPassword"
               >
                 忘记密码？
@@ -133,7 +133,7 @@ const {
               type="primary"
               size="medium"
               block
-              color="#18A058"
+              color="#14B8A6"
               :loading="submitting"
               class="login-submit"
             >

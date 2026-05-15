@@ -93,8 +93,8 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 }
 
 .role-card:hover {
-  border-color: #18a058;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  border-color: var(--ez-brand);
+  box-shadow: var(--ez-shadow-md);
 }
 
 .role-card--active {

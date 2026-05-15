@@ -59,7 +59,7 @@ defineProps<{
 <style scoped>
 .overview-panel {
   padding: 28px;
-  background: linear-gradient(135deg, #F4FDFA 0%, #F8FBFF 100%);
+  background: linear-gradient(135deg, var(--ez-brand-soft) 0%, var(--ez-accent-blue-soft) 100%);
   border-radius: 18px;
 }
 
@@ -70,7 +70,7 @@ defineProps<{
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #14B8A6 0%, #0D8B82 100%);
+  background: linear-gradient(135deg, var(--ez-brand) 0%, var(--ez-brand-pressed) 100%);
   color: #ffffff;
   flex-shrink: 0;
 }
@@ -86,7 +86,7 @@ defineProps<{
   background: var(--ez-card-bg);
   border-radius: 14px;
   padding: 16px 18px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--ez-shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -94,7 +94,7 @@ defineProps<{
 }
 
 .overview-cell:hover {
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--ez-shadow-md);
 }
 
 .overview-cell__label {

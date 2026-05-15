@@ -146,7 +146,7 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
   gap: 4px;
   padding: 4px;
   border-radius: 6px;
-  background: #f3f4f6;
+  background: var(--ez-segment-bg);
 }
 
 .type-segment.is-disabled {
@@ -159,16 +159,16 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: #6b7280;
+  color: var(--ez-text-muted);
   font-size: 13px;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 
 .type-segment__btn--active {
-  background: #fff;
-  color: #18a058;
+  background: var(--ez-card-bg);
+  color: var(--ez-brand);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ez-shadow-sm);
 }
 </style>

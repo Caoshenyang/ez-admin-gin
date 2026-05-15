@@ -36,7 +36,7 @@ const props = withDefaults(defineProps<Props>(), {
       <span
         v-if="showTitle"
         class="block text-lg leading-none font-semibold tracking-[0.01em]"
-        :class="variant === 'dark' ? 'text-white' : 'text-[#111827]'"
+        :class="variant === 'dark' ? 'text-white' : 'text-[var(--ez-text-heading)]'"
       >
         {{ title }}
       </span>
@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<Props>(), {
     <p
       v-if="subtitle"
       class="m-0 text-[15px] leading-7"
-      :class="variant === 'dark' ? 'text-[#D1D5DB]' : 'text-[#6B7280]'"
+      :class="variant === 'dark' ? 'text-[var(--ez-text-light)]' : 'text-[var(--ez-text-muted)]'"
     >
       {{ subtitle }}
     </p>

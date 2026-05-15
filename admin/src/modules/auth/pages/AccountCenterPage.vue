@@ -100,7 +100,7 @@ const {
         :bordered="false"
         content-class="space-y-5"
       >
-        <div class="rounded-2xl bg-[#0F172A] px-4 py-4 text-white">
+        <div class="rounded-2xl bg-[var(--ez-panel-dark)] px-4 py-4 text-white">
           <p class="text-sm font-semibold">密码修改后立即生效</p>
           <p class="mt-1 text-xs leading-6 text-white/72">
             当前实现不会修改其他用户，也不会触碰角色、岗位和部门归属。

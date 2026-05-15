@@ -62,7 +62,7 @@ export function useNoticePage() {
       width: 220,
       ellipsis: { tooltip: true },
       render(row) {
-        return h('span', { class: 'font-semibold text-[#111827]' }, displayText(row.title))
+        return h('span', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.title))
       },
     },
     {
@@ -71,7 +71,7 @@ export function useNoticePage() {
       minWidth: 240,
       ellipsis: { tooltip: true },
       render(row) {
-        return h('span', { class: 'text-[#374151]' }, displayText(row.content))
+        return h('span', { class: 'text-[var(--ez-text-body)]' }, displayText(row.content))
       },
     },
     {
@@ -98,7 +98,7 @@ export function useNoticePage() {
       key: 'updated_at',
       width: 160,
       render(row) {
-        return h('span', { class: 'tabular-nums text-[#6B7280]' }, formatTime(row.updated_at))
+        return h('span', { class: 'tabular-nums text-[var(--ez-text-muted)]' }, formatTime(row.updated_at))
       },
     },
     {

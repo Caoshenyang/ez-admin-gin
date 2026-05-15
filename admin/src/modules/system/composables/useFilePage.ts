@@ -92,8 +92,8 @@ export function useFilePage() {
             ],
           ),
           h('div', { class: 'min-w-0 leading-5' }, [
-            h('p', { class: 'truncate font-medium text-[#111827]' }, displayText(row.original_name)),
-            h('p', { class: 'truncate text-xs text-[#6B7280]' }, displayText(row.mime_type)),
+            h('p', { class: 'truncate font-medium text-[var(--ez-text-heading)]' }, displayText(row.original_name)),
+            h('p', { class: 'truncate text-xs text-[var(--ez-text-muted)]' }, displayText(row.mime_type)),
           ]),
         ])
       },

@@ -84,7 +84,7 @@ const {
             </article>
           </div>
 
-          <div class="rounded-2xl bg-[#0F172A] px-5 py-4 text-white">
+          <div class="rounded-2xl bg-[var(--ez-panel-dark)] px-5 py-4 text-white">
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="text-xs uppercase tracking-[0.2em] text-white/55">Last Check</p>
