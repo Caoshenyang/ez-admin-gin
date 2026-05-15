@@ -34,6 +34,25 @@
   --color-success: #12B981;
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
+
+  /* Shadow */
+  --color-shadow-sm: rgba(15, 23, 42, 0.04);
+  --color-shadow-md: rgba(15, 23, 42, 0.06);
+  --color-shadow-lg: rgba(15, 23, 42, 0.10);
+
+  /* Semantic panels */
+  --color-panel-dark: #0F172A;
+  --color-panel-dark-secondary: #1F2937;
+
+  /* Semantic text */
+  --color-text-heading: #111827;
+  --color-text-body: #374151;
+  --color-text-muted: #6B7280;
+
+  /* Misc */
+  --color-segment-bg: #f3f4f6;
+  --color-link: #2080F0;
+  --color-brand-green: #18A058;
 }
 
 :root {
@@ -61,6 +80,17 @@
   --ez-danger-text: #E11D48;
   --ez-info-bg: rgba(37, 99, 235, 0.10);
   --ez-info-text: #2563EB;
+  --ez-shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.04);
+  --ez-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --ez-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
+  --ez-panel-dark: #0F172A;
+  --ez-panel-dark-secondary: #1F2937;
+  --ez-text-heading: #111827;
+  --ez-text-body: #374151;
+  --ez-text-muted: #6B7280;
+  --ez-segment-bg: #f3f4f6;
+  --ez-link: #2080F0;
+  --ez-brand-green: #18A058;
   color-scheme: light;
   font-family: var(--font-sans);
   color: var(--color-text-main);
@@ -92,6 +122,16 @@
   --ez-danger-text: #FB7185;
   --ez-info-bg: rgba(37, 99, 235, 0.15);
   --ez-info-text: #93C5FD;
+  --ez-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.20);
+  --ez-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --ez-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.30);
+  --ez-panel-dark: #0B1A2E;
+  --ez-panel-dark-secondary: #152238;
+  --ez-text-heading: #E2E8F0;
+  --ez-text-body: #CBD5E1;
+  --ez-text-muted: #94A3B8;
+  --ez-segment-bg: #1E293B;
+  --ez-link: #60A5FA;
 }
 
 * {
@@ -169,14 +209,14 @@ button:not(:disabled),
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ez-shadow-md);
 }
 
 .ez-card-elevated {
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ez-shadow-md);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -185,7 +225,7 @@ button:not(:disabled),
 
 .ez-card-elevated:hover {
   border-color: rgba(20, 184, 166, 0.18);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
+  box-shadow: var(--ez-shadow-lg);
 }
 
 .ez-card-content-reset {
@@ -203,7 +243,7 @@ button:not(:disabled),
 /* ========== Ez Page Header ========== */
 
 .ez-page-header h1 {
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--color-text-main);
   letter-spacing: -0.01em;
@@ -224,7 +264,7 @@ button:not(:disabled),
   border: 1px solid var(--ez-border);
   border-radius: 18px;
   padding: 20px 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--ez-shadow-sm);
 }
 
 /* ========== Ez Table Card ========== */
@@ -233,7 +273,7 @@ button:not(:disabled),
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--ez-shadow-md);
   overflow: hidden;
 }
 
