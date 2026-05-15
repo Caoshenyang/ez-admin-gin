@@ -183,3 +183,17 @@
 - App.vue 的 NConfigProvider locale 绑定到 locale store 的 computed 属性
 - 后端返回的动态数据（菜单标题、角色名称等）暂不翻译
 - 默认语言 zh-CN，localStorage 持久化用户选择
+
+---
+
+## ADR-015：移除模块生成器 CLI，替换为 AI Skill
+
+**状态：** 已采纳
+
+**原因：** 在 AI coding 时代，模板生成器的 ROI 很低。18 个模板文件需要持续维护，且生成的代码千篇一律，遇到特殊业务需求仍需大量修改。而 AI 可以按需生成代码并根据具体业务灵活调整。
+
+**决策：**
+- 删除 `server/cmd/gen/` 目录（CLI 入口、配置、模板引擎、10 个后端模板）
+- 新建 `.agents/skills/module-generator/SKILL.md`，覆盖完整后端/前端分层约定、命名规范、权限常量、Swagger 注释模式和接入步骤
+- AI 按此 skill 规范生成模块代码，参照 `system/dict` 模块作为完整范例
+- 维护成本从「同步 18 个模板文件」降为「更新一个 markdown 文件」
