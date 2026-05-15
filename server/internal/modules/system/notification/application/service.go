@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"time"
 
 	notidomain "ez-admin-gin/server/internal/modules/system/notification/domain"
 	"ez-admin-gin/server/internal/pkg/paging"
@@ -111,9 +110,4 @@ func BuildUnreadCountMessage(count int64) map[string]any {
 		"type": "unread_count",
 		"data": map[string]any{"count": count},
 	}
-}
-
-// Now 返回当前时间，方便测试。
-func Now() time.Time {
-	return time.Now()
 }
