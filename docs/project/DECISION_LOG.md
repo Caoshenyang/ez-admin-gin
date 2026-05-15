@@ -197,3 +197,21 @@
 - 新建 `.agents/skills/module-generator/SKILL.md`，覆盖完整后端/前端分层约定、命名规范、权限常量、Swagger 注释模式和接入步骤
 - AI 按此 skill 规范生成模块代码，参照 `system/dict` 模块作为完整范例
 - 维护成本从「同步 18 个模板文件」降为「更新一个 markdown 文件」
+
+---
+
+## ADR-016：WebSocket 实时通知系统
+
+**状态：** 已采纳
+
+**原因：** AppHeader 有静态通知铃铛图标但无功能。需要完整的实时通知推送能力：服务端推送 → WebSocket 送达 → 前端展示未读/已读/全部标记。
+
+**决策：**
+- WebSocket 库选用 `coder/websocket`（nhooyr.io/websocket）：Go Authors 推荐、全平台、context 原生、零 alloc、并发写安全
+- 模块位置：新建 `system/notification/` 子模块，与 notice（公告 CRUD）领域模型不同
+- 消息分发：本地 Hub + Redis Pub/Sub fan-out（单实例直接推送，多实例通过 Redis）
+- WS 认证：query param `?token=<access_token>`（浏览器 WebSocket API 不支持自定义 Header）
+- WS 端点注册在 system group 内但 handler 内部自行认证，不依赖 Auth 中间件链
+- 持久化：`sys_notification` 表（PostgreSQL JSONB），支持历史查询、分页、重启后未读计数不丢
+- 前端：Pinia store 管理 WS 连接生命周期，AdminLayout 挂载时连接、卸载时断开
+- 通知抽屉：NDrawer 组件，显示通知列表、未读标记、全部已读按钮

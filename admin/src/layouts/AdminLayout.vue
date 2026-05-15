@@ -20,6 +20,7 @@ import {
 } from '../router/dynamic-menu'
 import { resetDynamicRoutes } from '../router'
 import { useAdminShellStore } from '../stores/admin-shell'
+import { useNotificationStore } from '../stores/notification'
 import {
   AUTH_USER_INFO_UPDATED_EVENT,
   clearAuthSession,
@@ -31,6 +32,7 @@ const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 const shellStore = useAdminShellStore()
+const notificationStore = useNotificationStore()
 
 const currentUser = computed(() => getAuthUserInfo())
 
@@ -191,10 +193,12 @@ function handleAuthUserUpdate() {
 
 onMounted(() => {
   window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
+  notificationStore.connectWS()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
+  notificationStore.disconnectWS()
 })
 </script>
 

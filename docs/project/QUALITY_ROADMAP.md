@@ -1,7 +1,7 @@
 # Quality Roadmap — 长期路线图
 
 > 从约 8.0 分提升到 9.0+ 的分阶段计划。
-> 当前阶段：Phase 5 已完成，Phase 6 待开始
+> 当前阶段：Phase 6 进行中（暗色模式 ✅、模块生成器 ✅、WebSocket 通知 ✅）
 
 ---
 
@@ -112,8 +112,8 @@
 - 暗色模式 / 主题系统 ✅
 - 国际化（已移除：内部工具无多语言需求）
 - 模块生成器（已替换为 AI Skill：`.agents/skills/module-generator/SKILL.md`）
-- WebSocket 通知
+- WebSocket 通知 ✅
 - 业务模板
 - 审批工作流（已移除：当前无实际需求）
 
-**状态：** 进行中（暗色模式已完成，模块生成器已替换为 Skill）
+**状态：** 进行中（暗色模式 ✅、模块生成器已替换为 Skill、WebSocket 通知 ✅）

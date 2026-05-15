@@ -7,9 +7,11 @@ import {
   SunnyOutline,
 } from '@vicons/ionicons5'
 import type { DropdownOption } from 'naive-ui'
-import { NButton, NDropdown, NIcon, NInput, NLayoutHeader, NTooltip } from 'naive-ui'
+import { NBadge, NButton, NDropdown, NIcon, NInput, NLayoutHeader, NTooltip } from 'naive-ui'
 import { computed } from 'vue'
 import { useThemeStore } from '../../stores/theme'
+import { useNotificationStore } from '../../stores/notification'
+import NotificationDrawer from './NotificationDrawer.vue'
 
 defineProps<{
   breadcrumbText: string
@@ -22,6 +24,7 @@ const emit = defineEmits<{
 }>()
 
 const themeStore = useThemeStore()
+const notificationStore = useNotificationStore()
 
 const themeIcon = computed(() => (themeStore.isDark ? SunnyOutline : MoonOutline))
 
@@ -49,9 +52,13 @@ const themeTooltip = computed(() => {
         </template>
       </NInput>
 
-      <NButton quaternary circle class="h-9 w-9 rounded-[10px] !text-[var(--ez-text-sub)] hover:!text-[var(--ez-text-main)]">
-        <NIcon :component="NotificationsOutline" :size="18" />
-      </NButton>
+      <NBadge :value="notificationStore.unreadCount" :max="99">
+        <NButton quaternary circle class="h-9 w-9 rounded-[10px] !text-[var(--ez-text-sub)] hover:!text-[var(--ez-text-main)]" @click="notificationStore.openDrawer()">
+          <NIcon :component="NotificationsOutline" :size="18" />
+        </NButton>
+      </NBadge>
+
+      <NotificationDrawer />
 
       <NTooltip trigger="hover">
         <template #trigger>

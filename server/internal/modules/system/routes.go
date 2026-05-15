@@ -8,6 +8,7 @@ import (
 	filemodule "ez-admin-gin/server/internal/modules/system/file"
 	loginlogmodule "ez-admin-gin/server/internal/modules/system/loginlog"
 	noticemodule "ez-admin-gin/server/internal/modules/system/notice"
+	notificationmodule "ez-admin-gin/server/internal/modules/system/notification"
 	operationlogmodule "ez-admin-gin/server/internal/modules/system/operationlog"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
@@ -76,5 +77,11 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	noticemodule.RegisterRoutes(system, noticemodule.RouteOptions{
 		DB:  opts.DB,
 		Log: opts.Log,
+	})
+	notificationmodule.RegisterRoutes(system, notificationmodule.RouteOptions{
+		DB:    opts.DB,
+		Redis: opts.Redis,
+		Log:   opts.Log,
+		Token: opts.Token,
 	})
 }
