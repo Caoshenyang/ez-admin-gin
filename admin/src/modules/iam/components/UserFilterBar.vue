@@ -42,8 +42,10 @@ const emit = defineEmits<{
         class="w-36"
         @update:value="(value) => emit('update:status', Number(value ?? 0))"
       />
-      <NButton type="primary" @click="emit('search')">查询</NButton>
-      <NButton @click="emit('reset')">重置</NButton>
+      <div class="ez-filter-actions">
+        <NButton type="primary" @click="emit('search')">查询</NButton>
+        <NButton @click="emit('reset')">重置</NButton>
+      </div>
     </NSpace>
   </div>
 </template>

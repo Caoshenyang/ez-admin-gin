@@ -27,7 +27,6 @@ import {
   toMenuFormModel,
 } from './menu-page.utils'
 
-// 菜单管理页面组合式函数，封装菜单树加载、创建、编辑、删除、状态切换等逻辑
 export function useMenuPage() {
   const message = useMessage()
   const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
@@ -39,76 +38,57 @@ export function useMenuPage() {
   const formRef = ref<FormInst | null>(null)
   const expandedRowKeys = ref<Array<string | number>>([])
 
-  // 搜索查询条件
   const query = reactive<MenuQuery>(defaultMenuQuery())
 
-  // 菜单表单数据
   const formModel = reactive<MenuFormModel>(defaultMenuFormModel())
 
-  // 菜单类型筛选选项
   const typeOptions: SelectOption[] = menuTypeOptions
 
-  // 表单中的菜单类型选项（不含"全部"）
   const formTypeOptions: SelectOption[] = menuFormTypeOptions
 
-  // 状态筛选选项
   const statusOptions: SelectOption[] = menuStatusOptions
 
-  // 表单校验规则
   const rules: FormRules = {
     code: [{ required: true, message: '请输入权限标识', trigger: 'blur' }],
     title: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
   }
 
-  // 扁平化后的菜单列表（用于统计和搜索）
   const flatMenus = computed(() => flattenMenus(menus.value))
 
-  // 所有菜单行的 key 集合（用于展开全部）
   const allRowKeys = computed(() => flatMenus.value.map((m) => m.id))
 
-  // 根据搜索条件过滤后的菜单树
   const displayMenus = computed(() => filterMenus(menus.value, query))
 
-  // 目录数量统计
   const directoryCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Directory).length)
 
-  // 菜单数量统计
   const menuCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Menu).length)
 
-  // 按钮数量统计
   const buttonCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Button).length)
 
-  // 上级菜单选择选项，排除按钮类型和当前编辑的菜单
   const parentOptions = computed<SelectOption[]>(() => {
     return buildMenuParentOptions(flatMenus.value, formModel.id)
   })
 
-  // 判断当前用户是否拥有指定按钮权限码
   function canUse(code: string) {
     return buttonPermissionCodes.value.includes(code)
   }
 
-  // 展开所有菜单行
   function expandAll() {
     expandedRowKeys.value = allRowKeys.value
   }
 
-  // 折叠所有菜单行
   function collapseAll() {
     expandedRowKeys.value = []
   }
 
-  // 处理展开/折叠行变化
   function handleExpandedChange(keys: Array<string | number>) {
     expandedRowKeys.value = keys
   }
 
-  // 重置菜单表单为默认值
   function resetForm() {
     Object.assign(formModel, defaultMenuFormModel())
   }
 
-  // 从服务端加载菜单树数据
   async function loadMenus() {
     loading.value = true
     try {
@@ -119,14 +99,12 @@ export function useMenuPage() {
     }
   }
 
-  // 打开创建根级菜单的弹窗
   function openCreateRoot() {
     formMode.value = 'create'
     resetForm()
     formVisible.value = true
   }
 
-  // 打开创建子菜单的弹窗，自动设置上级菜单和默认类型
   function openCreateChild(row: AdminMenu) {
     formMode.value = 'create'
     resetForm()
@@ -136,14 +114,12 @@ export function useMenuPage() {
     formVisible.value = true
   }
 
-  // 打开编辑菜单的弹窗，将当前行数据填充到表单
   function openEdit(row: AdminMenu) {
     formMode.value = 'edit'
     Object.assign(formModel, toMenuFormModel(row))
     formVisible.value = true
   }
 
-  // 提交菜单表单（新建或更新）
   async function handleSubmit() {
     await formRef.value?.validate()
     saving.value = true
@@ -170,7 +146,6 @@ export function useMenuPage() {
     }
   }
 
-  // 切换菜单的启用/禁用状态
   async function handleToggleStatus(row: AdminMenu, status: MenuStatus) {
     await updateMenuStatus(row.id, { status })
     showSuccess(`菜单已${status === MenuStatus.Enabled ? '启用' : '禁用'}`)
@@ -178,7 +153,6 @@ export function useMenuPage() {
     await loadMenus()
   }
 
-  // 删除指定菜单
   async function handleDelete(row: AdminMenu) {
     await deleteMenu(row.id)
     showSuccess('菜单已删除')
@@ -190,12 +164,10 @@ export function useMenuPage() {
     }
   }
 
-  // 重置搜索条件
   function handleResetQuery() {
     Object.assign(query, defaultMenuQuery())
   }
 
-  // 组件挂载时自动加载菜单列表
   onMounted(loadMenus)
 
   return {

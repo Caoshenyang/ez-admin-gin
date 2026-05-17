@@ -21,7 +21,6 @@ import {
   defaultAttachmentUploadForm,
 } from './attachment-page.utils'
 
-// 附件管理页面组合式函数，封装附件列表、上传、编辑、状态切换等逻辑
 export function useAttachmentPage() {
   const { canUse } = usePermission()
   const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
@@ -63,28 +62,23 @@ export function useAttachmentPage() {
     },
   })
 
-  // 是否有附件数据行
   const hasRows = computed(() => attachments.value.length > 0)
 
-  // 打开上传附件的弹窗
   function openUploadModal() {
     uploadModalVisible.value = true
   }
 
-  // 重置上传弹窗的表单和文件状态
   function resetUploadModal() {
     uploadFormModel.value = defaultAttachmentUploadForm()
     uploadFileList.value = []
     selectedUploadFile.value = null
   }
 
-  // 处理上传文件列表变化，只保留最新一个文件
   function handleUpdateFileList(fileList: UploadFileInfo[]) {
     uploadFileList.value = fileList.slice(-1)
     selectedUploadFile.value = uploadFileList.value[0]?.file ?? null
   }
 
-  // 提交上传附件，校验表单后调用接口上传文件
   async function submitUpload() {
     try {
       await uploadFormRef.value?.validate()
@@ -108,14 +102,12 @@ export function useAttachmentPage() {
     }
   }
 
-  // 提交编辑附件信息
   async function submitEdit() {
     await updateAttachment(editFormModel.id, buildAttachmentEditPayload(editFormModel))
     showSuccess('附件信息已更新')
     await load()
   }
 
-  // 格式化上传错误信息，将异常转为用户友好的中文提示
   function formatSubmitUploadError(error: unknown) {
     if (error instanceof Error && error.message === 'NO_UPLOAD_FILE') {
       return '请选择要上传的附件'

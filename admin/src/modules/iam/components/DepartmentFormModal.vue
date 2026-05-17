@@ -60,7 +60,7 @@ const formModel = defineModel<DepartmentFormModel>('model', { required: true })
     </NForm>
 
     <template #footer>
-      <div class="flex justify-end gap-3">
+      <div class="ez-modal-footer">
         <NButton quaternary @click="$emit('update:show', false)">取消</NButton>
         <NButton type="primary" :loading="saving" @click="$emit('submit')">保存</NButton>
       </div>

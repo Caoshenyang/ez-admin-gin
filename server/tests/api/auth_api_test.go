@@ -3,6 +3,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -164,5 +165,49 @@ func TestUnauthorizedAccessWithInvalidToken(t *testing.T) {
 	}
 }
 
-// TODO: TestLoginRateLimiting — verify login rate limiting kicks in after N failed attempts.
-// Requires either Redis or careful request sequencing. Deferred to next phase.
+func TestLoginRateLimiting(t *testing.T) {
+	app := testutil.NewTestApp(t)
+	defer app.Close(t)
+
+	app.SeedAdmin(t, testAdminUser, testAdminPassword, testAdminNickname)
+
+	threshold := app.Config.RateLimit.LoginLockoutThreshold
+	if threshold <= 0 {
+		t.Fatal("login lockout threshold must be enabled in test config")
+	}
+
+	ctx := context.Background()
+	accountKey := "ratelimit:login_account:" + testAdminUser
+	defer app.Redis.Del(ctx, accountKey)
+	app.Redis.Del(ctx, accountKey)
+
+	wrongBody := `{"username":"admin","password":"wrong-password"}`
+	for i := 0; i < threshold; i++ {
+		resp := postLogin(t, app, wrongBody)
+		if resp.StatusCode == http.StatusTooManyRequests {
+			resp.Body.Close()
+			t.Fatalf("attempt %d returned 429 before threshold %d", i+1, threshold)
+		}
+		resp.Body.Close()
+	}
+
+	resp := postLogin(t, app, wrongBody)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("status = %d, want 429 after %d failed attempts", resp.StatusCode, threshold)
+	}
+}
+
+func postLogin(t *testing.T, app *testutil.TestApp, body string) *http.Response {
+	t.Helper()
+
+	req, _ := http.NewRequest(http.MethodPost, app.URL("/api/v1/auth/login"), strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Do(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	return resp
+}

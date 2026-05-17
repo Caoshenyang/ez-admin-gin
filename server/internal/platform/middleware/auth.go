@@ -78,6 +78,22 @@ func CurrentUsername(c *gin.Context) (string, bool) {
 	return username, ok
 }
 
+// RequireUserID 从 Gin 上下文中取当前用户 ID，未登录时自动写入 401 响应。
+func RequireUserID(c *gin.Context, log *zap.Logger) (uint, bool) {
+	userID, ok := CurrentUserID(c)
+	if !ok {
+		httpx.Error(c, errorsx.Unauthorized("请先登录"), log)
+		return 0, false
+	}
+	return userID, true
+}
+
+// Username 从 Gin 上下文中取当前用户名，未登录时返回空字符串。
+func Username(c *gin.Context) string {
+	username, _ := CurrentUsername(c)
+	return username
+}
+
 // bearerToken 解析 Authorization: Bearer <token>。
 func bearerToken(header string) (string, bool) {
 	parts := strings.Fields(header)

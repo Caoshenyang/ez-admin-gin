@@ -11,7 +11,6 @@ import { getFiles, uploadFile } from '../api/file'
 import type { FileItem, FileListQuery } from '../types/file'
 import { defaultFileListQuery } from './file-page.utils'
 
-// 文件扩展名筛选选项
 const extFilterOptions = [
   { label: '类型：全部', value: '' },
   { label: '图片', value: '.png' },
@@ -21,10 +20,8 @@ const extFilterOptions = [
   { label: 'Word', value: '.docx' },
 ]
 
-// 图片文件扩展名列表
 const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']
 
-// 文件管理页面组合式函数，封装文件列表、上传、复制链接等逻辑
 export function useFilePage() {
   const message = useMessage()
   const { canUse } = usePermission()
@@ -45,7 +42,6 @@ export function useFilePage() {
     ...defaultFileListQuery(),
   })
 
-  // 复制文件URL到剪贴板
   function copyURL(row: FileItem) {
     navigator.clipboard.writeText(row.url).then(
       () => message.success('链接已复制'),
@@ -53,7 +49,6 @@ export function useFilePage() {
     )
   }
 
-  // 处理文件上传，调用接口上传后刷新列表
   async function handleUpload({ file }: { file: UploadFileInfo }) {
     if (!file.file) return
 
@@ -72,7 +67,6 @@ export function useFilePage() {
     }
   }
 
-  // 文件列表表格列定义
   const columns: DataTableColumns<FileItem> = [
     {
       title: '文件',
@@ -84,8 +78,12 @@ export function useFilePage() {
           h(
             'div',
             {
-              class: 'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg',
-              style: isImage ? 'background:#f0f7ff;color:#3b82f6' : 'background:#f3f4f6;color:#6b7280',
+              class: [
+                'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[var(--ez-radius-sm)]',
+                isImage
+                  ? 'bg-[var(--ez-accent-blue-soft)] text-[var(--ez-accent-blue)]'
+                  : 'bg-[var(--ez-segment-bg)] text-[var(--ez-text-muted)]',
+              ],
             },
             [
               h(NIcon, { size: 18 }, { default: () => h(isImage ? ImageOutline : DocumentOutline) }),

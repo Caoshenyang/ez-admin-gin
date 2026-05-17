@@ -2,6 +2,7 @@
 import { CloudUploadOutline } from '@vicons/ionicons5'
 import { NAlert, NButton, NIcon, NUpload } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import FileFilterBar from '../components/FileFilterBar.vue'
 import FileTable from '../components/FileTable.vue'
 import { useFilePage } from '../composables/useFilePage'
@@ -29,21 +30,18 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>文件管理</h1>
-          <p>上传和管理系统附件，支持图片和常见文档格式。</p>
-        </div>
-
-        <NUpload v-if="canUse('system:file:upload')" :show-file-list="false" :custom-request="handleUpload" :disabled="uploading">
-          <NButton type="primary" :loading="uploading">
-            <template #icon>
-              <NIcon><CloudUploadOutline /></NIcon>
-            </template>
-            上传文件
-          </NButton>
-        </NUpload>
-      </div>
+      <PageHeader title="文件管理" description="上传和管理系统附件，支持图片和常见文档格式。">
+        <template #actions>
+          <NUpload v-if="canUse('system:file:upload')" :show-file-list="false" :custom-request="handleUpload" :disabled="uploading">
+            <NButton type="primary" :loading="uploading">
+              <template #icon>
+                <NIcon><CloudUploadOutline /></NIcon>
+              </template>
+              上传文件
+            </NButton>
+          </NUpload>
+        </template>
+      </PageHeader>
 
       <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}

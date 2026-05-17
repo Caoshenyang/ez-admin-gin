@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { NAlert, NButton, NCard, NEmpty, NTag } from 'naive-ui'
+import { NAlert, NButton, NCard, NTag } from 'naive-ui'
+import EmptyState from '@/components/EmptyState.vue'
 import OverviewPanel from '../components/OverviewPanel.vue'
 import QuickEntry from '../components/QuickEntry.vue'
 import StatCard from '../components/StatCard.vue'
@@ -42,7 +43,7 @@ const {
       v-if="errorMessage"
       type="error"
       title="工作台同步失败"
-      class="rounded-[16px]"
+      class="rounded-[var(--ez-radius-lg)]"
       :bordered="false"
     >
       {{ errorMessage }}
@@ -51,10 +52,10 @@ const {
     <!-- 欢迎区 -->
     <section class="flex items-center justify-between gap-4">
       <div>
-        <h1 class="text-[28px] font-bold text-[var(--ez-text-main)]">
+        <h1 class="text-[var(--ez-text-3xl)] font-bold text-[var(--ez-text-main)]">
           {{ currentUserLabel }}，{{ currentDateLabel }}
         </h1>
-        <p class="mt-1.5 text-[14px] text-[var(--ez-text-sub)]">
+        <p class="mt-1.5 text-[var(--ez-text-base)] text-[var(--ez-text-sub)]">
           {{ heroStatusText }}
         </p>
       </div>
@@ -140,21 +141,21 @@ const {
                   {{ item.success ? '成功' : '失败' }}
                 </NTag>
                 <NTag size="small" round :bordered="false">{{ item.method }}</NTag>
-                <span class="truncate text-[13px] text-[var(--ez-text-sub)]">
+                <span class="truncate text-[var(--ez-text-sm)] text-[var(--ez-text-sub)]">
                   {{ displayText(item.username, '系统') }} · {{ formatDashboardRoutePath(item.path) }}
                 </span>
               </div>
-              <span class="text-[12px] text-[var(--ez-text-light)]">
+              <span class="text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
                 {{ formatDashboardDateTime(item.created_at) }}
               </span>
             </div>
-            <div class="mt-2 flex items-center gap-4 text-[12px] text-[var(--ez-text-light)]">
+            <div class="mt-2 flex items-center gap-4 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
               <span>状态码 {{ item.status_code }}</span>
               <span>耗时 {{ item.latency_ms }} ms</span>
             </div>
           </article>
         </div>
-        <NEmpty v-else description="还没有操作日志" />
+        <EmptyState v-else class="dash-empty-state" title="还没有操作日志" description="系统记录到操作后会显示在这里。" />
       </NCard>
 
       <section class="grid gap-5">
@@ -177,7 +178,7 @@ const {
               <div class="flex items-center justify-between gap-2">
                 <div class="min-w-0">
                   <div class="flex items-center gap-2">
-                    <span class="text-[13px] font-medium text-[var(--ez-text-main)]">
+                    <span class="text-[var(--ez-text-sm)] font-medium text-[var(--ez-text-main)]">
                       {{ displayText(item.username) }}
                     </span>
                     <NTag
@@ -189,18 +190,18 @@ const {
                       {{ getLoginStatusLabel(item.status) }}
                     </NTag>
                   </div>
-                  <p class="mt-1 truncate text-[12px] text-[var(--ez-text-light)]">
+                  <p class="mt-1 truncate text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
                     {{ displayText(item.message, '登录状态已记录') }}
                   </p>
                 </div>
-                <span class="text-[12px] text-[var(--ez-text-light)]">{{ displayText(item.ip) }}</span>
+                <span class="text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">{{ displayText(item.ip) }}</span>
               </div>
-              <p class="mt-2 text-[12px] text-[var(--ez-text-light)]">
+              <p class="mt-2 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
                 {{ formatDashboardDateTime(item.created_at) }}
               </p>
             </article>
           </div>
-          <NEmpty v-else description="还没有登录记录" />
+          <EmptyState v-else class="dash-empty-state" title="还没有登录记录" description="用户登录后会显示最近状态。" />
         </NCard>
 
         <NCard class="ez-card-elevated">
@@ -219,13 +220,13 @@ const {
               :key="item.id"
               class="dash-log-row"
             >
-              <p class="text-[13px] font-medium text-[var(--ez-text-main)]">{{ displayText(item.title) }}</p>
-              <p class="mt-1 text-[12px] text-[var(--ez-text-light)]">
+              <p class="text-[var(--ez-text-sm)] font-medium text-[var(--ez-text-main)]">{{ displayText(item.title) }}</p>
+              <p class="mt-1 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
                 {{ formatDashboardDateTime(item.updated_at) }}
               </p>
             </article>
           </div>
-          <NEmpty v-else description="当前没有启用中的公告" />
+          <EmptyState v-else class="dash-empty-state" title="当前没有启用中的公告" description="发布并启用公告后会显示在这里。" />
         </NCard>
       </section>
     </section>
@@ -238,25 +239,30 @@ const {
 }
 
 .dash-card-title {
-  font-size: 16px;
+  font-size: var(--ez-text-lg);
   font-weight: 600;
   color: var(--ez-text-main);
 }
 
+.dash-empty-state {
+  --empty-state-min-height: 144px;
+  --empty-state-padding: 22px 16px;
+}
+
 .dash-log-row {
-  border-radius: 12px;
+  border-radius: var(--ez-radius-md);
   border: 1px solid var(--ez-border);
   padding: 12px 14px;
   transition: all 0.2s ease;
 }
 
 .dash-log-row:hover {
-  border-color: #CBD5E1;
-  background: #FAFBFD;
+  border-color: var(--ez-border);
+  background: var(--ez-brand-soft);
 }
 
 .dash-log-row--flat {
-  background: #F6F8FB;
+  background: var(--ez-page-bg);
   border-color: transparent;
 }
 

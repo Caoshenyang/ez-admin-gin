@@ -1,7 +1,6 @@
 import http from '@/api/http'
 import type { ApiResponse } from '@/api/types'
 import type {
-  NotificationItem,
   NotificationListQuery,
   NotificationListResponse,
   UnreadCountResponse,

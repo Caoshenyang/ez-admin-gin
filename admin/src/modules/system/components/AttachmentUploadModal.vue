@@ -27,7 +27,7 @@ const formModel = defineModel<AttachmentUploadFormModel>('model', { required: tr
     :show="show"
     preset="card"
     title="上传附件"
-    class="max-w-[620px] rounded-2xl"
+    class="max-w-[620px] rounded-[var(--ez-radius-2xl)]"
     :bordered="false"
     @update:show="(value) => $emit('update:show', value)"
   >
@@ -59,7 +59,7 @@ const formModel = defineModel<AttachmentUploadFormModel>('model', { required: tr
         </NUpload>
       </NFormItem>
 
-      <div class="flex justify-end gap-3">
+      <div class="ez-modal-footer">
         <NButton @click="$emit('update:show', false)">取消</NButton>
         <NButton type="primary" :loading="saving" @click="$emit('submit')">上传并入库</NButton>
       </div>

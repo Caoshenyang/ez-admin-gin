@@ -28,7 +28,6 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
-// rowProps 函数。
 function rowProps(row: OperationLogItem) {
   return {
     class: 'operation-table-row',
@@ -118,7 +117,7 @@ const columns: DataTableColumns<OperationLogItem> = [
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <TableStatsBar>
-      <span class="text-sm text-[var(--ez-text-sub)]">共 {{ total }} 条</span>
+      <span>共 {{ total }} 条</span>
       <template #actions>
         <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
       </template>
@@ -134,9 +133,10 @@ const columns: DataTableColumns<OperationLogItem> = [
       :row-key="(row: OperationLogItem) => row.id"
       :row-props="rowProps"
       :bordered="false"
+      :scroll-x="980"
     />
 
-    <div class="flex items-center justify-between border-t border-[var(--ez-border)] px-4 py-3 text-sm text-[var(--ez-text-sub)]">
+    <div class="ez-table-footer">
       <span>共 {{ total }} 条</span>
       <NPagination
         :page="page"

@@ -21,8 +21,8 @@ defineProps<{
         <NIcon :component="heroIcon" :size="18" />
       </div>
       <div>
-        <p class="text-[16px] font-semibold text-[var(--ez-text-main)]">系统概览</p>
-        <p class="mt-0.5 text-[12px] text-[var(--ez-text-light)]">{{ statusText }}</p>
+        <p class="text-[var(--ez-text-lg)] font-semibold text-[var(--ez-text-main)]">系统概览</p>
+        <p class="mt-0.5 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">{{ statusText }}</p>
       </div>
     </div>
 
@@ -60,7 +60,7 @@ defineProps<{
 .overview-panel {
   padding: 28px;
   background: linear-gradient(135deg, var(--ez-brand-soft) 0%, var(--ez-accent-blue-soft) 100%);
-  border-radius: 18px;
+  border-radius: var(--ez-radius-xl);
 }
 
 .overview-panel__icon {
@@ -69,9 +69,9 @@ defineProps<{
   justify-content: center;
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--ez-radius-md);
   background: linear-gradient(135deg, var(--ez-brand) 0%, var(--ez-brand-pressed) 100%);
-  color: #ffffff;
+  color: var(--ez-on-brand);
   flex-shrink: 0;
 }
 
@@ -84,7 +84,7 @@ defineProps<{
 
 .overview-cell {
   background: var(--ez-card-bg);
-  border-radius: 14px;
+  border-radius: var(--ez-radius-lg);
   padding: 16px 18px;
   box-shadow: var(--ez-shadow-sm);
   display: flex;
@@ -98,18 +98,18 @@ defineProps<{
 }
 
 .overview-cell__label {
-  font-size: 12px;
+  font-size: var(--ez-text-xs);
   color: var(--ez-text-sub);
 }
 
 .overview-cell__value {
-  font-size: 15px;
+  font-size: var(--ez-text-md);
   font-weight: 600;
   color: var(--ez-text-main);
 }
 
 .overview-cell__hint {
-  font-size: 11px;
+  font-size: var(--ez-text-xs);
   color: var(--ez-text-light);
 }
 

@@ -215,3 +215,17 @@
 - 持久化：`sys_notification` 表（PostgreSQL JSONB），支持历史查询、分页、重启后未读计数不丢
 - 前端：Pinia store 管理 WS 连接生命周期，AdminLayout 挂载时连接、卸载时断开
 - 通知抽屉：NDrawer 组件，显示通知列表、未读标记、全部已读按钮
+
+---
+
+## ADR-017：暂停新增功能，进入质量与 UI 收口阶段
+
+**状态：** 已采纳
+
+**原因：** 项目已经完成测试、安全、可观测性、E2E、发布治理、暗色模式和 WebSocket 通知等关键能力。继续新增功能会扩大维护面，而当前更有价值的是统一 UI、修复基础红线、清理半成品样式变量化和保持验证闭环。
+
+**决策：**
+- Phase 6 剩余的“业务模板”暂停推进。
+- 当前阶段执行 `docs/project/QUALITY_UI_STABILIZATION_PLAN.md`。
+- 不新增业务功能，不扩大模块边界，不顺手重构无关代码。
+- 每次任务结束必须更新 `PHASE_STATUS.md`，必要时同步 `TESTING_STRATEGY.md`。

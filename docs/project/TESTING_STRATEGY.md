@@ -74,7 +74,7 @@ server/tests/
 
 ## 当前测试清单
 
-### 真实可跑（非 t.Skip）— 共 50 个后端 + 43 个 E2E（全部通过）
+### 真实可跑（非 t.Skip）— 共 51 个后端 + 43 个 E2E（全部通过）
 
 **admin/e2e/auth/login.spec.ts (5) — 已验证:**
 - Login Flow: redirects to login page when not authenticated
@@ -133,11 +133,12 @@ server/tests/
 - Token Expiration: valid token allows normal page access
 - Token Expiration: removing token redirects to login on next navigation
 
-**server/tests/api/auth_api_test.go (4):**
+**server/tests/api/auth_api_test.go (5):**
 - TestLoginSuccess
 - TestLoginWrongPassword
 - TestUnauthorizedAccessWithoutToken
 - TestUnauthorizedAccessWithInvalidToken
+- TestLoginRateLimiting
 
 **server/tests/api/auth_refresh_test.go (6):**
 - TestRefreshSuccess
@@ -201,9 +202,11 @@ server/tests/
 - 多角色权限联合测试 (1):
   - TestMultiRolePermissionUnion
 
-### t.Skip / TODO — 0 个
+### t.Skip / TODO
 
-（Phase 1 全部完成，无剩余 t.Skip）
+- `server/tests/testutil/app.go` 中存在依赖 DB / Redis 可用性的条件跳过，只用于集成测试环境不可用时跳过。
+
+当前无已知测试 TODO；不得再把 TODO 伪装成完成状态。
 
 ### 已修复的业务代码 Bug
 

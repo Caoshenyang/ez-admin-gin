@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton, NSpace } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import RoleFormModal from '../components/RoleFormModal.vue'
 import RoleListPanel from '../components/RoleListPanel.vue'
 import RolePermissionPanel from '../components/RolePermissionPanel.vue'
@@ -51,27 +52,24 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>角色权限</h1>
-          <p>维护角色本身，以及角色拥有的菜单、按钮和接口权限。</p>
-        </div>
-
-        <NSpace>
-          <NButton v-if="canUse('system:role:create')" type="primary" @click="openCreate">
-            + 新增角色
-          </NButton>
-          <NButton type="primary" :loading="saving" :disabled="!canEditSelectedRole" @click="handleSavePermissions">
-            保存权限
-          </NButton>
-        </NSpace>
-      </div>
+      <PageHeader title="角色权限" description="维护角色本身，以及角色拥有的菜单、按钮和接口权限。">
+        <template #actions>
+          <NSpace>
+            <NButton v-if="canUse('system:role:create')" type="primary" @click="openCreate">
+              + 新增角色
+            </NButton>
+            <NButton type="primary" :loading="saving" :disabled="!canEditSelectedRole" @click="handleSavePermissions">
+              保存权限
+            </NButton>
+          </NSpace>
+        </template>
+      </PageHeader>
 
       <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}
       </NAlert>
 
-      <div class="grid min-h-0 flex-1 grid-cols-[320px_minmax(0,1fr)] gap-4 overflow-hidden">
+      <div class="grid min-h-0 flex-1 grid-cols-[320px_minmax(0,1fr)] gap-4 overflow-hidden max-[1080px]:grid-cols-1">
         <RoleListPanel
           v-model:query="query"
           :can-use="canUse"

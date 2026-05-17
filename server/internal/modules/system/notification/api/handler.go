@@ -35,7 +35,7 @@ type WSHandler struct {
 }
 
 func NewWSHandler(service *notiapp.Service, hub interface{ Run() }, token *authnPlatform.Manager, log *zap.Logger) *WSHandler {
-	return &WSHandler{service: service, hub: hub, log: log}
+	return &WSHandler{service: service, hub: hub, token: token, log: log}
 }
 
 // List godoc

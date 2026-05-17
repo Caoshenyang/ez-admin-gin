@@ -19,7 +19,6 @@ import {
   type ConfigFormModel,
 } from './config-page.utils'
 
-// 系统配置管理页面组合式函数，封装配置列表、创建、编辑、状态切换等逻辑
 export function useConfigPage() {
   const message = useMessage()
   const { canUse } = usePermission()
@@ -60,7 +59,6 @@ export function useConfigPage() {
     openEdit(toConfigFormModel(row))
   }
 
-  // 配置列表表格列定义
   const columns: DataTableColumns<ConfigItem> = [
     {
       title: '分组',
@@ -160,7 +158,6 @@ export function useConfigPage() {
     },
   ]
 
-  // 提交配置表单（新建或更新）
   async function submitForm() {
     if (formMode.value === 'create') {
       await createConfig(buildConfigCreatePayload(formModel))

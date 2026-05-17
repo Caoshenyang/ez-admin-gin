@@ -38,7 +38,7 @@ export const useThemeStore = defineStore('theme', () => {
   function cycleMode() {
     const order: ThemeMode[] = ['light', 'dark', 'auto']
     const idx = order.indexOf(mode.value)
-    mode.value = order[(idx + 1) % order.length]
+    mode.value = order[(idx + 1) % order.length] ?? 'light'
   }
 
   function applyHtmlClass() {

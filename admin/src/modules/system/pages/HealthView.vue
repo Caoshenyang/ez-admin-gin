@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton, NCard, NTag } from 'naive-ui'
+
+import PageHeader from '@/components/PageHeader.vue'
 import { useHealthPage } from '../composables/useHealthPage'
 
 const {
@@ -20,29 +22,26 @@ const {
 <template>
   <main class="admin-page admin-page-scroll">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <h1 class="text-[28px] font-bold text-[var(--ez-text-main)]">系统状态</h1>
-          <p>登录后检查后台运行环境、数据库和 Redis 的连通性。</p>
-        </div>
-
-        <NButton type="primary" :loading="loading" @click="void loadHealth()">
-          刷新状态
-        </NButton>
-      </div>
+      <PageHeader title="系统状态" description="登录后检查后台运行环境、数据库和 Redis 的连通性。">
+        <template #actions>
+          <NButton type="primary" :loading="loading" @click="void loadHealth()">
+            刷新状态
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert
         v-if="errorMessage"
         type="error"
         title="状态检查失败"
-        class="rounded-lg"
+        class="rounded-[var(--ez-radius-sm)]"
         :bordered="false"
       >
         {{ errorMessage }}
       </NAlert>
 
       <div class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.9fr)]">
-        <NCard class="rounded-lg" :bordered="false" content-class="p-6">
+        <NCard class="rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="p-6">
           <div class="flex h-full flex-col gap-5">
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -66,7 +65,7 @@ const {
             <article
               v-for="item in dependencyCards"
               :key="item.key"
-              class="rounded-2xl border border-[var(--ez-border)] bg-[var(--ez-page-bg)] px-5 py-4"
+              class="rounded-[var(--ez-radius-2xl)] border border-[var(--ez-border)] bg-[var(--ez-page-bg)] px-5 py-4"
             >
               <div class="flex items-center justify-between gap-3">
                 <span class="text-sm font-semibold text-[var(--ez-text-main)]">{{ item.label }}</span>
@@ -84,20 +83,20 @@ const {
             </article>
           </div>
 
-          <div class="rounded-2xl bg-[var(--ez-panel-dark)] px-5 py-4 text-white">
+          <div class="rounded-[var(--ez-radius-2xl)] bg-[var(--ez-panel-dark)] px-5 py-4 text-[var(--ez-on-dark)]">
             <div class="flex items-center justify-between gap-4">
               <div>
-                <p class="text-xs uppercase tracking-[0.2em] text-white/55">Last Check</p>
+                <p class="text-xs uppercase tracking-[0.2em] text-[var(--ez-on-dark-muted)]">Last Check</p>
                 <p class="mt-2 text-base font-semibold">{{ lastCheckedLabel }}</p>
               </div>
-              <p class="text-sm text-white/72">{{ getStatusText(health?.database) }}</p>
+              <p class="text-sm text-[var(--ez-on-dark-sub)]">{{ getStatusText(health?.database) }}</p>
             </div>
             </div>
           </div>
         </NCard>
 
         <section class="grid gap-4">
-          <NCard class="rounded-lg" :bordered="false" content-class="p-5">
+          <NCard class="rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="p-5">
             <div class="flex flex-col gap-3">
               <div>
                 <p class="text-sm font-semibold text-[var(--ez-text-main)]">运行环境</p>
@@ -106,14 +105,14 @@ const {
                 </p>
               </div>
 
-              <div class="rounded-xl bg-[var(--ez-page-bg)] px-4 py-3">
+              <div class="rounded-[var(--ez-radius-md)] bg-[var(--ez-page-bg)] px-4 py-3">
                 <p class="text-xs uppercase tracking-[0.18em] text-[var(--ez-text-light)]">Environment</p>
                 <p class="mt-2 text-2xl font-bold text-[var(--ez-text-main)]">{{ health?.env || 'unknown' }}</p>
               </div>
             </div>
           </NCard>
 
-          <NCard class="rounded-lg" :bordered="false" content-class="p-5">
+          <NCard class="rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="p-5">
             <div class="flex flex-col gap-3">
               <div>
                 <p class="text-sm font-semibold text-[var(--ez-text-main)]">接口职责</p>
@@ -125,7 +124,7 @@ const {
               <article
                 v-for="endpoint in endpointCards"
                 :key="endpoint.path"
-                class="rounded-xl border border-[var(--ez-border)] px-4 py-3"
+                class="rounded-[var(--ez-radius-md)] border border-[var(--ez-border)] px-4 py-3"
               >
                 <div class="flex items-center justify-between gap-3">
                   <span class="font-semibold text-[var(--ez-text-main)]">{{ endpoint.title }}</span>

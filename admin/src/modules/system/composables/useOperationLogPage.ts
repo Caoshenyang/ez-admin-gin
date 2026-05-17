@@ -6,7 +6,6 @@ import type { OperationLogItem } from '../types/operation-log'
 import type { OperationLogPageQuery } from '../types/operation-log-page'
 import { defaultOperationLogQuery, normalizeOperationLogQuery } from './operation-log-page.utils'
 
-// 操作日志管理页面组合式函数，封装日志列表查询、详情查看等逻辑
 export function useOperationLogPage() {
   const detailVisible = ref(false)
   const detailRow = ref<OperationLogItem | null>(null)
@@ -32,7 +31,6 @@ export function useOperationLogPage() {
     closeDetail()
   }
 
-  // 打开日志详情弹窗
   function openDetail(row: OperationLogItem) {
     detailRow.value = row
     detailVisible.value = true
@@ -48,7 +46,6 @@ export function useOperationLogPage() {
     closeDetail()
   }
 
-  // 关闭详情弹窗，并清空当前选中的日志行
   function closeDetail() {
     detailVisible.value = false
     detailRow.value = null

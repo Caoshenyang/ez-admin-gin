@@ -30,7 +30,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 </script>
 
 <template>
-  <NCard class="ez-card min-h-0 rounded-lg" :bordered="false" content-class="ez-card-content-fill">
+  <NCard class="ez-card min-h-0 rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
     <div class="flex h-full flex-col overflow-hidden">
       <div class="border-b border-[var(--ez-border)] px-5 py-5">
         <div class="flex items-start justify-between gap-4">
@@ -53,7 +53,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
           <NTabPane name="menu" tab="菜单权限">
             <div class="permission-toolbar">
               <NCheckbox :checked="checkedTotal > 0" @update:checked="$emit('checkAll')">全选</NCheckbox>
-              <NButton text type="primary" @click="$emit('checkAll')">展开全部</NButton>
+              <NButton text type="primary" @click="$emit('checkAll')">全选可用节点</NButton>
               <NButton text type="primary" @click="$emit('clearAll')">清空全部</NButton>
             </div>
 
@@ -94,7 +94,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
             </div>
 
             <div class="space-y-3">
-              <div v-for="row in permissionRows" :key="row.id" class="grid grid-cols-[130px_minmax(0,1fr)_80px] items-center gap-3">
+              <div v-for="row in permissionRows" :key="row.id" class="grid grid-cols-[130px_minmax(0,1fr)_80px] items-center gap-3 max-[720px]:grid-cols-1">
                 <NSelect v-model:value="row.method" :options="methodOptions" :disabled="!canEditSelectedRole" />
                 <NInput v-model:value="row.path" placeholder="/api/v1/system/users" :disabled="!canEditSelectedRole" />
                 <NButton size="small" type="error" ghost :disabled="!canEditSelectedRole" @click="$emit('removePermission', row.id)">
@@ -122,8 +122,8 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
   gap: 16px;
   margin-bottom: 16px;
   padding: 10px 12px;
-  border-radius: 6px;
-  background: #f7fafc;
+  border-radius: var(--ez-radius-xs);
+  background: var(--ez-page-bg);
 }
 
 .permission-summary {
@@ -131,7 +131,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
   gap: 32px;
   margin: 0 20px 20px;
   padding: 16px 18px;
-  border-radius: 6px;
+  border-radius: var(--ez-radius-xs);
   background: var(--ez-brand-soft);
   color: var(--ez-brand);
   font-weight: 700;

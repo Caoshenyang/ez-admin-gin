@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import { STATUS_FILTER_OPTIONS } from '@/constants/status'
 import AttachmentEditModal from '../components/AttachmentEditModal.vue'
 import AttachmentFilterBar from '../components/AttachmentFilterBar.vue'
@@ -43,22 +44,18 @@ const {
   uploadRules,
 } = useAttachmentPage()
 
-// copyURL 函数。
 function copyURL(url: string) {
   void navigator.clipboard.writeText(url)
 }
 
-// handleUploadSubmit 函数。
 async function handleUploadSubmit() {
   await submitUpload()
 }
 
-// handleEditSubmitAction 函数。
 async function handleEditSubmitAction() {
   await handleEditSubmit(submitEdit)
 }
 
-// handleStatusChange 函数。
 async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0], status: Parameters<typeof handleToggleStatus>[1]) {
   await handleToggleStatus(row, status)
 }
@@ -67,16 +64,13 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>附件中心</h1>
-          <p>复用底层文件上传链路，把附件整理成可分类、可检索、可业务复用的统一资源。</p>
-        </div>
-
-        <NButton v-if="canUse('system:attachment:upload')" type="primary" @click="openUploadModal">
-          上传附件
-        </NButton>
-      </div>
+      <PageHeader title="附件中心" description="复用底层文件上传链路，把附件整理成可分类、可检索、可业务复用的统一资源。">
+        <template #actions>
+          <NButton v-if="canUse('system:attachment:upload')" type="primary" @click="openUploadModal">
+            上传附件
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}

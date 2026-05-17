@@ -38,7 +38,7 @@ const themeTooltip = computed(() => {
 
 <template>
   <NLayoutHeader bordered class="flex h-16 items-center justify-between bg-[var(--ez-card-bg)] px-6">
-    <p class="text-[13px] text-[var(--ez-text-sub)]">{{ breadcrumbText }}</p>
+    <p class="text-[var(--ez-text-sm)] text-[var(--ez-text-sub)]">{{ breadcrumbText }}</p>
 
     <div class="flex items-center gap-1.5">
       <NInput
@@ -53,7 +53,7 @@ const themeTooltip = computed(() => {
       </NInput>
 
       <NBadge :value="notificationStore.unreadCount" :max="99">
-        <NButton quaternary circle class="h-9 w-9 rounded-[10px] !text-[var(--ez-text-sub)] hover:!text-[var(--ez-text-main)]" @click="notificationStore.openDrawer()">
+        <NButton quaternary circle class="h-9 w-9 rounded-[var(--ez-radius-md)] !text-[var(--ez-text-sub)] hover:!text-[var(--ez-text-main)]" @click="notificationStore.openDrawer()">
           <NIcon :component="NotificationsOutline" :size="18" />
         </NButton>
       </NBadge>
@@ -62,7 +62,7 @@ const themeTooltip = computed(() => {
 
       <NTooltip trigger="hover">
         <template #trigger>
-          <NButton quaternary circle class="h-9 w-9 rounded-[10px] !text-[var(--ez-text-sub)] hover:!text-[var(--ez-text-main)]" @click="themeStore.cycleMode()">
+          <NButton quaternary circle class="h-9 w-9 rounded-[var(--ez-radius-md)] !text-[var(--ez-text-sub)] hover:!text-[var(--ez-text-main)]" @click="themeStore.cycleMode()">
             <NIcon :component="themeIcon" :size="18" />
           </NButton>
         </template>
@@ -72,9 +72,9 @@ const themeTooltip = computed(() => {
       <NDropdown trigger="click" :options="dropdownOptions" @select="(key) => emit('userAction', key)">
         <NButton
           quaternary
-          class="gap-1.5 rounded-xl border border-[var(--ez-border)] px-3.5 py-2 text-[var(--ez-text-main)] transition-colors hover:border-[var(--ez-brand)] hover:bg-[var(--ez-page-bg)]"
+          class="gap-1.5 rounded-[var(--ez-radius-xl)] border border-[var(--ez-border)] px-3.5 py-2 text-[var(--ez-text-main)] transition-colors hover:border-[var(--ez-brand)] hover:bg-[var(--ez-page-bg)]"
         >
-          <span class="text-[13px] font-medium">{{ displayName }}</span>
+          <span class="text-[var(--ez-text-sm)] font-medium">{{ displayName }}</span>
           <NIcon :component="ChevronDownOutline" :size="14" class="text-[var(--ez-text-light)]" />
         </NButton>
       </NDropdown>

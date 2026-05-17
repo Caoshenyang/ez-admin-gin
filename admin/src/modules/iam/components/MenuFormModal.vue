@@ -145,7 +145,7 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--ez-radius-xs);
   background: var(--ez-segment-bg);
 }
 
@@ -157,10 +157,10 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
 .type-segment__btn {
   padding: 4px 20px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--ez-radius-2xs);
   background: transparent;
   color: var(--ez-text-muted);
-  font-size: 13px;
+  font-size: var(--ez-text-sm);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }

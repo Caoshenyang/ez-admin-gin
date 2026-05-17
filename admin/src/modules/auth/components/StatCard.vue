@@ -15,8 +15,8 @@ defineProps<{
   <div class="stat-card">
     <div class="flex items-start justify-between">
       <div>
-        <p class="text-[13px] font-medium text-[var(--ez-text-light)]">{{ label }}</p>
-        <p class="mt-2 text-[32px] font-bold tracking-tight text-[var(--ez-text-main)]">
+        <p class="text-[var(--ez-text-sm)] font-medium text-[var(--ez-text-light)]">{{ label }}</p>
+        <p class="mt-2 text-[var(--ez-text-hero)] font-bold tracking-tight text-[var(--ez-text-main)]">
           {{ value }}
         </p>
       </div>
@@ -24,14 +24,14 @@ defineProps<{
         <NIcon :component="icon" :size="22" />
       </div>
     </div>
-    <p class="mt-3 text-[12px] text-[var(--ez-text-light)]">{{ hint }}</p>
+    <p class="mt-3 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">{{ hint }}</p>
   </div>
 </template>
 
 <style scoped>
 .stat-card {
   background: var(--ez-card-bg);
-  border-radius: 18px;
+  border-radius: var(--ez-radius-xl);
   padding: 24px;
   border: 1px solid var(--ez-border);
   box-shadow: var(--ez-shadow-md);
@@ -42,7 +42,7 @@ defineProps<{
 }
 
 .stat-card:hover {
-  border-color: rgba(20, 184, 166, 0.22);
+  border-color: var(--ez-brand-border);
   box-shadow: var(--ez-shadow-lg);
   transform: translateY(-2px);
 }
@@ -53,7 +53,7 @@ defineProps<{
   justify-content: center;
   width: 48px;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--ez-radius-lg);
   flex-shrink: 0;
 }
 </style>

@@ -3,10 +3,8 @@ export const FileStatus = {
   Disabled: 2,
 } as const
 
-// FileStatus 类型定义。
 export type FileStatus = (typeof FileStatus)[keyof typeof FileStatus]
 
-// FileItem 类型定义。
 export interface FileItem {
   id: number
   storage: string
@@ -25,7 +23,6 @@ export interface FileItem {
   updated_at: string
 }
 
-// FileListQuery 类型定义。
 export interface FileListQuery {
   page: number
   page_size: number
@@ -34,7 +31,6 @@ export interface FileListQuery {
   status?: FileStatus | 0
 }
 
-// FileListResponse 类型定义。
 export interface FileListResponse {
   items: FileItem[]
   total: number

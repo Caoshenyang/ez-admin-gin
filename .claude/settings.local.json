@@ -141,7 +141,12 @@
       "Bash(pnpm add *)",
       "Bash(pnpm generate:api)",
       "Bash(pnpm check:api-types)",
-      "Bash(make generate-types *)"
+      "Bash(make generate-types *)",
+      "Bash(pnpm remove *)",
+      "Bash(find admin/src/modules/*/pages -type f)",
+      "Bash(git status *)",
+      "Bash(git commit *)",
+      "Bash(grep -rn 'text-\\\\[.*px\\\\]\\\\|rounded-\\\\[.*px\\\\]\\\\|font-size:.*px\\\\|border-radius:.*px\\\\|background:.*#\\\\|background-color:.*#\\\\|: #[0-9A-Fa-f]\\\\{3,8\\\\}\\\\b\\\\|border-color:.*#\\\\|box-shadow:.*px\\\\|#F6F8FB\\\\|#FAFBFD\\\\|#f7fafc\\\\|#0D8B82\\\\|#0F766E\\\\|#CBD5E1' /Users/pzhen/Documents/workspace/csy/ez-admin-gin/admin/src/modules/iam/ --include=\"*.vue\")"
     ]
   }
 }

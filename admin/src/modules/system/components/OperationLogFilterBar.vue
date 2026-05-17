@@ -39,7 +39,7 @@ const emit = defineEmits<{
         @keyup.enter="emit('search')"
       />
       <NSelect :value="props.success" :options="successOptions" @update:value="emit('update:success', $event ?? '')" />
-      <div class="flex gap-3 xl:justify-end">
+      <div class="ez-filter-actions">
         <NButton type="primary" @click="emit('search')">查询</NButton>
         <NButton @click="emit('reset')">重置</NButton>
       </div>

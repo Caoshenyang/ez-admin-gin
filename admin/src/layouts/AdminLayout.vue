@@ -71,7 +71,6 @@ const dropdownOptions: DropdownOption[] = [
   },
 ]
 
-// syncShellByRoute 函数。
 function syncShellByRoute() {
   if (route.path === '/login') {
     return
@@ -88,7 +87,6 @@ function syncShellByRoute() {
   shellStore.ensureExpandedMenuKeys(collectExpandedMenuKeysByPath(route.path))
 }
 
-// navigateTo 函数。
 function navigateTo(path: string) {
   if (!path) {
     return
@@ -102,12 +100,10 @@ function navigateTo(path: string) {
   void router.push(path)
 }
 
-// handleMenuExpand 函数。
 function handleMenuExpand(keys: Array<string | number>) {
   shellStore.setExpandedMenuKeys(keys.map(String))
 }
 
-// handleMenuUpdate 函数。
 function handleMenuUpdate(key: string | number) {
   const option = findMenuOptionByKey(String(key))
   if (!option || option.menuType !== 2 || !option.routePath) {
@@ -117,7 +113,6 @@ function handleMenuUpdate(key: string | number) {
   navigateTo(option.routePath)
 }
 
-// handleCloseTab 函数。
 function handleCloseTab(path: string) {
   shellStore.closeTab(path)
 
@@ -127,7 +122,6 @@ function handleCloseTab(path: string) {
   }
 }
 
-// handleCloseCurrentTab 函数。
 function handleCloseCurrentTab() {
   const current = shellStore.openTabs.find((tab) => tab.to === route.path)
   if (!current?.closable) {
@@ -138,23 +132,19 @@ function handleCloseCurrentTab() {
   handleCloseTab(current.to)
 }
 
-// handleCloseOtherTabs 函数。
 function handleCloseOtherTabs() {
   shellStore.closeOtherTabs(route.path)
 }
 
-// handleCloseAllTabs 函数。
 function handleCloseAllTabs() {
   shellStore.closeAllTabs()
   navigateTo('/dashboard')
 }
 
-// handleRefresh 函数。
 function handleRefresh() {
   shellStore.refreshRoute(route.fullPath)
 }
 
-// handleUserAction 函数。
 async function handleUserAction(key: string | number) {
   if (key === 'account-profile') {
     navigateTo('/account/profile')
@@ -185,7 +175,6 @@ watch(
   { immediate: true },
 )
 
-// handleAuthUserUpdate 函数。
 function handleAuthUserUpdate() {
   // 本地用户信息变更时，computed 会自动更新；这里仅触发一次路由同步，确保标签标题可刷新。
   syncShellByRoute()

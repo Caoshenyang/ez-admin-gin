@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import DepartmentFilterBar from '../components/DepartmentFilterBar.vue'
 import DepartmentFormModal from '../components/DepartmentFormModal.vue'
 import DepartmentTable from '../components/DepartmentTable.vue'
@@ -32,16 +33,13 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>部门管理</h1>
-          <p>维护组织树结构，为用户归属与数据权限提供稳定边界。</p>
-        </div>
-
-        <NButton v-if="canUse('system:department:create')" type="primary" @click="openCreate">
-          + 新增部门
-        </NButton>
-      </div>
+      <PageHeader title="部门管理" description="维护组织树结构，为用户归属与数据权限提供稳定边界。">
+        <template #actions>
+          <NButton v-if="canUse('system:department:create')" type="primary" @click="openCreate">
+            + 新增部门
+          </NButton>
+        </template>
+      </PageHeader>
 
       <DepartmentFilterBar
         :keyword="query.keyword"

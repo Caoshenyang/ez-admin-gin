@@ -1,31 +1,30 @@
 <script setup lang="ts">
-import { NButton, NCard, NEmpty } from "naive-ui";
+import { NCard, NTag } from 'naive-ui'
+
+import EmptyState from '@/components/EmptyState.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 defineProps<{
-  title: string;
-  description: string;
-}>();
+  title: string
+  description: string
+}>()
 </script>
 
 <template>
   <main class="admin-page">
     <section class="admin-page-section gap-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-[28px] font-bold text-[var(--ez-text-main)]">{{ title }}</h1>
-          <p class="mt-1 text-sm text-[var(--ez-text-sub)]">{{ description }}</p>
-        </div>
+      <PageHeader :title="title" :description="description">
+        <template #actions>
+          <NTag type="info" :bordered="false">后续接入</NTag>
+        </template>
+      </PageHeader>
 
-        <NButton tertiary type="primary"> 后续接入 </NButton>
-      </div>
-
-      <NCard class="ez-card min-h-0 flex-1 rounded-lg" :bordered="false" content-class="ez-card-content-fill">
-        <div class="flex h-full items-center justify-center">
-          <NEmpty description="本页会在后续小节继续补齐">
-            <template #extra>
-              <p class="text-sm text-[var(--ez-text-sub)]">当前先验证后台布局、路由出口和工作标签。</p>
-            </template>
-          </NEmpty>
+      <NCard class="ez-card min-h-0 flex-1 rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
+        <div class="flex h-full items-center justify-center p-4">
+          <EmptyState
+            title="本页待接入"
+            description="当前先验证后台布局、路由出口和工作标签，后续小节会继续补齐业务内容。"
+          />
         </div>
       </NCard>
     </section>

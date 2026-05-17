@@ -17,8 +17,10 @@ const query = defineModel<NoticeListQuery>('query', { required: true })
     <NSpace align="center" :wrap="true">
       <NInput v-model:value="query.keyword" clearable placeholder="公告标题" class="w-56" @keyup.enter="$emit('search')" />
       <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-36" />
-      <NButton type="primary" @click="$emit('search')">查询</NButton>
-      <NButton @click="$emit('reset')">重置</NButton>
+      <div class="ez-filter-actions">
+        <NButton type="primary" @click="$emit('search')">查询</NButton>
+        <NButton @click="$emit('reset')">重置</NButton>
+      </div>
     </NSpace>
   </div>
 </template>

@@ -31,8 +31,10 @@ defineEmits<{
       <NInput :value="bizType" clearable placeholder="业务类型" class="w-40" @update:value="(value) => $emit('update:bizType', value)" @keyup.enter="$emit('search')" />
       <NSelect :value="ext" :options="extOptions" class="w-36" @update:value="(value) => $emit('update:ext', String(value ?? ''))" />
       <NSelect :value="status" :options="statusOptions" class="w-32" @update:value="(value) => $emit('update:status', Number(value ?? 0))" />
-      <NButton type="primary" @click="$emit('search')">查询</NButton>
-      <NButton quaternary @click="$emit('reset')">重置</NButton>
+      <div class="ez-filter-actions">
+        <NButton type="primary" @click="$emit('search')">查询</NButton>
+        <NButton quaternary @click="$emit('reset')">重置</NButton>
+      </div>
     </NSpace>
   </div>
 </template>

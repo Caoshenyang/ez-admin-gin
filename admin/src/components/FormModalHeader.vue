@@ -11,9 +11,9 @@ defineEmits<{ close: [] }>()
 </script>
 
 <template>
-  <div class="relative overflow-hidden bg-[linear-gradient(135deg,#F4FDFA_0%,#F8FBFF_100%)] px-7 py-6">
-    <h2 class="text-[19px] font-bold text-[var(--ez-text-main)]">{{ title }}</h2>
-    <p v-if="subtitle" class="mt-2 max-w-[420px] text-[13px] leading-6 text-[var(--ez-text-sub)]">
+  <div class="relative overflow-hidden bg-[linear-gradient(135deg,var(--ez-brand-soft)_0%,var(--ez-card-bg)_100%)] px-7 py-6">
+    <h2 class="text-[var(--ez-text-xl)] font-bold text-[var(--ez-text-main)]">{{ title }}</h2>
+    <p v-if="subtitle" class="mt-2 max-w-[420px] text-[var(--ez-text-sm)] leading-6 text-[var(--ez-text-sub)]">
       {{ subtitle }}
     </p>
     <NButton

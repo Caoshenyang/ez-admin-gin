@@ -30,8 +30,10 @@ const emit = defineEmits<{
         @keyup.enter="emit('search')"
       />
       <NSelect :value="props.status" :options="statusOptions" class="w-36" @update:value="emit('update:status', $event as 0 | DepartmentStatus)" />
-      <NButton type="primary" @click="emit('search')">查询</NButton>
-      <NButton @click="emit('reset')">重置</NButton>
+      <div class="ez-filter-actions">
+        <NButton type="primary" @click="emit('search')">查询</NButton>
+        <NButton @click="emit('reset')">重置</NButton>
+      </div>
     </NSpace>
   </div>
 </template>

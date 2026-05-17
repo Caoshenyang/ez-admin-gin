@@ -18,7 +18,6 @@ import {
   type NoticeFormModel,
 } from './notice-page.utils'
 
-// 公告管理页面组合式函数，封装公告列表、创建、编辑、状态切换等逻辑
 export function useNoticePage() {
   const message = useMessage()
   const { canUse } = usePermission()
@@ -54,7 +53,6 @@ export function useNoticePage() {
     },
   })
 
-  // 公告列表表格列定义
   const columns: DataTableColumns<NoticeItem> = [
     {
       title: '标题',
@@ -148,7 +146,6 @@ export function useNoticePage() {
     },
   ]
 
-  // 提交公告表单（新建或更新）
   async function submitForm() {
     if (formMode.value === 'create') {
       await createNotice(buildNoticePayload(formModel))

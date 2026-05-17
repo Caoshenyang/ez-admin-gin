@@ -3,7 +3,6 @@ import { getLoginLogs } from '../api/login-log'
 import type { LoginLogItem, LoginLogListQuery } from '../types/login-log'
 import { defaultLoginLogQuery, normalizeLoginLogQuery } from './login-log-page.utils'
 
-// 登录日志页面组合式函数，统一封装查询、分页和刷新逻辑。
 export function useLoginLogPage() {
   const {
     items: logs,

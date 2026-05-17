@@ -6,6 +6,7 @@ import (
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	platformConfig "ez-admin-gin/server/internal/platform/config"
 	platformDatabase "ez-admin-gin/server/internal/platform/database"
+	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -36,9 +37,17 @@ type ServiceOptions struct {
 func NewServices(opts ServiceOptions) Services {
 	repo := authinfra.NewRepository(opts.DB)
 	transactor := platformDatabase.NewTransactor(opts.DB)
+	var lockChecker authapp.AccountLockChecker
+	if opts.Config != nil && opts.Redis != nil {
+		lockChecker = platformMiddleware.NewAccountLockChecker(
+			opts.Redis,
+			opts.Config.RateLimit.LoginLockoutThreshold,
+			opts.Config.RateLimit.LoginLockoutSec,
+		)
+	}
 
 	return Services{
-		Login:     authapp.NewLoginService(repo, opts.Token, nil, opts.Log),
+		Login:     authapp.NewLoginService(repo, opts.Token, lockChecker, opts.Log),
 		Refresh:   authapp.NewRefreshService(opts.RefreshStore, opts.Token),
 		Logout:    authapp.NewLogoutService(opts.RefreshStore, opts.Token),
 		Me:        authapp.NewMeService(),

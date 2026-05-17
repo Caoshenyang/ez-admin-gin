@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineSlots<{
+  actions?: () => unknown
+  default?: () => unknown
+}>()
 </script>
 
 <template>
@@ -6,7 +10,7 @@
     <div>
       <slot />
     </div>
-    <div>
+    <div v-if="$slots.actions">
       <slot name="actions" />
     </div>
   </div>

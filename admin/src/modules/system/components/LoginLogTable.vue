@@ -9,6 +9,7 @@ import {
 } from 'naive-ui'
 import { h } from 'vue'
 
+import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText, formatTime } from '@/utils/format'
 import { LoginLogStatus, type LoginLogItem } from '../types/login-log'
 
@@ -70,7 +71,7 @@ const columns: DataTableColumns<LoginLogItem> = [
     key: 'ip',
     width: 150,
     render(row) {
-      return h('span', { class: 'font-mono text-[13px] text-[var(--ez-text-sub)]' }, displayText(row.ip))
+      return h('span', { class: 'font-mono text-[var(--ez-text-sm)] text-[var(--ez-text-sub)]' }, displayText(row.ip))
     },
   },
   {
@@ -95,10 +96,12 @@ function rowProps(row: LoginLogItem) {
 
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
-    <div class="flex items-center justify-between border-b border-[var(--ez-border)] px-4 py-3">
-      <span class="text-sm text-[var(--ez-text-sub)]">共 {{ total }} 条</span>
-      <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
-    </div>
+    <TableStatsBar>
+      <span>共 {{ total }} 条</span>
+      <template #actions>
+        <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
+      </template>
+    </TableStatsBar>
 
     <NDataTable
       remote
@@ -110,9 +113,10 @@ function rowProps(row: LoginLogItem) {
       :row-key="(row: LoginLogItem) => row.id"
       :row-props="rowProps"
       :bordered="false"
+      :scroll-x="1010"
     />
 
-    <div class="flex items-center justify-between border-t border-[var(--ez-border)] px-4 py-3 text-sm text-[var(--ez-text-sub)]">
+    <div class="ez-table-footer">
       <span>共 {{ total }} 条</span>
       <NPagination
         :page="props.page"
@@ -129,6 +133,6 @@ function rowProps(row: LoginLogItem) {
 
 <style scoped>
 .log-table :deep(.log-table-row--failed .n-data-table-td) {
-  background: #fef2f2;
+  background: var(--ez-danger-bg);
 }
 </style>

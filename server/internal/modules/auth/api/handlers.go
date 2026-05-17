@@ -110,16 +110,14 @@ func (h *MeHandler) Me(c *gin.Context) {
 		return
 	}
 
-	userID, ok := middleware.CurrentUserID(c)
+	userID, ok := middleware.RequireUserID(c, h.log)
 	if !ok {
-		httpx.Error(c, errorsx.Unauthorized("请先登录"), h.log)
 		return
 	}
 
-	username, _ := middleware.CurrentUsername(c)
 	httpx.Success(c, authdomain.MeResponse{
 		UserID:   userID,
-		Username: username,
+		Username: middleware.Username(c),
 	})
 }
 
@@ -238,9 +236,8 @@ func NewMenuHandler(service *authapp.MenuService, log *zap.Logger) *MenuHandler 
 // @Security     BearerAuth
 // @Router       /auth/menus [get]
 func (h *MenuHandler) Menus(c *gin.Context) {
-	userID, ok := middleware.CurrentUserID(c)
+	userID, ok := middleware.RequireUserID(c, h.log)
 	if !ok {
-		httpx.Error(c, errorsx.Unauthorized("请先登录"), h.log)
 		return
 	}
 
@@ -272,14 +269,12 @@ func NewDashboardHandler(service *authapp.DashboardService, log *zap.Logger) *Da
 // @Security     BearerAuth
 // @Router       /auth/dashboard [get]
 func (h *DashboardHandler) Dashboard(c *gin.Context) {
-	userID, ok := middleware.CurrentUserID(c)
+	userID, ok := middleware.RequireUserID(c, h.log)
 	if !ok {
-		httpx.Error(c, errorsx.Unauthorized("请先登录"), h.log)
 		return
 	}
 
-	username, _ := middleware.CurrentUsername(c)
-	result, err := h.service.Dashboard(userID, username)
+	result, err := h.service.Dashboard(userID, middleware.Username(c))
 	if err != nil {
 		httpx.WriteError(c, err, "查询工作台失败", h.log)
 		return

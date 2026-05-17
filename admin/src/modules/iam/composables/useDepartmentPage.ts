@@ -11,7 +11,6 @@ import {
 } from '../api/department'
 import {
   DepartmentStatus,
-  // DepartmentItem 类型定义。
   type DepartmentItem,
 } from '../types/department'
 import type { DepartmentFormModel, DepartmentPageQuery } from '../types/department-page'
@@ -26,7 +25,6 @@ import {
   toDepartmentFormModel,
 } from './department-page.utils'
 
-// 部门管理页面组合式函数，封装部门树加载、创建、编辑、状态切换等逻辑
 export function useDepartmentPage() {
   const message = useMessage()
   const loading = ref(false)
@@ -51,18 +49,15 @@ export function useDepartmentPage() {
     ]
   })
 
-  // 表单校验规则
   const rules: FormRules = {
     name: [{ required: true, message: '请输入部门名称', trigger: ['blur', 'input'] }],
     code: [{ required: true, message: '请输入部门编码', trigger: ['blur', 'input'] }],
   }
 
-  // 判断当前用户是否拥有指定按钮权限码
   function canUse(code: string) {
     return buttonPermissionCodes.value.includes(code)
   }
 
-  // 从服务端加载部门树数据
   async function loadDepartments() {
     loading.value = true
     try {
@@ -74,32 +69,27 @@ export function useDepartmentPage() {
     }
   }
 
-  // 点击搜索按钮，重新加载部门列表
   function handleSearch() {
     void loadDepartments()
   }
 
-  // 重置搜索条件并重新加载部门列表
   function handleReset() {
     Object.assign(query, defaultDepartmentQuery())
     void loadDepartments()
   }
 
-  // 打开新建部门的弹窗
   function openCreate() {
     formMode.value = 'create'
     Object.assign(formModel, defaultDepartmentFormModel())
     formVisible.value = true
   }
 
-  // 打开编辑部门的弹窗，将当前行数据填充到表单
   function openEdit(row: DepartmentItem) {
     formMode.value = 'edit'
     Object.assign(formModel, toDepartmentFormModel(row))
     formVisible.value = true
   }
 
-  // 提交部门表单（新建或更新）
   async function handleSubmit() {
     await formRef.value?.validate()
     saving.value = true
@@ -122,7 +112,6 @@ export function useDepartmentPage() {
     }
   }
 
-  // 切换部门的启用/禁用状态
   async function handleToggleStatus(row: DepartmentItem, status: DepartmentStatus) {
     try {
       await updateDepartmentStatus(row.id, { status })
@@ -133,7 +122,6 @@ export function useDepartmentPage() {
     }
   }
 
-  // 组件挂载时自动加载部门列表
   onMounted(() => {
     void loadDepartments()
   })

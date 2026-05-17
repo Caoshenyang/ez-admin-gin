@@ -261,12 +261,12 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 5px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--ez-radius-md);
   background: transparent;
   padding: 0 14px;
   height: 32px;
   color: var(--ez-text-sub);
-  font-size: 13px;
+  font-size: var(--ez-text-sm);
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -278,19 +278,19 @@ onBeforeUnmount(() => {
 .admin-tab-item:hover {
   background: var(--ez-page-bg);
   border-color: var(--ez-border);
-  color: #0D8B82;
+  color: var(--ez-brand-pressed);
 }
 
 .admin-tab-item--active {
-  background: rgba(20, 184, 166, 0.10);
-  border: 1px solid rgba(20, 184, 166, 0.16);
-  color: #0F766E;
+  background: var(--ez-brand-muted);
+  border: 1px solid var(--ez-brand-border);
+  color: var(--ez-brand-pressed);
   font-weight: 500;
 }
 
 .admin-tab-item--active:hover {
-  background: rgba(20, 184, 166, 0.08);
-  color: #0D8B82;
+  background: var(--ez-brand-muted);
+  color: var(--ez-brand-pressed);
 }
 
 .admin-tab-item__dot {
@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   width: 16px;
   height: 16px;
-  border-radius: 4px;
+  border-radius: var(--ez-radius-2xs);
   margin-right: -2px;
   opacity: 0;
   transition:
@@ -328,11 +328,11 @@ onBeforeUnmount(() => {
 
 .admin-tab-item__close:hover {
   opacity: 1;
-  background: rgba(20, 184, 166, 0.12);
+  background: var(--ez-brand-muted);
 }
 
 .admin-tab-item--active .admin-tab-item__close:hover {
-  background: rgba(20, 184, 166, 0.15);
+  background: var(--ez-brand-soft);
 }
 
 .admin-tabs-actions {

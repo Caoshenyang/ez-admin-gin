@@ -178,7 +178,6 @@ const columns: DataTableColumns<AdminMenu> = [
   },
 ]
 
-// rowKey 函数。
 function rowKey(row: AdminMenu) {
   return row.id
 }
@@ -187,7 +186,7 @@ function rowKey(row: AdminMenu) {
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
     <TableStatsBar>
-      <span class="text-xs text-[var(--ez-text-sub)]">
+      <span>
         共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单 {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }}
       </span>
       <template #actions>
@@ -208,6 +207,7 @@ function rowKey(row: AdminMenu) {
       :expanded-row-keys="expandedRowKeys"
       :pagination="false"
       :bordered="false"
+      :scroll-x="884"
       children-key="children"
       @update:expanded-row-keys="expandedRowKeys = $event"
     />

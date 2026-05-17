@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import MenuFilterBar from '../components/MenuFilterBar.vue'
 import MenuFormModal from '../components/MenuFormModal.vue'
 import MenuTable from '../components/MenuTable.vue'
@@ -45,16 +46,13 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>菜单管理</h1>
-          <p>维护侧边栏目录、页面菜单和页面内按钮权限。</p>
-        </div>
-
-        <NButton v-if="canUse('system:menu:create')" type="primary" @click="openCreateRoot">
-          + 新增根目录
-        </NButton>
-      </div>
+      <PageHeader title="菜单管理" description="维护侧边栏目录、页面菜单和页面内按钮权限。">
+        <template #actions>
+          <NButton v-if="canUse('system:menu:create')" type="primary" @click="openCreateRoot">
+            + 新增根目录
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert
         v-if="successText"

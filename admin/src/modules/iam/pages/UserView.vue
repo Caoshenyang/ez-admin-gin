@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import UserFilterBar from '../components/UserFilterBar.vue'
 import UserFormModal from '../components/UserFormModal.vue'
 import UserRoleModal from '../components/UserRoleModal.vue'
@@ -53,16 +54,13 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-        <div class="ez-page-header">
-          <h1>用户管理</h1>
-          <p>维护后台账号、启停状态和角色绑定。</p>
-        </div>
-
-        <NButton v-if="canUse('system:user:create')" type="primary" @click="openCreate">
-          + 新增用户
-        </NButton>
-      </div>
+      <PageHeader title="用户管理" description="维护后台账号、启停状态和角色绑定。">
+        <template #actions>
+          <NButton v-if="canUse('system:user:create')" type="primary" @click="openCreate">
+            + 新增用户
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert
         v-if="successText"

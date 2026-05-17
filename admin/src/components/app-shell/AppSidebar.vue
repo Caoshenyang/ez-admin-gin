@@ -24,8 +24,8 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
   width: '4px',
   height: '4px',
   borderRadius: '999px',
-  color: 'rgba(255, 255, 255, 0.16)',
-  colorHover: 'rgba(20, 184, 166, 0.32)',
+  color: 'var(--ez-sidebar-scrollbar)',
+  colorHover: 'var(--ez-sidebar-scrollbar-hover)',
   railColor: 'transparent',
 }
 </script>
@@ -48,7 +48,7 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
       </NButton>
     </div>
 
-    <p v-if="!collapsed" class="px-4 text-[11px] font-semibold tracking-[0.08em] text-white/30 uppercase">
+    <p v-if="!collapsed" class="px-4 text-[var(--ez-text-xs)] font-semibold tracking-[0.08em] text-white/30 uppercase">
       主菜单
     </p>
 
@@ -84,7 +84,7 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
           <NButton
             quaternary
             circle
-            class="h-[42px] w-[42px] shrink-0 rounded-[14px] !bg-white/6 !p-0 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
+            class="h-[42px] w-[42px] shrink-0 rounded-[var(--ez-radius-lg)] !bg-white/6 !p-0 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
             @click="emit('toggle')"
           >
             <NIcon :component="ChevronForwardOutline" :size="18" />
@@ -95,11 +95,11 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
       <NButton
         v-else
         quaternary
-        class="flex w-full items-center justify-center gap-2 rounded-xl !bg-white/6 px-0 py-2.5 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
+        class="flex w-full items-center justify-center gap-2 rounded-[var(--ez-radius-xl)] !bg-white/6 px-0 py-2.5 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
         @click="emit('toggle')"
       >
         <NIcon :component="ChevronBackOutline" :size="18" />
-        <span class="text-[12px] font-medium">收起菜单</span>
+        <span class="text-[var(--ez-text-xs)] font-medium">收起菜单</span>
       </NButton>
     </div>
   </NLayoutSider>

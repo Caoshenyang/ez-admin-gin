@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
-import { h } from 'vue'
+import { computed, h } from 'vue'
 
+import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText } from '@/utils/format'
 import { DepartmentStatus, type DepartmentItem } from '@/modules/iam/types/department'
 
@@ -17,10 +18,15 @@ const emit = defineEmits<{
   toggleStatus: [row: DepartmentItem, status: DepartmentStatus]
 }>()
 
-// formatTime 函数。
 function formatTime(value: string) {
   return value ? new Date(value).toLocaleString() : '-'
 }
+
+function countDepartments(items: DepartmentItem[]): number {
+  return items.reduce((total, item) => total + 1 + countDepartments(item.children ?? []), 0)
+}
+
+const departmentCount = computed(() => countDepartments(props.departments))
 
 const columns: DataTableColumns<DepartmentItem> = [
   {
@@ -127,6 +133,10 @@ const columns: DataTableColumns<DepartmentItem> = [
 
 <template>
   <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
+    <TableStatsBar>
+      <span>共 {{ departmentCount }} 个部门节点</span>
+    </TableStatsBar>
+
     <NDataTable
       class="department-table"
       :columns="columns"
@@ -134,6 +144,7 @@ const columns: DataTableColumns<DepartmentItem> = [
       :loading="loading"
       :pagination="false"
       :bordered="false"
+      :scroll-x="930"
       children-key="children"
     />
   </NCard>

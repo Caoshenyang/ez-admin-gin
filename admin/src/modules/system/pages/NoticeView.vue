@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { NButton, NAlert } from 'naive-ui'
+import { NAlert, NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import NoticeFilterBar from '../components/NoticeFilterBar.vue'
 import NoticeFormModal from '../components/NoticeFormModal.vue'
 import NoticeTable from '../components/NoticeTable.vue'
@@ -35,16 +36,13 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>公告管理</h1>
-          <p>管理系统公告，支持按标题搜索和状态筛选。</p>
-        </div>
-
-        <NButton v-if="canUse('system:notice:create')" type="primary" @click="openCreate">
-          + 新增公告
-        </NButton>
-      </div>
+      <PageHeader title="公告管理" description="管理系统公告，支持按标题搜索和状态筛选。">
+        <template #actions>
+          <NButton v-if="canUse('system:notice:create')" type="primary" @click="openCreate">
+            + 新增公告
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}

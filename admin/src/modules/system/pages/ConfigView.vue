@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import ConfigFilterBar from '../components/ConfigFilterBar.vue'
 import ConfigFormModal from '../components/ConfigFormModal.vue'
 import ConfigTable from '../components/ConfigTable.vue'
@@ -35,16 +36,13 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between">
-                  <div class="ez-page-header">
-            <h1>配置管理</h1>
-          <p>维护系统键值配置，按分组归类管理。</p>
-        </div>
-
-        <NButton v-if="canUse('system:config:create')" type="primary" @click="openCreate">
-          + 新增配置
-        </NButton>
-      </div>
+      <PageHeader title="配置管理" description="维护系统键值配置，按分组归类管理。">
+        <template #actions>
+          <NButton v-if="canUse('system:config:create')" type="primary" @click="openCreate">
+            + 新增配置
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
         {{ successText }}

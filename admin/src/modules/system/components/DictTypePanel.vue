@@ -26,22 +26,22 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="ez-card min-h-0 rounded-lg" :bordered="false" content-class="ez-card-content-fill">
+  <NCard class="ez-card h-full min-h-0 min-w-0 overflow-hidden rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
     <div class="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto]">
       <div class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4">
         <div>
-          <p class="text-[11px] font-bold tracking-[0.14em] text-slate-400 uppercase">Types</p>
-          <h2 class="mt-1.5 text-[18px] font-bold text-[var(--ez-text-main)]">字典类型</h2>
+          <p class="text-[var(--ez-text-xs)] font-bold tracking-[0.14em] text-[var(--ez-text-light)] uppercase">Types</p>
+          <h2 class="mt-1.5 text-[var(--ez-text-xl)] font-bold text-[var(--ez-text-main)]">字典类型</h2>
         </div>
         <NButton v-if="canUse('system:dict:type:create')" size="small" type="primary" ghost @click="$emit('create')">
           新增
         </NButton>
       </div>
 
-      <div class="grid gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(0,1fr)_140px_auto] max-[720px]:px-4">
+      <div class="grid items-center gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(0,1fr)_132px_auto] max-[720px]:px-4">
         <NInput v-model:value="query.keyword" clearable placeholder="编码 / 名称" @keyup.enter="$emit('search')" />
         <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" />
-        <div class="flex gap-2.5 min-[1281px]:justify-start max-[1280px]:justify-end">
+        <div class="ez-filter-actions">
           <NButton type="primary" @click="$emit('search')">查询</NButton>
           <NButton @click="$emit('reset')">重置</NButton>
         </div>
@@ -57,10 +57,11 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
         :row-key="(row: DictTypeItem) => row.id"
         :row-props="rowProps"
         :bordered="false"
+        :scroll-x="500"
         flex-height
       />
 
-      <div class="flex items-center justify-between gap-4 border-t border-[var(--ez-border-light)] px-5 py-3.5 text-[13px] text-[var(--ez-text-sub)] max-[720px]:flex-col max-[720px]:items-stretch max-[720px]:px-4">
+      <div class="ez-table-footer">
         <span>共 {{ total }} 条</span>
         <NPagination
           :page="query.page"
@@ -82,6 +83,6 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
 }
 
 :deep(.dict-type-row--active .n-data-table-td) {
-  background: #eef6ff;
+  background: var(--ez-brand-soft);
 }
 </style>

@@ -40,7 +40,6 @@ import {
 } from '../types/dict'
 import type { DictItemFormModel, DictTypeFormModel } from '../types/dict-page'
 
-// 将标签类型字符串校验为合法的 Naive UI Tag 类型
 function toTagType(value: string) {
   if (value === 'success' || value === 'warning' || value === 'error' || value === 'info' || value === 'default') {
     return value
@@ -49,7 +48,6 @@ function toTagType(value: string) {
   return 'default'
 }
 
-// 字典管理页面组合式函数，封装字典类型和字典项的增删改查、状态切换等逻辑
 export function useDictPage() {
   const message = useMessage()
   const { canUse } = usePermission()
@@ -66,13 +64,10 @@ export function useDictPage() {
   const dictItems = ref<DictItem[]>([])
   const dictItemTotal = ref(0)
 
-  // 字典类型列表查询条件
   const typeQuery = reactive<DictTypeListQuery>(defaultDictTypeQuery())
 
-  // 字典项列表查询条件
   const itemQuery = reactive<DictItemListQuery>(defaultDictItemQuery())
 
-  // 生成字典项表单的默认值（自动关联当前选中的字典类型）
   function defaultItemFormModel(): DictItemFormModel {
     return defaultDictItemFormModel(selectedTypeID.value ?? 0)
   }
@@ -112,7 +107,6 @@ export function useDictPage() {
     } as FormRules,
   })
 
-  // 从服务端加载字典项列表
   async function loadDictItems() {
     if (!selectedTypeID.value) {
       dictItems.value = []
@@ -132,7 +126,6 @@ export function useDictPage() {
     }
   }
 
-  // 选中指定字典类型并加载其字典项
   async function selectType(row: DictTypeItem) {
     selectedTypeID.value = row.id
     selectedType.value = row
@@ -141,7 +134,6 @@ export function useDictPage() {
     await loadDictItems()
   }
 
-  // 从服务端加载字典类型列表
   async function loadDictTypes() {
     typeLoading.value = true
 
@@ -183,17 +175,14 @@ export function useDictPage() {
     },
   })
 
-  // 打开创建字典类型的弹窗
   function openTypeCreate() {
     openTypeCreateBase()
   }
 
-  // 打开编辑字典类型的弹窗
   function openTypeEdit(row: DictTypeItem) {
     openTypeEditBase(toDictTypeFormModel(row))
   }
 
-  // 打开创建字典项的弹窗，需先选中字典类型
   function openItemCreate() {
     if (!selectedTypeID.value) {
       message.warning('请先选择一个字典类型')
@@ -204,12 +193,10 @@ export function useDictPage() {
     itemFormModel.type_id = selectedTypeID.value
   }
 
-  // 打开编辑字典项的弹窗
   function openItemEdit(row: DictItem) {
     openItemEditBase(toDictItemFormModel(row))
   }
 
-  // 提交字典类型表单（新建或更新）
   async function submitType() {
     if (typeFormMode.value === 'create') {
       await createDictTypeRequest(buildDictTypeCreatePayload(typeFormModel))
@@ -224,7 +211,6 @@ export function useDictPage() {
     await loadDictTypes()
   }
 
-  // 提交字典项表单（新建或更新）
   async function submitItem() {
     if (!selectedTypeID.value) {
       message.warning('请先选择一个字典类型')
@@ -244,78 +230,71 @@ export function useDictPage() {
     await loadDictItems()
   }
 
-  // 搜索字典类型
   function handleTypeSearch() {
     typeQuery.page = 1
     void loadDictTypes()
   }
 
-  // 重置字典类型搜索条件
   function handleTypeReset() {
     Object.assign(typeQuery, defaultDictTypeQuery())
     void loadDictTypes()
   }
 
-  // 搜索字典项
   function handleItemSearch() {
     itemQuery.page = 1
     void loadDictItems()
   }
 
-  // 重置字典项搜索条件
   function handleItemReset() {
     Object.assign(itemQuery, defaultDictItemQuery(selectedTypeID.value ?? 0))
     void loadDictItems()
   }
 
-  // 处理字典类型分页页码变化
   function handleTypePageChange(page: number) {
     typeQuery.page = page
     void loadDictTypes()
   }
 
-  // 处理字典类型每页条数变化
   function handleTypePageSizeChange(pageSize: number) {
     typeQuery.page = 1
     typeQuery.page_size = pageSize
     void loadDictTypes()
   }
 
-  // 处理字典项分页页码变化
   function handleItemPageChange(page: number) {
     itemQuery.page = page
     void loadDictItems()
   }
 
-  // 处理字典项每页条数变化
   function handleItemPageSizeChange(pageSize: number) {
     itemQuery.page = 1
     itemQuery.page_size = pageSize
     void loadDictItems()
   }
 
-  // 字典类型列表表格列定义
   const typeColumns: DataTableColumns<DictTypeItem> = [
     {
       title: '字典类型',
       key: 'code',
-      minWidth: 220,
+      width: 168,
       render(row) {
-        return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
-          h('p', { class: 'text-xs text-[var(--ez-text-muted)]' }, displayText(row.code)),
+        return h('div', { class: 'min-w-0 leading-5' }, [
+          h('p', { class: 'truncate font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
+          h('p', { class: 'truncate text-xs text-[var(--ez-text-muted)]' }, displayText(row.code)),
         ])
       },
     },
     {
       title: '排序',
       key: 'sort',
-      width: 76,
+      width: 56,
+      align: 'center',
     },
     {
       title: '状态',
       key: 'status',
-      width: 90,
+      width: 76,
+      align: 'center',
       render(row) {
         return h(
           NTag,
@@ -327,21 +306,20 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 176,
-      fixed: 'right',
+      width: 120,
       render(row) {
         const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
 
         return h(
           NSpace,
-          { size: 8, align: 'center' },
+          { size: 6, align: 'center' },
           {
             default: () =>
               [
                 canUse('system:dict:type:update')
                   ? h(
                       NButton,
-                      { size: 'small', ghost: true, type: 'info', onClick: () => openTypeEdit(row) },
+                      { size: 'tiny', secondary: true, type: 'info', onClick: () => openTypeEdit(row) },
                       { default: () => '编辑' },
                     )
                   : null,
@@ -354,8 +332,8 @@ export function useDictPage() {
                           h(
                             NButton,
                             {
-                              size: 'small',
-                              ghost: true,
+                              size: 'tiny',
+                              secondary: true,
                               type: nextStatus === DictStatus.Disabled ? 'error' : 'success',
                             },
                             { default: () => (nextStatus === DictStatus.Disabled ? '禁用' : '启用') },
@@ -371,7 +349,6 @@ export function useDictPage() {
     },
   ]
 
-  // 字典项列表表格列定义
   const itemColumns: DataTableColumns<DictItem> = [
     {
       title: '字典项',
@@ -464,7 +441,6 @@ export function useDictPage() {
     },
   ]
 
-  // 字典类型行的属性，用于高亮选中行和点击选中
   function typeRowProps(row: DictTypeItem) {
     return {
       class: row.id === selectedTypeID.value ? 'dict-type-row dict-type-row--active' : 'dict-type-row',
@@ -474,7 +450,6 @@ export function useDictPage() {
     }
   }
 
-  // 组件挂载时自动加载字典类型列表
   onMounted(() => {
     void loadDictTypes()
   })

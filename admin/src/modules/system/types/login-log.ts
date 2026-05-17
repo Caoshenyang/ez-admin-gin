@@ -3,10 +3,8 @@ export const LoginLogStatus = {
   Failed: 2,
 } as const
 
-// LoginLogStatus 类型定义。
 export type LoginLogStatus = (typeof LoginLogStatus)[keyof typeof LoginLogStatus]
 
-// LoginLogItem 类型定义。
 export interface LoginLogItem {
   id: number
   user_id: number
@@ -18,7 +16,6 @@ export interface LoginLogItem {
   created_at: string
 }
 
-// LoginLogListQuery 类型定义。
 export interface LoginLogListQuery {
   page: number
   page_size: number
@@ -27,7 +24,6 @@ export interface LoginLogListQuery {
   status?: LoginLogStatus | 0
 }
 
-// LoginLogListResponse 类型定义。
 export interface LoginLogListResponse {
   items: LoginLogItem[]
   total: number

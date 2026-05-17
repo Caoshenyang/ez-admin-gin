@@ -26,7 +26,7 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="ez-card min-h-0 rounded-lg" :bordered="false" content-class="ez-card-content-fill">
+  <NCard class="ez-card min-h-0 rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
     <div class="flex h-full flex-col overflow-hidden">
       <div class="mb-4">
         <h2 class="text-lg font-bold text-[var(--ez-text-main)]">角色列表</h2>
@@ -82,7 +82,7 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 .role-card {
   width: 100%;
   border: 1px solid var(--ez-border);
-  border-radius: 8px;
+  border-radius: var(--ez-radius-sm);
   background: var(--ez-card-bg);
   padding: 14px 12px;
   text-align: left;

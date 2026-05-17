@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageHeader from '@/components/PageHeader.vue'
 import LoginLogFilterBar from '../components/LoginLogFilterBar.vue'
 import LoginLogTable from '../components/LoginLogTable.vue'
 import { useLoginLogPage } from '../composables/useLoginLogPage'
@@ -19,10 +20,7 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-              <div class="ez-page-header">
-          <h1>登录日志</h1>
-        <p>按用户名、IP 和登录状态回看账号登录轨迹，快速识别异常登录或失败重试。</p>
-      </div>
+      <PageHeader title="登录日志" description="按用户名、IP 和登录状态回看账号登录轨迹，快速识别异常登录或失败重试。" />
 
       <LoginLogFilterBar
         :query="query"

@@ -13,6 +13,7 @@ import {
 } from 'naive-ui'
 import { computed, h } from 'vue'
 
+import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText, formatTime } from '@/utils/format'
 import { UserStatus, type UserItem } from '../types/user'
 
@@ -198,18 +199,12 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 
 <template>
   <div class="ez-table-card min-h-0 flex-1">
-    <div class="ez-table-bar">
-      <NSpace :size="12">
-        <span>已选 {{ selectedCount }} 项</span>
-        <NButton text :disabled="selectedCount === 0">批量禁用</NButton>
-        <NButton text :disabled="selectedCount === 0">批量删除</NButton>
-      </NSpace>
-      <NSpace :size="14">
-        <NButton text type="primary">列设置</NButton>
-        <NButton text type="primary">密度</NButton>
+    <TableStatsBar>
+      <span>已选 {{ selectedCount }} 项</span>
+      <template #actions>
         <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
-      </NSpace>
-    </div>
+      </template>
+    </TableStatsBar>
 
     <NDataTable
       remote
@@ -220,6 +215,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
       :row-key="(row: UserItem) => row.id"
       :checked-row-keys="checkedRowKeys"
       :bordered="false"
+      :scroll-x="1368"
       @update:checked-row-keys="(keys) => emit('checkedRowKeysChange', keys)"
     />
 

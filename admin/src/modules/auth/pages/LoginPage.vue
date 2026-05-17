@@ -27,12 +27,12 @@ const {
 </script>
 
 <template>
-  <main class="h-screen overflow-hidden bg-[var(--color-surface-page)] px-4 py-4 md:px-5 md:py-5">
+  <main class="h-screen overflow-hidden bg-[var(--ez-page-bg)] px-4 py-4 md:px-5 md:py-5">
     <section
       class="mx-auto grid h-full max-w-[1180px] items-center gap-6 xl:grid-cols-[minmax(0,560px)_400px] xl:justify-between xl:gap-8"
     >
       <section
-        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[20px] bg-[var(--ez-panel-dark)] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
+        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[var(--ez-radius-2xl)] bg-[var(--ez-panel-dark)] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
       >
         <div>
           <BrandLogo
@@ -42,12 +42,12 @@ const {
           />
         </div>
 
-        <div class="mt-6 rounded-2xl bg-[var(--ez-panel-dark-secondary)] p-5 md:p-6">
+        <div class="mt-6 rounded-[var(--ez-radius-lg)] bg-[var(--ez-panel-dark-secondary)] p-5 md:p-6">
           <ul class="grid list-none gap-4 p-0">
             <li
               v-for="feature in productFeatures"
               :key="feature"
-              class="text-[14px] leading-7 text-[#F9FAFB] md:text-[15px]"
+              class="text-[var(--ez-text-base)] leading-7 text-[var(--ez-on-brand)] md:text-[var(--ez-text-md)]"
             >
               {{ feature }}
             </li>
@@ -57,12 +57,12 @@ const {
 
       <section class="flex min-h-0 flex-col justify-center gap-2">
         <NCard
-          class="rounded-2xl shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+          class="rounded-[var(--ez-radius-xl)] shadow-[var(--ez-shadow-lg)]"
           :bordered="false"
           content-class="login-card-content"
         >
           <div class="mb-2.5">
-            <h2 class="mb-1 text-[23px] font-bold text-[var(--ez-text-main)]">登录控制台</h2>
+            <h2 class="mb-1 text-[var(--ez-text-2xl)] font-bold text-[var(--ez-text-main)]">登录控制台</h2>
             <p class="text-sm text-[var(--ez-text-sub)]">请使用管理员账号继续</p>
           </div>
 
@@ -121,7 +121,7 @@ const {
 
               <button
                 type="button"
-                class="cursor-pointer border-none bg-transparent p-0 text-sm text-[var(--ez-link)]"
+                class="cursor-pointer border-none bg-transparent p-0 text-[var(--ez-text-sm)] text-[var(--ez-link)]"
                 @click="handleForgotPassword"
               >
                 忘记密码？
@@ -133,7 +133,6 @@ const {
               type="primary"
               size="medium"
               block
-              color="#14B8A6"
               :loading="submitting"
               class="login-submit"
             >
@@ -151,7 +150,7 @@ const {
           </NAlert>
         </NCard>
 
-        <p class="px-1 text-[12px] text-[var(--ez-text-light)]">{{ footerText }}</p>
+        <p class="px-1 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">{{ footerText }}</p>
       </section>
     </section>
   </main>
@@ -186,22 +185,22 @@ const {
 }
 
 .compact-input {
-  --n-border-radius: 8px;
-  --n-font-size: 14px;
+  --n-border-radius: var(--ez-radius-sm);
+  --n-font-size: var(--ez-text-base);
   --n-height: 34px;
   --n-padding-left: 11px;
   --n-padding-right: 11px;
 }
 
 .login-submit {
-  --n-border-radius: 8px;
-  --n-font-size: 14px;
+  --n-border-radius: var(--ez-radius-sm);
+  --n-font-size: var(--ez-text-base);
   --n-height: 36px;
 }
 
 .compact-alert {
-  --n-border-radius: 8px;
-  --n-font-size: 13px;
+  --n-border-radius: var(--ez-radius-sm);
+  --n-font-size: var(--ez-text-sm);
   --n-padding: 8px 10px;
 }
 

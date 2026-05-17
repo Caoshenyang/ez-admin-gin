@@ -32,7 +32,9 @@ const emit = defineEmits<{
       />
       <NSelect :value="props.type" :options="typeOptions" class="w-40" @update:value="emit('update:type', $event as 0 | MenuType)" />
       <NSelect :value="props.status" :options="statusOptions" class="w-40" @update:value="emit('update:status', $event as 0 | MenuStatus)" />
-      <NButton @click="emit('reset')">重置</NButton>
+      <div class="ez-filter-actions">
+        <NButton @click="emit('reset')">重置</NButton>
+      </div>
     </NSpace>
   </div>
 </template>

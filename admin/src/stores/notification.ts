@@ -63,7 +63,9 @@ export const useNotificationStore = defineStore('notification', () => {
     drawerVisible.value = false
   }
 
-  function handleWSMessage(msg: WSMessage) {
+  function handleWSMessage(data: unknown) {
+    const msg = data as WSMessage
+
     if (msg.type === 'notification') {
       const item = msg.data as NotificationItem
       items.value.unshift(item)

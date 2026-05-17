@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { NAlert, NButton } from 'naive-ui'
 
+import PageHeader from '@/components/PageHeader.vue'
 import DictItemModal from '../components/DictItemModal.vue'
 import DictItemPanel from '../components/DictItemPanel.vue'
 import DictTypeModal from '../components/DictTypeModal.vue'
@@ -55,22 +56,19 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <div class="flex items-center justify-between gap-4">
-                  <div class="ez-page-header">
-            <h1>字典管理</h1>
-          <p>先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。</p>
-        </div>
-
-        <NButton v-if="canUse('system:dict:type:create')" type="primary" @click="openTypeCreate">
-          + 新增字典类型
-        </NButton>
-      </div>
+      <PageHeader title="字典管理" description="先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。">
+        <template #actions>
+          <NButton v-if="canUse('system:dict:type:create')" type="primary" @click="openTypeCreate">
+            + 新增字典类型
+          </NButton>
+        </template>
+      </PageHeader>
 
       <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[560px]" @close="closeSuccess">
         {{ successText }}
       </NAlert>
 
-      <div class="grid min-h-0 flex-1 gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <div class="grid h-full min-h-[560px] flex-1 gap-4 xl:grid-cols-[520px_minmax(0,1fr)]">
         <DictTypePanel
           :can-use="canUse"
           :columns="typeColumns"
