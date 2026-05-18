@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- 移除误提交的 server/server 二进制文件（38 MB ELF）
+- 修复 SECURITY.md 限流默认值：Per-IP 从 200 req/60s 修正为 10 req/60s（与代码一致）
+- 修复 docs/architecture/rbac.md 代码块语言标记（conf → ini）
+- .gitignore 补充 *.out、*.test、tmp/ 等构建产物忽略规则
+
+### Documentation
+
+- README 升级：增加适合/不适合表格、环境要求、默认账号说明、License 链接
+- README Roadmap 同步：WebSocket 通知推送移至已完成，暂不计划项明确列出
+- 新增 .github/workflows/ci.yml（后端 + 集成测试 + 前端 + Docker + 安全扫描）
+- 新增 .github/workflows/deploy-docs.yml（VitePress 部署到 GitHub Pages）
+
 ### Added
 
 - 企业级组织体系：部门树、岗位管理、用户-岗位多对多关联

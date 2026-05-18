@@ -59,7 +59,7 @@ See the [Production Checklist](https://caoshenyang.github.io/ez-admin-gin/deploy
 
 | Setting | Default | Environment Variable |
 |---------|---------|---------------------|
-| Per-IP limit | 200 req/60s | `EZ_RATE_LIMIT_LOGIN_MAX_REQUESTS` |
+| Per-IP limit | 10 req/60s | `EZ_RATE_LIMIT_LOGIN_MAX_REQUESTS` |
 | Account lockout threshold | 5 failures | `EZ_RATE_LIMIT_LOGIN_LOCKOUT_THRESHOLD` |
 | Account lockout duration | 300s | `EZ_RATE_LIMIT_LOGIN_LOCKOUT_SEC` |
 

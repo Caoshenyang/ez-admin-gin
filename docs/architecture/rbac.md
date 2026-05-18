@@ -71,7 +71,7 @@ sys_user ──M:N── sys_role ──M:N── sys_menu
 
 **RBAC 模型（`configs/rbac_model.conf`）：**
 
-```conf
+```ini
 [request_definition]
 r = sub, obj, act
 

@@ -1,15 +1,16 @@
 # EZ Admin Gin
 
-面向个人项目快速上线的通用后台管理系统底座。功能完整、可直接部署、可二次扩展。
+基于 Go + Gin + Vue 3 的全栈后台管理系统底座，适合个人项目快速上线、中小型后台系统和 SaaS 原型二次开发。
 
-## 项目简介
+## 适合 / 不适合
 
-EZ Admin 不是单独的后端模板，也不是只有页面壳子的前端 Demo，而是一套放在同一个单仓库里的后台底座：
-
-- **`server/`** — Go + Gin 后端（认证、RBAC、数据权限、系统模块）
-- **`admin/`** — Vue 3 管理台（Naive UI + Tailwind CSS）
-- **`docs/`** — VitePress 文档站
-- **`deploy/`** — Docker Compose、Nginx、部署脚本
+| 适合 | 不适合 |
+|------|--------|
+| 个人项目后台 | 大型企业 IAM / 统一身份认证平台 |
+| SaaS 原型 / MVP | 微服务架构的服务治理平台 |
+| 中小型管理系统（ERP、CRM、CMS 底座） | 低代码 / 无代码平台底座 |
+| 需要 RBAC / 数据权限 / 动态菜单的后台底座 | 无需二次开发的商业成品系统 |
+| 想学习 Go + Vue 全栈工程化的开发者 | 高并发（万级 QPS+）独立场景 |
 
 ## 核心特性
 
@@ -58,52 +59,49 @@ EZ Admin 不是单独的后端模板，也不是只有页面壳子的前端 Demo
 └─────────────────────────────────────────────────┘
 ```
 
+## 项目结构
+
+```
+ez-admin-gin/
+├── server/                 Go 后端
+│   ├── configs/            配置文件
+│   ├── internal/           业务代码
+│   │   ├── bootstrap/      启动引导
+│   │   ├── modules/        业务模块（auth / iam / system / setup）
+│   │   ├── platform/       平台层（authn / authz / datascope / middleware / ...）
+│   │   └── pkg/            公共工具包
+│   ├── migrations/         数据库迁移（MySQL + PostgreSQL）
+│   ├── tests/              测试（API / RBAC / Contract / Testutil）
+│   └── docs/               Swagger / OpenAPI 规范
+├── admin/                  Vue 3 管理台
+│   └── src/
+│       ├── modules/        业务模块（auth / iam / system）
+│       ├── layouts/        布局组件
+│       ├── router/         路由 + 动态菜单注册
+│       └── stores/         Pinia 状态管理
+├── docs/                   VitePress 文档站
+├── deploy/                 Docker Compose、Nginx、部署配置
+└── scripts/                部署与打包脚本
+```
+
 ## 快速启动
 
-项目根目录提供了 **Makefile** 作为统一的开发、测试、构建入口。所有常用操作都可以通过 `make <命令>` 执行，不用记忆每个子项目的具体命令。
+### 环境要求
 
-### 安装 make
+| 工具 | 最低版本 | 用途 |
+|------|---------|------|
+| Go | 1.26+ | 后端 |
+| Node.js | 20.19+ 或 22.12+ | 前端 & 文档 |
+| pnpm | 9+ | 包管理器 |
+| Docker | 20+ | 本地 PostgreSQL + Redis |
+| make | GNU Make 4+ | 构建自动化（Windows 可选） |
 
-::: code-group
-
-```bash [macOS]
-# macOS 自带 make，无需安装
-make --version
-```
-
-```bash [Linux]
-# Debian / Ubuntu
-sudo apt install make
-
-# Fedora / RHEL
-sudo dnf install make
-```
-
-```bash [Windows]
-# 方式一：Chocolatey
-choco install make
-
-# 方式二：Scoop
-scoop install make
-
-# 安装后重启终端，验证
-make --version
-```
-
-:::
-
-::: warning
-Windows 用户如果暂时不想安装 make，也可以直接查看 Makefile 中的等效命令手动执行。
-:::
-
-### 使用 Makefile
+### 使用 Makefile（推荐）
 
 ```bash
 # 查看所有可用命令
 make help
-```
 
-```bash
 # 1. 启动 PostgreSQL 和 Redis
 make docker-up
 
@@ -118,24 +116,6 @@ curl -X POST http://localhost:8080/api/v1/setup/init \
 # 4. 启动前端（另一个终端）
 make install && make admin-dev
 ```
-
-### 常用命令速查
-
-| 命令 | 说明 |
-|------|------|
-| `make help` | 显示所有可用命令 |
-| `make server-dev` | 启动后端 (`go run .`) |
-| `make admin-dev` | 启动前端 (`pnpm dev`) |
-| `make docs-dev` | 启动文档站 |
-| `make docs-build` | 构建文档站 |
-| `make test` | 运行后端测试 (`go test ./...`) |
-| `make server-vet` | 后端代码检查 (`go vet ./...`) |
-| `make admin-check` | 前端类型检查 + lint |
-| `make lint` | 运行所有 lint (后端 + 前端) |
-| `make build` | 构建后端二进制 + 前端产物 |
-| `make docker-up` | 启动 PostgreSQL + Redis |
-| `make docker-down` | 停止 PostgreSQL + Redis |
-| `make docker-config` | 验证所有 Docker Compose 配置 |
 
 ### 不使用 make 的等效命令
 
@@ -155,30 +135,38 @@ curl -X POST http://localhost:8080/api/v1/setup/init \
 cd admin && pnpm install && pnpm dev
 ```
 
-## 项目结构
+::: warning Windows 用户
+安装 make：`choco install make` 或 `scoop install make`。如果暂时不想安装，也可以直接查看 Makefile 中的对应命令手动执行。
+:::
 
-```
-ez-admin-gin/
-├── server/
-│   ├── configs/            配置文件
-│   ├── internal/           业务代码
-│   │   ├── bootstrap/      启动引导
-│   │   ├── modules/        业务模块（auth / iam / system / setup）
-│   │   ├── platform/       平台层（authn / authz / datascope / middleware / ...）
-│   │   └── pkg/            公共工具包
-│   └── migrations/         数据库迁移（MySQL + PostgreSQL）
-├── admin/
-│   └── src/
-│       ├── modules/        业务模块（auth / iam / system）
-│       ├── layouts/        布局组件
-│       ├── router/         路由 + 动态菜单注册
-│       └── stores/         Pinia 状态管理
-├── docs/                   VitePress 文档站
-├── deploy/                 Docker Compose、Nginx、部署配置
-└── scripts/                部署与打包脚本
-```
+### 默认账号说明
+
+初始化时通过 `setup/init` 接口自行指定用户名和密码。**生产环境首次登录后请立即修改密码。**
+
+## 常用命令速查
+
+| 命令 | 说明 |
+|------|------|
+| `make help` | 显示所有可用命令 |
+| `make server-dev` | 启动后端 (`go run .`) |
+| `make admin-dev` | 启动前端 (`pnpm dev`) |
+| `make docs-dev` | 启动文档站 |
+| `make test` | 运行后端测试 (`go test ./...` + 契约测试) |
+| `make test-contract` | OpenAPI 契约测试（不需要 DB） |
+| `make test-integration` | 集成测试（需要 DB + Redis） |
+| `make server-vet` | 后端代码检查 (`go vet ./...`) |
+| `make admin-check` | 前端类型检查 + lint |
+| `make lint` | 运行所有 lint (后端 vet + 前端检查 + 契约一致性) |
+| `make build` | 构建后端二进制 + 前端产物 |
+| `make docs-build` | 构建文档站 |
+| `make docker-up` | 启动 PostgreSQL + Redis |
+| `make docker-down` | 停止 PostgreSQL + Redis |
+| `make docker-config` | 验证所有 Docker Compose 配置 |
+| `make generate-types` | 从 Swagger spec 生成前端 TypeScript 类型 |
 
 ## 文档
+
+在线文档：[https://caoshenyang.github.io/ez-admin-gin/](https://caoshenyang.github.io/ez-admin-gin/)
 
 - [快速开始](https://caoshenyang.github.io/ez-admin-gin/getting-started/)
 - [系统架构](https://caoshenyang.github.io/ez-admin-gin/architecture/overview)
@@ -201,26 +189,6 @@ ez-admin-gin/
 
 五级数据作用域：所有数据 / 本部门 / 本部门及下级 / 仅本人 / 自定义部门
 
-## Roadmap
-
-已完成：
-
-- [x] JWT 认证 + Casbin RBAC
-- [x] 动态菜单与按钮权限
-- [x] 组织体系（部门/岗位）
-- [x] 五级数据权限
-- [x] 系统模块（用户/角色/菜单/配置/字典/文件/日志/公告）
-- [x] 前端管理台（登录/壳子/动态菜单/管理页面）
-- [x] 多场景部署方案（5 种 Docker Compose 变体 + 一键部署脚本）
-
-计划中：
-
-- [ ] 前端主题切换（暗色模式）
-- [ ] 国际化支持
-- [ ] WebSocket 消息推送
-- [ ] 审批工作流
-- [ ] 更多业务模板
-
 ## CI / 质量门禁
 
 每次 push 和 pull request 都会自动运行以下检查：
@@ -228,7 +196,8 @@ ez-admin-gin/
 | Job | 检查内容 | 阻塞 |
 |-----|---------|------|
 | **Backend** | `go mod tidy` 一致性、`go vet`、`go test` | 是 |
-| **Frontend** | TypeScript 类型检查、ESLint + oxlint、生产构建 | 是 |
+| **Integration** | API 黑盒测试 + RBAC 权限流程测试（PostgreSQL + Redis） | 是 |
+| **Frontend** | API 类型同步、TypeScript 类型检查、ESLint + oxlint、生产构建 | 是 |
 | **Docker** | compose.local / compose.prod / compose.server 配置校验 | 是 |
 | **Security** | Gitleaks 密钥扫描、govulncheck Go 漏洞检查 | 密钥扫描阻塞，漏洞扫描仅告警 |
 
@@ -240,6 +209,7 @@ ez-admin-gin/
 # 后端
 cd server && go mod tidy && git diff --exit-code go.mod go.sum
 cd server && go vet ./... && go test ./...
+cd server && go test -v -timeout 60s ./tests/contract/...
 
 # 前端
 cd admin && pnpm install --frozen-lockfile && pnpm type-check && pnpm lint && pnpm build
@@ -250,12 +220,38 @@ EZ_AUTH_JWT_SECRET=placeholder docker compose -f deploy/compose.prod.yml config 
 docker compose -f deploy/compose.server.yml config --quiet
 ```
 
+## Roadmap
+
+已完成：
+
+- [x] JWT 认证 + Casbin RBAC
+- [x] 动态菜单与按钮权限
+- [x] 组织体系（部门/岗位）
+- [x] 五级数据权限
+- [x] 系统模块（用户/角色/菜单/配置/字典/文件/日志/公告）
+- [x] 前端管理台（登录/壳子/动态菜单/管理页面）
+- [x] 多场景部署方案（5 种 Docker Compose 变体 + 一键部署脚本）
+- [x] WebSocket 通知公告实时推送
+
+计划中：
+
+- [ ] 前端主题切换（暗色模式）
+- [ ] 国际化支持
+- [ ] 审批工作流
+- [ ] 更多业务模板
+
+暂不计划：
+
+- [ ] 微服务拆分
+- [ ] 低代码引擎
+- [ ] 多租户隔离
+
 ## Contributing
 
 欢迎通过 Issue 反馈 Bug、提出建议或分享使用心得。
 
-目前暂不接受 Pull Request，主要原因是项目还处于架构快速迭代阶段，代码结构和接口设计调整较频繁，外部 PR 容易产生冲突。等架构稳定后会开放 PR，感谢理解。
+目前暂不接受 Pull Request，主要原因是项目还处于架构快速迭代阶段。等架构稳定后会开放 PR，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## License
 
-MIT
+[MIT](LICENSE)

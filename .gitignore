@@ -28,6 +28,9 @@ Thumbs.db
 server/uploads/
 server/server
 server/server.exe
+*.out
+*.test
+tmp/
 
 # Third-party skills not tracked in release
 .agents/skills/drawio-skill/
