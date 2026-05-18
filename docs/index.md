@@ -1,11 +1,11 @@
 ---
 title: EZ Admin
-description: "EZ Admin 是面向个人项目快速上线的通用后台管理系统底座。"
+description: "EZ Admin 是面向个人项目快速上线、也适合中小型后台系统复用的全栈后台底座。"
 layout: home
 
 hero:
   name: EZ Admin
-  text: 企业级通用后台管理系统底座
+  text: 全栈后台管理系统底座
   tagline: Go + Gin 后端 / Vue 3 前端 / 开箱即用的权限体系与部署方案
   actions:
     - theme: brand
@@ -28,3 +28,18 @@ features:
   - title: 多场景部署方案
     details: Docker Compose 一键编排，Nginx 反向代理，支持本地开发、服务器部署、云端部署和生产环境。
 ---
+
+## 适合谁
+
+- 个人项目需要快速上线一个管理后台
+- SaaS 原型或 MVP 需要权限体系和用户管理
+- 中小型内部管理系统（ERP、CRM、CMS 底座）
+- 二次开发：基于现有模块扩展业务功能
+
+## 不适合谁
+
+- 直接当大型企业 IAM / 统一身份认证平台
+- 微服务架构的服务治理平台
+- 低代码 / 无代码平台底座
+- 高并发（万级 QPS+）独立场景 — 需要额外优化
+

@@ -126,14 +126,16 @@ make install && make admin-dev
 | `make help` | 显示所有可用命令 |
 | `make server-dev` | 启动后端 (`go run .`) |
 | `make admin-dev` | 启动前端 (`pnpm dev`) |
+| `make docs-dev` | 启动文档站 |
+| `make docs-build` | 构建文档站 |
 | `make test` | 运行后端测试 (`go test ./...`) |
 | `make server-vet` | 后端代码检查 (`go vet ./...`) |
 | `make admin-check` | 前端类型检查 + lint |
 | `make lint` | 运行所有 lint (后端 + 前端) |
 | `make build` | 构建后端二进制 + 前端产物 |
 | `make docker-up` | 启动 PostgreSQL + Redis |
-| `make docker-config` | 验证 Docker Compose 配置 |
-| `make docker-build` | 构建 Docker 镜像 |
+| `make docker-down` | 停止 PostgreSQL + Redis |
+| `make docker-config` | 验证所有 Docker Compose 配置 |
 
 ### 不使用 make 的等效命令
 
@@ -244,7 +246,8 @@ cd admin && pnpm install --frozen-lockfile && pnpm type-check && pnpm lint && pn
 
 # Docker
 docker compose -f deploy/compose.local.yml config --quiet
-docker compose -f deploy/compose.prod.yml config --quiet
+EZ_AUTH_JWT_SECRET=placeholder docker compose -f deploy/compose.prod.yml config --quiet
+docker compose -f deploy/compose.server.yml config --quiet
 ```
 
 ## Contributing

@@ -47,6 +47,10 @@ admin-dev: ## 启动前端 (pnpm dev)
 docs-dev: ## 启动文档站
 	cd $(DOCS_DIR) && $(PNPM) docs:dev
 
+.PHONY: docs-build
+docs-build: ## 构建文档站
+	cd $(DOCS_DIR) && $(PNPM) docs:build
+
 # ---------- 测试 ----------
 
 .PHONY: test
@@ -120,9 +124,13 @@ admin-build: ## 构建前端产物
 # ---------- Docker ----------
 
 .PHONY: docker-config
-docker-config: ## 验证 Docker Compose 配置 (本地开发)
+docker-config: ## 验证所有 Docker Compose 配置
 	$(DOCKER) compose -f $(DEPLOY_DIR)/compose.local.yml config -q
-	@echo ">>> compose.local.yml 配置有效"
+	@echo ">>> compose.local.yml OK"
+	EZ_AUTH_JWT_SECRET=placeholder $(DOCKER) compose -f $(DEPLOY_DIR)/compose.prod.yml config -q
+	@echo ">>> compose.prod.yml OK"
+	$(DOCKER) compose -f $(DEPLOY_DIR)/compose.server.yml config -q
+	@echo ">>> compose.server.yml OK"
 
 .PHONY: docker-build
 docker-build: ## 构建后端 + 前端 Docker 镜像
@@ -147,5 +155,5 @@ install: ## 安装前端依赖
 
 .PHONY: clean
 clean: ## 清理构建产物
-	rm -f $(SERVER_DIR)/server
+	rm -f $(SERVER_DIR)/server $(SERVER_DIR)/server.exe
 	rm -rf $(ADMIN_DIR)/dist
