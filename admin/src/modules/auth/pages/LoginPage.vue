@@ -37,7 +37,7 @@ const {
         <div>
           <BrandLogo
             :width="196"
-            subtitle="面向工程团队的 Naive UI 后台框架"
+            subtitle="面向工程团队的 Go + Vue 企业级后台底座"
             variant="dark"
           />
         </div>

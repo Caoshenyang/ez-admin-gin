@@ -2,24 +2,24 @@
 
 @theme {
   --font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "Inter", "Inter Display", "Noto Sans CJK SC", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* Brand */
-  --color-brand-500: #14B8A6;
-  --color-brand-600: #0F9F93;
-  --color-brand-700: #0D8B82;
-  --color-brand-soft: #E6FFFB;
-  --color-brand-muted: rgba(20, 184, 166, 0.10);
+  --color-brand-500: #2563FF;
+  --color-brand-600: #1D4ED8;
+  --color-brand-700: #163EBA;
+  --color-brand-soft: #EEF4FF;
+  --color-brand-muted: rgba(37, 99, 255, 0.10);
 
   /* Accent */
-  --color-accent-blue: #2563EB;
-  --color-accent-blue-soft: #EFF6FF;
+  --color-accent-blue: #38D0F8;
+  --color-accent-blue-soft: #ECFBFF;
 
   /* Surface */
   --color-surface-page: #F6F8FB;
   --color-surface-card: #FFFFFF;
-  --color-surface-sidebar: #071D33;
-  --color-surface-sidebar-deep: #061527;
+  --color-surface-sidebar: #0D1B2A;
+  --color-surface-sidebar-deep: #13263A;
 
   /* Text */
   --color-text-main: #0F172A;
@@ -76,26 +76,26 @@
 }
 
 :root {
-  --ez-brand: #14B8A6;
-  --ez-brand-hover: #0F9F93;
-  --ez-brand-pressed: #0D8B82;
-  --ez-brand-soft: #E6FFFB;
-  --ez-brand-muted: rgba(20, 184, 166, 0.10);
-  --ez-brand-border: rgba(20, 184, 166, 0.18);
+  --ez-brand: #2563FF;
+  --ez-brand-hover: #1D4ED8;
+  --ez-brand-pressed: #163EBA;
+  --ez-brand-soft: #EEF4FF;
+  --ez-brand-muted: rgba(37, 99, 255, 0.10);
+  --ez-brand-border: rgba(37, 99, 255, 0.18);
   --ez-on-brand: #FFFFFF;
   --ez-on-dark: #FFFFFF;
   --ez-on-dark-sub: rgba(255, 255, 255, 0.72);
   --ez-on-dark-muted: rgba(255, 255, 255, 0.55);
-  --ez-accent-blue: #2563EB;
-  --ez-accent-blue-soft: #EFF6FF;
+  --ez-accent-blue: #38D0F8;
+  --ez-accent-blue-soft: #ECFBFF;
   --ez-accent-purple: #8B5CF6;
   --ez-accent-purple-soft: #F5F3FF;
   --ez-accent-indigo: #4F46E5;
   --ez-accent-indigo-soft: #EEF2FF;
   --ez-sidebar-scrollbar: rgba(255, 255, 255, 0.16);
-  --ez-sidebar-scrollbar-hover: rgba(20, 184, 166, 0.32);
-  --ez-sidebar-bg: #071D33;
-  --ez-sidebar-bg-deep: #061527;
+  --ez-sidebar-scrollbar-hover: rgba(56, 208, 248, 0.36);
+  --ez-sidebar-bg: #0D1B2A;
+  --ez-sidebar-bg-deep: #13263A;
   --ez-page-bg: #F6F8FB;
   --ez-card-bg: #FFFFFF;
   --ez-border: #E6ECF3;
@@ -103,8 +103,8 @@
   --ez-text-main: #0F172A;
   --ez-text-sub: #64748B;
   --ez-text-light: #94A3B8;
-  --ez-success-bg: rgba(20, 184, 166, 0.12);
-  --ez-success-text: #0F766E;
+  --ez-success-bg: rgba(37, 99, 255, 0.10);
+  --ez-success-text: #1D4ED8;
   --ez-warning-bg: rgba(245, 158, 11, 0.12);
   --ez-warning-text: #B45309;
   --ez-danger-bg: rgba(244, 63, 94, 0.10);
@@ -120,7 +120,7 @@
   --ez-text-body: #374151;
   --ez-text-muted: #6B7280;
   --ez-segment-bg: #f3f4f6;
-  --ez-link: #2080F0;
+  --ez-link: #2563FF;
   --ez-brand-green: #18A058;
 
   /* Radius */
@@ -154,16 +154,16 @@
 }
 
 .dark {
-  --ez-brand-soft: rgba(20, 184, 166, 0.15);
-  --ez-brand-muted: rgba(20, 184, 166, 0.12);
-  --ez-brand-border: rgba(20, 184, 166, 0.22);
-  --ez-accent-blue-soft: rgba(37, 99, 235, 0.15);
+  --ez-brand-soft: rgba(37, 99, 255, 0.18);
+  --ez-brand-muted: rgba(37, 99, 255, 0.14);
+  --ez-brand-border: rgba(56, 208, 248, 0.28);
+  --ez-accent-blue-soft: rgba(56, 208, 248, 0.16);
   --ez-accent-purple-soft: rgba(139, 92, 246, 0.18);
   --ez-accent-indigo-soft: rgba(79, 70, 229, 0.18);
   --ez-sidebar-scrollbar: rgba(255, 255, 255, 0.16);
-  --ez-sidebar-scrollbar-hover: rgba(20, 184, 166, 0.32);
-  --ez-sidebar-bg: #0B1A2E;
-  --ez-sidebar-bg-deep: #071220;
+  --ez-sidebar-scrollbar-hover: rgba(56, 208, 248, 0.36);
+  --ez-sidebar-bg: #08111B;
+  --ez-sidebar-bg-deep: #0D1B2A;
   --ez-page-bg: #0C1222;
   --ez-card-bg: #151E31;
   --ez-border: #1E293B;
@@ -171,8 +171,8 @@
   --ez-text-main: #E2E8F0;
   --ez-text-sub: #94A3B8;
   --ez-text-light: #64748B;
-  --ez-success-bg: rgba(20, 184, 166, 0.15);
-  --ez-success-text: #5EEAD4;
+  --ez-success-bg: rgba(37, 99, 255, 0.16);
+  --ez-success-text: #7DD3FC;
   --ez-warning-bg: rgba(245, 158, 11, 0.15);
   --ez-warning-text: #FCD34D;
   --ez-danger-bg: rgba(244, 63, 94, 0.15);
@@ -188,7 +188,7 @@
   --ez-text-body: #CBD5E1;
   --ez-text-muted: #94A3B8;
   --ez-segment-bg: #1E293B;
-  --ez-link: #60A5FA;
+  --ez-link: #38D0F8;
 }
 
 * {

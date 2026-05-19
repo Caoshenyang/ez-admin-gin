@@ -1,0 +1,16 @@
+:root {
+  --ez-primary-blue: #2563FF;
+  --ez-primary-blue-deep: #1D4ED8;
+  --ez-accent-blue: #38D0F8;
+  --ez-deep-navy: #0D1B2A;
+  --ez-navy-gray: #1F2937;
+  --ez-slate-600: #475569;
+  --ez-slate-400: #94A3B8;
+  --ez-slate-200: #E2E8F0;
+  --ez-slate-100: #F1F5F9;
+  --ez-font-sans: Inter, 'Inter Display', 'Noto Sans CJK SC', 'Microsoft YaHei', Arial, sans-serif;
+}
+
+.ez-logo-gradient {
+  background: linear-gradient(135deg, var(--ez-primary-blue-deep) 0%, var(--ez-primary-blue) 58%, var(--ez-accent-blue) 100%);
+}

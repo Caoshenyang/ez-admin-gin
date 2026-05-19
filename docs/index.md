@@ -1,12 +1,14 @@
----
-title: EZ Admin
-description: "EZ Admin 是面向个人项目快速上线、也适合中小型后台系统复用的全栈后台底座。"
+title: EZ Admin Gin
+description: "EZ Admin Gin 是面向个人项目快速上线、也适合中小型后台系统复用的全栈后台底座。"
 layout: home
 
 hero:
-  name: EZ Admin
+  name: EZ Admin Gin
   text: 全栈后台管理系统底座
-  tagline: Go + Gin 后端 / Vue 3 前端 / 开箱即用的权限体系与部署方案
+  tagline: 高效、易用、企业级后台框架，开箱即用的权限体系与部署方案
+  image:
+    src: /images/logo-stacked.svg
+    alt: EZ Admin Gin 品牌 Logo
   actions:
     - theme: brand
       text: 快速开始
@@ -42,4 +44,3 @@ features:
 - 微服务架构的服务治理平台
 - 低代码 / 无代码平台底座
 - 高并发（万级 QPS+）独立场景 — 需要额外优化
-

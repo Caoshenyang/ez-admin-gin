@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import brandLogoUrl from '@/assets/brand-logo.svg'
+import { computed } from 'vue'
+
+import brandLogoHorizontalDarkUrl from '@/assets/brand-logo-horizontal-dark.svg'
+import brandLogoHorizontalUrl from '@/assets/brand-logo-horizontal.svg'
+import brandLogoMarkDarkUrl from '@/assets/brand-logo-mark-dark.svg'
+import brandLogoMarkLightUrl from '@/assets/brand-logo-mark-light.svg'
+import brandLogoStackedDarkUrl from '@/assets/brand-logo-stacked-dark.svg'
+import brandLogoStackedUrl from '@/assets/brand-logo-stacked.svg'
 
 interface Props {
   align?: 'left' | 'center'
@@ -20,6 +27,18 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'light',
   width: 132,
 })
+
+const imageSrc = computed(() => {
+  if (props.direction === 'stacked') {
+    return props.variant === 'dark' ? brandLogoStackedDarkUrl : brandLogoStackedUrl
+  }
+
+  if (props.showTitle) {
+    return props.variant === 'dark' ? brandLogoHorizontalDarkUrl : brandLogoHorizontalUrl
+  }
+
+  return props.variant === 'dark' ? brandLogoMarkDarkUrl : brandLogoMarkLightUrl
+})
 </script>
 
 <template>
@@ -31,15 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
       class="flex max-w-full items-center"
       :class="direction === 'inline' ? 'gap-3' : 'flex-col gap-3'"
     >
-      <img :src="brandLogoUrl" :width="props.width" alt="EZ Admin 品牌 Logo" class="block h-auto max-w-full">
-
-      <span
-        v-if="showTitle"
-        class="block text-lg leading-none font-semibold tracking-[0.01em]"
-        :class="variant === 'dark' ? 'text-[var(--ez-on-brand)]' : 'text-[var(--ez-text-heading)]'"
-      >
-        {{ title }}
-      </span>
+      <img :src="imageSrc" :width="props.width" :alt="`${title} 品牌 Logo`" class="block h-auto max-w-full">
     </div>
 
     <p

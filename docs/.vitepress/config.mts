@@ -3,14 +3,22 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   base: '/ez-admin-gin/',
   lang: 'zh-CN',
-  title: 'EZ Admin',
-  description: '企业级通用后台管理系统底座，开箱即用的权限体系与部署方案。',
+  title: 'EZ Admin Gin',
+  description: '高效、易用、企业级后台框架，开箱即用的权限体系与部署方案。',
   cleanUrls: true,
   lastUpdated: true,
   head: [
     ['link', { rel: 'icon', href: '/ez-admin-gin/favicon.svg', type: 'image/svg+xml' }],
     ['link', { rel: 'alternate icon', href: '/ez-admin-gin/favicon.ico', sizes: 'any' }],
-    ['meta', { name: 'theme-color', content: '#079aa2' }]
+    ['link', { rel: 'apple-touch-icon', href: '/ez-admin-gin/apple-touch-icon.png' }],
+    ['link', { rel: 'manifest', href: '/ez-admin-gin/site.webmanifest' }],
+    ['meta', { name: 'theme-color', content: '#2563FF' }],
+    ['meta', { property: 'og:title', content: 'EZ Admin Gin' }],
+    ['meta', { property: 'og:description', content: '高效、易用、企业级后台框架，开箱即用的权限体系与部署方案。' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:image', content: 'https://caoshenyang.github.io/ez-admin-gin/open-graph-light.png' }],
+    ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { property: 'twitter:image', content: 'https://caoshenyang.github.io/ez-admin-gin/open-graph-light.png' }]
   ],
 
   markdown: {
@@ -54,8 +62,8 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/images/logo.svg',
-    siteTitle: 'EZ Admin',
+    logo: '/images/logo-mark.svg',
+    siteTitle: 'EZ Admin Gin',
     outline: {
       level: [2, 3],
       label: '页面导航'
@@ -72,8 +80,8 @@ export default defineConfig({
       next: '下一页'
     },
     footer: {
-      message: '企业级通用后台管理系统底座',
-      copyright: '2026 EZ Admin'
+      message: '高效、易用、企业级后台框架',
+      copyright: '2026 EZ Admin Gin'
     },
     search: {
       provider: 'local'

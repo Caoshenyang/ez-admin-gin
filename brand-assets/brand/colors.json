@@ -1,0 +1,41 @@
+{
+  "brand": "EZ Admin Gin",
+  "colors": {
+    "primary_blue": "#2563FF",
+    "primary_blue_deep": "#1D4ED8",
+    "accent_blue": "#38D0F8",
+    "deep_navy": "#0D1B2A",
+    "navy_gray": "#1F2937",
+    "slate_600": "#475569",
+    "slate_400": "#94A3B8",
+    "slate_200": "#E2E8F0",
+    "slate_100": "#F1F5F9",
+    "white": "#FFFFFF"
+  },
+  "typography": {
+    "primary_font": "Inter",
+    "fallbacks": [
+      "Noto Sans CJK SC",
+      "Microsoft YaHei",
+      "Arial",
+      "sans-serif"
+    ],
+    "display": {
+      "font_weight": 800,
+      "size": "32px",
+      "line_height": "40px",
+      "letter_spacing": "-0.5px"
+    },
+    "section_title": {
+      "font_weight": 700,
+      "size": "24px",
+      "line_height": "32px",
+      "letter_spacing": "-0.3px"
+    },
+    "body": {
+      "font_weight": 400,
+      "size": "16px",
+      "line_height": "24px"
+    }
+  }
+}
