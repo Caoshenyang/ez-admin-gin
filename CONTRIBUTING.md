@@ -5,14 +5,7 @@
 ## 当前贡献状态
 
 - **Issue**：欢迎通过 [GitHub Issues](https://github.com/Caoshenyang/ez-admin-gin/issues) 报告 Bug、提出建议或分享使用心得。
-- **Pull Request**：**暂不接受**。项目仍处于架构快速迭代阶段，代码结构和接口设计调整较频繁，外部 PR 容易产生冲突。等架构稳定后会开放 PR。
-
-开放 PR 的条件：
-- 核心架构（platform 层、模块接入流程）稳定
-- API 接口版本化管理就绪
-- 贡献指南和 PR 模板完善
-
-届时会在 README 和本文件中更新。
+- **Pull Request**：当前以仓库维护者主导收尾和稳定化为主。欢迎先通过 Issue 对齐问题、范围和方案，再决定是否进入协作实现。
 
 ## 开发环境
 
@@ -93,10 +86,9 @@ chore: update Go dependencies
 在做任何修改前，建议先阅读：
 
 - `CLAUDE.md` — 项目规则和约束
-- `docs/project/PHASE_STATUS.md` — 当前进度和状态
-- `docs/project/QUALITY_ROADMAP.md` — 长期路线图
-- `docs/project/TESTING_STRATEGY.md` — 测试规范
-- `docs/project/DECISION_LOG.md` — 架构决策记录
+- `README.md` — 项目定位、启动方式和文档入口
+- `docs/backend/migration.md` — 完整版 SQL、增量迁移链与管理员初始化关系
+- `docs/reference/database-ddl.md` — 数据库交付物入口
 
 ## 问题？
 

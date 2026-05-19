@@ -5,7 +5,7 @@ description: "集中记录 EZ Admin Gin 的配置、接口、目录约定、模�
 
 # 参考手册
 
-参考手册用于快速查阅，不承担完整教程职责。这里放固定约定、参数说明、接口说明和需要反复翻阅的内容。
+参考手册用于快速查阅，不承担完整教程职责。这里保留交付、部署、扩展和长期维护时需要反复回看的稳定说明。
 
 ## 已有参考
 
@@ -27,5 +27,11 @@ description: "集中记录 EZ Admin Gin 的配置、接口、目录约定、模�
 | [模块初始化模板](./module-init-template) | 新模块从目录、权限、菜单到前端页面接入的最小开工模板 |
 | [查询与分页约定](./query-and-pagination-conventions) | `page/page_size`、`keyword`、`status` 与模块扩展筛选边界 |
 | [数据库迁移工具选型](./migration-tool-selection) | Goose、golang-migrate、Atlas 对比和选型理由 |
-| [数据库建表语句](./database-ddl) | 完整建表 SQL 和字段说明 |
+| [数据库建表语句](./database-ddl) | MySQL / PostgreSQL 完整版 SQL 的权威入口 |
 | [逻辑删除与唯一索引冲突](./logical-delete-and-unique-index) | 逻辑删除场景下唯一索引的处理方案 |
+
+## 当前收口约定
+
+- 数据库交付以 `server/migrations/{mysql,postgres}/full_schema_and_seed.sql` 为准
+- 首个管理员账号通过 `POST /api/v1/setup/init` 创建，不内置在 SQL 种子里
+- 更新日志以仓库根目录 `CHANGELOG.md` 为准，不再维护第二份文档站版本

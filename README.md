@@ -2,6 +2,8 @@
 
 基于 Go + Gin + Vue 3 的全栈后台管理系统底座，适合个人项目快速上线、中小型后台系统和 SaaS 原型二次开发。
 
+当前仓库已进入稳定收尾阶段，主目标是保持交付完整、文档一致和数据库初始化链路清晰，而不是继续扩展示例功能。
+
 ## 适合 / 不适合
 
 | 适合 | 不适合 |
@@ -105,15 +107,18 @@ make help
 # 1. 启动 PostgreSQL 和 Redis
 make docker-up
 
-# 2. 启动后端（另一个终端）
+# 2. 如需更新完整版初始化 SQL（可选）
+make db-full-sql
+
+# 3. 启动后端（另一个终端）
 make server-dev
 
-# 3. 初始化管理员账号
+# 4. 初始化管理员账号
 curl -X POST http://localhost:8080/api/v1/setup/init \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 
-# 4. 启动前端（另一个终端）
+# 5. 启动前端（另一个终端）
 make install && make admin-dev
 ```
 
@@ -123,15 +128,18 @@ make install && make admin-dev
 # 1. 启动 PostgreSQL 和 Redis
 docker compose -f deploy/compose.local.yml up -d
 
-# 2. 启动后端
+# 2. 如需更新完整版初始化 SQL（可选）
+./scripts/build-full-migrations.sh
+
+# 3. 启动后端
 cd server && go run .
 
-# 3. 初始化管理员账号
+# 4. 初始化管理员账号
 curl -X POST http://localhost:8080/api/v1/setup/init \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 
-# 4. 启动前端
+# 5. 启动前端
 cd admin && pnpm install && pnpm dev
 ```
 
@@ -142,6 +150,15 @@ cd admin && pnpm install && pnpm dev
 ### 默认账号说明
 
 初始化时通过 `setup/init` 接口自行指定用户名和密码。**生产环境首次登录后请立即修改密码。**
+
+### 数据库初始化说明
+
+数据库对外交付以两份完整版 SQL 为准：
+
+- `server/migrations/mysql/full_schema_and_seed.sql`
+- `server/migrations/postgres/full_schema_and_seed.sql`
+
+它们只负责系统表和内置种子，不会写死真实管理员账号。首个管理员仍通过 `setup/init` 创建。
 
 ## 常用命令速查
 
@@ -159,6 +176,7 @@ cd admin && pnpm install && pnpm dev
 | `make lint` | 运行所有 lint (后端 vet + 前端检查 + 契约一致性) |
 | `make build` | 构建后端二进制 + 前端产物 |
 | `make docs-build` | 构建文档站 |
+| `make db-full-sql` | 生成 MySQL / PostgreSQL 完整版初始化 SQL |
 | `make docker-up` | 启动 PostgreSQL + Redis |
 | `make docker-down` | 停止 PostgreSQL + Redis |
 | `make docker-config` | 验证所有 Docker Compose 配置 |
@@ -250,7 +268,7 @@ docker compose -f deploy/compose.server.yml config --quiet
 
 欢迎通过 Issue 反馈 Bug、提出建议或分享使用心得。
 
-目前暂不接受 Pull Request，主要原因是项目还处于架构快速迭代阶段。等架构稳定后会开放 PR，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+当前以仓库维护者主导的稳定化和收尾为主。若要协作实现，建议先通过 Issue 对齐范围和方案，详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## License
 

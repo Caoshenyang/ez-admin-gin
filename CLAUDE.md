@@ -11,10 +11,9 @@
 
 ## 项目目标
 
-- 当前评分：约 8.0 / 10
-- 目标评分：9.0+
-- 核心方向：生产级后台框架，不是堆功能 demo
-- 长期路线图：docs/project/QUALITY_ROADMAP.md
+- 当前阶段：稳定收尾与交付面整理
+- 核心方向：生产可交付的后台底座，不再继续扩展示例功能
+- 判断标准：减少双套真相、降低维护成本、优先修复漂移
 
 ## 技术栈
 
@@ -61,15 +60,14 @@
 ## 每次任务前必须阅读
 
 - CLAUDE.md（本文件）
-- docs/project/QUALITY_ROADMAP.md
-- docs/project/EXECUTION_RULES.md
-- docs/project/PHASE_STATUS.md
-- docs/project/DECISION_LOG.md
-- docs/project/TESTING_STRATEGY.md
+- README.md
+- docs/backend/migration.md
+- docs/reference/database-ddl.md
+- docs/reference/init-data-reference.md
 
-## 每次任务后必须更新
+## 数据库交付约定
 
-- docs/project/PHASE_STATUS.md — 更新完成/未完成/阻塞/下一步
-- docs/project/DECISION_LOG.md — 如有新架构决策
-- docs/project/TESTING_STRATEGY.md — 如测试策略变化
-- docs/project/QUALITY_ROADMAP.md — 如 Phase 状态变化
+- 数据库对外交付以 `server/migrations/mysql/full_schema_and_seed.sql` 和 `server/migrations/postgres/full_schema_and_seed.sql` 为准。
+- 这两份文件由 `./scripts/build-full-migrations.sh` 从真实 `.up.sql` 迁移链归并生成。
+- 不要手工维护第二套“示意 SQL”真相源。
+- 首个管理员继续通过 `POST /api/v1/setup/init` 创建，不写死到种子里。

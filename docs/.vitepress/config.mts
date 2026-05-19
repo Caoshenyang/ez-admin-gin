@@ -178,8 +178,7 @@ export default defineConfig({
             { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
             { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' },
             { text: 'SSH 隧道连接服务器数据库', link: '/reference/ssh-tunnel-database' },
-            { text: 'VitePress 部署到 GitHub Pages', link: '/reference/vitepress-github-pages' },
-            { text: '更新日志', link: '/reference/changelog' }
+            { text: 'VitePress 部署到 GitHub Pages', link: '/reference/vitepress-github-pages' }
           ]
         }
       ],

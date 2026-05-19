@@ -51,6 +51,10 @@ docs-dev: ## 启动文档站
 docs-build: ## 构建文档站
 	cd $(DOCS_DIR) && $(PNPM) docs:build
 
+.PHONY: db-full-sql
+db-full-sql: ## 生成 MySQL / PostgreSQL 完整版初始化 SQL
+	./scripts/build-full-migrations.sh
+
 # ---------- 测试 ----------
 
 .PHONY: test

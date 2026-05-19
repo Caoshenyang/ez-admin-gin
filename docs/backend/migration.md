@@ -1,115 +1,44 @@
 ---
 title: 迁移与种子数据
-description: 数据库迁移机制、种子数据内容、双数据库支持
+description: 完整版 SQL、历史迁移链与管理员初始化之间的关系说明
 ---
 
 # 迁移与种子数据
 
-## 迁移机制
+这页只回答三个问题：
 
-使用 `golang-migrate` 管理数据库版本，支持 MySQL 和 PostgreSQL 双方言。
+1. 生产环境到底以哪份 SQL 为准
+2. 仓库里保留的增量迁移链还扮演什么角色
+3. 第一个可登录管理员账号是怎么创建出来的
 
-### 迁移文件结构
+::: tip 先记结论
+对外交付时，数据库以 `server/migrations/mysql/full_schema_and_seed.sql` 和 `server/migrations/postgres/full_schema_and_seed.sql` 为准。
 
-```
-server/migrations/
-├── mysql/
-│   ├── 000001_init_schema.up.sql
-│   ├── 000001_init_schema.down.sql
-│   ├── 000002_seed_data.up.sql
-│   ├── 000002_seed_data.down.sql
-│   └── ...
-└── postgres/
-    ├── 000001_init_schema.up.sql
-    ├── 000001_init_schema.down.sql
-    └── ...
-```
+现有 `000001` 到 `000011` 的增量迁移链继续保留，主要用于程序启动兼容和历史演进追踪；它不是新的对外交付入口。
+:::
 
-每个版本包含 `.up.sql`（执行）和 `.down.sql`（回滚）。
+## 当前初始化分成两段
 
-### 迁移版本
+当前主线不是“一个 SQL 直接连管理员账号都帮你建好”，而是固定分成两段：
 
-| 版本 | 内容 |
-|------|------|
-| 000001 | 基础表结构（用户、角色、菜单、配置、日志等） |
-| 000002 | 种子数据（super_admin 角色、系统菜单、权限策略） |
-| 000003 | 企业基础（部门、岗位、数据权限表结构） |
-| 000004 | 字典表结构 |
-| 000005 | 字典种子数据 |
-| 000006 | 附件表结构 |
-| 000007 | 附件种子数据 |
-| 000008 | 组织菜单种子数据 |
-| 000009 | 菜单图标对齐 |
+1. 导入完整版 SQL，创建全部系统表和内置系统种子
+2. 调用 `POST /api/v1/setup/init` 创建第一个管理员用户
 
-### 迁移执行
+也就是说：
 
-迁移在服务启动时自动执行：
+- 角色、菜单、按钮、Casbin 策略、字典、附件、通知等内置数据来自数据库脚本
+- 第一个真正能登录后台的管理员账号来自初始化接口
 
-```
-bootstrap.MustRun()
-  → 连接数据库
-  → migrate.MustRun(migrationsFS, driver)
-  → 已执行的版本自动跳过
-```
+## 推荐使用方式
 
-也提供了验证脚本 `scripts/verify-realdb-migrations.sh`，可针对真实数据库测试迁移。
+### 生产环境 / 新环境初始化
 
-## 数据库表清单
+按数据库类型选择下面其中一份：
 
-| 表 | 用途 | 逻辑删除 |
-|----|------|---------|
-| `sys_user` | 用户 | ✅ |
-| `sys_role` | 角色 | ✅ |
-| `sys_menu` | 菜单/权限 | ✅ |
-| `sys_department` | 部门 | ✅ |
-| `sys_post` | 岗位 | ✅ |
-| `sys_user_role` | 用户-角色关联 | ❌ |
-| `sys_role_menu` | 角色-菜单关联 | ❌ |
-| `sys_user_post` | 用户-岗位关联 | ❌ |
-| `sys_role_data_scope` | 角色自定义数据范围 | ❌ |
-| `sys_config` | 系统配置 | ✅ |
-| `sys_dict_type` | 字典类型 | ✅ |
-| `sys_dict_item` | 字典项 | ✅ |
-| `sys_login_log` | 登录日志 | ❌ |
-| `sys_operation_log` | 操作日志 | ❌ |
-| `sys_notice` | 通知公告 | ✅ |
-| `sys_file` | 文件 | ✅ |
-| `sys_attachment` | 附件 | ✅ |
-| `casbin_rule` | Casbin 策略 | ❌ |
+- MySQL：`server/migrations/mysql/full_schema_and_seed.sql`
+- PostgreSQL：`server/migrations/postgres/full_schema_and_seed.sql`
 
-## 种子数据
-
-### 超级管理员角色
-
-- 角色编码：`super_admin`
-- 数据范围：`all`（所有数据）
-- 关联全部菜单和按钮权限
-
-### 系统菜单结构
-
-```
-系统管理
-├── 用户管理 (system:user:*)
-├── 角色管理 (system:role:*)
-├── 菜单管理 (system:menu:*)
-├── 部门管理 (system:dept:*)
-└── 岗位管理 (system:post:*)
-系统工具
-├── 系统配置 (system:config:*)
-├── 数据字典 (system:dict:*)
-├── 文件管理 (system:file:*)
-├── 操作日志 (system:operationlog:*)
-├── 登录日志 (system:loginlog:*)
-└── 通知公告 (system:notice:*)
-```
-
-### Casbin 策略
-
-所有系统管理接口的权限策略分配给 `super_admin` 角色。
-
-## 系统初始化
-
-管理员账号通过 Setup API 创建，不在迁移中硬编码：
+导入完成后，再调用：
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/setup/init \
@@ -117,14 +46,68 @@ curl -X POST http://localhost:8080/api/v1/setup/init \
   -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
 ```
 
-初始化只能执行一次，重复调用会返回错误。
+### 程序启动时的增量迁移
 
-## 新增迁移
+服务启动时仍会执行 `server/migrations/{driver}/` 下的增量迁移链。
 
-添加新迁移文件时：
+这条链路继续保留的原因是：
 
-1. 在 `migrations/mysql/` 和 `migrations/postgres/` 同时添加
-2. 编号递增，格式 `000010_xxx.up.sql` / `000010_xxx.down.sql`
-3. 同时提供 `.up.sql` 和 `.down.sql`
-4. `.up.sql` 包含建表、索引、种子数据
-5. `.down.sql` 包含反向操作（DROP TABLE、DELETE）
+- 兼容已有开发环境和历史部署方式
+- 让仓库保留清晰的结构演进记录
+- 避免一次性推翻当前启动逻辑带来的额外风险
+
+但从交付口径上，它现在是“内部兼容机制”，不是新的用户入口。
+
+::: warning 不要把两种入口重复执行成两遍初始化
+如果你已经从空库导入了 `full_schema_and_seed.sql`，就不要再把它理解成“还需要额外手动补一遍 000001~000011”。
+
+程序启动后看到迁移链是 `no change` 或幂等跳过，属于正常现象。
+:::
+
+## 完整版 SQL 是怎么来的
+
+两份完整版 SQL 不是手工拼出来的，它们由仓库脚本从真实的 `.up.sql` 迁移链顺序归并生成：
+
+```bash
+./scripts/build-full-migrations.sh
+```
+
+如果后续迁移链继续演进，更新完整版 SQL 时也应该走这个脚本，而不是直接手改产物文件。
+
+## 当前迁移版本
+
+当前保留的增量迁移版本为：
+
+| 版本 | 内容 |
+| --- | --- |
+| `000001` | 基础系统表结构 |
+| `000002` | 超级管理员角色、系统菜单、Casbin、角色菜单种子 |
+| `000003` | 组织体系、岗位、数据权限结构 |
+| `000004` | 字典表结构 |
+| `000005` | 字典种子数据 |
+| `000006` | 附件表结构 |
+| `000007` | 附件菜单与权限种子 |
+| `000008` | 部门 / 岗位菜单与权限种子 |
+| `000009` | 菜单图标对齐 |
+| `000010` | 通知表结构 |
+| `000011` | 通知权限种子 |
+
+## 验证你是否初始化成功
+
+完成完整版 SQL 导入后，系统应至少满足下面这些条件：
+
+- 能查到 `super_admin` 角色
+- 能查到系统管理主菜单及其按钮节点
+- `casbin_rule` 中存在 `super_admin` 的系统接口策略
+- 字典、附件、通知等扩展模块表已经存在
+
+完成 `setup/init` 后，还应看到：
+
+- `sys_user` 出现首条管理员用户
+- `sys_user_role` 出现该用户与 `super_admin` 的绑定
+- 重复调用 `setup/init` 会返回冲突，而不是重复创建账号
+
+## 相关入口
+
+- 完整建表与种子说明：[/reference/database-ddl](/reference/database-ddl)
+- 初始化链路说明：[/reference/init-data-reference](/reference/init-data-reference)
