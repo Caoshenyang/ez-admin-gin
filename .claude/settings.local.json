@@ -146,7 +146,19 @@
       "Bash(find admin/src/modules/*/pages -type f)",
       "Bash(git status *)",
       "Bash(git commit *)",
-      "Bash(grep -rn 'text-\\\\[.*px\\\\]\\\\|rounded-\\\\[.*px\\\\]\\\\|font-size:.*px\\\\|border-radius:.*px\\\\|background:.*#\\\\|background-color:.*#\\\\|: #[0-9A-Fa-f]\\\\{3,8\\\\}\\\\b\\\\|border-color:.*#\\\\|box-shadow:.*px\\\\|#F6F8FB\\\\|#FAFBFD\\\\|#f7fafc\\\\|#0D8B82\\\\|#0F766E\\\\|#CBD5E1' /Users/pzhen/Documents/workspace/csy/ez-admin-gin/admin/src/modules/iam/ --include=\"*.vue\")"
+      "Bash(grep -rn 'text-\\\\[.*px\\\\]\\\\|rounded-\\\\[.*px\\\\]\\\\|font-size:.*px\\\\|border-radius:.*px\\\\|background:.*#\\\\|background-color:.*#\\\\|: #[0-9A-Fa-f]\\\\{3,8\\\\}\\\\b\\\\|border-color:.*#\\\\|box-shadow:.*px\\\\|#F6F8FB\\\\|#FAFBFD\\\\|#f7fafc\\\\|#0D8B82\\\\|#0F766E\\\\|#CBD5E1' /Users/pzhen/Documents/workspace/csy/ez-admin-gin/admin/src/modules/iam/ --include=\"*.vue\")",
+      "Bash(findstr \"auth\")",
+      "Bash(pnpm build *)",
+      "Bash(EZ_AUTH_JWT_SECRET=ci-placeholder docker compose -f deploy/compose.prod.yml config --quiet)",
+      "Bash(make docker-config *)",
+      "Bash(EZ_AUTH_JWT_SECRET=placeholder docker compose -f deploy/compose.prod.yml config -q)",
+      "Bash(ls *.md)",
+      "Bash(ls -d */)",
+      "Bash(git rm *)",
+      "Bash(git ls-tree *)",
+      "Bash(make help *)",
+      "Bash(EZ_AUTH_JWT_SECRET=placeholder docker compose -f deploy/compose.prod.yml config --quiet)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

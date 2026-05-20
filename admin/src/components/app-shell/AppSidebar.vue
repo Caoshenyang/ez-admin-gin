@@ -4,7 +4,7 @@ import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import type { MenuOption, ScrollbarProps } from 'naive-ui'
 import { NButton, NIcon, NLayoutSider, NMenu, NScrollbar, NTooltip } from 'naive-ui'
 
-import BrandLogo from '@/components/brand/BrandLogo.vue'
+import brandLogoMarkLightUrl from '@/assets/brand-logo-mark-light.svg'
 
 defineProps<{
   activeMenuKey: string
@@ -42,9 +42,22 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
     :show-trigger="false"
     inverted
   >
-    <div class="flex items-center justify-center px-4 pt-5 pb-4">
+    <div class="flex items-center justify-center px-4 pt-6 pb-5">
       <NButton text class="!h-auto !p-0 !text-white hover:!bg-transparent" @click="emit('navigate', '/dashboard')">
-        <BrandLogo :width="42" direction="inline" :show-title="!collapsed" variant="dark" />
+        <div
+          class="flex items-center"
+          :class="collapsed ? 'justify-center' : 'w-full justify-start gap-3'"
+        >
+          <img
+            :src="brandLogoMarkLightUrl"
+            :width="collapsed ? 28 : 34"
+            alt="EZ Admin Gin 品牌图形"
+            class="block h-auto shrink-0"
+          >
+          <div v-if="!collapsed" class="min-w-0 text-left leading-none">
+            <p class="truncate text-[16px] font-semibold tracking-[0.01em] text-white">EZ Admin</p>
+          </div>
+        </div>
       </NButton>
     </div>
 

@@ -12,6 +12,7 @@ export default defineConfig({
     ['link', { rel: 'alternate icon', href: '/ez-admin-gin/favicon.ico', sizes: 'any' }],
     ['link', { rel: 'apple-touch-icon', href: '/ez-admin-gin/apple-touch-icon.png' }],
     ['link', { rel: 'manifest', href: '/ez-admin-gin/site.webmanifest' }],
+    ['meta', { name: 'msapplication-config', content: '/ez-admin-gin/browserconfig.xml' }],
     ['meta', { name: 'theme-color', content: '#2563FF' }],
     ['meta', { property: 'og:title', content: 'EZ Admin Gin' }],
     ['meta', { property: 'og:description', content: '高效、易用、企业级后台框架，开箱即用的权限体系与部署方案。' }],
