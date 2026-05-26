@@ -154,8 +154,6 @@ const {
 
 <style scoped>
 .login-page {
-  display: grid;
-  place-items: center;
   height: 100vh;
   overflow: hidden;
   background: #F3F7FF;
@@ -165,15 +163,15 @@ const {
 .login-shell {
   position: relative;
   display: grid;
-  width: min(100vw, calc(100vh * 1.7779));
-  height: min(100vh, calc(100vw / 1.7779));
+  width: 100vw;
+  height: 100vh;
   grid-template-columns: minmax(460px, 1fr) minmax(360px, 560px);
   align-items: stretch;
   overflow: hidden;
   background-color: #F3F7FF;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: cover;
 }
 
 .login-brand-panel {
@@ -323,10 +321,7 @@ const {
 
 @media (max-width: 920px) {
   .login-shell {
-    width: 100vw;
-    height: 100vh;
     grid-template-columns: 1fr;
-    background-size: cover;
     background-position: center;
   }
 
