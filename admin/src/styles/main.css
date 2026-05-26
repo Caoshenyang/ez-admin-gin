@@ -1,3 +1,4 @@
+@import "./tokens.css";
 @import "tailwindcss";
 
 @theme {
@@ -76,10 +77,10 @@
 }
 
 :root {
-  --ez-brand: #2563FF;
-  --ez-brand-hover: #1D4ED8;
-  --ez-brand-pressed: #163EBA;
-  --ez-brand-soft: #EEF4FF;
+  --ez-brand: var(--ez-primary);
+  --ez-brand-hover: var(--ez-primary-hover);
+  --ez-brand-pressed: var(--ez-primary-pressed);
+  --ez-brand-soft: var(--ez-primary-light);
   --ez-brand-muted: rgba(37, 99, 255, 0.10);
   --ez-brand-border: rgba(37, 99, 255, 0.18);
   --ez-on-brand: #FFFFFF;
@@ -94,15 +95,9 @@
   --ez-accent-indigo-soft: #EEF2FF;
   --ez-sidebar-scrollbar: rgba(255, 255, 255, 0.16);
   --ez-sidebar-scrollbar-hover: rgba(56, 208, 248, 0.36);
-  --ez-sidebar-bg: #0D1B2A;
-  --ez-sidebar-bg-deep: #13263A;
-  --ez-page-bg: #F6F8FB;
-  --ez-card-bg: #FFFFFF;
-  --ez-border: #E6ECF3;
-  --ez-border-light: #EEF2F7;
-  --ez-text-main: #0F172A;
-  --ez-text-sub: #64748B;
-  --ez-text-light: #94A3B8;
+  --ez-sidebar-bg-deep: #07111F;
+  --ez-text-sub: var(--ez-text-secondary);
+  --ez-text-light: var(--ez-text-placeholder);
   --ez-success-bg: rgba(37, 99, 255, 0.10);
   --ez-success-text: #1D4ED8;
   --ez-warning-bg: rgba(245, 158, 11, 0.12);
@@ -112,8 +107,8 @@
   --ez-info-bg: rgba(37, 99, 235, 0.10);
   --ez-info-text: #2563EB;
   --ez-shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.04);
-  --ez-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --ez-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.10);
+  --ez-shadow-md: var(--ez-shadow-card);
+  --ez-shadow-lg: var(--ez-shadow-popup);
   --ez-panel-dark: #0F172A;
   --ez-panel-dark-secondary: #1F2937;
   --ez-text-heading: #111827;
@@ -144,7 +139,7 @@
   --ez-text-hero: 32px;
 
   color-scheme: light;
-  font-family: var(--font-sans);
+  font-family: var(--ez-font-family);
   color: var(--ez-text-main);
   background: var(--ez-page-bg);
   font-synthesis: none;
@@ -162,15 +157,12 @@
   --ez-accent-indigo-soft: rgba(79, 70, 229, 0.18);
   --ez-sidebar-scrollbar: rgba(255, 255, 255, 0.16);
   --ez-sidebar-scrollbar-hover: rgba(56, 208, 248, 0.36);
-  --ez-sidebar-bg: #08111B;
-  --ez-sidebar-bg-deep: #0D1B2A;
-  --ez-page-bg: #0C1222;
-  --ez-card-bg: #151E31;
-  --ez-border: #1E293B;
-  --ez-border-light: #1A2536;
-  --ez-text-main: #E2E8F0;
-  --ez-text-sub: #94A3B8;
-  --ez-text-light: #64748B;
+  --ez-brand: var(--ez-primary);
+  --ez-brand-hover: var(--ez-primary-hover);
+  --ez-brand-pressed: var(--ez-primary-pressed);
+  --ez-brand-soft: var(--ez-primary-light);
+  --ez-text-sub: var(--ez-text-secondary);
+  --ez-text-light: var(--ez-text-placeholder);
   --ez-success-bg: rgba(37, 99, 255, 0.16);
   --ez-success-text: #7DD3FC;
   --ez-warning-bg: rgba(245, 158, 11, 0.15);

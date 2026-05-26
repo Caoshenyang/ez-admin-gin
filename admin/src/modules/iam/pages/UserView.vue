@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton } from 'naive-ui'
+import { NAlert, NButton, NCard, NInput, NTree } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import UserFilterBar from '../components/UserFilterBar.vue'
@@ -73,39 +73,59 @@ const {
         {{ successText }}
       </NAlert>
 
-      <UserFilterBar
-        :keyword="query.keyword ?? ''"
-        :role-id="query.role_id ?? 0"
-        :role-options="roleFilterOptions"
-        :status="query.status ?? 0"
-        :status-options="statusOptions"
-        @update:keyword="query.keyword = $event"
-        @update:role-id="query.role_id = $event"
-        @update:status="query.status = $event as 0 | UserStatus"
-        @search="handleSearch"
-        @reset="handleReset"
-      />
+      <div class="user-page-layout">
+        <NCard class="user-dept-card" :bordered="false" content-class="ez-card-content-fill">
+          <div class="user-dept-card__head">
+            <strong>部门树</strong>
+            <span>{{ departmentTreeOptions.length }} 组</span>
+          </div>
+          <NInput size="small" placeholder="搜索部门" clearable />
+          <NTree
+            class="mt-3"
+            block-line
+            default-expand-all
+            :data="departmentTreeOptions"
+            key-field="value"
+            label-field="label"
+          />
+        </NCard>
 
-      <UserTable
-        :checked-row-keys="checkedRowKeys"
-        :department-name-map="departmentNameMap"
-        :display-total="displayTotal"
-        :loading="loading"
-        :page="query.page"
-        :page-size="query.page_size"
-        :post-name-map="postNameMap"
-        :role-name-map="roleNameMap"
-        :selected-count="selectedCount"
-        :users="displayUsers"
-        :can-use="canUse"
-        @checked-row-keys-change="handleCheckedRowKeys"
-        @edit="openEdit"
-        @page-change="handlePageChange"
-        @page-size-change="handlePageSizeChange"
-        @refresh="handleSearch"
-        @role="openRole"
-        @toggle-status="handleToggleStatus"
-      />
+        <section class="user-table-panel">
+          <UserFilterBar
+            :keyword="query.keyword ?? ''"
+            :role-id="query.role_id ?? 0"
+            :role-options="roleFilterOptions"
+            :status="query.status ?? 0"
+            :status-options="statusOptions"
+            @update:keyword="query.keyword = $event"
+            @update:role-id="query.role_id = $event"
+            @update:status="query.status = $event as 0 | UserStatus"
+            @search="handleSearch"
+            @reset="handleReset"
+          />
+
+          <UserTable
+            :checked-row-keys="checkedRowKeys"
+            :department-name-map="departmentNameMap"
+            :display-total="displayTotal"
+            :loading="loading"
+            :page="query.page"
+            :page-size="query.page_size"
+            :post-name-map="postNameMap"
+            :role-name-map="roleNameMap"
+            :selected-count="selectedCount"
+            :users="displayUsers"
+            :can-use="canUse"
+            @checked-row-keys-change="handleCheckedRowKeys"
+            @edit="openEdit"
+            @page-change="handlePageChange"
+            @page-size-change="handlePageSizeChange"
+            @refresh="handleSearch"
+            @role="openRole"
+            @toggle-status="handleToggleStatus"
+          />
+        </section>
+      </div>
     </section>
 
     <UserFormModal
@@ -132,3 +152,50 @@ const {
     />
   </main>
 </template>
+
+<style scoped>
+.user-page-layout {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  overflow: hidden;
+}
+
+.user-dept-card {
+  min-height: 0;
+  border: 1px solid var(--ez-border);
+  border-radius: 12px;
+  box-shadow: var(--ez-shadow-card);
+}
+
+.user-dept-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--ez-text-main);
+}
+
+.user-dept-card__head span {
+  color: var(--ez-text-secondary);
+  font-size: 12px;
+}
+
+.user-table-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .user-page-layout {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}
+</style>

@@ -1,6 +1,6 @@
 ## Summary
 
-Brief description of what this PR does and why.
+Brief description of what this change does and why.
 
 ## Change Type
 
@@ -8,13 +8,11 @@ Brief description of what this PR does and why.
 - [ ] New feature
 - [ ] Refactoring
 - [ ] Documentation
-- [ ] Test
 - [ ] Chore / CI
 
 ## Checklist
 
-- [ ] `make lint` passes
-- [ ] Tests added or updated for the changed behavior
+- [ ] `make verify` passes, or skipped with a clear reason
 - [ ] No unrelated changes or refactoring
 - [ ] Documentation updated if applicable
 - [ ] `CHANGELOG.md` updated (under `[Unreleased]`)

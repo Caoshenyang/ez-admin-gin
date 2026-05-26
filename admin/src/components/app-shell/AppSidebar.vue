@@ -36,13 +36,13 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
     bordered
     content-class="flex h-full flex-col bg-[linear-gradient(180deg,var(--ez-sidebar-bg)_0%,var(--ez-sidebar-bg-deep)_100%)]"
     :collapsed="collapsed"
-    :collapsed-width="72"
+    :collapsed-width="64"
     :width="240"
     :native-scrollbar="false"
     :show-trigger="false"
     inverted
   >
-    <div class="flex items-center justify-center px-4 pt-6 pb-5">
+    <div class="flex h-16 items-center justify-center px-3">
       <NButton text class="!h-auto !p-0 !text-white hover:!bg-transparent" @click="emit('navigate', '/dashboard')">
         <div
           class="flex items-center"
@@ -50,24 +50,24 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
         >
           <img
             :src="brandLogoMarkLightUrl"
-            :width="collapsed ? 28 : 34"
+            :width="collapsed ? 28 : 32"
             alt="EZ Admin Gin 品牌图形"
             class="block h-auto shrink-0"
           >
           <div v-if="!collapsed" class="min-w-0 text-left leading-none">
-            <p class="truncate text-[16px] font-semibold tracking-[0.01em] text-white">EZ Admin</p>
+            <p class="truncate text-[16px] font-semibold tracking-[0.01em] text-white">EZ Admin Gin</p>
           </div>
         </div>
       </NButton>
     </div>
 
-    <p v-if="!collapsed" class="px-4 text-[var(--ez-text-xs)] font-semibold tracking-[0.08em] text-white/30 uppercase">
-      主菜单
+    <p v-if="!collapsed" class="px-4 text-[12px] font-semibold tracking-[0.08em] text-[#64748B] uppercase">
+      工作台
     </p>
 
     <NScrollbar
       class="sidebar-menu-scrollbar mt-2 min-h-0 flex-1"
-      :class="collapsed ? 'px-0' : 'px-2'"
+      :class="collapsed ? 'px-0' : 'px-3'"
       trigger="hover"
       :theme-overrides="sidebarScrollbarThemeOverrides"
     >
@@ -76,9 +76,9 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
         :expanded-keys="expandedMenuKeys"
         :options="menuOptions"
         :indent="20"
-        :root-indent="18"
+        :root-indent="12"
         :collapsed="collapsed"
-        :collapsed-width="72"
+        :collapsed-width="64"
         :collapsed-icon-size="22"
         :accordion="false"
         inverted

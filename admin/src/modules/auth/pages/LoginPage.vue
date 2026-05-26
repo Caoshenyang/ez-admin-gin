@@ -10,7 +10,8 @@ import {
 } from 'naive-ui'
 
 import { useLoginPage } from '../composables/useLoginPage'
-import BrandLogo from '@/components/brand/BrandLogo.vue'
+import brandLogoMarkUrl from '@/assets/brand-logo.svg'
+import loginHeroBgUrl from '@/assets/login/login-hero-bg.png'
 
 const {
   captchaText,
@@ -27,43 +28,38 @@ const {
 </script>
 
 <template>
-  <main class="h-screen overflow-hidden bg-[var(--ez-page-bg)] px-4 py-4 md:px-5 md:py-5">
-    <section
-      class="mx-auto grid h-full max-w-[1180px] items-center gap-6 xl:grid-cols-[minmax(0,560px)_400px] xl:justify-between xl:gap-8"
-    >
-      <section
-        class="flex max-h-[720px] min-h-0 flex-col justify-between overflow-hidden rounded-[var(--ez-radius-2xl)] bg-[var(--ez-panel-dark)] px-7 py-7 md:px-9 md:py-8 xl:px-10 xl:py-9"
-      >
-        <div>
-          <BrandLogo
-            :width="196"
-            subtitle="面向工程团队的 Go + Vue 企业级后台底座"
-            variant="dark"
-          />
+  <main class="login-page">
+    <section class="login-shell" :style="{ backgroundImage: `url(${loginHeroBgUrl})` }">
+      <section class="login-brand-panel">
+        <div class="login-logo-row">
+          <img :src="brandLogoMarkUrl" alt="EZ Admin Gin" class="login-logo-mark">
         </div>
 
-        <div class="mt-6 rounded-[var(--ez-radius-lg)] bg-[var(--ez-panel-dark-secondary)] p-5 md:p-6">
-          <ul class="grid list-none gap-4 p-0">
-            <li
-              v-for="feature in productFeatures"
-              :key="feature"
-              class="text-[var(--ez-text-base)] leading-7 text-[var(--ez-on-brand)] md:text-[var(--ez-text-md)]"
-            >
-              {{ feature }}
-            </li>
-          </ul>
+        <div class="login-brand-copy">
+          <h1>EZ Admin Gin</h1>
+          <p>企业级后台管理系统</p>
         </div>
+
+        <ul class="login-feature-list">
+          <li
+            v-for="feature in productFeatures"
+            :key="feature"
+          >
+            <span class="login-feature-check">✓</span>
+            {{ feature }}
+          </li>
+        </ul>
       </section>
 
-      <section class="flex min-h-0 flex-col justify-center gap-2">
+      <section class="login-form-panel">
         <NCard
-          class="rounded-[var(--ez-radius-xl)] shadow-[var(--ez-shadow-lg)]"
+          class="login-card"
           :bordered="false"
           content-class="login-card-content"
         >
           <div class="mb-2.5">
-            <h2 class="mb-1 text-[var(--ez-text-2xl)] font-bold text-[var(--ez-text-main)]">登录控制台</h2>
-            <p class="text-sm text-[var(--ez-text-sub)]">请使用管理员账号继续</p>
+            <h2 class="mb-1 text-[24px] font-semibold text-[var(--ez-text-main)]">欢迎回来 👋</h2>
+            <p class="text-sm text-[var(--ez-text-secondary)]">请使用您的账号登录系统</p>
           </div>
 
           <NForm
@@ -144,7 +140,7 @@ const {
             type="info"
             :show-icon="false"
             class="mt-2.5 compact-alert"
-            title="默认账号：admin / Admin@123456"
+            title="默认账号：admin / EzAdmin@123456"
           >
             验证码当前仅做占位，后续补齐真实校验。
           </NAlert>
@@ -157,6 +153,123 @@ const {
 </template>
 
 <style scoped>
+.login-page {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  overflow: hidden;
+  background: #F3F7FF;
+  padding: 0;
+}
+
+.login-shell {
+  position: relative;
+  display: grid;
+  width: min(100vw, calc(100vh * 1.7779));
+  height: min(100vh, calc(100vw / 1.7779));
+  grid-template-columns: minmax(460px, 1fr) minmax(360px, 560px);
+  align-items: stretch;
+  overflow: hidden;
+  background-color: #F3F7FF;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.login-brand-panel {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 44px 48px;
+  z-index: 1;
+}
+
+.login-logo-row {
+  display: flex;
+  align-items: center;
+}
+
+.login-logo-mark {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 24px rgba(37, 99, 255, 0.22));
+}
+
+.login-brand-copy {
+  max-width: 360px;
+  margin-top: 56px;
+}
+
+.login-brand-copy h1 {
+  margin: 0;
+  color: #0F172A;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.login-brand-copy p {
+  margin: 12px 0 0;
+  color: #334155;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.login-feature-list {
+  display: grid;
+  width: min(360px, 100%);
+  gap: 16px;
+  margin: 42px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.login-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1E3A5F;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-feature-check {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563FF, #60A5FA);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(37, 99, 255, 0.18);
+}
+
+.login-form-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 56px 40px 32px;
+  z-index: 2;
+}
+
+.login-card {
+  border: 1px solid var(--ez-border);
+  border-radius: 16px;
+  width: min(420px, 100%);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--ez-shadow-popup);
+  backdrop-filter: blur(14px);
+}
+
 .login-form {
   --n-feedback-height: 8px;
   --n-feedback-padding: 1px 0 0;
@@ -205,6 +318,29 @@ const {
 }
 
 .login-card-content {
-  padding: 20px;
+  padding: 28px;
+}
+
+@media (max-width: 920px) {
+  .login-shell {
+    width: 100vw;
+    height: 100vh;
+    grid-template-columns: 1fr;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .login-brand-panel {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.18;
+  }
+
+  .login-form-panel {
+    width: min(420px, 100%);
+    margin: 0 auto;
+    padding: 24px;
+  }
 }
 </style>

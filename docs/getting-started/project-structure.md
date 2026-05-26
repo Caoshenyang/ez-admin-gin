@@ -1,6 +1,6 @@
 ---
 title: 项目结构
-description: "EZ Admin Gin 的技术栈组成、当前目录结构，以及企业级底座主线下已经稳定下来的后端骨架说明。"
+description: "EZ Admin Gin 的技术栈组成、当前目录结构，以及面向个人 MVP 项目的后端骨架说明。"
 ---
 
 # 项目结构

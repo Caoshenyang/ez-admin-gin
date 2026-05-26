@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NInput, NSelect, NSpace } from 'naive-ui'
+import { NButton, NInput, NSelect } from 'naive-ui'
+import EzSearchPanel from '@/components/ez/EzSearchPanel.vue'
 
 defineProps<{
   keyword: string
@@ -20,8 +21,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="ez-toolbar">
-    <NSpace align="center" :wrap="true" :size="12">
+  <EzSearchPanel>
       <NInput
         :value="keyword"
         clearable
@@ -42,10 +42,9 @@ const emit = defineEmits<{
         class="w-36"
         @update:value="(value) => emit('update:status', Number(value ?? 0))"
       />
-      <div class="ez-filter-actions">
+      <template #actions>
         <NButton type="primary" @click="emit('search')">查询</NButton>
         <NButton @click="emit('reset')">重置</NButton>
-      </div>
-    </NSpace>
-  </div>
+      </template>
+  </EzSearchPanel>
 </template>

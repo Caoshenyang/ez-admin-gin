@@ -49,7 +49,31 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
       </div>
 
       <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-        <NTabs v-model:value="activeTab" type="segment" animated>
+        <NTabs v-model:value="activeTab" type="line" animated>
+          <NTabPane name="base" tab="基础信息">
+            <div class="role-basic-grid">
+              <div>
+                <span>角色名称</span>
+                <strong>{{ selectedRole?.name ?? '未选择' }}</strong>
+              </div>
+              <div>
+                <span>角色编码</span>
+                <strong>{{ selectedRole?.code ?? '-' }}</strong>
+              </div>
+              <div>
+                <span>角色状态</span>
+                <NTag v-if="selectedRole" :type="selectedRole.status === 1 ? 'success' : 'error'" :bordered="false">
+                  {{ selectedRole.status === 1 ? '启用' : '禁用' }}
+                </NTag>
+                <strong v-else>-</strong>
+              </div>
+              <div>
+                <span>权限概览</span>
+                <strong>{{ checkedTotal }} 项</strong>
+              </div>
+            </div>
+          </NTabPane>
+
           <NTabPane name="menu" tab="菜单权限">
             <div class="permission-toolbar">
               <NCheckbox :checked="checkedTotal > 0" @update:checked="$emit('checkAll')">全选</NCheckbox>
@@ -103,6 +127,38 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
               </div>
             </div>
           </NTabPane>
+
+          <NTabPane name="data" tab="数据权限">
+            <div class="data-scope-panel">
+              <button type="button" class="data-scope-card data-scope-card--active">
+                <strong>全部数据</strong>
+                <span>可查看所有组织与业务数据</span>
+              </button>
+              <button type="button" class="data-scope-card">
+                <strong>本部门数据</strong>
+                <span>仅查看当前归属部门数据</span>
+              </button>
+              <button type="button" class="data-scope-card">
+                <strong>本部门及下级</strong>
+                <span>适合部门负责人和区域管理员</span>
+              </button>
+              <button type="button" class="data-scope-card">
+                <strong>仅本人数据</strong>
+                <span>限制为当前登录用户创建或归属的数据</span>
+              </button>
+              <button type="button" class="data-scope-card">
+                <strong>自定义部门</strong>
+                <span>后续接入部门树后可精细授权</span>
+              </button>
+            </div>
+          </NTabPane>
+
+          <NTabPane name="users" tab="关联用户">
+            <div class="related-users-empty">
+              <strong>{{ selectedRole?.name ?? '当前角色' }}</strong>
+              <span>关联用户列表后续可接入用户分页接口，这里先保留规范化入口。</span>
+            </div>
+          </NTabPane>
         </NTabs>
       </div>
 
@@ -135,5 +191,72 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
   background: var(--ez-brand-soft);
   color: var(--ez-brand);
   font-weight: 700;
+}
+
+.role-basic-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.role-basic-grid > div,
+.related-users-empty,
+.data-scope-card {
+  border: 1px solid var(--ez-border);
+  border-radius: 10px;
+  background: var(--ez-page-bg);
+  padding: 14px;
+}
+
+.role-basic-grid span,
+.data-scope-card span,
+.related-users-empty span {
+  display: block;
+  color: var(--ez-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.role-basic-grid strong,
+.data-scope-card strong,
+.related-users-empty strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--ez-text-main);
+  font-size: 14px;
+}
+
+.data-scope-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.data-scope-card {
+  text-align: left;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.data-scope-card--active,
+.data-scope-card:hover {
+  border-color: var(--ez-primary);
+  background: var(--ez-primary-light);
+}
+
+.related-users-empty {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .role-basic-grid,
+  .data-scope-panel {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

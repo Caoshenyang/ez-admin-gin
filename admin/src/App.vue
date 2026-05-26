@@ -9,13 +9,13 @@ import {
   dateZhCN,
 } from 'naive-ui'
 import { computed } from 'vue'
-import { darkThemeOverrides, themeOverrides } from './styles/theme'
+import { darkThemeOverrides, lightThemeOverrides } from './theme/naive-theme'
 import { useThemeStore } from './stores/theme'
 
 const themeStore = useThemeStore()
 
 const naiveTheme = computed(() => themeStore.naiveTheme)
-const overrides = computed(() => (themeStore.isDark ? darkThemeOverrides : themeOverrides))
+const overrides = computed(() => (themeStore.isDark ? darkThemeOverrides : lightThemeOverrides))
 </script>
 
 <template>

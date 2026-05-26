@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { NAlert, NButton, NCard, NTag } from 'naive-ui'
+import EzMetricCard from '@/components/ez/EzMetricCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import OverviewPanel from '../components/OverviewPanel.vue'
 import QuickEntry from '../components/QuickEntry.vue'
-import StatCard from '../components/StatCard.vue'
 import { useDashboardHomePage } from '../composables/useDashboardHomePage'
 
 const {
@@ -83,20 +83,20 @@ const {
     </section>
 
     <!-- 统计卡片 -->
-    <section class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-      <StatCard
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <EzMetricCard
         v-for="item in metricCards"
         :key="item.label"
-        :label="item.label"
+        :title="item.label"
         :value="item.value"
-        :hint="item.hint"
-        :icon-class="item.iconClass"
+        :trend="item.hint"
+        trend-type="up"
         :icon="item.icon"
       />
     </section>
 
     <!-- 系统概览 + 快捷入口 -->
-    <section class="grid gap-5 xl:grid-cols-[1fr_340px]">
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
       <NCard class="ez-card-elevated" :bordered="false" content-class="ez-card-content-reset">
         <OverviewPanel
           :hero-icon="heroIcon"
@@ -109,6 +109,44 @@ const {
 
       <NCard class="ez-card-elevated" :bordered="false">
         <QuickEntry :links="quickLinks" @navigate="navigateTo" />
+      </NCard>
+    </section>
+
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <NCard class="ez-card-elevated">
+        <template #header>
+          <span class="dash-card-title">登录趋势（近 7 天）</span>
+        </template>
+        <div class="dash-trend-chart">
+          <svg viewBox="0 0 640 220" role="img" aria-label="登录趋势折线图">
+            <defs>
+              <linearGradient id="loginTrendFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#2563FF" stop-opacity="0.22" />
+                <stop offset="100%" stop-color="#2563FF" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path class="dash-trend-grid" d="M40 36H610M40 84H610M40 132H610M40 180H610" />
+            <path class="dash-trend-area" d="M44 166L126 130L208 150L290 84L372 124L454 72L536 94L610 58V190H44Z" />
+            <path class="dash-trend-line dash-trend-line--primary" d="M44 166L126 130L208 150L290 84L372 124L454 72L536 94L610 58" />
+            <path class="dash-trend-line dash-trend-line--success" d="M44 176L126 152L208 164L290 128L372 148L454 116L536 126L610 102" />
+          </svg>
+          <div class="dash-trend-legend">
+            <span><i class="dash-dot dash-dot--primary" />登录次数</span>
+            <span><i class="dash-dot dash-dot--success" />独立用户</span>
+          </div>
+        </div>
+      </NCard>
+
+      <NCard class="ez-card-elevated">
+        <template #header>
+          <span class="dash-card-title">系统运行状态</span>
+        </template>
+        <div class="dash-health-grid">
+          <div v-for="item in healthItems" :key="item.label" class="dash-health-item">
+            <span>{{ item.label }}</span>
+            <NTag :type="getHealthTagType(item.status)" size="small" :bordered="false">{{ item.value }}</NTag>
+          </div>
+        </div>
       </NCard>
     </section>
 
@@ -242,6 +280,81 @@ const {
   font-size: var(--ez-text-lg);
   font-weight: 600;
   color: var(--ez-text-main);
+}
+
+.dash-trend-chart {
+  position: relative;
+}
+
+.dash-trend-chart svg {
+  width: 100%;
+  height: 240px;
+}
+
+.dash-trend-grid {
+  stroke: var(--ez-border-light);
+  stroke-width: 1;
+}
+
+.dash-trend-area {
+  fill: url(#loginTrendFill);
+}
+
+.dash-trend-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+}
+
+.dash-trend-line--primary {
+  stroke: var(--ez-primary);
+}
+
+.dash-trend-line--success {
+  stroke: var(--ez-success);
+}
+
+.dash-trend-legend {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  color: var(--ez-text-secondary);
+  font-size: 12px;
+}
+
+.dash-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.dash-dot--primary {
+  background: var(--ez-primary);
+}
+
+.dash-dot--success {
+  background: var(--ez-success);
+}
+
+.dash-health-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.dash-health-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--ez-border-light);
+  border-radius: 10px;
+  background: var(--ez-page-bg);
+  padding: 12px 14px;
+  color: var(--ez-text-main);
+  font-size: 13px;
 }
 
 .dash-empty-state {

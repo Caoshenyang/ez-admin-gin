@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { FormInst, FormRules, SelectOption, TreeSelectOption } from 'naive-ui'
-import { NButton, NForm, NFormItem, NInput, NModal, NSelect, NTreeSelect } from 'naive-ui'
+import { NForm, NFormItem, NInput, NSelect, NTreeSelect } from 'naive-ui'
 
-import FormModalHeader from '@/components/FormModalHeader.vue'
+import EzDrawerForm from '@/components/ez/EzDrawerForm.vue'
 import type { UserFormModel } from '../types/user-page'
 
 defineProps<{
@@ -25,21 +25,14 @@ const formModel = defineModel<UserFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal
+  <EzDrawerForm
     :show="show"
-    preset="card"
-    :closable="false"
-    class="ez-modal-width-lg"
+    :title="formMode === 'create' ? '新增用户' : '编辑用户'"
+    :loading="saving"
+    :width="680"
     @update:show="(value) => $emit('update:show', value)"
+    @submit="$emit('submit')"
   >
-    <template #header>
-      <FormModalHeader
-        :title="formMode === 'create' ? '新增用户' : '编辑用户'"
-        :subtitle="formMode === 'create' ? '先完成账号主体信息，再补充默认角色范围。' : '这里仅维护展示资料，不修改登录凭证。'"
-        @close="$emit('update:show', false)"
-      />
-    </template>
-
     <div class="ez-modal-shell">
       <NForm
         ref="formRef"
@@ -117,14 +110,5 @@ const formModel = defineModel<UserFormModel>('model', { required: true })
         </section>
       </NForm>
     </div>
-
-    <template #footer>
-      <div class="ez-modal-footer">
-        <NButton quaternary class="min-w-[92px]" @click="$emit('update:show', false)">取消</NButton>
-        <NButton type="primary" class="min-w-[92px]" :loading="saving" @click="$emit('submit')">
-          保存
-        </NButton>
-      </div>
-    </template>
-  </NModal>
+  </EzDrawerForm>
 </template>

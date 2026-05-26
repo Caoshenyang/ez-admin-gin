@@ -3,7 +3,11 @@
 import {
   CloseOutline,
   EllipsisHorizontal,
+  LockClosedOutline,
+  LockOpenOutline,
   RefreshOutline,
+  ReturnDownBackOutline,
+  ReturnDownForwardOutline,
   RemoveCircleOutline,
   TrashOutline,
 } from '@vicons/ionicons5'
@@ -15,17 +19,20 @@ import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'v
 import type { WorkTab } from '@/stores/admin-shell'
 
 const props = defineProps<{
-  activePath: string
+  activeFullPath: string
   tabs: WorkTab[]
 }>()
 
 const emit = defineEmits<{
-  navigate: [path: string]
-  closeTab: [path: string]
+  navigate: [fullPath: string]
+  closeTab: [fullPath: string]
   refresh: []
   closeCurrent: []
-  closeOthers: []
+  closeOthers: [fullPath?: string]
+  closeLeft: [fullPath?: string]
+  closeRight: [fullPath?: string]
   closeAll: []
+  pinCurrent: [fullPath?: string]
 }>()
 
 // === 图标工厂 ===
@@ -34,16 +41,22 @@ const icon = (comp: Component) => () => h(NIcon, null, { default: () => h(comp) 
 // === 三点下拉菜单 ===
 const actionOptions: DropdownOption[] = [
   { label: '刷新当前', key: 'refresh', icon: icon(RefreshOutline) },
+  { label: '固定当前', key: 'pinCurrent', icon: icon(LockClosedOutline) },
   { type: 'divider', key: 'd1' },
   { label: '关闭当前', key: 'closeCurrent', icon: icon(CloseOutline) },
   { label: '关闭其他', key: 'closeOthers', icon: icon(RemoveCircleOutline) },
+  { label: '关闭左侧', key: 'closeLeft', icon: icon(ReturnDownBackOutline) },
+  { label: '关闭右侧', key: 'closeRight', icon: icon(ReturnDownForwardOutline) },
   { label: '关闭全部', key: 'closeAll', icon: icon(TrashOutline) },
 ]
 
 function handleAction(key: string) {
   if (key === 'refresh') emit('refresh')
+  else if (key === 'pinCurrent') emit('pinCurrent')
   else if (key === 'closeCurrent') emit('closeCurrent')
   else if (key === 'closeOthers') emit('closeOthers')
+  else if (key === 'closeLeft') emit('closeLeft')
+  else if (key === 'closeRight') emit('closeRight')
   else if (key === 'closeAll') emit('closeAll')
 }
 
@@ -54,19 +67,27 @@ const showContextMenu = ref(false)
 const contextTabPath = ref('')
 
 const contextMenuOptions = computed<DropdownOption[]>(() => {
-  const tab = props.tabs.find((t) => t.to === contextTabPath.value)
+  const tab = props.tabs.find((t) => t.fullPath === contextTabPath.value)
   return [
     { label: '刷新', key: 'refresh', icon: icon(RefreshOutline) },
+    {
+      label: tab?.affix ? '取消固定' : '固定',
+      key: 'pin',
+      disabled: tab?.fullPath === '/dashboard',
+      icon: icon(tab?.affix ? LockOpenOutline : LockClosedOutline),
+    },
     { type: 'divider', key: 'd1' },
     { label: '关闭', key: 'close', disabled: !tab?.closable, icon: icon(CloseOutline) },
     { label: '关闭其他', key: 'closeOthers', icon: icon(RemoveCircleOutline) },
+    { label: '关闭左侧', key: 'closeLeft', icon: icon(ReturnDownBackOutline) },
+    { label: '关闭右侧', key: 'closeRight', icon: icon(ReturnDownForwardOutline) },
     { label: '关闭全部', key: 'closeAll', icon: icon(TrashOutline) },
   ]
 })
 
 function handleTabContext(e: MouseEvent, tab: WorkTab) {
   e.preventDefault()
-  contextTabPath.value = tab.to
+  contextTabPath.value = tab.fullPath
   showContextMenu.value = false
   nextTick(() => {
     contextMenuX.value = e.clientX
@@ -78,8 +99,11 @@ function handleTabContext(e: MouseEvent, tab: WorkTab) {
 function handleContextAction(key: string) {
   showContextMenu.value = false
   if (key === 'refresh') emit('refresh')
+  else if (key === 'pin') emit('pinCurrent', contextTabPath.value)
   else if (key === 'close') emit('closeTab', contextTabPath.value)
-  else if (key === 'closeOthers') emit('closeOthers')
+  else if (key === 'closeOthers') emit('closeOthers', contextTabPath.value)
+  else if (key === 'closeLeft') emit('closeLeft', contextTabPath.value)
+  else if (key === 'closeRight') emit('closeRight', contextTabPath.value)
   else if (key === 'closeAll') emit('closeAll')
 }
 
@@ -87,7 +111,7 @@ function handleContextAction(key: string) {
 function handleTabAuxClick(e: MouseEvent, tab: WorkTab) {
   if (e.button === 1 && tab.closable) {
     e.preventDefault()
-    emit('closeTab', tab.to)
+    emit('closeTab', tab.fullPath)
   }
 }
 
@@ -136,20 +160,20 @@ onBeforeUnmount(() => {
         <div class="admin-tabs-track">
           <button
             v-for="tab in tabs"
-            :key="tab.to"
+            :key="tab.fullPath"
             type="button"
             class="admin-tab-item"
-            :class="{ 'admin-tab-item--active': activePath === tab.to }"
-            @click="emit('navigate', tab.to)"
+            :class="{ 'admin-tab-item--active': activeFullPath === tab.fullPath }"
+            @click="emit('navigate', tab.fullPath)"
             @contextmenu.prevent="handleTabContext($event, tab)"
             @auxclick="handleTabAuxClick($event, tab)"
           >
-            <span v-if="!tab.closable" class="admin-tab-item__dot" />
+            <span v-if="tab.affix" class="admin-tab-item__dot" />
             <span class="truncate">{{ tab.title }}</span>
             <span
               v-if="tab.closable"
               class="admin-tab-item__close"
-              @click.stop="emit('closeTab', tab.to)"
+              @click.stop="emit('closeTab', tab.fullPath)"
             >
               <NIcon :component="CloseOutline" :size="13" />
             </span>
@@ -194,12 +218,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .admin-tabs-bar {
   display: flex;
-  height: 44px;
+  height: 40px;
   align-items: center;
   gap: 0;
   border-bottom: 1px solid var(--ez-border);
   background: var(--ez-card-bg);
-  padding: 0 12px;
+  padding: 0 16px;
 }
 
 .admin-tabs-scroll-wrapper {
@@ -250,8 +274,8 @@ onBeforeUnmount(() => {
   display: inline-flex;
   min-width: 100%;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: 6px;
+  padding: 4px 0;
 }
 
 .admin-tab-item {
@@ -260,13 +284,13 @@ onBeforeUnmount(() => {
   max-width: 180px;
   align-items: center;
   gap: 5px;
-  border: 1px solid transparent;
-  border-radius: var(--ez-radius-md);
-  background: transparent;
+  border: 1px solid var(--ez-border);
+  border-radius: 8px 8px 0 0;
+  background: #F8FAFC;
   padding: 0 14px;
   height: 32px;
-  color: var(--ez-text-sub);
-  font-size: var(--ez-text-sm);
+  color: var(--ez-text-secondary);
+  font-size: 13px;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -276,16 +300,18 @@ onBeforeUnmount(() => {
 }
 
 .admin-tab-item:hover {
-  background: var(--ez-page-bg);
+  background: var(--ez-card-bg);
   border-color: var(--ez-border);
-  color: var(--ez-brand-pressed);
+  color: var(--ez-primary);
 }
 
 .admin-tab-item--active {
-  background: var(--ez-brand-muted);
-  border: 1px solid var(--ez-brand-border);
-  color: var(--ez-brand-pressed);
-  font-weight: 500;
+  position: relative;
+  background: var(--ez-card-bg);
+  border: 1px solid var(--ez-primary);
+  border-bottom-color: var(--ez-card-bg);
+  color: var(--ez-primary);
+  font-weight: 600;
 }
 
 .admin-tab-item--active:hover {

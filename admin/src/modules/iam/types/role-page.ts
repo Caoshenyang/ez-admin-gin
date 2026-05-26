@@ -15,4 +15,4 @@ export interface PermissionRow {
   method: string
 }
 
-export type PermissionTab = 'menu' | 'button' | 'api'
+export type PermissionTab = 'base' | 'menu' | 'button' | 'api' | 'data' | 'users'

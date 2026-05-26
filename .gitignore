@@ -23,6 +23,7 @@ junit.xml
 *.dylib
 
 .env
+.env.local
 .env.*
 !.env.example
 favicon-preview.png

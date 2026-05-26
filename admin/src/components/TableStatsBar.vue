@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EzToolbar from './ez/EzToolbar.vue'
+
 defineSlots<{
   actions?: () => unknown
   default?: () => unknown
@@ -6,12 +8,12 @@ defineSlots<{
 </script>
 
 <template>
-  <div class="ez-table-bar">
+  <EzToolbar>
     <div>
       <slot />
     </div>
-    <div v-if="$slots.actions">
+    <template v-if="$slots.actions" #actions>
       <slot name="actions" />
-    </div>
-  </div>
+    </template>
+  </EzToolbar>
 </template>

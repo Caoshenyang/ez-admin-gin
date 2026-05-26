@@ -46,7 +46,7 @@ export function useRolePage() {
   const roles = ref<RoleItem[]>([])
   const menus = ref<AdminMenu[]>([])
   const selectedRoleID = ref<number | null>(null)
-  const activeTab = ref<PermissionTab>('menu')
+  const activeTab = ref<PermissionTab>('base')
   const checkedMenuIDs = ref<Array<string | number>>([])
   const permissionRows = ref<PermissionRow[]>([])
 

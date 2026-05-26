@@ -77,8 +77,14 @@ function syncShellByRoute() {
   }
 
   shellStore.ensureTab({
+    affix: route.path === '/dashboard',
+    fullPath: route.fullPath,
+    key: String(route.name ?? route.fullPath),
+    name: route.name ? String(route.name) : undefined,
+    path: route.path,
+    query: route.query as Record<string, unknown>,
+    params: route.params as Record<string, unknown>,
     title: routeTitle.value,
-    to: route.path,
     closable: route.path !== '/dashboard',
   })
 
@@ -87,17 +93,17 @@ function syncShellByRoute() {
   shellStore.ensureExpandedMenuKeys(collectExpandedMenuKeysByPath(route.path))
 }
 
-function navigateTo(path: string) {
-  if (!path) {
+function navigateTo(to: string) {
+  if (!to) {
     return
   }
 
-  if (route.path === path) {
+  if (route.fullPath === to || route.path === to) {
     shellStore.refreshRoute(route.fullPath)
     return
   }
 
-  void router.push(path)
+  void router.push(to)
 }
 
 function handleMenuExpand(keys: Array<string | number>) {
@@ -113,32 +119,52 @@ function handleMenuUpdate(key: string | number) {
   navigateTo(option.routePath)
 }
 
-function handleCloseTab(path: string) {
-  shellStore.closeTab(path)
+function handleCloseTab(fullPath: string) {
+  const fallback = shellStore.closeTab(fullPath, route.fullPath)
 
-  if (route.path === path) {
-    const fallback = shellStore.openTabs[shellStore.openTabs.length - 1]
-    navigateTo(fallback?.to ?? '/dashboard')
+  if (route.fullPath === fullPath) {
+    navigateTo(fallback ?? '/dashboard')
   }
 }
 
 function handleCloseCurrentTab() {
-  const current = shellStore.openTabs.find((tab) => tab.to === route.path)
+  const current = shellStore.openTabs.find((tab) => tab.fullPath === route.fullPath)
   if (!current?.closable) {
     navigateTo('/dashboard')
     return
   }
 
-  handleCloseTab(current.to)
+  handleCloseTab(current.fullPath)
 }
 
-function handleCloseOtherTabs() {
-  shellStore.closeOtherTabs(route.path)
+function handleCloseOtherTabs(fullPath = route.fullPath) {
+  shellStore.closeOtherTabs(fullPath)
+  if (!shellStore.openTabs.some((tab) => tab.fullPath === route.fullPath)) {
+    navigateTo(fullPath)
+  }
+}
+
+function handleCloseLeftTabs(fullPath = route.fullPath) {
+  shellStore.closeLeftTabs(fullPath)
+  if (!shellStore.openTabs.some((tab) => tab.fullPath === route.fullPath)) {
+    navigateTo(fullPath)
+  }
+}
+
+function handleCloseRightTabs(fullPath = route.fullPath) {
+  shellStore.closeRightTabs(fullPath)
+  if (!shellStore.openTabs.some((tab) => tab.fullPath === route.fullPath)) {
+    navigateTo(fullPath)
+  }
 }
 
 function handleCloseAllTabs() {
   shellStore.closeAllTabs()
   navigateTo('/dashboard')
+}
+
+function handlePinCurrentTab(fullPath = route.fullPath) {
+  shellStore.pinCurrentTab(fullPath)
 }
 
 function handleRefresh() {
@@ -181,6 +207,8 @@ function handleAuthUserUpdate() {
 }
 
 onMounted(() => {
+  shellStore.hydrateTabs()
+  syncShellByRoute()
   window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
   notificationStore.connectWS()
 })
@@ -209,18 +237,22 @@ onBeforeUnmount(() => {
         :breadcrumb-text="breadcrumbText"
         :display-name="displayName"
         :dropdown-options="dropdownOptions"
+        @toggle-sidebar="shellStore.toggleSidebar()"
         @user-action="handleUserAction"
       />
 
       <WorkTabs
-        :active-path="route.path"
+        :active-full-path="route.fullPath"
         :tabs="shellStore.openTabs"
         @navigate="navigateTo"
         @close-tab="handleCloseTab"
         @refresh="handleRefresh"
         @close-current="handleCloseCurrentTab"
         @close-others="handleCloseOtherTabs"
+        @close-left="handleCloseLeftTabs"
+        @close-right="handleCloseRightTabs"
         @close-all="handleCloseAllTabs"
+        @pin-current="handlePinCurrentTab"
       />
 
       <NLayoutContent class="min-h-0 flex-1" :native-scrollbar="false">

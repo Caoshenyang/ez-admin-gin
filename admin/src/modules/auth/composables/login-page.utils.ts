@@ -6,10 +6,11 @@ import type { LoginFormModel } from '../types/login-page'
 const captchaAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 export const loginProductFeatures = [
-  '权限模型：用户 / 角色 / 菜单 / 按钮',
-  '工作标签：多页面切换、刷新、关闭其他',
-  '审计能力：登录日志、操作日志、风险等级',
-  '蓝图友好：模块骨架清晰，业务页面可以快速扩展',
+  'RBAC 权限体系',
+  '动态菜单与按钮权限',
+  '五级数据权限',
+  '系统日志与公告通知',
+  '高性能 WebSocket 推送',
 ]
 
 export function createCaptchaText() {
@@ -22,7 +23,7 @@ export function createCaptchaText() {
 export function defaultLoginFormModel(): LoginFormModel {
   return {
     username: 'admin',
-    password: 'Admin@123456',
+    password: 'EzAdmin@123456',
     captcha: '',
     rememberLogin: true,
   }

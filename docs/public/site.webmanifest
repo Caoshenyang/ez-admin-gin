@@ -1,7 +1,7 @@
 {
   "name": "EZ Admin Gin",
   "short_name": "EZ Admin Gin",
-  "description": "高效 · 易用 · 企业级后台框架",
+  "description": "轻量 · 清晰 · MVP 后台基座",
   "start_url": "/ez-admin-gin/",
   "display": "standalone",
   "background_color": "#FFFFFF",

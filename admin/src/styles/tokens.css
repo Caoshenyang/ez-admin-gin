@@ -1,0 +1,54 @@
+:root {
+  --ez-primary: #2563FF;
+  --ez-primary-hover: #1D4ED8;
+  --ez-primary-pressed: #1E40AF;
+  --ez-primary-light: #EFF6FF;
+  --ez-success: #12B981;
+  --ez-warning: #F59E0B;
+  --ez-danger: #EF4444;
+  --ez-info: #0EA5E9;
+  --ez-sidebar-bg: #0D1B2A;
+  --ez-sidebar-bg-deep: #07111F;
+  --ez-sidebar-active: #2563FF;
+  --ez-sidebar-text: #A8B3C5;
+  --ez-sidebar-text-active: #FFFFFF;
+  --ez-page-bg: #F6F8FB;
+  --ez-card-bg: #FFFFFF;
+  --ez-header-bg: #FFFFFF;
+  --ez-text-main: #0F172A;
+  --ez-text-regular: #334155;
+  --ez-text-secondary: #64748B;
+  --ez-text-placeholder: #94A3B8;
+  --ez-border: #E6ECF3;
+  --ez-border-light: #F1F5F9;
+  --ez-shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --ez-shadow-popup: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --ez-font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ez-radius-page: 12px;
+  --ez-radius-card: 10px;
+  --ez-radius-control: 8px;
+  --ez-radius-tag: 6px;
+}
+
+html.dark {
+  --ez-primary: #3B82F6;
+  --ez-primary-hover: #60A5FA;
+  --ez-primary-pressed: #2563EB;
+  --ez-primary-light: rgba(59, 130, 246, 0.16);
+  --ez-sidebar-bg: #020617;
+  --ez-sidebar-bg-deep: #020617;
+  --ez-sidebar-active: #2563FF;
+  --ez-sidebar-text: #94A3B8;
+  --ez-sidebar-text-active: #FFFFFF;
+  --ez-page-bg: #0B1120;
+  --ez-card-bg: #111827;
+  --ez-header-bg: #0F172A;
+  --ez-text-main: #E5E7EB;
+  --ez-text-regular: #CBD5E1;
+  --ez-text-secondary: #94A3B8;
+  --ez-text-placeholder: #64748B;
+  --ez-border: rgba(148, 163, 184, 0.16);
+  --ez-border-light: rgba(148, 163, 184, 0.10);
+  --ez-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.24);
+  --ez-shadow-popup: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
