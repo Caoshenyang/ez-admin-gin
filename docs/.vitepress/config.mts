@@ -4,7 +4,7 @@ export default defineConfig({
   base: '/ez-admin-gin/',
   lang: 'zh-CN',
   title: 'EZ Admin Gin',
-  description: '高效、易用、企业级后台框架，开箱即用的权限体系与部署方案。',
+  description: '维护者自用优先的后台系统基座，适合个人项目和 SaaS/MVP 快速开发。',
   cleanUrls: true,
   lastUpdated: true,
   head: [
@@ -15,7 +15,7 @@ export default defineConfig({
     ['meta', { name: 'msapplication-config', content: '/ez-admin-gin/browserconfig.xml' }],
     ['meta', { name: 'theme-color', content: '#2563FF' }],
     ['meta', { property: 'og:title', content: 'EZ Admin Gin' }],
-    ['meta', { property: 'og:description', content: '高效、易用、企业级后台框架，开箱即用的权限体系与部署方案。' }],
+    ['meta', { property: 'og:description', content: '维护者自用优先的后台系统基座，适合个人项目和 SaaS/MVP 快速开发。' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:image', content: 'https://caoshenyang.github.io/ez-admin-gin/open-graph-light.png' }],
     ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
@@ -81,7 +81,7 @@ export default defineConfig({
       next: '下一页'
     },
     footer: {
-      message: '高效、易用、企业级后台框架',
+      message: '维护者自用优先的后台系统基座',
       copyright: '2026 EZ Admin Gin'
     },
     search: {
@@ -178,6 +178,7 @@ export default defineConfig({
             { text: '初始化数据参考', link: '/reference/init-data-reference' },
             { text: '动态菜单组件白名单', link: '/reference/dynamic-menu-component-reference' },
             { text: '按钮权限消费示例', link: '/reference/button-permission-consumption-example' },
+            { text: '轻量验证与人工测试', link: '/reference/lightweight-verification' },
             { text: '上传与公开路径参考', link: '/reference/upload-public-path-reference' },
             { text: '模块初始化模板', link: '/reference/module-init-template' },
             { text: '查询与分页约定', link: '/reference/query-and-pagination-conventions' },

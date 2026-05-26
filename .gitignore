@@ -7,8 +7,13 @@ docs/.vitepress/dist/
 docs/.vitepress/cache/
 .idea/
 .vscode/
+.cache/
 test-results/
 coverage/
+playwright-report/
+junit.xml
+*.lcov
+*.cover
 
 *.log
 *.exe

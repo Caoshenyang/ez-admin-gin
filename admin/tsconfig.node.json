@@ -3,8 +3,6 @@
   "extends": "@tsconfig/node24/tsconfig.json",
   "include": [
     "vite.config.*",
-    "cypress.config.*",
-    "playwright.config.*",
     "eslint.config.*"
   ],
   "compilerOptions": {

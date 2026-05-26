@@ -11,9 +11,10 @@
 
 ## 项目目标
 
-- 当前阶段：稳定收尾与交付面整理
-- 核心方向：生产可交付的后台底座，不再继续扩展示例功能
-- 判断标准：减少双套真相、降低维护成本、优先修复漂移
+- 当前定位：维护者自用优先的后台系统基座
+- 核心方向：快速支撑维护者自己的 SaaS/MVP 项目开发
+- 公开源码目的：供他人参考和复用，不以社区协作为主要目标
+- 判断标准：结构清晰、部署简单、维护成本低、方便复制到真实业务项目
 
 ## 技术栈
 
@@ -29,41 +30,39 @@
 - `admin/` — Vue 3 前端
 - `docs/` — 文档站
 - `deploy/` — 部署配置
-- `server/tests/` — 集中式测试目录
-  - `server/tests/api/` — API 黑盒测试
-  - `server/tests/rbac/` — 权限和数据权限流程测试
-  - `server/tests/contract/` — OpenAPI 契约测试
-  - `server/tests/testutil/` — 测试辅助工具
+- `scripts/` — 部署、打包和迁移辅助脚本
+- `MANUAL_TEST.md` — 发布前人工测试清单
 
-## 测试组织原则
+## 质量策略
 
-- 不在业务代码目录中散落大量 *_test.go
-- 后端测试集中在 server/tests
-- server/tests/api：API 黑盒测试
-- server/tests/rbac：权限和数据权限流程测试
-- server/tests/contract：OpenAPI 契约测试
-- server/tests/testutil：测试辅助工具
-- tests/e2e 或 admin/e2e：Playwright E2E（Phase 4）
+本项目不维护复杂自动化测试体系，不追求测试覆盖率。修改后优先运行轻量验证：
+
+- 后端 vet
+- 后端 build
+- 前端 type-check
+- 前端 lint
+- 前端 build
+- Docker Compose config 校验（修改部署文件时必须跑）
+
+除非维护者明确要求，不要新增复杂自动化测试。
 
 ## 禁止事项
 
-- 禁止大面积创建 co-located unit tests
 - 禁止大规模重构（除非有明确收益且先说明风险）
 - 禁止绕过权限逻辑
-- 禁止为了测试通过而降低安全性
 - 禁止连接生产数据库
-- 禁止破坏现有 CI
+- 禁止破坏构建、启动和部署链路
 - 禁止在没有说明的情况下扩大任务范围
 - 禁止把 TODO 当成完成
-- 禁止把 t.Skip 当成有效覆盖
+- 禁止为了质量检查通过而降低安全性
 
-## 每次任务前必须阅读
+## 每次任务前建议阅读
 
-- CLAUDE.md（本文件）
-- README.md
-- docs/backend/migration.md
-- docs/reference/database-ddl.md
-- docs/reference/init-data-reference.md
+- `CLAUDE.md`（本文件）
+- `README.md`
+- `docs/backend/migration.md`
+- `docs/reference/database-ddl.md`
+- `docs/reference/init-data-reference.md`
 
 ## 数据库交付约定
 

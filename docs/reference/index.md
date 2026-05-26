@@ -23,6 +23,7 @@ description: "集中记录 EZ Admin Gin 的配置、接口、目录约定、模�
 | [初始化数据参考](./init-data-reference) | 首批角色、菜单、Casbin 策略与管理员初始化接口的真实链路 |
 | [动态菜单组件白名单](./dynamic-menu-component-reference) | `component`、`icon`、占位页回退和按钮权限来源 |
 | [按钮权限消费示例](./button-permission-consumption-example) | `collectButtonCodes(...)`、`buttonPermissionCodes` 和页面 `canUse(code)` 的最小稳定写法 |
+| [轻量验证与人工测试](./lightweight-verification) | 当前质量策略、轻量验证命令和发布前人工测试清单 |
 | [上传与公开路径参考](./upload-public-path-reference) | `upload.dir`、`upload.public_path`、`sys_file.path/url` 和 `/uploads/` 代理关系 |
 | [模块初始化模板](./module-init-template) | 新模块从目录、权限、菜单到前端页面接入的最小开工模板 |
 | [查询与分页约定](./query-and-pagination-conventions) | `page/page_size`、`keyword`、`status` 与模块扩展筛选边界 |

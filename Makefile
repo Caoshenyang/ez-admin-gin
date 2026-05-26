@@ -15,6 +15,8 @@ GO          := go
 PNPM        := pnpm
 DOCKER      := docker
 
+export GOCACHE := $(CURDIR)/.cache/go-build
+
 # ---------- 帮助 ----------
 
 .PHONY: help
@@ -29,7 +31,7 @@ help: ## 显示所有可用命令
 # ---------- 开发 ----------
 
 .PHONY: dev
-dev: ## 启动后端 + 前端 (需要先 make docker-config 启动数据库)
+dev: ## 启动后端 + 前端 (需要先 make docker-up 启动数据库)
 	@echo ">>> 启动后端..."
 	$(MAKE) server-dev &
 	@echo ">>> 启动前端..."
@@ -55,48 +57,18 @@ docs-build: ## 构建文档站
 db-full-sql: ## 生成 MySQL / PostgreSQL 完整版初始化 SQL
 	./scripts/build-full-migrations.sh
 
-# ---------- 测试 ----------
-
-.PHONY: test
-test: server-test test-contract ## 运行所有测试 (后端 unit + 契约)
-	@echo ">>> 后端测试完成"
-
-.PHONY: server-test
-server-test: ## 运行后端测试 (go test ./..., 不含集成测试)
-	cd $(SERVER_DIR) && $(GO) test ./... -timeout 60s
-
-.PHONY: test-api
-test-api: ## 运行 API 黑盒集成测试 (需要 DB + Redis)
-	cd $(SERVER_DIR) && $(GO) test -tags integration -v -timeout 120s ./tests/api/...
-
-.PHONY: test-rbac
-test-rbac: ## 运行 RBAC 权限流程测试 (需要 DB + Redis)
-	cd $(SERVER_DIR) && $(GO) test -tags integration -v -timeout 120s ./tests/rbac/...
-
-.PHONY: test-contract
-test-contract: ## 运行 OpenAPI 契约测试 (不需要 DB/Redis)
-	cd $(SERVER_DIR) && $(GO) test -v -timeout 60s ./tests/contract/...
-
-.PHONY: test-integration
-test-integration: ## 运行所有集成测试 (API + RBAC, 需要 DB + Redis)
-	cd $(SERVER_DIR) && $(GO) test -p 1 -tags integration -v -timeout 180s ./tests/api/... ./tests/rbac/...
-
-.PHONY: test-e2e
-test-e2e: ## 运行 E2E 测试 (需要前端 + 后端运行中)
-	cd $(ADMIN_DIR) && pnpm exec playwright test
-
 # ---------- 代码检查 ----------
 
 .PHONY: lint
-lint: server-vet admin-check check-types ## 运行所有 lint (后端 vet + 前端检查 + 契约一致性)
-	@echo ">>> 所有 lint 完成"
+lint: server-vet admin-check check-types ## 后端 vet + 前端检查 + API 类型同步检查
+	@echo ">>> 轻量 lint 完成"
 
 .PHONY: server-vet
 server-vet: ## 后端 go vet
 	cd $(SERVER_DIR) && $(GO) vet ./...
 
 .PHONY: server-mod
-server-mod: ## 后端 go mod tidy (检查依赖一致性)
+server-mod: ## 后端 go mod tidy
 	cd $(SERVER_DIR) && $(GO) mod tidy
 
 .PHONY: admin-check
@@ -124,6 +96,10 @@ server-build: ## 编译后端二进制
 .PHONY: admin-build
 admin-build: ## 构建前端产物
 	cd $(ADMIN_DIR) && $(PNPM) build
+
+.PHONY: verify
+verify: server-vet admin-check build docker-config ## 轻量验证 (不运行自动化测试)
+	@echo "Lightweight verification passed."
 
 # ---------- Docker ----------
 
