@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NCard, NDataTable, NPopconfirm, NSpace, NTag, NTooltip } from 'naive-ui'
+import { NButton, NDataTable, NPopconfirm, NSpace, NTag, NTooltip } from 'naive-ui'
 import { h } from 'vue'
 
+import EzTableCard from '@/components/ez/EzTableCard.vue'
 import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText } from '@/utils/format'
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
@@ -184,7 +185,7 @@ function rowKey(row: AdminMenu) {
 </script>
 
 <template>
-  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
+  <EzTableCard>
     <TableStatsBar>
       <span>
         共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单 {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }}
@@ -211,5 +212,5 @@ function rowKey(row: AdminMenu) {
       children-key="children"
       @update:expanded-row-keys="expandedRowKeys = $event"
     />
-  </NCard>
+  </EzTableCard>
 </template>

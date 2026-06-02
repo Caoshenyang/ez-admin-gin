@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NInput, NSelect, NSpace } from 'naive-ui'
+import { NButton, NInput, NSelect } from 'naive-ui'
 
+import EzSearchPanel from '@/components/ez/EzSearchPanel.vue'
 import { MenuStatus, MenuType } from '@/modules/iam/types/menu'
 
 const props = defineProps<{
@@ -21,20 +22,19 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="ez-toolbar">
-    <NSpace align="center" :wrap="true">
-      <NInput
-        :value="props.keyword"
-        clearable
-        placeholder="菜单名称 / 路由 / 权限标识"
-        class="w-56"
-        @update:value="emit('update:keyword', $event ?? '')"
-      />
-      <NSelect :value="props.type" :options="typeOptions" class="w-40" @update:value="emit('update:type', $event as 0 | MenuType)" />
-      <NSelect :value="props.status" :options="statusOptions" class="w-40" @update:value="emit('update:status', $event as 0 | MenuStatus)" />
-      <div class="ez-filter-actions">
-        <NButton @click="emit('reset')">重置</NButton>
-      </div>
-    </NSpace>
-  </div>
+  <EzSearchPanel>
+    <NInput
+      :value="props.keyword"
+      clearable
+      placeholder="菜单名称 / 路由 / 权限标识"
+      class="ez-search-field ez-search-field--primary"
+      @update:value="emit('update:keyword', $event ?? '')"
+    />
+    <NSelect :value="props.type" :options="typeOptions" class="ez-search-field ez-search-field--md" @update:value="emit('update:type', $event as 0 | MenuType)" />
+    <NSelect :value="props.status" :options="statusOptions" class="ez-search-field ez-search-field--sm" @update:value="emit('update:status', $event as 0 | MenuStatus)" />
+
+    <template #actions>
+      <NButton @click="emit('reset')">重置</NButton>
+    </template>
+  </EzSearchPanel>
 </template>

@@ -12,7 +12,7 @@ EZ Admin Gin 之前一直采用手动执行 SQL 建表，没有引入迁移工�
 - **种子数据和启动代码耦合** — 角色、菜单、权限规则全部写在迁移文件里，每次启动都要查重判断，影响启动性能
 
 ::: tip 项目决策
-引入 **golang-migrate** 管理建表和种子数据，把 DDL 和静态初始化数据全部写成 SQL 迁移文件，编号管理、可审查、可回滚。管理员账号（需要 bcrypt）改为一次性初始化接口，不再在启动流程中硬编码。
+引入 **golang-migrate** 管理结构迁移，把 DDL 变更写成 SQL 迁移文件，编号管理、可审查、可回滚。稳定内置种子收口到 `full_schema_and_seed.sql`，管理员账号（需要 bcrypt）改为一次性初始化接口，不在启动流程中硬编码。
 :::
 
 ## golang-migrate 简介
@@ -30,8 +30,6 @@ EZ Admin Gin 之前一直采用手动执行 SQL 建表，没有引入迁移工�
 1. **创建迁移文件**：在 `migrations/{postgres,mysql}/` 目录下创建编号命名的 SQL 文件
    - `000001_init_schema.up.sql`：创建表结构
    - `000001_init_schema.down.sql`：回滚表结构
-   - `000002_seed_data.up.sql`：插入种子数据
-   - `000002_seed_data.down.sql`：清除种子数据
 
 2. **执行迁移**：在应用启动时通过 `golang-migrate` 库自动执行
 
@@ -43,7 +41,7 @@ EZ Admin Gin 之前一直采用手动执行 SQL 建表，没有引入迁移工�
 
 - 使用 `embed.FS` 嵌入 `migrations/` 目录下的所有 SQL 文件
 - 根据数据库驱动（`postgres` 或 `mysql`）加载对应子目录的迁移文件
-- 在应用启动时自动执行 `migrate.Up()`，确保数据库结构和种子数据与代码版本一致
+- 在应用启动时自动执行 `migrate.Up()`，确保数据库结构与代码版本一致
 
 这种方式既保证了数据库变更的可追踪性，又简化了部署流程，是中小型项目的理想选择。
 
@@ -72,19 +70,18 @@ server/
    ├── postgres/          # PostgreSQL 迁移文件
    │   ├── 000001_init_schema.up.sql
    │   ├── 000001_init_schema.down.sql
-   │   ├── 000002_seed_data.up.sql
-   │   └── 000002_seed_data.down.sql
+   │   └── full_schema_and_seed.sql
    └── mysql/          # MySQL 迁移文件
        ├── 000001_init_schema.up.sql
        ├── 000001_init_schema.down.sql
-       ├── 000002_seed_data.up.sql
-       └── 000002_seed_data.down.sql
+       └── full_schema_and_seed.sql
 ```
 
 - **文件命名规则**：`{版本号}_{描述}.{up|down}.sql`
 - **版本号**：使用 6 位数字，确保顺序正确
-- **up.sql**：升级操作（创建表、插入数据等）
-- **down.sql**：回滚操作（删除表、清除数据等）
+- **up.sql**：升级操作（创建表、调整结构等）
+- **down.sql**：回滚操作（删除表、撤销结构调整等）
+- **full_schema_and_seed.sql**：稳定初始化入口，包含最终结构和内置种子
 
 ### 步骤 3：编写迁移文件
 
@@ -126,20 +123,14 @@ DROP TABLE IF EXISTS sys_user;
 DROP TABLE IF EXISTS sys_user;
 ```
 
-#### 示例：插入种子数据（000002_seed_data.up.sql）
+#### 稳定种子数据入口
 
-种子数据的 INSERT 必须幂等，避免迁移中途失败后重试时唯一键冲突：
+当前项目不再保留阶段性的种子迁移文件。角色、菜单、按钮、Casbin、字典等稳定内置种子统一写入：
 
-```sql
--- PostgreSQL：使用 ON CONFLICT DO NOTHING
-INSERT INTO sys_role (id, code, name, status, remark, created_at, updated_at)
-VALUES (1, 'super_admin', '超级管理员', 1, '系统内置角色', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
+- `server/migrations/mysql/full_schema_and_seed.sql`
+- `server/migrations/postgres/full_schema_and_seed.sql`
 
--- MySQL：使用 INSERT IGNORE
-INSERT IGNORE INTO `sys_role` (`id`, `code`, `name`, `status`, `remark`, `created_at`, `updated_at`)
-VALUES (1, 'super_admin', '超级管理员', 1, '系统内置角色', NOW(3), NOW(3));
-```
+这两份文件由 `./scripts/build-full-migrations.sh` 生成，不手工编辑。
 
 ### 步骤 4：在 Go 代码中集成
 
@@ -295,8 +286,8 @@ INFO server started {"addr": ":8080", "env": "dev"}
 ### 最佳实践
 
 - **版本控制**：将迁移文件纳入版本控制，确保团队协作时的一致性
-- **幂等性**：DDL 使用 `IF NOT EXISTS`，DML 使用 `ON CONFLICT DO NOTHING`（PostgreSQL）或 `INSERT IGNORE`（MySQL），确保迁移可以安全重试
-- **分阶段**：将建表和种子数据分开，便于管理和回滚
+- **幂等性**：DDL 尽量使用清晰、可重复审查的结构变更，避免把一次性补丁藏进启动代码
+- **分入口**：结构演进保留在增量迁移链，稳定内置种子保留在完整版 SQL
 - **测试**：在开发环境充分测试迁移，避免生产环境出错
 - **备份**：执行迁移前备份数据库，尤其是生产环境
 
@@ -403,19 +394,19 @@ EZ Admin Gin 的特点：
 - 同时支持 PostgreSQL 和 MySQL，需要跨数据库兼容
 - 已有 GORM 模型，迁移工具需要和 GORM 共存
 - 项目规模不大，复杂的数据迁移场景较少
-- 种子数据（角色、菜单、权限规则、角色-菜单绑定）全部可以用纯 SQL 表达
+- 稳定内置种子（角色、菜单、权限规则、角色-菜单绑定）全部可以用纯 SQL 表达，并集中在完整版 SQL 中
 - 优先选择简洁、学习成本低、维护活跃的方案
 
 基于以上特点，**golang-migrate** 是比较合适的选择：
 
 1. **数据库支持最广** — 原生支持 20+ 数据库，本项目同时需要 PostgreSQL 和 MySQL，两套迁移文件可以按 `migrations/postgres/` 和 `migrations/mysql/` 分别管理
-2. **纯 SQL 迁移** — 建表和种子数据都用 SQL 写，直观、可审查、不依赖 Go 运行时
+2. **纯 SQL 迁移** — 建表和初始化数据都用 SQL 表达，直观、可审查、不依赖 Go 运行时
 3. **轻量** — 不引入额外概念，`Up()` / `Down()` 即可
 4. **Go 库集成** — 可以通过 `embed.FS` 嵌入迁移文件，在应用启动时自动执行
 5. **社区最大** — GitHub 16k stars，问题排查资料丰富
 
 ::: details Goose 也不错，为什么不选？
-Goose 和 golang-migrate 在纯 SQL 迁移上几乎等价。Goose 额外支持 Go 迁移文件，但本项目的种子数据（角色、菜单、权限规则、角色-菜单绑定）都可以用纯 SQL 的 `INSERT` 搞定，不需要 Go 运行时。唯一需要 Go 代码的是管理员用户的 bcrypt 密码哈希，这部分改为通过一次性初始化接口处理，不走迁移文件。
+Goose 和 golang-migrate 在纯 SQL 迁移上几乎等价。Goose 额外支持 Go 迁移文件，但本项目的稳定内置种子（角色、菜单、权限规则、角色-菜单绑定）都可以用纯 SQL 的 `INSERT` 搞定，不需要 Go 运行时。唯一需要 Go 代码的是管理员用户的 bcrypt 密码哈希，这部分改为通过一次性初始化接口处理，不走迁移文件。
 
 选 golang-migrate 的核心理由是数据库支持更广——本项目需要同时维护 PostgreSQL 和 MySQL 两套 DDL。
 :::

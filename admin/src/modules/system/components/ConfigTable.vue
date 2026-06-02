@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NCard, NDataTable, NPagination } from 'naive-ui'
+import { NButton, NDataTable, NPagination } from 'naive-ui'
 
+import EzTableCard from '@/components/ez/EzTableCard.vue'
 import TableStatsBar from '@/components/TableStatsBar.vue'
 import type { ConfigItem, ConfigListQuery } from '../types/config'
 
@@ -21,7 +22,7 @@ defineEmits<{
 </script>
 
 <template>
-  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
+  <EzTableCard>
     <TableStatsBar>
       <span>共 {{ total }} 条</span>
       <template #actions>
@@ -51,5 +52,5 @@ defineEmits<{
         @update:page-size="(pageSize) => $emit('pageSizeChange', pageSize)"
       />
     </div>
-  </NCard>
+  </EzTableCard>
 </template>

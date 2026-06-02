@@ -12,22 +12,36 @@ import type {
   UpdateRoleStatusPayload,
 } from '../types/role'
 
+// normalizeRoleItem 确保角色关联数组始终可直接用于表单和树控件。
+function normalizeRoleItem(item: RoleItem): RoleItem {
+  return {
+    ...item,
+    custom_department_ids: Array.isArray(item.custom_department_ids) ? item.custom_department_ids : [],
+    menu_ids: Array.isArray(item.menu_ids) ? item.menu_ids : [],
+    permissions: Array.isArray(item.permissions) ? item.permissions : [],
+  }
+}
+
 // getRoles 分页查询角色列表，附带每个角色的权限和菜单信息。
 export async function getRoles(params: RoleListQuery) {
   const response = await http.get<ApiResponse<RoleListResponse>>('/system/roles', { params })
-  return response.data.data
+  const data = response.data.data
+  return {
+    ...data,
+    items: data.items.map(normalizeRoleItem),
+  }
 }
 
 // createRole 创建角色。
 export async function createRole(payload: CreateRolePayload) {
   const response = await http.post<ApiResponse<RoleItem>>('/system/roles', payload)
-  return response.data.data
+  return normalizeRoleItem(response.data.data)
 }
 
 // updateRole 更新角色基本信息和数据范围。
 export async function updateRole(id: number, payload: UpdateRolePayload) {
   const response = await http.post<ApiResponse<RoleItem>>(`/system/roles/${id}/update`, payload)
-  return response.data.data
+  return normalizeRoleItem(response.data.data)
 }
 
 // updateRoleStatus 切换角色的启用/禁用状态。

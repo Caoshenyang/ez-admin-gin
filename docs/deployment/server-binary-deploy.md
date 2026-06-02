@@ -108,7 +108,7 @@ bash scripts/deploy.sh user@your-server-ip
 ✅ 部署完成！
 
   访问地址：http://your-server-ip
-  默认账号：admin / Admin@123456
+  默认账号：admin / EzAdmin@123456
 
   查看后端日志：sudo journalctl -u ez-admin -f
   查看容器状态：docker compose -f /opt/ez-admin/compose.server.yml ps
@@ -231,11 +231,11 @@ sudo systemctl enable --now ez-admin
 `setup-server.sh` 会在部署完成后自动尝试创建默认管理员：
 
 - 用户名：`admin`
-- 密码：`Admin@123456`
+- 密码：`EzAdmin@123456`
 - 昵称：`管理员`
 
 ::: danger 生产部署后必须立即修改默认密码
-首次部署脚本会尝试创建默认管理员账号 `admin / Admin@123456`。
+首次部署脚本会尝试创建默认管理员账号 `admin / EzAdmin@123456`。
 部署完成后请立即登录后台修改密码，或在正式开放公网前完成初始化。
 不要在公网长期保留默认密码。
 :::
@@ -245,9 +245,7 @@ sudo systemctl enable --now ez-admin
 如果初始化失败（返回非 `200`/`409` 状态码），脚本会打印手动初始化命令：
 
 ```bash
-curl -X POST http://localhost/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin@123456","nickname":"管理员"}'
+curl -X POST http://localhost/api/v1/setup/init
 ```
 
 ## 验证部署
@@ -286,7 +284,7 @@ curl -sf http://localhost/
 ### 浏览器验证
 
 1. 访问 `http://your-server-ip` — 应看到登录页
-2. 使用 `admin / Admin@123456` 登录 — 应进入后台首页
+2. 使用 `admin / EzAdmin@123456` 登录 — 应进入后台首页
 3. 检查左侧菜单是否正常显示
 4. 点击菜单项，确认页面正常加载
 5. 尝试上传文件，确认上传目录有写入权限
@@ -424,9 +422,7 @@ grep EZ_DATABASE /opt/ez-admin/.env
 curl -sf http://localhost/health
 
 # 手动初始化
-curl -X POST http://localhost/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin@123456","nickname":"管理员"}'
+curl -X POST http://localhost/api/v1/setup/init
 
 # 返回 409 表示管理员已存在，正常
 ```

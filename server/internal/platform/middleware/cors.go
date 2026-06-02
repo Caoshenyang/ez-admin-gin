@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	platformConfig "ez-admin-gin/server/internal/platform/config"
@@ -62,4 +63,52 @@ func CORS(cfg platformConfig.CORSConfig, env string) gin.HandlerFunc {
 
 func isLocalhost(origin string) bool {
 	return strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "http://127.0.0.1:")
+}
+
+// AllowedWebSocketOriginPatterns 从 CORS 配置中提取 WebSocket OriginPatterns。
+// dev 环境默认放行 localhost / 127.0.0.1 的任意端口，prod 只允许显式配置的前端域名。
+func AllowedWebSocketOriginPatterns(cfg platformConfig.CORSConfig, env string) []string {
+	patterns := make([]string, 0, len(cfg.AllowedOrigins)+2)
+	seen := make(map[string]struct{})
+
+	add := func(pattern string) {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" {
+			return
+		}
+		if _, ok := seen[pattern]; ok {
+			return
+		}
+		seen[pattern] = struct{}{}
+		patterns = append(patterns, pattern)
+	}
+
+	if env != "prod" {
+		add("localhost:*")
+		add("127.0.0.1:*")
+	}
+
+	for _, origin := range cfg.AllowedOrigins {
+		host := originHost(origin)
+		if host == "" || host == "*" {
+			continue
+		}
+		add(host)
+	}
+
+	return patterns
+}
+
+func originHost(origin string) string {
+	origin = strings.TrimSpace(origin)
+	if origin == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(origin)
+	if err == nil && parsed.Host != "" {
+		return parsed.Host
+	}
+
+	return strings.TrimPrefix(origin, "http://")
 }

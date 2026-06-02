@@ -3,7 +3,6 @@ import { AttachOutline, CopyOutline } from '@vicons/ionicons5'
 import type { DataTableColumns } from 'naive-ui'
 import {
   NButton,
-  NCard,
   NDataTable,
   NIcon,
   NPagination,
@@ -15,6 +14,7 @@ import {
 import { computed, h } from 'vue'
 
 import EmptyState from '@/components/EmptyState.vue'
+import EzTableCard from '@/components/ez/EzTableCard.vue'
 import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText, formatSize, formatTime } from '@/utils/format'
 import { AttachmentStatus, type AttachmentItem } from '../types/attachment'
@@ -158,7 +158,7 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
 </script>
 
 <template>
-  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
+  <EzTableCard>
     <TableStatsBar>
       <span>共 {{ total }} 个附件</span>
       <template #actions>
@@ -197,5 +197,5 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
         />
       </div>
     </div>
-  </NCard>
+  </EzTableCard>
 </template>

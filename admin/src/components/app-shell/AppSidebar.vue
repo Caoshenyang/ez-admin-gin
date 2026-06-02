@@ -37,12 +37,12 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
     content-class="flex h-full flex-col bg-[linear-gradient(180deg,var(--ez-sidebar-bg)_0%,var(--ez-sidebar-bg-deep)_100%)]"
     :collapsed="collapsed"
     :collapsed-width="64"
-    :width="240"
+    :width="248"
     :native-scrollbar="false"
     :show-trigger="false"
     inverted
   >
-    <div class="flex h-16 items-center justify-center px-3">
+    <div class="flex h-14 items-center justify-center px-3">
       <NButton text class="!h-auto !p-0 !text-white hover:!bg-transparent" @click="emit('navigate', '/dashboard')">
         <div
           class="flex items-center"
@@ -55,13 +55,13 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
             class="block h-auto shrink-0"
           >
           <div v-if="!collapsed" class="min-w-0 text-left leading-none">
-            <p class="truncate text-[16px] font-semibold tracking-[0.01em] text-white">EZ Admin Gin</p>
+            <p class="truncate text-[15px] font-semibold text-white">EZ Admin Gin</p>
           </div>
         </div>
       </NButton>
     </div>
 
-    <p v-if="!collapsed" class="px-4 text-[12px] font-semibold tracking-[0.08em] text-[#64748B] uppercase">
+    <p v-if="!collapsed" class="px-4 text-[11px] font-semibold tracking-[0.08em] text-[#64748B] uppercase">
       工作台
     </p>
 
@@ -89,7 +89,7 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
 
     <!-- 底部收起/展开按钮 -->
     <div
-      class="flex items-center justify-center border-t border-white/6 pt-2 pb-3"
+      class="flex items-center justify-center border-t border-white/6 py-3"
       :class="collapsed ? 'px-0' : 'px-3'"
     >
       <NTooltip v-if="collapsed" placement="right" :delay="300">
@@ -97,7 +97,7 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
           <NButton
             quaternary
             circle
-            class="h-[42px] w-[42px] shrink-0 rounded-[var(--ez-radius-lg)] !bg-white/6 !p-0 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
+            class="h-9 w-9 shrink-0 rounded-[var(--ez-radius-control)] !bg-white/6 !p-0 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
             @click="emit('toggle')"
           >
             <NIcon :component="ChevronForwardOutline" :size="18" />
@@ -108,7 +108,7 @@ const sidebarScrollbarThemeOverrides: NonNullable<ScrollbarProps['themeOverrides
       <NButton
         v-else
         quaternary
-        class="flex w-full items-center justify-center gap-2 rounded-[var(--ez-radius-xl)] !bg-white/6 px-0 py-2.5 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
+        class="flex w-full items-center justify-center gap-2 rounded-[var(--ez-radius-control)] !bg-white/6 px-0 py-2 !text-white/45 hover:!bg-white/12 hover:!text-white/85"
         @click="emit('toggle')"
       >
         <NIcon :component="ChevronBackOutline" :size="18" />

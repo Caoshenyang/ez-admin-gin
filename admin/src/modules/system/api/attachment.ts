@@ -5,9 +5,9 @@ import type {
   AttachmentItem,
   AttachmentListQuery,
   AttachmentListResponse,
-  AttachmentStatus,
   CreateAttachmentPayload,
   UpdateAttachmentPayload,
+  UpdateAttachmentStatusPayload,
 } from '../types/attachment'
 
 // 获取附件列表（分页查询）
@@ -49,7 +49,7 @@ export async function updateAttachment(id: number, payload: UpdateAttachmentPayl
 }
 
 // 更新附件状态（启用/禁用）
-export async function updateAttachmentStatus(id: number, payload: { status: AttachmentStatus }) {
+export async function updateAttachmentStatus(id: number, payload: UpdateAttachmentStatusPayload) {
   const response = await http.post<ApiResponse<{ id: number, status: number }>>(
     `/system/attachments/${id}/status`,
     payload,

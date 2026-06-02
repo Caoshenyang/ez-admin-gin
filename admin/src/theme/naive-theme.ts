@@ -29,9 +29,11 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
   },
   Button: {
     borderRadiusMedium: '8px',
-    borderRadiusSmall: '8px',
+    borderRadiusSmall: '6px',
     heightMedium: '36px',
     heightSmall: '30px',
+    paddingMedium: '0 14px',
+    paddingSmall: '0 10px',
     fontWeight: '500',
   },
   Input: {
@@ -53,17 +55,19 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
     },
   },
   Card: {
-    borderRadius: '12px',
-    paddingMedium: '20px',
+    borderRadius: '10px',
+    paddingMedium: '18px',
     color: '#FFFFFF',
     borderColor: '#E6ECF3',
-    boxShadow: '0 8px 24px rgba(15, 23, 42, 0.06)',
+    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
   },
   DataTable: {
-    borderRadius: '10px',
+    borderRadius: '0px',
     thColor: '#F8FAFC',
     thTextColor: '#334155',
     thFontWeight: '600',
+    thPaddingMedium: '10px 14px',
+    tdPaddingMedium: '11px 14px',
     tdColor: '#FFFFFF',
     tdTextColor: '#0F172A',
     tdColorHover: '#F8FAFC',
@@ -100,13 +104,13 @@ export const lightThemeOverrides: GlobalThemeOverrides = {
     barColor: '#2563FF',
   },
   Drawer: {
-    borderRadius: '12px',
+    borderRadius: '10px',
   },
   Modal: {
-    borderRadius: '12px',
+    borderRadius: '10px',
   },
   Dropdown: {
-    borderRadius: '10px',
+    borderRadius: '8px',
     boxShadow: '0 12px 32px rgba(15, 23, 42, 0.12)',
   },
   Tag: {
@@ -140,9 +144,11 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
   },
   Button: {
     borderRadiusMedium: '8px',
-    borderRadiusSmall: '8px',
+    borderRadiusSmall: '6px',
     heightMedium: '36px',
     heightSmall: '30px',
+    paddingMedium: '0 14px',
+    paddingSmall: '0 10px',
     fontWeight: '500',
   },
   Input: {
@@ -168,17 +174,19 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
     },
   },
   Card: {
-    borderRadius: '12px',
-    paddingMedium: '20px',
+    borderRadius: '10px',
+    paddingMedium: '18px',
     color: '#111827',
     borderColor: 'rgba(148, 163, 184, 0.16)',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.24)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.20)',
   },
   DataTable: {
-    borderRadius: '10px',
+    borderRadius: '0px',
     thColor: '#0F172A',
     thTextColor: '#CBD5E1',
     thFontWeight: '600',
+    thPaddingMedium: '10px 14px',
+    tdPaddingMedium: '11px 14px',
     tdColor: '#111827',
     tdTextColor: '#E5E7EB',
     tdColorHover: '#172033',
@@ -196,13 +204,13 @@ export const darkThemeOverrides: GlobalThemeOverrides = {
     barColor: '#3B82F6',
   },
   Drawer: {
-    borderRadius: '12px',
+    borderRadius: '10px',
   },
   Modal: {
-    borderRadius: '12px',
+    borderRadius: '10px',
   },
   Dropdown: {
-    borderRadius: '10px',
+    borderRadius: '8px',
     boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)',
   },
   Tag: {

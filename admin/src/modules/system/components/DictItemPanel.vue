@@ -56,7 +56,7 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
       </div>
 
       <div v-if="selectedType" class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
-        <div class="grid items-center gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(260px,520px)_160px_auto] max-[720px]:px-4">
+        <div class="grid items-center gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(240px,320px)_148px_auto] max-[720px]:px-4">
           <NInput v-model:value="query.keyword" clearable placeholder="编码 / 名称 / 值" @keyup.enter="$emit('search')" />
           <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" />
           <div class="ez-filter-actions">

@@ -71,12 +71,10 @@ cd server && go run .
 ## 4. 初始化管理员账号
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+curl -X POST http://localhost:8080/api/v1/setup/init
 ```
 
-执行后应返回包含 `token` 的 JSON。初始化完成后，用返回的账号登录前端。
+执行后应返回创建成功提示。初始化完成后，用默认账号 `admin / EzAdmin@123456` 登录前端，并及时修改默认密码。
 
 ::: warning ⚠️ 初始化只能执行一次
 如果返回 `already initialized` 类型的错误，说明已经初始化过了，直接跳到下一步用已有账号登录即可。

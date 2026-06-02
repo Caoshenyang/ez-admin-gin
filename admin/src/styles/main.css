@@ -111,6 +111,8 @@
   --ez-shadow-lg: var(--ez-shadow-popup);
   --ez-panel-dark: #0F172A;
   --ez-panel-dark-secondary: #1F2937;
+  --ez-surface-raised: rgba(255, 255, 255, 0.78);
+  --ez-surface-subtle: #FAFBFD;
   --ez-text-heading: #111827;
   --ez-text-body: #374151;
   --ez-text-muted: #6B7280;
@@ -176,6 +178,8 @@
   --ez-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.30);
   --ez-panel-dark: #0B1A2E;
   --ez-panel-dark-secondary: #152238;
+  --ez-surface-raised: rgba(17, 24, 39, 0.78);
+  --ez-surface-subtle: #0F172A;
   --ez-text-heading: #E2E8F0;
   --ez-text-body: #CBD5E1;
   --ez-text-muted: #94A3B8;
@@ -199,6 +203,11 @@ body,
 
 body {
   background: var(--ez-page-bg);
+}
+
+::selection {
+  background: var(--ez-brand-muted);
+  color: var(--ez-text-main);
 }
 
 a {
@@ -234,7 +243,7 @@ button:not(:disabled),
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .admin-page-scroll {
@@ -242,14 +251,49 @@ button:not(:disabled),
   flex: 1;
   overflow: auto;
   padding-right: 4px;
+  scrollbar-gutter: stable;
 }
 
 .ez-content-surface {
+  display: flex;
   min-height: 0;
+  height: 100%;
   flex: 1;
+  flex-direction: column;
   overflow: auto;
   background: var(--ez-page-bg);
-  padding: 24px;
+  padding: 20px;
+  scrollbar-gutter: stable;
+}
+
+.ez-content-surface::-webkit-scrollbar,
+.admin-page-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ez-content-surface::-webkit-scrollbar-thumb,
+.admin-page-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid var(--ez-page-bg);
+  border-radius: 999px;
+  background: var(--ez-border);
+}
+
+.ez-content-surface::-webkit-scrollbar-thumb:hover,
+.admin-page-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ez-text-placeholder);
+}
+
+@media (min-width: 1440px) {
+  .ez-content-surface {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 720px) {
+  .ez-content-surface {
+    padding: 16px;
+  }
 }
 
 /* ========== Ez Card ========== */
@@ -257,24 +301,23 @@ button:not(:disabled),
 .ez-card {
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-xl);
-  box-shadow: var(--ez-shadow-md);
+  border-radius: var(--ez-radius-card);
+  box-shadow: var(--ez-shadow-sm);
 }
 
 .ez-card-elevated {
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-xl);
-  box-shadow: var(--ez-shadow-md);
+  border-radius: var(--ez-radius-card);
+  box-shadow: var(--ez-shadow-sm);
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    box-shadow 0.2s ease;
 }
 
 .ez-card-elevated:hover {
   border-color: var(--ez-brand-border);
-  box-shadow: var(--ez-shadow-lg);
+  box-shadow: var(--ez-shadow-card);
 }
 
 .ez-card-content-reset {
@@ -292,10 +335,10 @@ button:not(:disabled),
 /* ========== Ez Page Header ========== */
 
 .ez-page-header h1 {
-  font-size: var(--ez-text-3xl);
+  font-size: var(--ez-text-2xl);
   font-weight: 700;
   color: var(--ez-text-main);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   line-height: 1.3;
 }
 
@@ -309,21 +352,34 @@ button:not(:disabled),
 /* ========== Ez Toolbar (筛选区域) ========== */
 
 .ez-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-xl);
-  padding: 20px 24px;
+  border-radius: var(--ez-radius-card);
+  padding: 14px 16px;
   box-shadow: var(--ez-shadow-sm);
+}
+
+.ez-toolbar > :first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .ez-filter-actions {
   display: flex;
-  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
   justify-content: flex-end;
 }
 
 @media (max-width: 720px) {
   .ez-toolbar {
+    align-items: stretch;
+    flex-direction: column;
     padding: 16px;
   }
 
@@ -335,11 +391,22 @@ button:not(:disabled),
 /* ========== Ez Table Card ========== */
 
 .ez-table-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
   background: var(--ez-card-bg);
   border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-xl);
-  box-shadow: var(--ez-shadow-md);
+  border-radius: var(--ez-radius-card);
+  box-shadow: var(--ez-shadow-card);
   overflow: hidden;
+}
+
+.ez-table-card .n-data-table {
+  min-height: 0;
+}
+
+.ez-table-card .n-data-table-th {
+  white-space: nowrap;
 }
 
 /* ========== Ez Table Bar (表格顶部工具条) ========== */
@@ -349,9 +416,10 @@ button:not(:disabled),
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 52px;
-  padding: 10px 20px;
+  min-height: 48px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--ez-border-light);
+  background: var(--ez-surface-subtle);
   font-size: var(--ez-text-sm);
   color: var(--ez-text-sub);
 }
@@ -363,8 +431,9 @@ button:not(:disabled),
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 20px;
+  padding: 11px 16px;
   border-top: 1px solid var(--ez-border-light);
+  background: var(--ez-surface-subtle);
   font-size: var(--ez-text-sm);
   color: var(--ez-text-sub);
 }
@@ -393,37 +462,96 @@ button:not(:disabled),
   width: min(680px, calc(100vw - 32px));
 }
 
+.ez-modal-width-sm :where(.n-card-header),
+.ez-modal-width-md :where(.n-card-header),
+.ez-modal-width-lg :where(.n-card-header),
+.ez-modal-width-xl :where(.n-card-header) {
+  padding: 0;
+}
+
+.ez-modal-width-sm :where(.n-card__content),
+.ez-modal-width-md :where(.n-card__content),
+.ez-modal-width-lg :where(.n-card__content),
+.ez-modal-width-xl :where(.n-card__content) {
+  padding: 14px 20px 16px;
+}
+
+.ez-modal-width-sm :where(.n-card__footer),
+.ez-modal-width-md :where(.n-card__footer),
+.ez-modal-width-lg :where(.n-card__footer),
+.ez-modal-width-xl :where(.n-card__footer) {
+  border-top: 1px solid var(--ez-border-light);
+  background: var(--ez-surface-subtle);
+  padding: 10px 20px 12px;
+}
+
 .ez-modal-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .ez-modal-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
+}
+
+.ez-modal-form :where(.n-form-item) {
+  --n-label-padding: 0 10px 0 0;
+  --n-feedback-height: 16px;
+  --n-feedback-padding: 1px 0 0;
+}
+
+.ez-form-grid {
+  display: grid;
+  min-width: 0;
+  gap: 10px 14px;
+}
+
+.ez-form-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ez-form-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .ez-modal-section {
   border: 1px solid var(--ez-border-light);
-  border-radius: var(--ez-radius-lg);
+  border-radius: var(--ez-radius-card);
   background: var(--ez-card-bg);
-  padding: 18px 18px 4px;
+  padding: 14px 14px 2px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
 }
 
 .ez-modal-section--soft {
-  background: linear-gradient(180deg, var(--ez-card-bg) 0%, var(--ez-page-bg) 100%);
+  background: var(--ez-surface-subtle);
 }
 
 .ez-modal-section__head {
-  margin-bottom: 12px;
+  position: relative;
+  margin-bottom: 10px;
+  padding-left: 10px;
+}
+
+.ez-modal-section__head::before {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--ez-primary);
+  content: "";
 }
 
 .ez-modal-section__head h3 {
+  margin: 0;
   font-size: var(--ez-text-md);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ez-text-main);
+  line-height: 22px;
 }
 
 .ez-modal-section__head p,
@@ -438,7 +566,8 @@ button:not(:disabled),
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 8px;
+  padding-top: 2px;
 }
 
 .ez-modal-footer .n-button {
@@ -446,6 +575,11 @@ button:not(:disabled),
 }
 
 @media (max-width: 480px) {
+  .ez-form-grid--2,
+  .ez-form-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
   .ez-modal-footer {
     justify-content: stretch;
   }

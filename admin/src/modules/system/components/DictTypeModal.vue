@@ -46,7 +46,7 @@ const formModel = defineModel<DictTypeFormModel>('model', { required: true })
             <p>字典编码建议使用小写字母、数字、冒号、短横线和下划线，便于在前后端直接复用。</p>
           </div>
 
-          <div class="grid gap-x-5 md:grid-cols-2">
+          <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="字典编码" path="code">
               <NInput v-model:value="formModel.code" placeholder="例如 common:status" :disabled="formMode === 'edit'" />
             </NFormItem>

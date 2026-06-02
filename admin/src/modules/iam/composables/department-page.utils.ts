@@ -82,6 +82,7 @@ export function flattenDepartments(items: DepartmentItem[]) {
 // 将部门树转换为树形选择控件选项
 export function buildDepartmentTreeOptions(items: DepartmentItem[]): TreeSelectOption[] {
   return items.map((item) => ({
+    key: item.id,
     label: `${item.name}（${item.code}）`,
     value: item.id,
     children: item.children?.length ? buildDepartmentTreeOptions(item.children) : undefined,

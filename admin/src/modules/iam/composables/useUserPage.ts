@@ -26,10 +26,13 @@ import {
   buildRoleFilterOptions,
   buildRoleOptions,
   buildUserCreatePayload,
+  buildUserDepartmentFilterTreeOptions,
   buildUserDepartmentTreeOptions,
   buildUserUpdatePayload,
+  countDepartments,
   defaultUserListQuery,
   defaultUserFormModel,
+  filterDepartmentTreeOptions,
   toUserFormModel,
   normalizeUserListQuery,
   userFormRules,
@@ -46,6 +49,7 @@ export function useUserPage() {
   const users = ref<UserItem[]>([])
   const roles = ref<RoleItem[]>([])
   const posts = ref<PostItem[]>([])
+  const departmentKeyword = ref('')
   const total = ref(0)
   const checkedRowKeys = ref<DataTableRowKey[]>([])
   const roleVisible = ref(false)
@@ -73,6 +77,22 @@ export function useUserPage() {
 
   const departmentTreeOptions = computed<TreeSelectOption[]>(() => buildUserDepartmentTreeOptions(departments.value))
 
+  const departmentFilterTreeOptions = computed<TreeSelectOption[]>(() => buildUserDepartmentFilterTreeOptions(departments.value))
+
+  const filteredDepartmentTreeOptions = computed<TreeSelectOption[]>(() =>
+    filterDepartmentTreeOptions(departmentFilterTreeOptions.value, departmentKeyword.value),
+  )
+
+  const departmentCount = computed(() => countDepartments(departments.value))
+
+  const selectedDepartmentKeys = computed<Array<string | number>>(() => {
+    if (!query.department_id) {
+      return []
+    }
+
+    return [query.department_id]
+  })
+
   const roleOptions = computed(() => buildRoleOptions(roles.value))
 
   const postOptions = computed(() => buildPostOptions(posts.value))
@@ -81,15 +101,9 @@ export function useUserPage() {
 
   const selectedCount = computed(() => checkedRowKeys.value.length)
 
-  const displayUsers = computed(() => {
-    if (!query.role_id) {
-      return users.value
-    }
+  const displayUsers = computed(() => users.value)
 
-    return users.value.filter((user) => user.role_ids.includes(query.role_id ?? 0))
-  })
-
-  const displayTotal = computed(() => (query.role_id ? displayUsers.value.length : total.value))
+  const displayTotal = computed(() => total.value)
 
   function handleCheckedRowKeys(keys: DataTableRowKey[]) {
     checkedRowKeys.value = keys
@@ -108,10 +122,27 @@ export function useUserPage() {
 
   function handleReset() {
     Object.assign(query, defaultUserListQuery())
+    departmentKeyword.value = ''
     void loadUsers()
   }
 
   function handleSearch() {
+    query.page = 1
+    void loadUsers()
+  }
+
+  function handleSelectDepartment(keys: Array<string | number>) {
+    query.department_id = Number(keys[0] ?? 0)
+    query.page = 1
+    void loadUsers()
+  }
+
+  function handleClearDepartment() {
+    if (!query.department_id) {
+      return
+    }
+
+    query.department_id = 0
     query.page = 1
     void loadUsers()
   }
@@ -213,9 +244,13 @@ export function useUserPage() {
     checkedRowKeys,
     closeSuccess,
     departmentNameMap,
+    departmentCount,
+    departmentFilterTreeOptions,
+    departmentKeyword,
     departmentTreeOptions,
     displayTotal,
     displayUsers,
+    filteredDepartmentTreeOptions,
     formMode,
     formModel,
     formRef,
@@ -223,9 +258,11 @@ export function useUserPage() {
     handleCheckedRowKeys,
     handlePageChange,
     handlePageSizeChange,
+    handleClearDepartment,
     handleReset,
     handleSaveRoles,
     handleSearch,
+    handleSelectDepartment,
     handleToggleStatus,
     loading,
     openCreate,
@@ -243,6 +280,7 @@ export function useUserPage() {
     rules,
     saving,
     selectedCount,
+    selectedDepartmentKeys,
     selectedRoleIDs,
     statusOptions: userStatusOptions,
     submitForm,

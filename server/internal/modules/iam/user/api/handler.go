@@ -33,6 +33,7 @@ func NewHandler(service *userapp.Service, log *zap.Logger) *Handler {
 // @Param        keyword    query     string  false  "关键词"
 // @Param        status     query     int     false  "状态"
 // @Param        department_id  query  int    false  "部门 ID"
+// @Param        role_id    query     int     false  "角色 ID"
 // @Success      200  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth

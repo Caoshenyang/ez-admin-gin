@@ -24,7 +24,8 @@ defineSlots<{
 <style scoped>
 .ez-page-header-shell {
   display: flex;
-  align-items: center;
+  min-height: 44px;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
@@ -32,7 +33,7 @@ defineSlots<{
 .ez-page-header-shell h1 {
   margin: 0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ez-text-main);
   line-height: 28px;
 }

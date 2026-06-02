@@ -11,6 +11,14 @@ import (
 
 var errAlreadyInitialized = errors.New("system already initialized")
 
+const (
+	defaultAdminUsername = "admin"
+	defaultAdminPassword = "EzAdmin@123456"
+	defaultAdminNickname = "管理员"
+
+	initSuccessMessage = "管理员账号创建成功，请及时修改默认密码"
+)
+
 type setupHandler struct {
 	service *Service
 	log     *zap.Logger
@@ -20,36 +28,28 @@ func newSetupHandler(service *Service, log *zap.Logger) *setupHandler {
 	return &setupHandler{service: service, log: log}
 }
 
-type initRequest struct {
-	Username string `json:"username" binding:"required,min=2,max=64"`
-	Password string `json:"password" binding:"required,min=6,max=128"`
-	Nickname string `json:"nickname" binding:"required,min=1,max=64"`
+type initResponse struct {
+	Message  string `json:"message"`
+	UserID   uint   `json:"user_id"`
+	Username string `json:"username"`
 }
 
 // Init godoc
 // @Summary      系统初始化
-// @Description  创建超级管理员账号，仅当系统中无用户时可执行。
+// @Description  使用默认账号创建超级管理员，仅当系统中无用户时可执行。
 // @Tags         系统
-// @Accept       json
 // @Produce      json
-// @Param        body  body  initRequest  true  "初始化参数"
-// @Success      200  {object}  map[string]any
-// @Failure      400  {object}  map[string]any
+// @Success      200  {object}  initResponse
 // @Failure      409  {object}  map[string]any
 // @Failure      500  {object}  map[string]any
 // @Router       /setup/init [post]
 func (h *setupHandler) Init(c *gin.Context) {
-	var req initRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
-		return
+	req := InitRequest{
+		Username: defaultAdminUsername,
+		Password: defaultAdminPassword,
+		Nickname: defaultAdminNickname,
 	}
-
-	user, err := h.service.Init(c.Request.Context(), InitRequest{
-		Username: req.Username,
-		Password: req.Password,
-		Nickname: req.Nickname,
-	})
+	user, err := h.service.Init(c.Request.Context(), req)
 	if err != nil {
 		switch {
 		case errors.Is(err, errAlreadyInitialized):
@@ -65,9 +65,9 @@ func (h *setupHandler) Init(c *gin.Context) {
 	}
 
 	h.log.Info("admin user initialized", zap.String("username", req.Username))
-	c.JSON(http.StatusOK, gin.H{
-		"message":  "管理员账号创建成功",
-		"user_id":  user.ID,
-		"username": user.Username,
+	c.JSON(http.StatusOK, initResponse{
+		Message:  initSuccessMessage,
+		UserID:   user.ID,
+		Username: user.Username,
 	})
 }

@@ -135,6 +135,7 @@ export default defineConfig({
           text: '前端',
           items: [
             { text: '前端概览', link: '/frontend/overview' },
+            { text: '前端 UI 规范', link: '/frontend/ui-conventions' },
             { text: '登录与认证流程', link: '/frontend/auth-flow' },
             { text: '动态菜单与路由', link: '/frontend/route-and-menu' }
           ]

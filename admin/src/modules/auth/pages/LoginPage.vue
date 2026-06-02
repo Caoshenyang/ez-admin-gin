@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  NAlert,
   NButton,
   NCard,
   NCheckbox,
@@ -14,14 +13,11 @@ import brandLogoMarkUrl from '@/assets/brand-logo.svg'
 import loginHeroBgUrl from '@/assets/login/login-hero-bg.png'
 
 const {
-  captchaText,
   footerText,
   formModel,
   formRef,
-  handleForgotPassword,
   handleSubmit,
   productFeatures,
-  refreshCaptcha,
   rules,
   submitting,
 } = useLoginPage()
@@ -58,7 +54,7 @@ const {
           content-class="login-card-content"
         >
           <div class="mb-2.5">
-            <h2 class="mb-1 text-[24px] font-semibold text-[var(--ez-text-main)]">欢迎回来 👋</h2>
+            <h2 class="mb-1 text-[24px] font-semibold text-[var(--ez-text-main)]">欢迎回来</h2>
             <p class="text-sm text-[var(--ez-text-secondary)]">请使用您的账号登录系统</p>
           </div>
 
@@ -91,37 +87,10 @@ const {
               />
             </NFormItem>
 
-            <NFormItem class="captcha-item mb-0">
-              <div class="grid w-full gap-3 sm:grid-cols-[minmax(0,1fr)_120px]">
-                <NInput
-                  v-model:value="formModel.captcha"
-                  class="compact-input"
-                  placeholder="验证码"
-                  maxlength="4"
-                />
-
-                <button
-                  type="button"
-                  class="h-8.5 cursor-pointer rounded-lg border border-[var(--ez-brand-soft)] bg-[var(--ez-brand-soft)] text-lg font-bold tracking-[0.08em] text-[var(--ez-brand)]"
-                  @click="refreshCaptcha"
-                >
-                  {{ captchaText }}
-                </button>
-              </div>
-            </NFormItem>
-
-            <div class="my-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div class="my-2.5 flex items-center justify-between">
               <NCheckbox v-model:checked="formModel.rememberLogin">
                 记住登录
               </NCheckbox>
-
-              <button
-                type="button"
-                class="cursor-pointer border-none bg-transparent p-0 text-[var(--ez-text-sm)] text-[var(--ez-link)]"
-                @click="handleForgotPassword"
-              >
-                忘记密码？
-              </button>
             </div>
 
             <NButton
@@ -136,14 +105,9 @@ const {
             </NButton>
           </NForm>
 
-          <NAlert
-            type="info"
-            :show-icon="false"
-            class="mt-2.5 compact-alert"
-            title="默认账号：admin / EzAdmin@123456"
-          >
-            验证码当前仅做占位，后续补齐真实校验。
-          </NAlert>
+          <p class="mt-2.5 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
+            默认账号：admin / EzAdmin@123456
+          </p>
         </NCard>
 
         <p class="px-1 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">{{ footerText }}</p>
@@ -154,9 +118,9 @@ const {
 
 <style scoped>
 .login-page {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  background: #F3F7FF;
+  background: var(--ez-page-bg);
   padding: 0;
 }
 
@@ -164,11 +128,11 @@ const {
   position: relative;
   display: grid;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   grid-template-columns: minmax(460px, 1fr) minmax(360px, 560px);
   align-items: stretch;
   overflow: hidden;
-  background-color: #F3F7FF;
+  background-color: var(--ez-page-bg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -202,7 +166,7 @@ const {
 
 .login-brand-copy h1 {
   margin: 0;
-  color: #0F172A;
+  color: var(--ez-text-main);
   font-size: 34px;
   font-weight: 700;
   line-height: 1.2;
@@ -210,7 +174,7 @@ const {
 
 .login-brand-copy p {
   margin: 12px 0 0;
-  color: #334155;
+  color: var(--ez-text-regular);
   font-size: 18px;
   line-height: 1.6;
 }
@@ -228,7 +192,7 @@ const {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #1E3A5F;
+  color: var(--ez-text-regular);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -261,9 +225,9 @@ const {
 
 .login-card {
   border: 1px solid var(--ez-border);
-  border-radius: 16px;
+  border-radius: var(--ez-radius-page);
   width: min(420px, 100%);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ez-surface-raised);
   box-shadow: var(--ez-shadow-popup);
   backdrop-filter: blur(14px);
 }
@@ -287,10 +251,6 @@ const {
   min-height: 2px;
 }
 
-.login-form :deep(.captcha-item) {
-  margin-top: -6px;
-}
-
 .login-form :deep(.n-form-item:last-child) {
   margin-bottom: 0;
 }
@@ -307,12 +267,6 @@ const {
   --n-border-radius: var(--ez-radius-sm);
   --n-font-size: var(--ez-text-base);
   --n-height: 36px;
-}
-
-.compact-alert {
-  --n-border-radius: var(--ez-radius-sm);
-  --n-font-size: var(--ez-text-sm);
-  --n-padding: 8px 10px;
 }
 
 .login-card-content {

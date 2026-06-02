@@ -40,7 +40,7 @@ const formModel = defineModel<NoticeFormModel>('model', { required: true })
             <p>标题不超过 128 个字符，内容支持任意文本。</p>
           </div>
 
-          <div class="grid gap-x-5 md:grid-cols-2">
+          <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="标题" path="title">
               <NInput v-model:value="formModel.title" placeholder="公告标题" />
             </NFormItem>
@@ -62,7 +62,7 @@ const formModel = defineModel<NoticeFormModel>('model', { required: true })
         </section>
 
         <section class="ez-modal-section">
-          <div class="grid gap-x-5 md:grid-cols-2">
+          <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="状态">
               <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
             </NFormItem>

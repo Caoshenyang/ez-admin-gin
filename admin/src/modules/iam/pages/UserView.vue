@@ -13,20 +13,25 @@ const {
   canUse,
   checkedRowKeys,
   closeSuccess,
+  departmentCount,
+  departmentKeyword,
   departmentNameMap,
   departmentTreeOptions,
   displayTotal,
   displayUsers,
+  filteredDepartmentTreeOptions,
   formMode,
   formModel,
   formRef,
   formVisible,
   handleCheckedRowKeys,
+  handleClearDepartment,
   handlePageChange,
   handlePageSizeChange,
   handleReset,
   handleSaveRoles,
   handleSearch,
+  handleSelectDepartment,
   handleToggleStatus,
   loading,
   openCreate,
@@ -44,6 +49,7 @@ const {
   rules,
   saving,
   selectedCount,
+  selectedDepartmentKeys,
   selectedRoleIDs,
   statusOptions,
   submitForm,
@@ -77,17 +83,21 @@ const {
         <NCard class="user-dept-card" :bordered="false" content-class="ez-card-content-fill">
           <div class="user-dept-card__head">
             <strong>部门树</strong>
-            <span>{{ departmentTreeOptions.length }} 组</span>
+            <NButton size="tiny" text type="primary" @click="handleClearDepartment">全部部门</NButton>
           </div>
-          <NInput size="small" placeholder="搜索部门" clearable />
+          <NInput v-model:value="departmentKeyword" size="small" placeholder="搜索部门" clearable />
           <NTree
             class="mt-3"
             block-line
             default-expand-all
-            :data="departmentTreeOptions"
+            selectable
+            :data="filteredDepartmentTreeOptions"
             key-field="value"
             label-field="label"
+            :selected-keys="selectedDepartmentKeys"
+            @update:selected-keys="handleSelectDepartment"
           />
+          <div class="user-dept-card__foot">{{ departmentCount }} 个部门</div>
         </NCard>
 
         <section class="user-table-panel">
@@ -159,15 +169,15 @@ const {
   min-height: 0;
   flex: 1;
   grid-template-columns: 260px minmax(0, 1fr);
-  gap: 16px;
+  gap: 14px;
   overflow: hidden;
 }
 
 .user-dept-card {
   min-height: 0;
   border: 1px solid var(--ez-border);
-  border-radius: 12px;
-  box-shadow: var(--ez-shadow-card);
+  border-radius: var(--ez-radius-card);
+  box-shadow: var(--ez-shadow-sm);
 }
 
 .user-dept-card__head {
@@ -175,11 +185,12 @@ const {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   color: var(--ez-text-main);
 }
 
-.user-dept-card__head span {
+.user-dept-card__foot {
+  margin-top: 12px;
   color: var(--ez-text-secondary);
   font-size: 12px;
 }
@@ -189,7 +200,7 @@ const {
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 @media (max-width: 1024px) {

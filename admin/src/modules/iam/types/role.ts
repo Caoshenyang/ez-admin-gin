@@ -7,12 +7,26 @@ export const RoleStatus = {
 // 角色状态联合类型
 export type RoleStatus = (typeof RoleStatus)[keyof typeof RoleStatus]
 
+// 角色数据权限范围常量
+export const RoleDataScope = {
+  All: 'all',
+  Dept: 'dept',
+  DeptAndChildren: 'dept_and_children',
+  Self: 'self',
+  CustomDept: 'custom_dept',
+} as const
+
+// 角色数据权限范围联合类型
+export type RoleDataScope = (typeof RoleDataScope)[keyof typeof RoleDataScope]
+
 // 角色列表项数据结构
 export interface RoleItem {
   id: number
   code: string
   name: string
   sort: number
+  data_scope: RoleDataScope
+  custom_department_ids: number[]
   status: RoleStatus
   remark: string
   menu_ids: number[]
@@ -45,6 +59,8 @@ export interface CreateRolePayload {
   code: string
   name: string
   sort: number
+  data_scope: RoleDataScope
+  custom_department_ids: number[]
   status: RoleStatus
   remark: string
 }
@@ -53,6 +69,8 @@ export interface CreateRolePayload {
 export interface UpdateRolePayload {
   name: string
   sort: number
+  data_scope: RoleDataScope
+  custom_department_ids: number[]
   status: RoleStatus
   remark: string
 }

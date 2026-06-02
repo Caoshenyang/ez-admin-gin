@@ -14,6 +14,7 @@ DEPLOY_DIR  := deploy
 GO          := go
 PNPM        := pnpm
 DOCKER      := docker
+SWAG        := swag
 
 export GOCACHE := $(CURDIR)/.cache/go-build
 
@@ -76,11 +77,15 @@ admin-check: ## 前端类型检查 + lint
 	cd $(ADMIN_DIR) && $(PNPM) type-check && $(PNPM) lint
 
 .PHONY: generate-types
-generate-types: ## 从 Swagger spec 生成前端 TypeScript 类型
+generate-types: swagger ## 从 Swagger spec 生成前端 TypeScript 类型
 	cd $(ADMIN_DIR) && $(PNPM) generate:api
 
+.PHONY: swagger
+swagger: ## 从后端注释生成 Swagger / OpenAPI 文档
+	cd $(SERVER_DIR) && $(SWAG) init -g main.go -o docs --parseInternal
+
 .PHONY: check-types
-check-types: ## 检查生成的 API 类型是否与 Swagger spec 同步
+check-types: swagger ## 检查 Swagger 文档和前端 API 类型是否同步
 	cd $(ADMIN_DIR) && $(PNPM) check:api-types
 
 # ---------- 构建 ----------

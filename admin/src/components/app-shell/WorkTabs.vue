@@ -218,12 +218,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .admin-tabs-bar {
   display: flex;
-  height: 40px;
+  height: 42px;
   align-items: center;
   gap: 0;
   border-bottom: 1px solid var(--ez-border);
-  background: var(--ez-card-bg);
-  padding: 0 16px;
+  background: var(--ez-surface-subtle);
+  padding: 0 12px;
 }
 
 .admin-tabs-scroll-wrapper {
@@ -252,12 +252,12 @@ onBeforeUnmount(() => {
 
 .admin-tabs-fade--left {
   left: 0;
-  background: linear-gradient(to right, var(--ez-card-bg) 20%, transparent);
+  background: linear-gradient(to right, var(--ez-surface-subtle) 20%, transparent);
 }
 
 .admin-tabs-fade--right {
   right: 0;
-  background: linear-gradient(to left, var(--ez-card-bg) 20%, transparent);
+  background: linear-gradient(to left, var(--ez-surface-subtle) 20%, transparent);
 }
 
 .fade-enter-active,
@@ -274,8 +274,8 @@ onBeforeUnmount(() => {
   display: inline-flex;
   min-width: 100%;
   align-items: center;
-  gap: 6px;
-  padding: 4px 0;
+  gap: 4px;
+  padding: 5px 0;
 }
 
 .admin-tab-item {
@@ -284,13 +284,14 @@ onBeforeUnmount(() => {
   max-width: 180px;
   align-items: center;
   gap: 5px;
-  border: 1px solid var(--ez-border);
-  border-radius: 8px 8px 0 0;
-  background: #F8FAFC;
-  padding: 0 14px;
-  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--ez-radius-control);
+  background: transparent;
+  padding: 0 10px;
+  height: 30px;
   color: var(--ez-text-secondary);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition:
     background-color 0.15s ease,
@@ -301,21 +302,21 @@ onBeforeUnmount(() => {
 
 .admin-tab-item:hover {
   background: var(--ez-card-bg);
-  border-color: var(--ez-border);
+  border-color: var(--ez-border-light);
   color: var(--ez-primary);
 }
 
 .admin-tab-item--active {
   position: relative;
   background: var(--ez-card-bg);
-  border: 1px solid var(--ez-primary);
-  border-bottom-color: var(--ez-card-bg);
+  border-color: var(--ez-border);
+  box-shadow: var(--ez-shadow-sm);
   color: var(--ez-primary);
   font-weight: 600;
 }
 
 .admin-tab-item--active:hover {
-  background: var(--ez-brand-muted);
+  background: var(--ez-card-bg);
   color: var(--ez-brand-pressed);
 }
 
@@ -340,7 +341,7 @@ onBeforeUnmount(() => {
   width: 16px;
   height: 16px;
   border-radius: var(--ez-radius-2xs);
-  margin-right: -2px;
+  margin-right: -3px;
   opacity: 0;
   transition:
     opacity 0.15s ease,
@@ -365,7 +366,9 @@ onBeforeUnmount(() => {
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--ez-border-light);
 }
 </style>

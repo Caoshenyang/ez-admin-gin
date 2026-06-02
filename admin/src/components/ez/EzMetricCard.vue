@@ -39,10 +39,10 @@ const trendClass = computed(() => {
 <style scoped>
 .ez-metric-card {
   border: 1px solid var(--ez-border);
-  border-radius: 12px;
+  border-radius: var(--ez-radius-card);
   background: var(--ez-card-bg);
-  padding: 20px;
-  box-shadow: var(--ez-shadow-card);
+  padding: 18px;
+  box-shadow: var(--ez-shadow-sm);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -51,8 +51,8 @@ const trendClass = computed(() => {
 
 .ez-metric-card:hover {
   border-color: var(--ez-brand-border);
-  box-shadow: var(--ez-shadow-popup);
-  transform: translateY(-2px);
+  box-shadow: var(--ez-shadow-card);
+  transform: translateY(-1px);
 }
 
 .ez-metric-card__top {
@@ -71,9 +71,9 @@ const trendClass = computed(() => {
 
 .ez-metric-card__value {
   display: block;
-  margin-top: 8px;
+  margin-top: 7px;
   color: var(--ez-text-main);
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 600;
   line-height: 1.1;
 }

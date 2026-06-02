@@ -19,12 +19,13 @@ defineSlots<{
 <style scoped>
 .ez-toolbar-line {
   display: flex;
-  min-height: 52px;
+  min-height: 48px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--ez-border-light);
-  padding: 10px 20px;
+  background: var(--ez-surface-subtle);
+  padding: 10px 16px;
   color: var(--ez-text-secondary);
   font-size: 13px;
 }

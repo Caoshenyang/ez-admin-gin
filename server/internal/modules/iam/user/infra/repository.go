@@ -40,6 +40,17 @@ func (r *Repository) List(actor datascope.Actor, query userdomain.ListQuery, pag
 		queryDB = queryDB.Where("status = ?", status)
 	}
 
+	if query.DepartmentID != 0 {
+		queryDB = queryDB.Where("department_id = ?", query.DepartmentID)
+	}
+
+	if query.RoleID != 0 {
+		roleUserSubquery := r.db.Model(&model.UserRole{}).
+			Select("user_id").
+			Where("role_id = ?", query.RoleID)
+		queryDB = queryDB.Where("id IN (?)", roleUserSubquery)
+	}
+
 	var total int64
 	if err := queryDB.Count(&total).Error; err != nil {
 		return nil, 0, err

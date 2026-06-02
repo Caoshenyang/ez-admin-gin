@@ -7,7 +7,6 @@ import { login } from '../api/auth'
 import type { LoginFormModel } from '../types/login-page'
 import { hasAccessToken, setAuthSession } from '@/utils/auth'
 import {
-  createCaptchaText,
   defaultLoginFormModel,
   loginErrorMessage,
   loginFooterText,
@@ -21,21 +20,11 @@ export function useLoginPage() {
 
   const formRef = ref<FormInst | null>(null)
   const submitting = ref(false)
-  const captchaText = ref(createCaptchaText())
   const formModel = reactive<LoginFormModel>(defaultLoginFormModel())
 
   const productFeatures = loginProductFeatures
   const rules = loginFormRules
   const footerText = computed(() => loginFooterText())
-
-  function refreshCaptcha() {
-    captchaText.value = createCaptchaText()
-    formModel.captcha = ''
-  }
-
-  function handleForgotPassword() {
-    message.info('当前版本先保留入口，后面再接入找回密码流程')
-  }
 
   async function handleSubmit() {
     try {
@@ -67,14 +56,11 @@ export function useLoginPage() {
   }
 
   return {
-    captchaText,
     footerText,
     formModel,
     formRef,
-    handleForgotPassword,
     handleSubmit,
     productFeatures,
-    refreshCaptcha,
     rules,
     submitting,
   }

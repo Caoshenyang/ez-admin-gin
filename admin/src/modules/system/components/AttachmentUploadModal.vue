@@ -2,6 +2,7 @@
 import type { FormInst, FormRules, UploadFileInfo } from 'naive-ui'
 import { NButton, NForm, NFormItem, NInput, NModal, NSelect, NUpload } from 'naive-ui'
 
+import FormModalHeader from '@/components/FormModalHeader.vue'
 import { STATUS_FORM_OPTIONS } from '@/constants/status'
 import type { AttachmentUploadFormModel } from '../types/attachment-page'
 
@@ -26,17 +27,25 @@ const formModel = defineModel<AttachmentUploadFormModel>('model', { required: tr
   <NModal
     :show="show"
     preset="card"
-    title="上传附件"
-    class="max-w-[620px] rounded-[var(--ez-radius-2xl)]"
+    :closable="false"
+    class="ez-modal-width-lg"
     :bordered="false"
     @update:show="(value) => $emit('update:show', value)"
   >
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top">
+    <template #header>
+      <FormModalHeader
+        title="上传附件"
+        subtitle="上传后会进入附件中心，后续可按分类、业务类型和状态继续检索复用。"
+        @close="$emit('update:show', false)"
+      />
+    </template>
+
+    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="ez-modal-form">
       <NFormItem label="附件名称" path="display_name">
         <NInput v-model:value="formModel.display_name" placeholder="可留空，默认使用原始文件名" />
       </NFormItem>
 
-      <div class="grid gap-4 md:grid-cols-2">
+      <div class="ez-form-grid ez-form-grid--2">
         <NFormItem label="附件分类" path="category">
           <NInput v-model:value="formModel.category" placeholder="例如 contract / avatar" />
         </NFormItem>

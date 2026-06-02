@@ -3,6 +3,8 @@ package bootstrap
 import (
 	"io/fs"
 	stdlog "log"
+	"net"
+	"strings"
 	"time"
 
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
@@ -92,8 +94,27 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 		zap.String("addr", cfg.Server.Addr),
 		zap.String("env", cfg.App.Env),
 	)
+	if cfg.Swagger.Enabled {
+		log.Info("swagger ui available", zap.String("url", swaggerURL(cfg.Server.Addr)))
+	}
 
 	if err := r.Run(cfg.Server.Addr); err != nil {
 		log.Fatal("run server", zap.Error(err))
 	}
+}
+
+func swaggerURL(addr string) string {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		trimmed := strings.TrimSpace(addr)
+		if strings.HasPrefix(trimmed, "http://") || strings.HasPrefix(trimmed, "https://") {
+			return strings.TrimRight(trimmed, "/") + "/swagger/index.html"
+		}
+		return "http://" + strings.TrimRight(trimmed, "/") + "/swagger/index.html"
+	}
+
+	if host == "" || host == "0.0.0.0" || host == "::" || host == "[::]" {
+		host = "localhost"
+	}
+	return "http://" + net.JoinHostPort(host, port) + "/swagger/index.html"
 }

@@ -48,7 +48,7 @@ const formModel = defineModel<DictItemFormModel>('model', { required: true })
             <p>字典项编码和显示值建议稳定设计，这样状态色、下拉项和表格标签都能长期复用。</p>
           </div>
 
-          <div class="grid gap-x-5 md:grid-cols-2">
+          <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="字典项编码" path="item_key">
               <NInput v-model:value="formModel.item_key" placeholder="例如 enabled" :disabled="formMode === 'edit'" />
             </NFormItem>

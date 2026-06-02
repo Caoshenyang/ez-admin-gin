@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import type { FormInst, FormRules, SelectOption } from 'naive-ui'
-import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect } from 'naive-ui'
+import type { FormInst, FormRules, SelectOption, TreeSelectOption } from 'naive-ui'
+import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, NTreeSelect } from 'naive-ui'
 
 import FormModalHeader from '@/components/FormModalHeader.vue'
 
+import { RoleDataScope } from '../types/role'
 import type { RoleFormModel } from '../types/role-page'
 
 defineProps<{
+  dataScopeOptions: SelectOption[]
+  departmentTreeOptions: TreeSelectOption[]
   formMode: 'create' | 'edit'
   rules: FormRules
   saving: boolean
@@ -42,6 +45,20 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
       </NFormItem>
       <NFormItem label="排序" path="sort">
         <NInputNumber v-model:value="formModel.sort" :min="0" class="w-full" />
+      </NFormItem>
+      <NFormItem label="数据范围" path="data_scope">
+        <NSelect v-model:value="formModel.data_scope" :options="dataScopeOptions" />
+      </NFormItem>
+      <NFormItem v-if="formModel.data_scope === RoleDataScope.CustomDept" label="授权部门" path="custom_department_ids">
+        <NTreeSelect
+          v-model:value="formModel.custom_department_ids"
+          :options="departmentTreeOptions"
+          multiple
+          cascade
+          checkable
+          default-expand-all
+          placeholder="请选择授权部门"
+        />
       </NFormItem>
       <NFormItem label="状态" path="status">
         <NSelect v-model:value="formModel.status" :options="statusOptions" />

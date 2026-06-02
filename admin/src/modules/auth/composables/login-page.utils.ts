@@ -3,8 +3,6 @@ import type { FormRules } from 'naive-ui'
 
 import type { LoginFormModel } from '../types/login-page'
 
-const captchaAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-
 export const loginProductFeatures = [
   'RBAC 权限体系',
   '动态菜单与按钮权限',
@@ -13,18 +11,10 @@ export const loginProductFeatures = [
   '高性能 WebSocket 推送',
 ]
 
-export function createCaptchaText() {
-  return Array.from({ length: 4 }, () => {
-    const index = Math.floor(Math.random() * captchaAlphabet.length)
-    return captchaAlphabet[index]
-  }).join('')
-}
-
 export function defaultLoginFormModel(): LoginFormModel {
   return {
     username: 'admin',
     password: 'EzAdmin@123456',
-    captcha: '',
     rememberLogin: true,
   }
 }

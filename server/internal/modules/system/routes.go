@@ -79,9 +79,10 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Log: opts.Log,
 	})
 	notificationmodule.RegisterRoutes(system, r, notificationmodule.RouteOptions{
-		DB:    opts.DB,
-		Redis: opts.Redis,
-		Log:   opts.Log,
-		Token: opts.Token,
+		Config: opts.Config,
+		DB:     opts.DB,
+		Redis:  opts.Redis,
+		Log:    opts.Log,
+		Token:  opts.Token,
 	})
 }

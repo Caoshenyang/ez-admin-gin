@@ -32,24 +32,26 @@ const formModel = defineModel<PostFormModel>('model', { required: true })
       />
     </template>
 
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="grid gap-4 md:grid-cols-2">
-      <NFormItem label="岗位编码" path="code">
-        <NInput v-model:value="formModel.code" placeholder="请输入岗位编码" />
-      </NFormItem>
+    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="ez-modal-form">
+      <div class="ez-form-grid ez-form-grid--2">
+        <NFormItem label="岗位编码" path="code">
+          <NInput v-model:value="formModel.code" placeholder="请输入岗位编码" />
+        </NFormItem>
 
-      <NFormItem label="岗位名称" path="name">
-        <NInput v-model:value="formModel.name" placeholder="请输入岗位名称" />
-      </NFormItem>
+        <NFormItem label="岗位名称" path="name">
+          <NInput v-model:value="formModel.name" placeholder="请输入岗位名称" />
+        </NFormItem>
 
-      <NFormItem label="排序" path="sort">
-        <NInputNumber v-model:value="formModel.sort" :min="0" class="w-full" />
-      </NFormItem>
+        <NFormItem label="排序" path="sort">
+          <NInputNumber v-model:value="formModel.sort" :min="0" class="w-full" />
+        </NFormItem>
 
-      <NFormItem label="状态" path="status">
-        <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
-      </NFormItem>
+        <NFormItem label="状态" path="status">
+          <NSelect v-model:value="formModel.status" :options="STATUS_FORM_OPTIONS" />
+        </NFormItem>
+      </div>
 
-      <NFormItem label="备注" path="remark" class="md:col-span-2">
+      <NFormItem label="备注" path="remark">
         <NInput v-model:value="formModel.remark" type="textarea" :rows="4" placeholder="补充记录岗位职责、适用部门或协作边界" />
       </NFormItem>
     </NForm>

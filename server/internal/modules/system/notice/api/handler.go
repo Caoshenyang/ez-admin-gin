@@ -29,7 +29,7 @@ func NewHandler(service *noticeapp.Service, log *zap.Logger) *Handler {
 // @Param        page_size  query     int     false  "每页条数"
 // @Param        keyword    query     string  false  "关键词"
 // @Param        status     query     int     false  "状态"
-// @Success      200  {object}  httpx.Body{data=noticedomain.ListResponse}
+// @Success      200  {object}  httpx.Body{data=ListResponse}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -53,8 +53,8 @@ func (h *Handler) List(c *gin.Context) {
 // @Tags         System / 公告管理
 // @Accept       json
 // @Produce      json
-// @Param        body  body  noticedomain.CreateRequest  true  "公告参数"
-// @Success      200  {object}  httpx.Body{data=noticedomain.Response}
+// @Param        body  body  CreateRequest  true  "公告参数"
+// @Success      200  {object}  httpx.Body{data=Response}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -79,8 +79,8 @@ func (h *Handler) Create(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path  uint                        true  "公告 ID"
-// @Param        body  body  noticedomain.UpdateRequest  true  "公告参数"
-// @Success      200  {object}  httpx.Body{data=noticedomain.Response}
+// @Param        body  body  UpdateRequest  true  "公告参数"
+// @Success      200  {object}  httpx.Body{data=Response}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -109,7 +109,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path  uint                              true  "公告 ID"
-// @Param        body  body  noticedomain.UpdateStatusRequest  true  "状态参数"
+// @Param        body  body  UpdateStatusRequest  true  "状态参数"
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body

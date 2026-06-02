@@ -2,13 +2,13 @@
 import type { DataTableColumns } from 'naive-ui'
 import {
   NButton,
-  NCard,
   NDataTable,
   NPagination,
   NTag,
 } from 'naive-ui'
 import { h } from 'vue'
 
+import EzTableCard from '@/components/ez/EzTableCard.vue'
 import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText, formatTime } from '@/utils/format'
 import { LoginLogStatus, type LoginLogItem } from '../types/login-log'
@@ -95,7 +95,7 @@ function rowProps(row: LoginLogItem) {
 </script>
 
 <template>
-  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
+  <EzTableCard>
     <TableStatsBar>
       <span>共 {{ total }} 条</span>
       <template #actions>
@@ -128,7 +128,7 @@ function rowProps(row: LoginLogItem) {
         @update:page-size="emit('page-size-change', $event)"
       />
     </div>
-  </NCard>
+  </EzTableCard>
 </template>
 
 <style scoped>

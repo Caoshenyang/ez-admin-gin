@@ -73,17 +73,15 @@ done
 # ---- 5. 初始化管理员（仅首次）----
 
 STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost/api/v1/setup/init \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin@123456","nickname":"管理员"}' 2>/dev/null || true)
+  -X POST 2>/dev/null || true)
 
 if [ "$STATUS" = "200" ]; then
-  echo "    管理员已创建（admin / Admin@123456，请登录后修改密码）"
+  echo "    管理员已创建（admin / EzAdmin@123456，请登录后修改密码）"
 elif [ "$STATUS" = "409" ]; then
   echo "    管理员已存在，跳过初始化"
 else
   echo "    ⚠️ 管理员初始化返回 $STATUS，请手动执行："
-  echo "    curl -X POST http://localhost/api/v1/setup/init -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"Admin@123456\",\"nickname\":\"管理员\"}'"
+  echo "    curl -X POST http://localhost/api/v1/setup/init"
 fi
 
 # ---- 6. 结果 ----
@@ -93,7 +91,7 @@ echo "========================================="
 echo "✅ 部署完成！"
 echo ""
 echo "  访问地址：http://$(hostname -I | awk '{print $1}')"
-echo "  默认账号：admin / Admin@123456"
+echo "  默认账号：admin / EzAdmin@123456"
 echo ""
 echo "  查看后端日志：sudo journalctl -u ez-admin -f"
 echo "  查看容器状态：docker compose -f $BASE/compose.server.yml ps"

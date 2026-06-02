@@ -1,7 +1,13 @@
 import type { FormRules, SelectOption, TreeOption } from 'naive-ui'
 
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
-import { RoleStatus, type RoleItem, type RoleListQuery, type RolePermissionItem } from '@/modules/iam/types/role'
+import {
+  RoleDataScope,
+  RoleStatus,
+  type RoleItem,
+  type RoleListQuery,
+  type RolePermissionItem,
+} from '@/modules/iam/types/role'
 
 import type { PermissionRow, RoleFormModel } from '../types/role-page'
 
@@ -12,6 +18,22 @@ export const roleStatusOptions: SelectOption[] = [
   { label: '启用', value: RoleStatus.Enabled },
   { label: '禁用', value: RoleStatus.Disabled },
 ]
+
+export const roleDataScopeOptions: SelectOption[] = [
+  { label: '全部数据', value: RoleDataScope.All },
+  { label: '本部门数据', value: RoleDataScope.Dept },
+  { label: '本部门及下级', value: RoleDataScope.DeptAndChildren },
+  { label: '仅本人数据', value: RoleDataScope.Self },
+  { label: '自定义部门', value: RoleDataScope.CustomDept },
+]
+
+export const roleDataScopeDescriptions = new Map<RoleDataScope, string>([
+  [RoleDataScope.All, '可查看所有组织与业务数据'],
+  [RoleDataScope.Dept, '仅查看当前归属部门数据'],
+  [RoleDataScope.DeptAndChildren, '适合部门负责人和区域管理员'],
+  [RoleDataScope.Self, '限制为当前登录用户创建或归属的数据'],
+  [RoleDataScope.CustomDept, '按勾选部门精细控制可见数据范围'],
+])
 
 export const permissionMethodOptions: SelectOption[] = [
   { label: 'GET', value: 'GET' },
@@ -31,6 +53,8 @@ export function defaultRoleFormModel(): RoleFormModel {
     code: '',
     name: '',
     sort: 10,
+    data_scope: RoleDataScope.Self,
+    custom_department_ids: [],
     status: RoleStatus.Enabled,
     remark: '',
   }
@@ -56,6 +80,8 @@ export function toRoleFormModel(role: RoleItem): RoleFormModel {
     code: role.code,
     name: role.name,
     sort: role.sort,
+    data_scope: role.data_scope,
+    custom_department_ids: [...role.custom_department_ids],
     status: role.status,
     remark: role.remark,
   }
@@ -127,6 +153,9 @@ export function buildRoleCreatePayload(formModel: RoleFormModel) {
     code: formModel.code.trim(),
     name: formModel.name.trim(),
     sort: formModel.sort,
+    data_scope: formModel.data_scope,
+    custom_department_ids:
+      formModel.data_scope === RoleDataScope.CustomDept ? formModel.custom_department_ids : [],
     status: formModel.status,
     remark: formModel.remark.trim(),
   }
@@ -136,6 +165,9 @@ export function buildRoleUpdatePayload(formModel: RoleFormModel) {
   return {
     name: formModel.name.trim(),
     sort: formModel.sort,
+    data_scope: formModel.data_scope,
+    custom_department_ids:
+      formModel.data_scope === RoleDataScope.CustomDept ? formModel.custom_department_ids : [],
     status: formModel.status,
     remark: formModel.remark.trim(),
   }

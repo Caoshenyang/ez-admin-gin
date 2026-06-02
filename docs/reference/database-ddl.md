@@ -13,7 +13,7 @@ description: "当前系统表结构与完整版 SQL 交付物入口。"
 - `server/migrations/mysql/full_schema_and_seed.sql`
 - `server/migrations/postgres/full_schema_and_seed.sql`
 
-它们由 `./scripts/build-full-migrations.sh` 从真实 `.up.sql` 迁移链顺序归并生成。
+它们由 `./scripts/build-full-migrations.sh` 生成。生成结果是稳定版初始化文件：表结构直接呈现最终形态，内置种子集中整理，并写入当前迁移基线。
 :::
 
 ## 为什么改成完整版 SQL 入口
@@ -27,7 +27,7 @@ description: "当前系统表结构与完整版 SQL 交付物入口。"
 现在的约定是：
 
 - 要执行建库和内置种子初始化，直接使用完整版 SQL
-- 要了解历史演进顺序，再回看 `000001` 到 `000011` 的增量迁移链
+- 要了解结构演进顺序，再回看保留的增量迁移链
 
 ## 当前主线表清单
 
@@ -65,9 +65,7 @@ description: "当前系统表结构与完整版 SQL 交付物入口。"
 完整版 SQL 不会写死管理员账号。导入完成后，需要再调用：
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+curl -X POST http://localhost:8080/api/v1/setup/init
 ```
 
 ### 后续维护

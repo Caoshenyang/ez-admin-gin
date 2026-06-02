@@ -103,9 +103,7 @@ docker compose -f compose.deploy.yml --env-file .env up -d
 ### 4. 初始化管理员
 
 ```bash
-curl -X POST http://localhost/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"Admin@123456","nickname":"管理员"}'
+curl -X POST http://localhost/api/v1/setup/init
 ```
 
 ::: danger

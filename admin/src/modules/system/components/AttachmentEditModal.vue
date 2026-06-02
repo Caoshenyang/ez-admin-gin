@@ -2,6 +2,7 @@
 import type { FormInst, FormRules } from 'naive-ui'
 import { NButton, NForm, NFormItem, NInput, NModal, NSelect } from 'naive-ui'
 
+import FormModalHeader from '@/components/FormModalHeader.vue'
 import { STATUS_FORM_OPTIONS } from '@/constants/status'
 import type { AttachmentEditFormModel } from '../types/attachment-page'
 
@@ -21,13 +22,21 @@ const formModel = defineModel<AttachmentEditFormModel>('model', { required: true
 </script>
 
 <template>
-  <NModal :show="show" preset="card" title="编辑附件" class="max-w-[620px] rounded-[var(--ez-radius-2xl)]" :bordered="false" @update:show="(value) => $emit('update:show', value)">
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top">
+  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-lg" :bordered="false" @update:show="(value) => $emit('update:show', value)">
+    <template #header>
+      <FormModalHeader
+        title="编辑附件"
+        subtitle="只调整附件的展示信息、分类和状态，不会替换底层文件内容。"
+        @close="$emit('update:show', false)"
+      />
+    </template>
+
+    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="ez-modal-form">
       <NFormItem label="附件名称" path="display_name">
         <NInput v-model:value="formModel.display_name" placeholder="请输入附件名称" />
       </NFormItem>
 
-      <div class="grid gap-4 md:grid-cols-2">
+      <div class="ez-form-grid ez-form-grid--2">
         <NFormItem label="附件分类" path="category">
           <NInput v-model:value="formModel.category" placeholder="附件分类" />
         </NFormItem>

@@ -1,18 +1,26 @@
 <!-- RolePermissionPanel 展示并编辑指定角色的 Casbin 权限策略列表。 -->
 <script setup lang="ts">
 import type { SelectOption, TreeOption } from 'naive-ui'
-import { NButton, NCard, NCheckbox, NInput, NSelect, NTabPane, NTabs, NTag, NTree } from 'naive-ui'
+import { NButton, NCard, NCheckbox, NEmpty, NInput, NSelect, NSpin, NTabPane, NTabs, NTag, NTree } from 'naive-ui'
 
+import { RoleDataScope } from '../types/role'
 import type { PermissionRow, PermissionTab } from '../types/role-page'
 import type { RoleItem } from '../types/role'
+import type { UserItem } from '../types/user'
+import { roleDataScopeDescriptions, roleDataScopeOptions } from '../composables/role-page.utils'
 
 defineProps<{
   canEditSelectedRole: boolean
   checkedButtonCount: number
   checkedMenuCount: number
   checkedTotal: number
+  dataScopeDescription: string
+  departmentNameMap: Map<number, string>
   menuTreeOptions: TreeOption[]
   methodOptions: SelectOption[]
+  relatedUsers: UserItem[]
+  relatedUsersLoading: boolean
+  relatedUsersTotal: number
   selectedRole: RoleItem | null
   superAdminRoleCode: string
 }>()
@@ -21,6 +29,7 @@ defineEmits<{
   addPermission: []
   checkAll: []
   clearAll: []
+  refreshRelatedUsers: []
   removePermission: [id: number]
 }>()
 
@@ -130,33 +139,59 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 
           <NTabPane name="data" tab="数据权限">
             <div class="data-scope-panel">
-              <button type="button" class="data-scope-card data-scope-card--active">
-                <strong>全部数据</strong>
-                <span>可查看所有组织与业务数据</span>
-              </button>
-              <button type="button" class="data-scope-card">
-                <strong>本部门数据</strong>
-                <span>仅查看当前归属部门数据</span>
-              </button>
-              <button type="button" class="data-scope-card">
-                <strong>本部门及下级</strong>
-                <span>适合部门负责人和区域管理员</span>
-              </button>
-              <button type="button" class="data-scope-card">
-                <strong>仅本人数据</strong>
-                <span>限制为当前登录用户创建或归属的数据</span>
-              </button>
-              <button type="button" class="data-scope-card">
-                <strong>自定义部门</strong>
-                <span>后续接入部门树后可精细授权</span>
-              </button>
+              <div
+                v-for="option in roleDataScopeOptions"
+                :key="String(option.value)"
+                class="data-scope-card"
+                :class="{ 'data-scope-card--active': selectedRole?.data_scope === option.value }"
+              >
+                <strong>{{ option.label }}</strong>
+                <span>{{ roleDataScopeDescriptions.get(option.value as RoleDataScope) }}</span>
+              </div>
+            </div>
+
+            <div class="data-scope-summary">
+              <strong>{{ selectedRole ? dataScopeDescription : '未选择角色' }}</strong>
+              <span v-if="selectedRole?.data_scope === RoleDataScope.CustomDept">
+                已授权 {{ selectedRole.custom_department_ids.length }} 个自定义部门
+              </span>
+              <span v-else>通过“编辑角色”调整数据权限范围。</span>
+              <div v-if="selectedRole?.data_scope === RoleDataScope.CustomDept" class="custom-department-tags">
+                <NTag
+                  v-for="departmentID in selectedRole.custom_department_ids"
+                  :key="departmentID"
+                  :bordered="false"
+                  type="info"
+                >
+                  {{ departmentNameMap.get(departmentID) ?? `部门 ${departmentID}` }}
+                </NTag>
+                <NEmpty v-if="selectedRole.custom_department_ids.length === 0" size="small" description="未选择自定义部门" />
+              </div>
             </div>
           </NTabPane>
 
           <NTabPane name="users" tab="关联用户">
-            <div class="related-users-empty">
-              <strong>{{ selectedRole?.name ?? '当前角色' }}</strong>
-              <span>关联用户列表后续可接入用户分页接口，这里先保留规范化入口。</span>
+            <div class="related-users-panel">
+              <div class="related-users-panel__head">
+                <strong>{{ selectedRole?.name ?? '当前角色' }}</strong>
+                <div>
+                  <span>{{ relatedUsersTotal }} 人</span>
+                  <NButton size="tiny" text type="primary" @click="$emit('refreshRelatedUsers')">刷新</NButton>
+                </div>
+              </div>
+
+              <NSpin :show="relatedUsersLoading">
+                <NEmpty v-if="!selectedRole || relatedUsers.length === 0" description="暂无关联用户" />
+                <div v-else class="related-user-list">
+                  <div v-for="user in relatedUsers" :key="user.id" class="related-user-item">
+                    <strong>{{ user.nickname || user.username }}</strong>
+                    <span>
+                      {{ user.username }} ·
+                      {{ user.department_id === 0 ? '未分配部门' : departmentNameMap.get(user.department_id) ?? `部门 ${user.department_id}` }}
+                    </span>
+                  </div>
+                </div>
+              </NSpin>
             </div>
           </NTabPane>
         </NTabs>
@@ -200,17 +235,21 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 }
 
 .role-basic-grid > div,
-.related-users-empty,
+.related-users-panel,
+.related-user-item,
+.data-scope-summary,
 .data-scope-card {
   border: 1px solid var(--ez-border);
-  border-radius: 10px;
+  border-radius: var(--ez-radius-xs);
   background: var(--ez-page-bg);
   padding: 14px;
 }
 
 .role-basic-grid span,
 .data-scope-card span,
-.related-users-empty span {
+.data-scope-summary span,
+.related-users-panel__head span,
+.related-user-item span {
   display: block;
   color: var(--ez-text-secondary);
   font-size: 12px;
@@ -219,7 +258,9 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 
 .role-basic-grid strong,
 .data-scope-card strong,
-.related-users-empty strong {
+.data-scope-summary strong,
+.related-users-panel__head strong,
+.related-user-item strong {
   display: block;
   margin-top: 6px;
   color: var(--ez-text-main);
@@ -239,18 +280,47 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
     background-color 0.2s ease;
 }
 
-.data-scope-card--active,
-.data-scope-card:hover {
+.data-scope-card--active {
   border-color: var(--ez-primary);
   background: var(--ez-primary-light);
 }
 
-.related-users-empty {
-  min-height: 180px;
+.data-scope-summary {
+  margin-top: 12px;
+}
+
+.custom-department-tags {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.related-users-panel {
+  min-height: 180px;
+}
+
+.related-users-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.related-users-panel__head > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.related-user-list {
+  display: grid;
+  gap: 10px;
+}
+
+.related-user-item strong {
+  margin-top: 0;
 }
 
 @media (max-width: 900px) {

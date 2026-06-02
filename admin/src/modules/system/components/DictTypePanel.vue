@@ -38,7 +38,7 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
         </NButton>
       </div>
 
-      <div class="grid items-center gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(0,1fr)_132px_auto] max-[720px]:px-4">
+      <div class="grid items-center gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(220px,300px)_132px_auto] max-[720px]:px-4">
         <NInput v-model:value="query.keyword" clearable placeholder="编码 / 名称" @keyup.enter="$emit('search')" />
         <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" />
         <div class="ez-filter-actions">

@@ -48,6 +48,7 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
       :rules="rules"
       label-placement="left"
       label-width="80"
+      class="ez-modal-form"
     >
       <NFormItem label="菜单类型" path="type">
         <div class="type-segment" :class="{ 'is-disabled': formMode === 'edit' }">
@@ -104,7 +105,7 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
       </NFormItem>
 
       <NFormItem label="图标 / 排序">
-        <div class="grid w-full grid-cols-[1fr_120px] gap-2">
+        <div class="ez-form-grid ez-form-grid--2 menu-form-grid">
           <NInput v-model:value="formModel.icon" placeholder="setting / notification / layout-dashboard" />
           <NInputNumber v-model:value="formModel.sort" :min="0" />
         </div>
@@ -170,5 +171,9 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
   color: var(--ez-brand);
   font-weight: 600;
   box-shadow: var(--ez-shadow-sm);
+}
+
+.menu-form-grid {
+  grid-template-columns: minmax(0, 1fr) 120px;
 }
 </style>

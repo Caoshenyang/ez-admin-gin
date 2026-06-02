@@ -10,7 +10,7 @@ export interface paths {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.AccountProfileResponse"];
+            data?: definitions["api.AccountProfileResponse"];
           };
         };
         /** Unauthorized */
@@ -25,7 +25,7 @@ export interface paths {
       parameters: {
         body: {
           /** 密码参数 */
-          body: definitions["domain.UpdateAccountPasswordRequest"];
+          body: definitions["api.UpdateAccountPasswordRequest"];
         };
       };
       responses: {
@@ -49,14 +49,14 @@ export interface paths {
       parameters: {
         body: {
           /** 更新参数 */
-          body: definitions["domain.UpdateAccountProfileRequest"];
+          body: definitions["api.UpdateAccountProfileRequest"];
         };
       };
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.AccountProfileResponse"];
+            data?: definitions["api.AccountProfileResponse"];
           };
         };
         /** Bad Request */
@@ -76,7 +76,7 @@ export interface paths {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.DashboardResponse"];
+            data?: definitions["api.DashboardResponse"];
           };
         };
         /** Unauthorized */
@@ -91,14 +91,14 @@ export interface paths {
       parameters: {
         body: {
           /** 登录参数 */
-          body: definitions["domain.LoginRequest"];
+          body: definitions["api.LoginRequest"];
         };
       };
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.LoginResponse"];
+            data?: definitions["api.LoginResponse"];
           };
         };
         /** Bad Request */
@@ -112,13 +112,27 @@ export interface paths {
       };
     };
   };
+  "/auth/logout": {
+    post: {
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
   "/auth/me": {
     get: {
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.MeResponse"];
+            data?: definitions["api.MeResponse"];
           };
         };
         /** Unauthorized */
@@ -134,7 +148,23 @@ export interface paths {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.MenuResponse"][];
+            data?: definitions["api.MenuResponse"][];
+          };
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/auth/refresh": {
+    post: {
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"] & {
+            data?: definitions["api.LoginResponse"];
           };
         };
         /** Unauthorized */
@@ -145,22 +175,12 @@ export interface paths {
     };
   };
   "/setup/init": {
-    /** 创建超级管理员账号，仅当系统中无用户时可执行。 */
+    /** 使用默认账号创建超级管理员，仅当系统中无用户时可执行。 */
     post: {
-      parameters: {
-        body: {
-          /** 初始化参数 */
-          body: definitions["setup.initRequest"];
-        };
-      };
       responses: {
         /** OK */
         200: {
-          schema: { [key: string]: unknown };
-        };
-        /** Bad Request */
-        400: {
-          schema: { [key: string]: unknown };
+          schema: definitions["setup.initResponse"];
         };
         /** Conflict */
         409: {
@@ -323,7 +343,7 @@ export interface paths {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["ez-admin-gin_server_internal_modules_system_config_domain.ListResponse"];
+            data?: definitions["ez-admin-gin_server_internal_modules_system_config_api.ListResponse"];
           };
         };
         /** Bad Request */
@@ -340,14 +360,14 @@ export interface paths {
       parameters: {
         body: {
           /** 配置参数 */
-          body: definitions["ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest"];
+          body: definitions["ez-admin-gin_server_internal_modules_system_config_api.CreateRequest"];
         };
       };
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["ez-admin-gin_server_internal_modules_system_config_domain.Response"];
+            data?: definitions["ez-admin-gin_server_internal_modules_system_config_api.Response"];
           };
         };
         /** Bad Request */
@@ -373,7 +393,7 @@ export interface paths {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["domain.ValueResponse"];
+            data?: definitions["api.ValueResponse"];
           };
         };
         /** Bad Request */
@@ -396,7 +416,7 @@ export interface paths {
         };
         body: {
           /** 状态参数 */
-          body: definitions["ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest"];
+          body: definitions["ez-admin-gin_server_internal_modules_system_config_api.UpdateStatusRequest"];
         };
       };
       responses: {
@@ -424,14 +444,14 @@ export interface paths {
         };
         body: {
           /** 配置参数 */
-          body: definitions["ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest"];
+          body: definitions["ez-admin-gin_server_internal_modules_system_config_api.UpdateRequest"];
         };
       };
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["ez-admin-gin_server_internal_modules_system_config_domain.Response"];
+            data?: definitions["ez-admin-gin_server_internal_modules_system_config_api.Response"];
           };
         };
         /** Bad Request */
@@ -973,7 +993,7 @@ export interface paths {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse"];
+            data?: definitions["ez-admin-gin_server_internal_modules_system_notice_api.ListResponse"];
           };
         };
         /** Bad Request */
@@ -990,14 +1010,14 @@ export interface paths {
       parameters: {
         body: {
           /** 公告参数 */
-          body: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest"];
+          body: definitions["ez-admin-gin_server_internal_modules_system_notice_api.CreateRequest"];
         };
       };
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.Response"];
+            data?: definitions["ez-admin-gin_server_internal_modules_system_notice_api.Response"];
           };
         };
         /** Bad Request */
@@ -1020,7 +1040,7 @@ export interface paths {
         };
         body: {
           /** 状态参数 */
-          body: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest"];
+          body: definitions["ez-admin-gin_server_internal_modules_system_notice_api.UpdateStatusRequest"];
         };
       };
       responses: {
@@ -1048,19 +1068,105 @@ export interface paths {
         };
         body: {
           /** 公告参数 */
-          body: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest"];
+          body: definitions["ez-admin-gin_server_internal_modules_system_notice_api.UpdateRequest"];
         };
       };
       responses: {
         /** OK */
         200: {
           schema: definitions["httpx.Body"] & {
-            data?: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.Response"];
+            data?: definitions["ez-admin-gin_server_internal_modules_system_notice_api.Response"];
           };
         };
         /** Bad Request */
         400: {
           schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/notifications": {
+    get: {
+      parameters: {
+        query: {
+          /** 页码 */
+          page?: number;
+          /** 每页条数 */
+          page_size?: number;
+          /** 通知类型 */
+          type?: number;
+          /** 已读状态 0=全部 1=未读 2=已读 */
+          is_read?: number;
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"] & {
+            data?: definitions["ez-admin-gin_server_internal_modules_system_notification_api.ListResponse"];
+          };
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/notifications/mark-all-read": {
+    post: {
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/notifications/mark-read": {
+    post: {
+      parameters: {
+        body: {
+          /** 通知 ID 列表 */
+          body: definitions["api.MarkReadRequest"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/notifications/unread-count": {
+    get: {
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"] & {
+            data?: definitions["api.UnreadCountResponse"];
+          };
         };
         /** Unauthorized */
         401: {
@@ -1343,6 +1449,8 @@ export interface paths {
           status?: number;
           /** 部门 ID */
           department_id?: number;
+          /** 角色 ID */
+          role_id?: number;
         };
       };
       responses: {
@@ -1466,6 +1574,18 @@ export interface paths {
 }
 
 export interface definitions {
+  "api.AccountProfileResponse": {
+    data_scope?: definitions["domain.MeDataScopeResult"];
+    department_id?: number;
+    department_name?: string;
+    is_super_admin?: boolean;
+    nickname?: string;
+    role_codes?: string[];
+    status?: definitions["model.UserStatus"];
+    updated_at?: string;
+    user_id?: number;
+    username?: string;
+  };
   "api.CreateItemRequest": {
     item_key?: string;
     label?: string;
@@ -1482,6 +1602,14 @@ export interface definitions {
     remark?: string;
     sort?: number;
     status?: definitions["model.SystemDictStatus"];
+  };
+  "api.DashboardResponse": {
+    current_user?: definitions["domain.DashboardCurrentUser"];
+    health?: definitions["domain.DashboardHealth"];
+    latest_notices?: definitions["domain.DashboardNoticeItem"][];
+    metrics?: definitions["domain.DashboardMetrics"];
+    recent_logins?: definitions["domain.DashboardLoginItem"][];
+    recent_operations?: definitions["domain.DashboardOperationItem"][];
   };
   "api.ItemListResponse": {
     items?: definitions["domain.ItemResponse"][];
@@ -1502,6 +1630,41 @@ export interface definitions {
     updated_at?: string;
     value?: string;
   };
+  "api.LoginRequest": {
+    password: string;
+    username: string;
+  };
+  "api.LoginResponse": {
+    access_token?: string;
+    expires_at?: string;
+    nickname?: string;
+    token_type?: string;
+    user_id?: number;
+    username?: string;
+  };
+  "api.MarkReadRequest": {
+    ids?: number[];
+  };
+  "api.MeResponse": {
+    data_scope?: definitions["domain.MeDataScopeResult"];
+    department_id?: number;
+    is_super_admin?: boolean;
+    role_codes?: string[];
+    user_id?: number;
+    username?: string;
+  };
+  "api.MenuResponse": {
+    children?: definitions["domain.MenuResponse"][];
+    code?: string;
+    component?: string;
+    icon?: string;
+    id?: number;
+    parent_id?: number;
+    path?: string;
+    sort?: number;
+    title?: string;
+    type?: definitions["model.MenuType"];
+  };
   "api.TypeListResponse": {
     items?: definitions["domain.TypeResponse"][];
     page?: number;
@@ -1517,6 +1680,16 @@ export interface definitions {
     sort?: number;
     status?: definitions["model.SystemDictStatus"];
     updated_at?: string;
+  };
+  "api.UnreadCountResponse": {
+    count?: number;
+  };
+  "api.UpdateAccountPasswordRequest": {
+    new_password?: string;
+    old_password?: string;
+  };
+  "api.UpdateAccountProfileRequest": {
+    nickname?: string;
   };
   "api.UpdateItemRequest": {
     label?: string;
@@ -1547,6 +1720,11 @@ export interface definitions {
   "api.UpdateTypeStatusRequest": {
     status?: definitions["model.SystemDictStatus"];
   };
+  "api.ValueResponse": {
+    key?: string;
+    source?: string;
+    value?: string;
+  };
   /** @enum {string} */
   "datascope.Scope":
     | "all"
@@ -1554,18 +1732,6 @@ export interface definitions {
     | "dept_and_children"
     | "self"
     | "custom_dept";
-  "domain.AccountProfileResponse": {
-    data_scope?: definitions["domain.MeDataScopeResult"];
-    department_id?: number;
-    department_name?: string;
-    is_super_admin?: boolean;
-    nickname?: string;
-    role_codes?: string[];
-    status?: definitions["model.UserStatus"];
-    updated_at?: string;
-    user_id?: number;
-    username?: string;
-  };
   "domain.DashboardCurrentUser": {
     nickname?: string;
     user_id?: number;
@@ -1611,14 +1777,6 @@ export interface definitions {
     success?: boolean;
     username?: string;
   };
-  "domain.DashboardResponse": {
-    current_user?: definitions["domain.DashboardCurrentUser"];
-    health?: definitions["domain.DashboardHealth"];
-    latest_notices?: definitions["domain.DashboardNoticeItem"][];
-    metrics?: definitions["domain.DashboardMetrics"];
-    recent_logins?: definitions["domain.DashboardLoginItem"][];
-    recent_operations?: definitions["domain.DashboardOperationItem"][];
-  };
   "domain.ItemResponse": {
     created_at?: string;
     id?: number;
@@ -1632,32 +1790,12 @@ export interface definitions {
     updated_at?: string;
     value?: string;
   };
-  "domain.LoginRequest": {
-    password: string;
-    username: string;
-  };
-  "domain.LoginResponse": {
-    access_token?: string;
-    expires_at?: string;
-    nickname?: string;
-    token_type?: string;
-    user_id?: number;
-    username?: string;
-  };
   "domain.MeDataScopeResult": {
     allow_all?: boolean;
     custom_department_ids?: number[];
     include_department?: boolean;
     include_dept_tree?: boolean;
     require_self?: boolean;
-  };
-  "domain.MeResponse": {
-    data_scope?: definitions["domain.MeDataScopeResult"];
-    department_id?: number;
-    is_super_admin?: boolean;
-    role_codes?: string[];
-    user_id?: number;
-    username?: string;
   };
   "domain.MenuResponse": {
     children?: definitions["domain.MenuResponse"][];
@@ -1685,20 +1823,8 @@ export interface definitions {
     status?: definitions["model.SystemDictStatus"];
     updated_at?: string;
   };
-  "domain.UpdateAccountPasswordRequest": {
-    new_password?: string;
-    old_password?: string;
-  };
-  "domain.UpdateAccountProfileRequest": {
-    nickname?: string;
-  };
-  "domain.ValueResponse": {
-    key?: string;
-    source?: string;
-    value?: string;
-  };
   /** @enum {integer} */
-  "errorsx.Code": 0 | 40000 | 40100 | 40300 | 40400 | 50300 | 50000;
+  "errorsx.Code": 0 | 40000 | 40100 | 40300 | 40400 | 42900 | 50300 | 50000;
   "ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest": {
     code?: string;
     leader_user_id?: number;
@@ -1853,7 +1979,7 @@ export interface definitions {
     uploader_id?: number;
     url?: string;
   };
-  "ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest": {
+  "ez-admin-gin_server_internal_modules_system_config_api.CreateRequest": {
     group_code?: string;
     key?: string;
     name?: string;
@@ -1862,11 +1988,34 @@ export interface definitions {
     status?: definitions["model.SystemConfigStatus"];
     value?: string;
   };
-  "ez-admin-gin_server_internal_modules_system_config_domain.ListResponse": {
+  "ez-admin-gin_server_internal_modules_system_config_api.ListResponse": {
     items?: definitions["ez-admin-gin_server_internal_modules_system_config_domain.Response"][];
     page?: number;
     page_size?: number;
     total?: number;
+  };
+  "ez-admin-gin_server_internal_modules_system_config_api.Response": {
+    created_at?: string;
+    group_code?: string;
+    id?: number;
+    key?: string;
+    name?: string;
+    remark?: string;
+    sort?: number;
+    status?: definitions["model.SystemConfigStatus"];
+    updated_at?: string;
+    value?: string;
+  };
+  "ez-admin-gin_server_internal_modules_system_config_api.UpdateRequest": {
+    group_code?: string;
+    name?: string;
+    remark?: string;
+    sort?: number;
+    status?: definitions["model.SystemConfigStatus"];
+    value?: string;
+  };
+  "ez-admin-gin_server_internal_modules_system_config_api.UpdateStatusRequest": {
+    status?: definitions["model.SystemConfigStatus"];
   };
   "ez-admin-gin_server_internal_modules_system_config_domain.Response": {
     created_at?: string;
@@ -1879,17 +2028,6 @@ export interface definitions {
     status?: definitions["model.SystemConfigStatus"];
     updated_at?: string;
     value?: string;
-  };
-  "ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest": {
-    group_code?: string;
-    name?: string;
-    remark?: string;
-    sort?: number;
-    status?: definitions["model.SystemConfigStatus"];
-    value?: string;
-  };
-  "ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest": {
-    status?: definitions["model.SystemConfigStatus"];
   };
   "ez-admin-gin_server_internal_modules_system_file_api.ListResponse": {
     items?: definitions["ez-admin-gin_server_internal_modules_system_file_domain.Response"][];
@@ -1947,18 +2085,38 @@ export interface definitions {
     user_id?: number;
     username?: string;
   };
-  "ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest": {
+  "ez-admin-gin_server_internal_modules_system_notice_api.CreateRequest": {
     content?: string;
     remark?: string;
     sort?: number;
     status?: definitions["model.NoticeStatus"];
     title?: string;
   };
-  "ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse": {
+  "ez-admin-gin_server_internal_modules_system_notice_api.ListResponse": {
     items?: definitions["ez-admin-gin_server_internal_modules_system_notice_domain.Response"][];
     page?: number;
     page_size?: number;
     total?: number;
+  };
+  "ez-admin-gin_server_internal_modules_system_notice_api.Response": {
+    content?: string;
+    created_at?: string;
+    id?: number;
+    remark?: string;
+    sort?: number;
+    status?: definitions["model.NoticeStatus"];
+    title?: string;
+    updated_at?: string;
+  };
+  "ez-admin-gin_server_internal_modules_system_notice_api.UpdateRequest": {
+    content?: string;
+    remark?: string;
+    sort?: number;
+    status?: definitions["model.NoticeStatus"];
+    title?: string;
+  };
+  "ez-admin-gin_server_internal_modules_system_notice_api.UpdateStatusRequest": {
+    status?: definitions["model.NoticeStatus"];
   };
   "ez-admin-gin_server_internal_modules_system_notice_domain.Response": {
     content?: string;
@@ -1970,15 +2128,21 @@ export interface definitions {
     title?: string;
     updated_at?: string;
   };
-  "ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest": {
-    content?: string;
-    remark?: string;
-    sort?: number;
-    status?: definitions["model.NoticeStatus"];
-    title?: string;
+  "ez-admin-gin_server_internal_modules_system_notification_api.ListResponse": {
+    items?: definitions["ez-admin-gin_server_internal_modules_system_notification_domain.Response"][];
+    page?: number;
+    page_size?: number;
+    total?: number;
   };
-  "ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest": {
-    status?: definitions["model.NoticeStatus"];
+  "ez-admin-gin_server_internal_modules_system_notification_domain.Response": {
+    content?: string;
+    created_at?: string;
+    extra?: definitions["model.JSONMap"];
+    id?: number;
+    is_read?: boolean;
+    read_at?: string;
+    title?: string;
+    type?: definitions["model.NotificationType"];
   };
   "ez-admin-gin_server_internal_modules_system_operationlog_api.ListResponse": {
     items?: definitions["ez-admin-gin_server_internal_modules_system_operationlog_domain.Response"][];
@@ -2009,6 +2173,7 @@ export interface definitions {
   };
   /** @enum {integer} */
   "model.DepartmentStatus": 1 | 2;
+  "model.JSONMap": { [key: string]: unknown };
   /** @enum {integer} */
   "model.LoginLogStatus": 1 | 2;
   /** @enum {integer} */
@@ -2017,6 +2182,8 @@ export interface definitions {
   "model.MenuType": 1 | 2 | 3;
   /** @enum {integer} */
   "model.NoticeStatus": 1 | 2;
+  /** @enum {integer} */
+  "model.NotificationType": 1 | 2 | 3 | 4;
   /** @enum {integer} */
   "model.PostStatus": 1 | 2;
   /** @enum {integer} */
@@ -2031,10 +2198,10 @@ export interface definitions {
   "model.SystemFileStatus": 1 | 2;
   /** @enum {integer} */
   "model.UserStatus": 1 | 2;
-  "setup.initRequest": {
-    nickname: string;
-    password: string;
-    username: string;
+  "setup.initResponse": {
+    message?: string;
+    user_id?: number;
+    username?: string;
   };
 }
 

@@ -27,6 +27,7 @@ export interface UserListQuery {
   keyword?: string
   role_id?: number
   status?: UserStatus | 0
+  department_id?: number
 }
 
 // 用户列表响应数据

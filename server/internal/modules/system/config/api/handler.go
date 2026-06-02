@@ -32,7 +32,7 @@ func NewHandler(service *configapp.Service, log *zap.Logger) *Handler {
 // @Param        keyword     query     string  false  "关键词"
 // @Param        group_code  query     string  false  "配置分组"
 // @Param        status      query     int     false  "状态"
-// @Success      200  {object}  httpx.Body{data=configdomain.ListResponse}
+// @Success      200  {object}  httpx.Body{data=ListResponse}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -58,8 +58,8 @@ func (h *Handler) List(c *gin.Context) {
 // @Tags         System / 配置管理
 // @Accept       json
 // @Produce      json
-// @Param        body  body  configdomain.CreateRequest  true  "配置参数"
-// @Success      200  {object}  httpx.Body{data=configdomain.Response}
+// @Param        body  body  CreateRequest  true  "配置参数"
+// @Success      200  {object}  httpx.Body{data=Response}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -86,8 +86,8 @@ func (h *Handler) Create(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path  uint                        true  "配置 ID"
-// @Param        body  body  configdomain.UpdateRequest  true  "配置参数"
-// @Success      200  {object}  httpx.Body{data=configdomain.Response}
+// @Param        body  body  UpdateRequest  true  "配置参数"
+// @Success      200  {object}  httpx.Body{data=Response}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -119,7 +119,7 @@ func (h *Handler) Update(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path  uint                              true  "配置 ID"
-// @Param        body  body  configdomain.UpdateStatusRequest  true  "状态参数"
+// @Param        body  body  UpdateStatusRequest  true  "状态参数"
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
@@ -151,7 +151,7 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        key  path  string  true  "配置键"
-// @Success      200  {object}  httpx.Body{data=configdomain.ValueResponse}
+// @Success      200  {object}  httpx.Body{data=ValueResponse}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth

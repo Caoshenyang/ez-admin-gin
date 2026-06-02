@@ -1,6 +1,6 @@
 import type { FormInst, FormRules, TreeSelectOption } from 'naive-ui'
 import { useMessage } from 'naive-ui'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import {
@@ -44,7 +44,7 @@ export function useDepartmentPage() {
   // 上级部门树形选择选项，包含"作为根部门"选项
   const parentOptions = computed<TreeSelectOption[]>(() => {
     return [
-      { label: '作为根部门', value: 0 },
+      { key: 0, label: '作为根部门', value: 0 },
       ...buildDepartmentTreeOptions(departments.value),
     ]
   })
@@ -82,16 +82,27 @@ export function useDepartmentPage() {
     formMode.value = 'create'
     Object.assign(formModel, defaultDepartmentFormModel())
     formVisible.value = true
+    void nextTick(() => {
+      formRef.value?.restoreValidation()
+    })
   }
 
   function openEdit(row: DepartmentItem) {
     formMode.value = 'edit'
     Object.assign(formModel, toDepartmentFormModel(row))
     formVisible.value = true
+    void nextTick(() => {
+      formRef.value?.restoreValidation()
+    })
   }
 
   async function handleSubmit() {
-    await formRef.value?.validate()
+    try {
+      await formRef.value?.validate()
+    } catch {
+      return
+    }
+
     saving.value = true
 
     try {

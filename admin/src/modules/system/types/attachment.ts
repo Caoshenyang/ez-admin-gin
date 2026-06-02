@@ -56,3 +56,7 @@ export interface UpdateAttachmentPayload {
   status: AttachmentStatus
   remark: string
 }
+
+export interface UpdateAttachmentStatusPayload {
+  status: AttachmentStatus
+}

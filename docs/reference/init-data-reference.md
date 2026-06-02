@@ -26,24 +26,25 @@ description: "说明内置系统种子与首个管理员初始化的真实边界
 完整版 SQL 会落下面这些稳定锚点：
 
 - `super_admin` 角色
-- 系统管理菜单树和按钮权限节点
+- “权限管理 / 系统设置 / 审计监控”三类菜单树和按钮权限节点
 - `super_admin` 对系统接口的 Casbin 策略
 - 角色菜单关系
 - 字典、附件、部门、岗位、通知等主线模块的结构和内置系统数据
+- 当前迁移基线，避免导入完整版 SQL 后启动服务时重复执行历史迁移
 
 相关文件：
 
 - `server/migrations/mysql/full_schema_and_seed.sql`
 - `server/migrations/postgres/full_schema_and_seed.sql`
 
-::: warning 不要把管理员账号写死到种子里
-当前项目明确把“系统骨架”和“首个运营账号”分开处理。
+::: warning 初始化后请立即修改默认密码
+当前项目明确把“系统骨架”和“首个运营账号”分开处理：SQL 不写入管理员账号，初始化接口运行时创建默认管理员 `admin / EzAdmin@123456`。
 
-这样做的好处是：
+这样做的重点是：
 
-- 避免仓库内置固定密码
-- 避免不同环境共享同一套管理员账号
-- 保持首次初始化更接近真实交付场景
+- 避免数据库种子直接携带可登录用户
+- 让初始化接口只在系统无用户时执行一次
+- 首次登录后必须及时修改默认密码
 :::
 
 ## 第二段：`setup/init` 会做什么
@@ -51,9 +52,8 @@ description: "说明内置系统种子与首个管理员初始化的真实边界
 `POST /api/v1/setup/init` 负责：
 
 1. 检查系统里是否已经存在用户
-2. 校验 `username / password / nickname`
-3. 创建第一条管理员用户
-4. 自动绑定 `super_admin` 角色
+2. 使用默认账号 `admin / EzAdmin@123456` 创建第一条管理员用户
+3. 自动绑定 `super_admin` 角色
 
 当前实现依赖一个稳定前提：
 
@@ -74,21 +74,21 @@ POST /api/v1/setup/init
 ## 首次初始化命令
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+curl -X POST http://localhost:8080/api/v1/setup/init
 ```
 
 执行成功后，你应该看到：
 
 - `sys_user` 中出现首条管理员用户
 - `sys_user_role` 中出现该用户与 `super_admin` 的绑定
+- 接口返回提示你及时修改默认密码
 - 再次执行会返回“系统已初始化”
 
 ## 当前最值得记住的约定
 
 - 数据库脚本提供系统骨架，不提供真实管理员账号
 - `super_admin` 是当前初始化链路的稳定角色锚点
+- 完整版 SQL 是稳定初始化入口，不是历史迁移文件的简单拼接
 - 菜单显隐和接口放行是两套配合关系：
   - `sys_menu` 负责前端菜单和按钮节点
   - `casbin_rule` 负责后端接口授权

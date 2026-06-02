@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
+import { getDepartments } from '../api/department'
 import { getAdminMenus } from '../api/menu'
 import {
   createRole,
@@ -13,12 +14,16 @@ import {
   updateRolePermissions,
   updateRoleStatus,
 } from '../api/role'
+import { getUsers } from '../api/user'
+import { buildDepartmentTreeOptions, flattenDepartments } from './department-page.utils'
+import type { DepartmentItem } from '../types/department'
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
 import {
   RoleStatus,
   type RoleItem,
   type RoleListQuery,
 } from '../types/role'
+import type { UserItem } from '../types/user'
 import type { PermissionRow, PermissionTab, RoleFormModel } from '../types/role-page'
 import {
   buildRoleCreatePayload,
@@ -29,6 +34,8 @@ import {
   flattenRoleMenus,
   getRoleStatusTagType,
   normalizeRolePermissions,
+  roleDataScopeDescriptions,
+  roleDataScopeOptions,
   permissionMethodOptions,
   roleFormRules,
   roleStatusOptions,
@@ -43,8 +50,12 @@ export function useRolePage() {
   const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const saving = ref(false)
+  const relatedUsersLoading = ref(false)
   const roles = ref<RoleItem[]>([])
   const menus = ref<AdminMenu[]>([])
+  const departments = ref<DepartmentItem[]>([])
+  const relatedUsers = ref<UserItem[]>([])
+  const relatedUsersTotal = ref(0)
   const selectedRoleID = ref<number | null>(null)
   const activeTab = ref<PermissionTab>('base')
   const checkedMenuIDs = ref<Array<string | number>>([])
@@ -60,6 +71,8 @@ export function useRolePage() {
   const statusOptions: SelectOption[] = roleStatusOptions
 
   const methodOptions: SelectOption[] = permissionMethodOptions
+
+  const dataScopeOptions: SelectOption[] = roleDataScopeOptions
 
   const rules: FormRules = roleFormRules
 
@@ -81,6 +94,20 @@ export function useRolePage() {
 
   const menuTreeOptions = computed<TreeOption[]>(() => menus.value.map(toRoleMenuTreeOption))
 
+  const departmentTreeOptions = computed(() => buildDepartmentTreeOptions(departments.value))
+
+  const departmentNameMap = computed(() =>
+    new Map(flattenDepartments(departments.value).map((department) => [department.id, department.name])),
+  )
+
+  const dataScopeDescription = computed(() => {
+    if (!selectedRole.value) {
+      return ''
+    }
+
+    return roleDataScopeDescriptions.get(selectedRole.value.data_scope) ?? ''
+  })
+
   const allMenus = computed(() => flattenRoleMenus(menus.value))
 
   const menuIDSet = computed(() => new Set(allMenus.value.filter((menu) => menu.type !== MenuType.Button).map((menu) => menu.id)))
@@ -95,16 +122,28 @@ export function useRolePage() {
 
   const canEditSelectedRole = computed(() => selectedRole.value !== null && selectedRole.value.code !== superAdminRoleCode)
 
+  const canSavePermissionTab = computed(() =>
+    canEditSelectedRole.value && ['menu', 'button', 'api'].includes(activeTab.value),
+  )
+
   // 角色切换后要同步整块权限面板，避免旧角色的勾选和接口行残留。
   watch(selectedRole, (role) => {
     if (!role) {
       checkedMenuIDs.value = []
       permissionRows.value = []
+      relatedUsers.value = []
+      relatedUsersTotal.value = 0
       return
     }
 
     checkedMenuIDs.value = [...(role.menu_ids ?? [])]
     permissionRows.value = toPermissionRows(role)
+  })
+
+  watch([selectedRoleID, activeTab], () => {
+    if (activeTab.value === 'users') {
+      void loadRelatedUsers()
+    }
   })
 
   function canUse(code: string) {
@@ -143,6 +182,32 @@ export function useRolePage() {
 
   async function loadMenus() {
     menus.value = await getAdminMenus()
+  }
+
+  async function loadDepartments() {
+    departments.value = await getDepartments()
+  }
+
+  async function loadRelatedUsers() {
+    if (!selectedRoleID.value) {
+      relatedUsers.value = []
+      relatedUsersTotal.value = 0
+      return
+    }
+
+    relatedUsersLoading.value = true
+    try {
+      const data = await getUsers({
+        page: 1,
+        page_size: 20,
+        role_id: selectedRoleID.value,
+        status: 0,
+      })
+      relatedUsers.value = data.items
+      relatedUsersTotal.value = data.total
+    } finally {
+      relatedUsersLoading.value = false
+    }
   }
 
   async function handleSearch() {
@@ -213,7 +278,7 @@ export function useRolePage() {
   }
 
   async function handleSavePermissions() {
-    if (!selectedRole.value || !canEditSelectedRole.value) {
+    if (!selectedRole.value || !canSavePermissionTab.value) {
       return
     }
 
@@ -233,25 +298,33 @@ export function useRolePage() {
       }
 
       await loadRoles()
+      if (activeTab.value === 'users') {
+        await loadRelatedUsers()
+      }
     } finally {
       saving.value = false
     }
   }
 
   onMounted(async () => {
-    await Promise.all([loadMenus(), loadRoles()])
+    await Promise.all([loadMenus(), loadDepartments(), loadRoles()])
   })
 
   return {
     activeTab,
     addPermissionRow,
     canEditSelectedRole,
+    canSavePermissionTab,
     canUse,
     checkedButtonCount,
     checkedMenuCount,
     checkedMenuIDs,
     checkedTotal,
     closeSuccess,
+    dataScopeDescription,
+    dataScopeOptions,
+    departmentNameMap,
+    departmentTreeOptions,
     filteredRoles,
     formMode,
     formModel,
@@ -263,12 +336,16 @@ export function useRolePage() {
     handleSavePermissions,
     handleSearch,
     handleToggleRoleStatus,
+    loadRelatedUsers,
     menuTreeOptions,
     methodOptions,
     openCreate,
     openEdit,
     permissionRows,
     query,
+    relatedUsers,
+    relatedUsersLoading,
+    relatedUsersTotal,
     removePermissionRow,
     rules,
     saving,

@@ -1,5 +1,30 @@
 basePath: /api/v1
 definitions:
+  api.AccountProfileResponse:
+    properties:
+      data_scope:
+        $ref: '#/definitions/domain.MeDataScopeResult'
+      department_id:
+        type: integer
+      department_name:
+        type: string
+      is_super_admin:
+        type: boolean
+      nickname:
+        type: string
+      role_codes:
+        items:
+          type: string
+        type: array
+      status:
+        $ref: '#/definitions/model.UserStatus'
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
   api.CreateItemRequest:
     properties:
       item_key:
@@ -31,6 +56,27 @@ definitions:
         type: integer
       status:
         $ref: '#/definitions/model.SystemDictStatus'
+    type: object
+  api.DashboardResponse:
+    properties:
+      current_user:
+        $ref: '#/definitions/domain.DashboardCurrentUser'
+      health:
+        $ref: '#/definitions/domain.DashboardHealth'
+      latest_notices:
+        items:
+          $ref: '#/definitions/domain.DashboardNoticeItem'
+        type: array
+      metrics:
+        $ref: '#/definitions/domain.DashboardMetrics'
+      recent_logins:
+        items:
+          $ref: '#/definitions/domain.DashboardLoginItem'
+        type: array
+      recent_operations:
+        items:
+          $ref: '#/definitions/domain.DashboardOperationItem'
+        type: array
     type: object
   api.ItemListResponse:
     properties:
@@ -70,6 +116,80 @@ definitions:
       value:
         type: string
     type: object
+  api.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  api.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: string
+      nickname:
+        type: string
+      token_type:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  api.MarkReadRequest:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  api.MeResponse:
+    properties:
+      data_scope:
+        $ref: '#/definitions/domain.MeDataScopeResult'
+      department_id:
+        type: integer
+      is_super_admin:
+        type: boolean
+      role_codes:
+        items:
+          type: string
+        type: array
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  api.MenuResponse:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/domain.MenuResponse'
+        type: array
+      code:
+        type: string
+      component:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      parent_id:
+        type: integer
+      path:
+        type: string
+      sort:
+        type: integer
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.MenuType'
+    type: object
   api.TypeListResponse:
     properties:
       items:
@@ -100,6 +220,23 @@ definitions:
       status:
         $ref: '#/definitions/model.SystemDictStatus'
       updated_at:
+        type: string
+    type: object
+  api.UnreadCountResponse:
+    properties:
+      count:
+        type: integer
+    type: object
+  api.UpdateAccountPasswordRequest:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  api.UpdateAccountProfileRequest:
+    properties:
+      nickname:
         type: string
     type: object
   api.UpdateItemRequest:
@@ -159,6 +296,15 @@ definitions:
       status:
         $ref: '#/definitions/model.SystemDictStatus'
     type: object
+  api.ValueResponse:
+    properties:
+      key:
+        type: string
+      source:
+        type: string
+      value:
+        type: string
+    type: object
   datascope.Scope:
     enum:
     - all
@@ -173,31 +319,6 @@ definitions:
     - ScopeDeptAndChildren
     - ScopeSelf
     - ScopeCustomDept
-  domain.AccountProfileResponse:
-    properties:
-      data_scope:
-        $ref: '#/definitions/domain.MeDataScopeResult'
-      department_id:
-        type: integer
-      department_name:
-        type: string
-      is_super_admin:
-        type: boolean
-      nickname:
-        type: string
-      role_codes:
-        items:
-          type: string
-        type: array
-      status:
-        $ref: '#/definitions/model.UserStatus'
-      updated_at:
-        type: string
-      user_id:
-        type: integer
-      username:
-        type: string
-    type: object
   domain.DashboardCurrentUser:
     properties:
       nickname:
@@ -282,27 +403,6 @@ definitions:
       username:
         type: string
     type: object
-  domain.DashboardResponse:
-    properties:
-      current_user:
-        $ref: '#/definitions/domain.DashboardCurrentUser'
-      health:
-        $ref: '#/definitions/domain.DashboardHealth'
-      latest_notices:
-        items:
-          $ref: '#/definitions/domain.DashboardNoticeItem'
-        type: array
-      metrics:
-        $ref: '#/definitions/domain.DashboardMetrics'
-      recent_logins:
-        items:
-          $ref: '#/definitions/domain.DashboardLoginItem'
-        type: array
-      recent_operations:
-        items:
-          $ref: '#/definitions/domain.DashboardOperationItem'
-        type: array
-    type: object
   domain.ItemResponse:
     properties:
       created_at:
@@ -328,31 +428,6 @@ definitions:
       value:
         type: string
     type: object
-  domain.LoginRequest:
-    properties:
-      password:
-        type: string
-      username:
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  domain.LoginResponse:
-    properties:
-      access_token:
-        type: string
-      expires_at:
-        type: string
-      nickname:
-        type: string
-      token_type:
-        type: string
-      user_id:
-        type: integer
-      username:
-        type: string
-    type: object
   domain.MeDataScopeResult:
     properties:
       allow_all:
@@ -367,23 +442,6 @@ definitions:
         type: boolean
       require_self:
         type: boolean
-    type: object
-  domain.MeResponse:
-    properties:
-      data_scope:
-        $ref: '#/definitions/domain.MeDataScopeResult'
-      department_id:
-        type: integer
-      is_super_admin:
-        type: boolean
-      role_codes:
-        items:
-          type: string
-        type: array
-      user_id:
-        type: integer
-      username:
-        type: string
     type: object
   domain.MenuResponse:
     properties:
@@ -436,27 +494,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  domain.UpdateAccountPasswordRequest:
-    properties:
-      new_password:
-        type: string
-      old_password:
-        type: string
-    type: object
-  domain.UpdateAccountProfileRequest:
-    properties:
-      nickname:
-        type: string
-    type: object
-  domain.ValueResponse:
-    properties:
-      key:
-        type: string
-      source:
-        type: string
-      value:
-        type: string
-    type: object
   errorsx.Code:
     enum:
     - 0
@@ -464,6 +501,7 @@ definitions:
     - 40100
     - 40300
     - 40400
+    - 42900
     - 50300
     - 50000
     type: integer
@@ -473,6 +511,7 @@ definitions:
     - CodeUnauthorized
     - CodeForbidden
     - CodeNotFound
+    - CodeTooManyRequests
     - CodeServiceUnavailable
     - CodeInternal
   ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest:
@@ -775,7 +814,7 @@ definitions:
       url:
         type: string
     type: object
-  ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest:
+  ez-admin-gin_server_internal_modules_system_config_api.CreateRequest:
     properties:
       group_code:
         type: string
@@ -792,7 +831,7 @@ definitions:
       value:
         type: string
     type: object
-  ez-admin-gin_server_internal_modules_system_config_domain.ListResponse:
+  ez-admin-gin_server_internal_modules_system_config_api.ListResponse:
     properties:
       items:
         items:
@@ -804,6 +843,49 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_api.Response:
+    properties:
+      created_at:
+        type: string
+      group_code:
+        type: string
+      id:
+        type: integer
+      key:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
+      updated_at:
+        type: string
+      value:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_api.UpdateRequest:
+    properties:
+      group_code:
+        type: string
+      name:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
+      value:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_config_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.SystemConfigStatus'
     type: object
   ez-admin-gin_server_internal_modules_system_config_domain.Response:
     properties:
@@ -827,26 +909,6 @@ definitions:
         type: string
       value:
         type: string
-    type: object
-  ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest:
-    properties:
-      group_code:
-        type: string
-      name:
-        type: string
-      remark:
-        type: string
-      sort:
-        type: integer
-      status:
-        $ref: '#/definitions/model.SystemConfigStatus'
-      value:
-        type: string
-    type: object
-  ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest:
-    properties:
-      status:
-        $ref: '#/definitions/model.SystemConfigStatus'
     type: object
   ez-admin-gin_server_internal_modules_system_file_api.ListResponse:
     properties:
@@ -959,7 +1021,7 @@ definitions:
       username:
         type: string
     type: object
-  ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest:
+  ez-admin-gin_server_internal_modules_system_notice_api.CreateRequest:
     properties:
       content:
         type: string
@@ -972,7 +1034,7 @@ definitions:
       title:
         type: string
     type: object
-  ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse:
+  ez-admin-gin_server_internal_modules_system_notice_api.ListResponse:
     properties:
       items:
         items:
@@ -984,6 +1046,43 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_api.Response:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_api.UpdateRequest:
+    properties:
+      content:
+        type: string
+      remark:
+        type: string
+      sort:
+        type: integer
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
+      title:
+        type: string
+    type: object
+  ez-admin-gin_server_internal_modules_system_notice_api.UpdateStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/model.NoticeStatus'
     type: object
   ez-admin-gin_server_internal_modules_system_notice_domain.Response:
     properties:
@@ -1004,23 +1103,37 @@ definitions:
       updated_at:
         type: string
     type: object
-  ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest:
+  ez-admin-gin_server_internal_modules_system_notification_api.ListResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notification_domain.Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+    type: object
+  ez-admin-gin_server_internal_modules_system_notification_domain.Response:
     properties:
       content:
         type: string
-      remark:
+      created_at:
         type: string
-      sort:
+      extra:
+        $ref: '#/definitions/model.JSONMap'
+      id:
         type: integer
-      status:
-        $ref: '#/definitions/model.NoticeStatus'
+      is_read:
+        type: boolean
+      read_at:
+        type: string
       title:
         type: string
-    type: object
-  ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest:
-    properties:
-      status:
-        $ref: '#/definitions/model.NoticeStatus'
+      type:
+        $ref: '#/definitions/model.NotificationType'
     type: object
   ez-admin-gin_server_internal_modules_system_operationlog_api.ListResponse:
     properties:
@@ -1082,6 +1195,9 @@ definitions:
     x-enum-varnames:
     - DepartmentStatusEnabled
     - DepartmentStatusDisabled
+  model.JSONMap:
+    additionalProperties: {}
+    type: object
   model.LoginLogStatus:
     enum:
     - 1
@@ -1116,6 +1232,28 @@ definitions:
     x-enum-varnames:
     - NoticeStatusEnabled
     - NoticeStatusDisabled
+  model.NotificationType:
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-comments:
+      NotificationTypeMessage: 消息通知
+      NotificationTypeSecurity: 安全通知
+      NotificationTypeSystem: 系统通知
+      NotificationTypeTask: 任务通知
+    x-enum-descriptions:
+    - 系统通知
+    - 安全通知
+    - 任务通知
+    - 消息通知
+    x-enum-varnames:
+    - NotificationTypeSystem
+    - NotificationTypeSecurity
+    - NotificationTypeTask
+    - NotificationTypeMessage
   model.PostStatus:
     enum:
     - 1
@@ -1172,24 +1310,14 @@ definitions:
     x-enum-varnames:
     - UserStatusEnabled
     - UserStatusDisabled
-  setup.initRequest:
+  setup.initResponse:
     properties:
-      nickname:
-        maxLength: 64
-        minLength: 1
+      message:
         type: string
-      password:
-        maxLength: 128
-        minLength: 6
-        type: string
+      user_id:
+        type: integer
       username:
-        maxLength: 64
-        minLength: 2
         type: string
-    required:
-    - nickname
-    - password
-    - username
     type: object
 host: localhost:8080
 info:
@@ -1212,7 +1340,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/domain.AccountProfileResponse'
+                  $ref: '#/definitions/api.AccountProfileResponse'
               type: object
         "401":
           description: Unauthorized
@@ -1233,7 +1361,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.UpdateAccountPasswordRequest'
+          $ref: '#/definitions/api.UpdateAccountPasswordRequest'
       produces:
       - application/json
       responses:
@@ -1264,7 +1392,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.UpdateAccountProfileRequest'
+          $ref: '#/definitions/api.UpdateAccountProfileRequest'
       produces:
       - application/json
       responses:
@@ -1275,7 +1403,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/domain.AccountProfileResponse'
+                  $ref: '#/definitions/api.AccountProfileResponse'
               type: object
         "400":
           description: Bad Request
@@ -1304,7 +1432,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/domain.DashboardResponse'
+                  $ref: '#/definitions/api.DashboardResponse'
               type: object
         "401":
           description: Unauthorized
@@ -1325,7 +1453,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/domain.LoginRequest'
+          $ref: '#/definitions/api.LoginRequest'
       produces:
       - application/json
       responses:
@@ -1336,7 +1464,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/domain.LoginResponse'
+                  $ref: '#/definitions/api.LoginResponse'
               type: object
         "400":
           description: Bad Request
@@ -1347,6 +1475,26 @@ paths:
           schema:
             $ref: '#/definitions/httpx.Body'
       summary: 用户登录
+      tags:
+      - 认证
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 退出登录
       tags:
       - 认证
   /auth/me:
@@ -1363,7 +1511,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/domain.MeResponse'
+                  $ref: '#/definitions/api.MeResponse'
               type: object
         "401":
           description: Unauthorized
@@ -1389,7 +1537,7 @@ paths:
             - properties:
                 data:
                   items:
-                    $ref: '#/definitions/domain.MenuResponse'
+                    $ref: '#/definitions/api.MenuResponse'
                   type: array
               type: object
         "401":
@@ -1401,31 +1549,39 @@ paths:
       summary: 查询当前用户菜单
       tags:
       - 认证
-  /setup/init:
+  /auth/refresh:
     post:
       consumes:
       - application/json
-      description: 创建超级管理员账号，仅当系统中无用户时可执行。
-      parameters:
-      - description: 初始化参数
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/setup.initRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.LoginResponse'
+              type: object
+        "401":
+          description: Unauthorized
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/httpx.Body'
+      summary: 刷新 Access Token
+      tags:
+      - 认证
+  /setup/init:
+    post:
+      description: 使用默认账号创建超级管理员，仅当系统中无用户时可执行。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/setup.initResponse'
         "409":
           description: Conflict
           schema:
@@ -1663,7 +1819,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.ListResponse'
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_api.ListResponse'
               type: object
         "400":
           description: Bad Request
@@ -1687,7 +1843,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest'
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_api.CreateRequest'
       produces:
       - application/json
       responses:
@@ -1698,7 +1854,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response'
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_api.Response'
               type: object
         "400":
           description: Bad Request
@@ -1728,7 +1884,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest'
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_api.UpdateStatusRequest'
       produces:
       - application/json
       responses:
@@ -1764,7 +1920,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest'
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_api.UpdateRequest'
       produces:
       - application/json
       responses:
@@ -1775,7 +1931,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response'
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_config_api.Response'
               type: object
         "400":
           description: Bad Request
@@ -1810,7 +1966,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/domain.ValueResponse'
+                  $ref: '#/definitions/api.ValueResponse'
               type: object
         "400":
           description: Bad Request
@@ -2566,7 +2722,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse'
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.ListResponse'
               type: object
         "400":
           description: Bad Request
@@ -2590,7 +2746,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest'
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.CreateRequest'
       produces:
       - application/json
       responses:
@@ -2601,7 +2757,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response'
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.Response'
               type: object
         "400":
           description: Bad Request
@@ -2631,7 +2787,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest'
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.UpdateStatusRequest'
       produces:
       - application/json
       responses:
@@ -2667,7 +2823,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest'
+          $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.UpdateRequest'
       produces:
       - application/json
       responses:
@@ -2678,7 +2834,7 @@ paths:
             - $ref: '#/definitions/httpx.Body'
             - properties:
                 data:
-                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response'
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.Response'
               type: object
         "400":
           description: Bad Request
@@ -2693,6 +2849,124 @@ paths:
       summary: 更新公告
       tags:
       - System / 公告管理
+  /system/notifications:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页条数
+        in: query
+        name: page_size
+        type: integer
+      - description: 通知类型
+        in: query
+        name: type
+        type: integer
+      - description: 已读状态 0=全部 1=未读 2=已读
+        in: query
+        name: is_read
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/ez-admin-gin_server_internal_modules_system_notification_api.ListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询通知列表
+      tags:
+      - System / 通知管理
+  /system/notifications/mark-all-read:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 全部标记已读
+      tags:
+      - System / 通知管理
+  /system/notifications/mark-read:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 通知 ID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/api.MarkReadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 标记通知已读
+      tags:
+      - System / 通知管理
+  /system/notifications/unread-count:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/httpx.Body'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.UnreadCountResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 获取未读通知数
+      tags:
+      - System / 通知管理
   /system/operation-logs:
     get:
       consumes:
@@ -3073,6 +3347,10 @@ paths:
       - description: 部门 ID
         in: query
         name: department_id
+        type: integer
+      - description: 角色 ID
+        in: query
+        name: role_id
         type: integer
       produces:
       - application/json

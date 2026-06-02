@@ -42,6 +42,7 @@ export function defaultUserListQuery(): UserListQuery {
     keyword: '',
     role_id: 0,
     status: 0,
+    department_id: 0,
   }
 }
 
@@ -51,6 +52,7 @@ export function normalizeUserListQuery(query: UserListQuery) {
     keyword: query.keyword?.trim() || undefined,
     role_id: query.role_id === 0 ? undefined : query.role_id,
     status: query.status === 0 ? undefined : query.status,
+    department_id: query.department_id === 0 ? undefined : query.department_id,
   }
 }
 
@@ -93,6 +95,31 @@ export function buildUserDepartmentTreeOptions(departments: DepartmentItem[]): T
   return [{ label: '未分配部门', value: 0 }, ...buildDepartmentTreeOptions(departments)]
 }
 
+export function buildUserDepartmentFilterTreeOptions(departments: DepartmentItem[]): TreeSelectOption[] {
+  return buildDepartmentTreeOptions(departments)
+}
+
+export function filterDepartmentTreeOptions(options: TreeSelectOption[], keyword: string): TreeSelectOption[] {
+  const normalizedKeyword = keyword.trim().toLowerCase()
+  if (!normalizedKeyword) {
+    return options
+  }
+
+  return options.flatMap((option) => {
+    const children = Array.isArray(option.children)
+      ? filterDepartmentTreeOptions(option.children as TreeSelectOption[], normalizedKeyword)
+      : []
+    const label = String(option.label ?? '').toLowerCase()
+    const value = String(option.value ?? '').toLowerCase()
+
+    if (label.includes(normalizedKeyword) || value.includes(normalizedKeyword) || children.length > 0) {
+      return [{ ...option, children: children.length > 0 ? children : undefined }]
+    }
+
+    return []
+  })
+}
+
 export function buildRoleOptions(roles: RoleItem[]): SelectOption[] {
   return roles.map((role) => ({
     label: `${role.name}（${role.code}）`,
@@ -120,4 +147,8 @@ export function buildRoleFilterOptions(roles: RoleItem[]): SelectOption[] {
 export function buildDepartmentNameMap(departments: DepartmentItem[]) {
   // 用户列表和详情都需要按部门 ID 反查名称，这里统一复用同一份扁平索引。
   return new Map(flattenDepartments(departments).map((department) => [department.id, department.name]))
+}
+
+export function countDepartments(departments: DepartmentItem[]) {
+  return flattenDepartments(departments).length
 }

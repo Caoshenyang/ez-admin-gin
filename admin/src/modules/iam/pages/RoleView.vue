@@ -11,12 +11,17 @@ const {
   activeTab,
   addPermissionRow,
   canEditSelectedRole,
+  canSavePermissionTab,
   canUse,
   checkedButtonCount,
   checkedMenuCount,
   checkedMenuIDs,
   checkedTotal,
   closeSuccess,
+  dataScopeDescription,
+  dataScopeOptions,
+  departmentNameMap,
+  departmentTreeOptions,
   filteredRoles,
   formMode,
   formModel,
@@ -28,6 +33,7 @@ const {
   handleSavePermissions,
   handleSearch,
   handleToggleRoleStatus,
+  loadRelatedUsers,
   loading,
   menuTreeOptions,
   methodOptions,
@@ -35,6 +41,9 @@ const {
   openEdit,
   permissionRows,
   query,
+  relatedUsers,
+  relatedUsersLoading,
+  relatedUsersTotal,
   removePermissionRow,
   rules,
   saving,
@@ -58,7 +67,7 @@ const {
             <NButton v-if="canUse('system:role:create')" type="primary" @click="openCreate">
               + 新增角色
             </NButton>
-            <NButton type="primary" :loading="saving" :disabled="!canEditSelectedRole" @click="handleSavePermissions">
+            <NButton type="primary" :loading="saving" :disabled="!canSavePermissionTab" @click="handleSavePermissions">
               保存权限
             </NButton>
           </NSpace>
@@ -94,13 +103,19 @@ const {
           :checked-button-count="checkedButtonCount"
           :checked-menu-count="checkedMenuCount"
           :checked-total="checkedTotal"
+          :data-scope-description="dataScopeDescription"
+          :department-name-map="departmentNameMap"
           :menu-tree-options="menuTreeOptions"
           :method-options="methodOptions"
+          :related-users="relatedUsers"
+          :related-users-loading="relatedUsersLoading"
+          :related-users-total="relatedUsersTotal"
           :selected-role="selectedRole"
           :super-admin-role-code="superAdminRoleCode"
           @add-permission="addPermissionRow"
           @check-all="handleCheckAll"
           @clear-all="handleClearAll"
+          @refresh-related-users="loadRelatedUsers"
           @remove-permission="removePermissionRow"
         />
       </div>
@@ -109,6 +124,8 @@ const {
     <RoleFormModal
       v-model:show="formVisible"
       v-model:form-ref="formRef"
+      :data-scope-options="dataScopeOptions"
+      :department-tree-options="departmentTreeOptions"
       :form-mode="formMode"
       :model="formModel"
       :rules="rules"

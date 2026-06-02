@@ -26,8 +26,8 @@ func NewLoginHandler(service *authapp.LoginService, log *zap.Logger) *LoginHandl
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Param        body  body  authdomain.LoginRequest  true  "登录参数"
-// @Success      200  {object}  httpx.Body{data=authdomain.LoginResponse}
+// @Param        body  body  LoginRequest  true  "登录参数"
+// @Success      200  {object}  httpx.Body{data=LoginResponse}
 // @Failure      400  {object}  httpx.Body
 // @Failure      500  {object}  httpx.Body
 // @Router       /auth/login [post]
@@ -100,7 +100,7 @@ func NewMeHandler(service *authapp.MeService, log *zap.Logger) *MeHandler {
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  httpx.Body{data=authdomain.MeResponse}
+// @Success      200  {object}  httpx.Body{data=MeResponse}
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
 // @Router       /auth/me [get]
@@ -135,7 +135,7 @@ func NewAccountHandler(service *authapp.AccountService, log *zap.Logger) *Accoun
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  httpx.Body{data=authdomain.AccountProfileResponse}
+// @Success      200  {object}  httpx.Body{data=AccountProfileResponse}
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
 // @Router       /auth/account [get]
@@ -159,8 +159,8 @@ func (h *AccountHandler) Profile(c *gin.Context) {
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Param        body  body  authdomain.UpdateAccountProfileRequest  true  "更新参数"
-// @Success      200  {object}  httpx.Body{data=authdomain.AccountProfileResponse}
+// @Param        body  body  UpdateAccountProfileRequest  true  "更新参数"
+// @Success      200  {object}  httpx.Body{data=AccountProfileResponse}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -191,7 +191,7 @@ func (h *AccountHandler) UpdateProfile(c *gin.Context) {
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Param        body  body  authdomain.UpdateAccountPasswordRequest  true  "密码参数"
+// @Param        body  body  UpdateAccountPasswordRequest  true  "密码参数"
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
@@ -231,7 +231,7 @@ func NewMenuHandler(service *authapp.MenuService, log *zap.Logger) *MenuHandler 
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  httpx.Body{data=[]authdomain.MenuResponse}
+// @Success      200  {object}  httpx.Body{data=[]MenuResponse}
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
 // @Router       /auth/menus [get]
@@ -264,7 +264,7 @@ func NewDashboardHandler(service *authapp.DashboardService, log *zap.Logger) *Da
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  httpx.Body{data=authdomain.DashboardResponse}
+// @Success      200  {object}  httpx.Body{data=DashboardResponse}
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
 // @Router       /auth/dashboard [get]

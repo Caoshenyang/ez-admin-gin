@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NCard, NDataTable, NPagination, NTag } from 'naive-ui'
+import { NButton, NDataTable, NPagination, NTag } from 'naive-ui'
 import { h } from 'vue'
 
+import EzTableCard from '@/components/ez/EzTableCard.vue'
 import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText, formatTime } from '@/utils/format'
 import type { OperationLogItem } from '../types/operation-log'
@@ -115,7 +116,7 @@ const columns: DataTableColumns<OperationLogItem> = [
 </script>
 
 <template>
-  <NCard class="ez-table-card min-h-0 flex-1" :bordered="false" content-class="ez-card-content-reset">
+  <EzTableCard>
     <TableStatsBar>
       <span>共 {{ total }} 条</span>
       <template #actions>
@@ -148,5 +149,5 @@ const columns: DataTableColumns<OperationLogItem> = [
         @update:page-size="emit('pageSizeChange', $event)"
       />
     </div>
-  </NCard>
+  </EzTableCard>
 </template>

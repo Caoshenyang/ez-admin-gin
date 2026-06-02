@@ -11,10 +11,12 @@ import (
 
 // ListQuery 定义用户列表查询的过滤参数。
 type ListQuery struct {
-	Page     int    `form:"page"`
-	PageSize int    `form:"page_size"`
-	Keyword  string `form:"keyword"`
-	Status   int    `form:"status"`
+	Page         int    `form:"page"`
+	PageSize     int    `form:"page_size"`
+	Keyword      string `form:"keyword"`
+	Status       int    `form:"status"`
+	DepartmentID uint   `form:"department_id"`
+	RoleID       uint   `form:"role_id"`
 }
 
 // CreateRequest 定义创建用户的请求参数。

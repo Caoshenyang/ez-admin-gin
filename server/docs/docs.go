@@ -44,7 +44,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/domain.AccountProfileResponse"
+                                            "$ref": "#/definitions/api.AccountProfileResponse"
                                         }
                                     }
                                 }
@@ -84,7 +84,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.UpdateAccountPasswordRequest"
+                            "$ref": "#/definitions/api.UpdateAccountPasswordRequest"
                         }
                     }
                 ],
@@ -134,7 +134,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.UpdateAccountProfileRequest"
+                            "$ref": "#/definitions/api.UpdateAccountProfileRequest"
                         }
                     }
                 ],
@@ -150,7 +150,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/domain.AccountProfileResponse"
+                                            "$ref": "#/definitions/api.AccountProfileResponse"
                                         }
                                     }
                                 }
@@ -201,7 +201,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/domain.DashboardResponse"
+                                            "$ref": "#/definitions/api.DashboardResponse"
                                         }
                                     }
                                 }
@@ -236,7 +236,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/domain.LoginRequest"
+                            "$ref": "#/definitions/api.LoginRequest"
                         }
                     }
                 ],
@@ -252,7 +252,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/domain.LoginResponse"
+                                            "$ref": "#/definitions/api.LoginResponse"
                                         }
                                     }
                                 }
@@ -267,6 +267,39 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "退出登录",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/httpx.Body"
                         }
@@ -303,7 +336,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/domain.MeResponse"
+                                            "$ref": "#/definitions/api.MeResponse"
                                         }
                                     }
                                 }
@@ -350,8 +383,48 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/domain.MenuResponse"
+                                                "$ref": "#/definitions/api.MenuResponse"
                                             }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "认证"
+                ],
+                "summary": "刷新 Access Token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Body"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/api.LoginResponse"
                                         }
                                     }
                                 }
@@ -369,10 +442,7 @@ const docTemplate = `{
         },
         "/setup/init": {
             "post": {
-                "description": "创建超级管理员账号，仅当系统中无用户时可执行。",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "使用默认账号创建超级管理员，仅当系统中无用户时可执行。",
                 "produces": [
                     "application/json"
                 ],
@@ -380,30 +450,11 @@ const docTemplate = `{
                     "系统"
                 ],
                 "summary": "系统初始化",
-                "parameters": [
-                    {
-                        "description": "初始化参数",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/setup.initRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/setup.initResponse"
                         }
                     },
                     "409": {
@@ -793,7 +844,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.ListResponse"
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_api.ListResponse"
                                         }
                                     }
                                 }
@@ -837,7 +888,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest"
+                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_api.CreateRequest"
                         }
                     }
                 ],
@@ -853,7 +904,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response"
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_api.Response"
                                         }
                                     }
                                 }
@@ -913,7 +964,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/domain.ValueResponse"
+                                            "$ref": "#/definitions/api.ValueResponse"
                                         }
                                     }
                                 }
@@ -966,7 +1017,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest"
+                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_api.UpdateStatusRequest"
                         }
                     }
                 ],
@@ -1023,7 +1074,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest"
+                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_api.UpdateRequest"
                         }
                     }
                 ],
@@ -1039,7 +1090,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_domain.Response"
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_config_api.Response"
                                         }
                                     }
                                 }
@@ -2283,7 +2334,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse"
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.ListResponse"
                                         }
                                     }
                                 }
@@ -2327,7 +2378,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest"
+                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.CreateRequest"
                         }
                     }
                 ],
@@ -2343,7 +2394,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response"
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.Response"
                                         }
                                     }
                                 }
@@ -2396,7 +2447,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest"
+                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.UpdateStatusRequest"
                         }
                     }
                 ],
@@ -2453,7 +2504,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest"
+                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.UpdateRequest"
                         }
                     }
                 ],
@@ -2469,7 +2520,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_domain.Response"
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notice_api.Response"
                                         }
                                     }
                                 }
@@ -2480,6 +2531,205 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notifications": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 通知管理"
+                ],
+                "summary": "查询通知列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "通知类型",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "已读状态 0=全部 1=未读 2=已读",
+                        "name": "is_read",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Body"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notification_api.ListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notifications/mark-all-read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 通知管理"
+                ],
+                "summary": "全部标记已读",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notifications/mark-read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 通知管理"
+                ],
+                "summary": "标记通知已读",
+                "parameters": [
+                    {
+                        "description": "通知 ID 列表",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.MarkReadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/notifications/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 通知管理"
+                ],
+                "summary": "获取未读通知数",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/httpx.Body"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/api.UnreadCountResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -3111,6 +3361,12 @@ const docTemplate = `{
                         "description": "部门 ID",
                         "name": "department_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "角色 ID",
+                        "name": "role_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3350,6 +3606,44 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.AccountProfileResponse": {
+            "type": "object",
+            "properties": {
+                "data_scope": {
+                    "$ref": "#/definitions/domain.MeDataScopeResult"
+                },
+                "department_id": {
+                    "type": "integer"
+                },
+                "department_name": {
+                    "type": "string"
+                },
+                "is_super_admin": {
+                    "type": "boolean"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "role_codes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/model.UserStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "api.CreateItemRequest": {
             "type": "object",
             "properties": {
@@ -3396,6 +3690,38 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/model.SystemDictStatus"
+                }
+            }
+        },
+        "api.DashboardResponse": {
+            "type": "object",
+            "properties": {
+                "current_user": {
+                    "$ref": "#/definitions/domain.DashboardCurrentUser"
+                },
+                "health": {
+                    "$ref": "#/definitions/domain.DashboardHealth"
+                },
+                "latest_notices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.DashboardNoticeItem"
+                    }
+                },
+                "metrics": {
+                    "$ref": "#/definitions/domain.DashboardMetrics"
+                },
+                "recent_logins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.DashboardLoginItem"
+                    }
+                },
+                "recent_operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.DashboardOperationItem"
+                    }
                 }
             }
         },
@@ -3457,6 +3783,119 @@ const docTemplate = `{
                 }
             }
         },
+        "api.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.MarkReadRequest": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "api.MeResponse": {
+            "type": "object",
+            "properties": {
+                "data_scope": {
+                    "$ref": "#/definitions/domain.MeDataScopeResult"
+                },
+                "department_id": {
+                    "type": "integer"
+                },
+                "is_super_admin": {
+                    "type": "boolean"
+                },
+                "role_codes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.MenuResponse": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.MenuResponse"
+                    }
+                },
+                "code": {
+                    "type": "string"
+                },
+                "component": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "parent_id": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.MenuType"
+                }
+            }
+        },
         "api.TypeListResponse": {
             "type": "object",
             "properties": {
@@ -3502,6 +3941,33 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.SystemDictStatus"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.UnreadCountResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.UpdateAccountPasswordRequest": {
+            "type": "object",
+            "properties": {
+                "new_password": {
+                    "type": "string"
+                },
+                "old_password": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.UpdateAccountProfileRequest": {
+            "type": "object",
+            "properties": {
+                "nickname": {
                     "type": "string"
                 }
             }
@@ -3595,6 +4061,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ValueResponse": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "datascope.Scope": {
             "type": "string",
             "enum": [
@@ -3611,44 +4091,6 @@ const docTemplate = `{
                 "ScopeSelf",
                 "ScopeCustomDept"
             ]
-        },
-        "domain.AccountProfileResponse": {
-            "type": "object",
-            "properties": {
-                "data_scope": {
-                    "$ref": "#/definitions/domain.MeDataScopeResult"
-                },
-                "department_id": {
-                    "type": "integer"
-                },
-                "department_name": {
-                    "type": "string"
-                },
-                "is_super_admin": {
-                    "type": "boolean"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "role_codes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "status": {
-                    "$ref": "#/definitions/model.UserStatus"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
         },
         "domain.DashboardCurrentUser": {
             "type": "object",
@@ -3779,38 +4221,6 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.DashboardResponse": {
-            "type": "object",
-            "properties": {
-                "current_user": {
-                    "$ref": "#/definitions/domain.DashboardCurrentUser"
-                },
-                "health": {
-                    "$ref": "#/definitions/domain.DashboardHealth"
-                },
-                "latest_notices": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.DashboardNoticeItem"
-                    }
-                },
-                "metrics": {
-                    "$ref": "#/definitions/domain.DashboardMetrics"
-                },
-                "recent_logins": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.DashboardLoginItem"
-                    }
-                },
-                "recent_operations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.DashboardOperationItem"
-                    }
-                }
-            }
-        },
         "domain.ItemResponse": {
             "type": "object",
             "properties": {
@@ -3849,44 +4259,6 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_at": {
-                    "type": "string"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "token_type": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
-                }
-            }
-        },
         "domain.MeDataScopeResult": {
             "type": "object",
             "properties": {
@@ -3907,32 +4279,6 @@ const docTemplate = `{
                 },
                 "require_self": {
                     "type": "boolean"
-                }
-            }
-        },
-        "domain.MeResponse": {
-            "type": "object",
-            "properties": {
-                "data_scope": {
-                    "$ref": "#/definitions/domain.MeDataScopeResult"
-                },
-                "department_id": {
-                    "type": "integer"
-                },
-                "is_super_admin": {
-                    "type": "boolean"
-                },
-                "role_codes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "username": {
-                    "type": "string"
                 }
             }
         },
@@ -4014,39 +4360,6 @@ const docTemplate = `{
                 }
             }
         },
-        "domain.UpdateAccountPasswordRequest": {
-            "type": "object",
-            "properties": {
-                "new_password": {
-                    "type": "string"
-                },
-                "old_password": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.UpdateAccountProfileRequest": {
-            "type": "object",
-            "properties": {
-                "nickname": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.ValueResponse": {
-            "type": "object",
-            "properties": {
-                "key": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
         "errorsx.Code": {
             "type": "integer",
             "enum": [
@@ -4055,6 +4368,7 @@ const docTemplate = `{
                 40100,
                 40300,
                 40400,
+                42900,
                 50300,
                 50000
             ],
@@ -4064,6 +4378,7 @@ const docTemplate = `{
                 "CodeUnauthorized",
                 "CodeForbidden",
                 "CodeNotFound",
+                "CodeTooManyRequests",
                 "CodeServiceUnavailable",
                 "CodeInternal"
             ]
@@ -4528,7 +4843,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ez-admin-gin_server_internal_modules_system_config_domain.CreateRequest": {
+        "ez-admin-gin_server_internal_modules_system_config_api.CreateRequest": {
             "type": "object",
             "properties": {
                 "group_code": {
@@ -4554,7 +4869,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ez-admin-gin_server_internal_modules_system_config_domain.ListResponse": {
+        "ez-admin-gin_server_internal_modules_system_config_api.ListResponse": {
             "type": "object",
             "properties": {
                 "items": {
@@ -4571,6 +4886,72 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_config_api.Response": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "group_code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.SystemConfigStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_config_api.UpdateRequest": {
+            "type": "object",
+            "properties": {
+                "group_code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.SystemConfigStatus"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_config_api.UpdateStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/model.SystemConfigStatus"
                 }
             }
         },
@@ -4606,37 +4987,6 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
-                }
-            }
-        },
-        "ez-admin-gin_server_internal_modules_system_config_domain.UpdateRequest": {
-            "type": "object",
-            "properties": {
-                "group_code": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "remark": {
-                    "type": "string"
-                },
-                "sort": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/model.SystemConfigStatus"
-                },
-                "value": {
-                    "type": "string"
-                }
-            }
-        },
-        "ez-admin-gin_server_internal_modules_system_config_domain.UpdateStatusRequest": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "$ref": "#/definitions/model.SystemConfigStatus"
                 }
             }
         },
@@ -4809,7 +5159,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ez-admin-gin_server_internal_modules_system_notice_domain.CreateRequest": {
+        "ez-admin-gin_server_internal_modules_system_notice_api.CreateRequest": {
             "type": "object",
             "properties": {
                 "content": {
@@ -4829,7 +5179,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ez-admin-gin_server_internal_modules_system_notice_domain.ListResponse": {
+        "ez-admin-gin_server_internal_modules_system_notice_api.ListResponse": {
             "type": "object",
             "properties": {
                 "items": {
@@ -4846,6 +5196,63 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_notice_api.Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.NoticeStatus"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_notice_api.UpdateRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "sort": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.NoticeStatus"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_notice_api.UpdateStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/model.NoticeStatus"
                 }
             }
         },
@@ -4878,31 +5285,52 @@ const docTemplate = `{
                 }
             }
         },
-        "ez-admin-gin_server_internal_modules_system_notice_domain.UpdateRequest": {
+        "ez-admin-gin_server_internal_modules_system_notification_api.ListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ez-admin-gin_server_internal_modules_system_notification_domain.Response"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ez-admin-gin_server_internal_modules_system_notification_domain.Response": {
             "type": "object",
             "properties": {
                 "content": {
                     "type": "string"
                 },
-                "remark": {
+                "created_at": {
                     "type": "string"
                 },
-                "sort": {
+                "extra": {
+                    "$ref": "#/definitions/model.JSONMap"
+                },
+                "id": {
                     "type": "integer"
                 },
-                "status": {
-                    "$ref": "#/definitions/model.NoticeStatus"
+                "is_read": {
+                    "type": "boolean"
+                },
+                "read_at": {
+                    "type": "string"
                 },
                 "title": {
                     "type": "string"
-                }
-            }
-        },
-        "ez-admin-gin_server_internal_modules_system_notice_domain.UpdateStatusRequest": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "$ref": "#/definitions/model.NoticeStatus"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.NotificationType"
                 }
             }
         },
@@ -4996,6 +5424,10 @@ const docTemplate = `{
                 "DepartmentStatusDisabled"
             ]
         },
+        "model.JSONMap": {
+            "type": "object",
+            "additionalProperties": {}
+        },
         "model.LoginLogStatus": {
             "type": "integer",
             "enum": [
@@ -5040,6 +5472,33 @@ const docTemplate = `{
             "x-enum-varnames": [
                 "NoticeStatusEnabled",
                 "NoticeStatusDisabled"
+            ]
+        },
+        "model.NotificationType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-comments": {
+                "NotificationTypeMessage": "消息通知",
+                "NotificationTypeSecurity": "安全通知",
+                "NotificationTypeSystem": "系统通知",
+                "NotificationTypeTask": "任务通知"
+            },
+            "x-enum-descriptions": [
+                "系统通知",
+                "安全通知",
+                "任务通知",
+                "消息通知"
+            ],
+            "x-enum-varnames": [
+                "NotificationTypeSystem",
+                "NotificationTypeSecurity",
+                "NotificationTypeTask",
+                "NotificationTypeMessage"
             ]
         },
         "model.PostStatus": {
@@ -5119,28 +5578,17 @@ const docTemplate = `{
                 "UserStatusDisabled"
             ]
         },
-        "setup.initRequest": {
+        "setup.initResponse": {
             "type": "object",
-            "required": [
-                "nickname",
-                "password",
-                "username"
-            ],
             "properties": {
-                "nickname": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 1
+                "message": {
+                    "type": "string"
                 },
-                "password": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 6
+                "user_id": {
+                    "type": "integer"
                 },
                 "username": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 2
+                    "type": "string"
                 }
             }
         }

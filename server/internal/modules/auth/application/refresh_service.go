@@ -22,6 +22,10 @@ func NewRefreshService(refreshStore *authnPlatform.RefreshTokenStore, token Toke
 
 // Refresh rotates the refresh token: verify old → revoke old → issue new pair.
 func (s *RefreshService) Refresh(ctx context.Context, oldRefreshToken string) (authdomain.LoginResponse, string, error) {
+	if s.refreshStore == nil {
+		return authdomain.LoginResponse{}, "", errorsx.ServiceUnavailable("refresh token service unavailable", nil)
+	}
+
 	session, err := s.refreshStore.Verify(ctx, oldRefreshToken)
 	if err != nil {
 		return authdomain.LoginResponse{}, "", errorsx.Unauthorized("refresh token 无效或已过期")

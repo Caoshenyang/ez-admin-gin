@@ -13,6 +13,7 @@ import {
 } from 'naive-ui'
 import { computed, h } from 'vue'
 
+import EzTableCard from '@/components/ez/EzTableCard.vue'
 import TableStatsBar from '@/components/TableStatsBar.vue'
 import { displayText, formatTime } from '@/utils/format'
 import { UserStatus, type UserItem } from '../types/user'
@@ -198,7 +199,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 </script>
 
 <template>
-  <div class="ez-table-card min-h-0 flex-1">
+  <EzTableCard>
     <TableStatsBar>
       <span>已选 {{ selectedCount }} 项</span>
       <template #actions>
@@ -231,5 +232,5 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
         @update:page-size="(pageSize) => emit('pageSizeChange', pageSize)"
       />
     </div>
-  </div>
+  </EzTableCard>
 </template>

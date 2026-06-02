@@ -28,14 +28,15 @@ func NewHandler(service *notiapp.Service, hub *notiws.Hub, log *zap.Logger) *Han
 
 // WSHandler 处理 WebSocket 连接（单独的 handler，因为不走 Auth 中间件）。
 type WSHandler struct {
-	service *notiapp.Service
-	hub     interface{ Run() }
-	token   *authnPlatform.Manager
-	log     *zap.Logger
+	service        *notiapp.Service
+	hub            interface{ Run() }
+	token          *authnPlatform.Manager
+	originPatterns []string
+	log            *zap.Logger
 }
 
-func NewWSHandler(service *notiapp.Service, hub interface{ Run() }, token *authnPlatform.Manager, log *zap.Logger) *WSHandler {
-	return &WSHandler{service: service, hub: hub, token: token, log: log}
+func NewWSHandler(service *notiapp.Service, hub interface{ Run() }, token *authnPlatform.Manager, originPatterns []string, log *zap.Logger) *WSHandler {
+	return &WSHandler{service: service, hub: hub, token: token, originPatterns: originPatterns, log: log}
 }
 
 // List godoc
@@ -47,7 +48,7 @@ func NewWSHandler(service *notiapp.Service, hub interface{ Run() }, token *authn
 // @Param        page_size  query     int     false  "每页条数"
 // @Param        type       query     int     false  "通知类型"
 // @Param        is_read    query     int     false  "已读状态 0=全部 1=未读 2=已读"
-// @Success      200  {object}  httpx.Body{data=notidomain.ListResponse}
+// @Success      200  {object}  httpx.Body{data=ListResponse}
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
@@ -81,7 +82,7 @@ func (h *Handler) List(c *gin.Context) {
 // @Summary      获取未读通知数
 // @Tags         System / 通知管理
 // @Produce      json
-// @Success      200  {object}  httpx.Body{data=notidomain.UnreadCountResponse}
+// @Success      200  {object}  httpx.Body{data=UnreadCountResponse}
 // @Failure      401  {object}  httpx.Body
 // @Security     BearerAuth
 // @Router       /system/notifications/unread-count [get]
@@ -104,7 +105,7 @@ func (h *Handler) UnreadCount(c *gin.Context) {
 // @Tags         System / 通知管理
 // @Accept       json
 // @Produce      json
-// @Param        body  body  notidomain.MarkReadRequest  true  "通知 ID 列表"
+// @Param        body  body  MarkReadRequest  true  "通知 ID 列表"
 // @Success      200  {object}  httpx.Body
 // @Failure      400  {object}  httpx.Body
 // @Failure      401  {object}  httpx.Body
@@ -172,7 +173,7 @@ func (h *WSHandler) ServeWebSocket(c *gin.Context) {
 	}
 
 	wsConn, err := websocket.Accept(c.Writer, c.Request, &websocket.AcceptOptions{
-		OriginPatterns: []string{"*"},
+		OriginPatterns: h.originPatterns,
 	})
 	if err != nil {
 		h.log.Error("websocket accept error", zap.Error(err))

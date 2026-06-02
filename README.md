@@ -92,15 +92,13 @@ make db-full-sql
 make server-dev
 
 # 4. 初始化管理员账号
-curl -X POST http://localhost:8080/api/v1/setup/init \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword123","nickname":"管理员"}'
+curl -X POST http://localhost:8080/api/v1/setup/init
 
 # 5. 启动前端（另一个终端）
 make install && make admin-dev
 ```
 
-初始化时通过 `setup/init` 接口自行指定用户名和密码。生产环境首次登录后请立即修改密码。
+初始化接口会创建默认管理员 `admin / EzAdmin@123456`。生产环境首次登录后请立即修改密码。
 
 ## 常用命令速查
 
@@ -118,14 +116,15 @@ make install && make admin-dev
 | `make docker-up` | 启动 PostgreSQL + Redis |
 | `make docker-down` | 停止 PostgreSQL + Redis |
 | `make docker-config` | 验证所有 Docker Compose 配置 |
-| `make generate-types` | 从 Swagger spec 生成前端 TypeScript 类型 |
-| `make check-types` | 检查生成的 API 类型是否与 Swagger spec 同步 |
+| `make swagger` | 从后端注释生成 Swagger / OpenAPI 文档 |
+| `make generate-types` | 先生成 Swagger，再生成前端 TypeScript 类型 |
+| `make check-types` | 检查 Swagger 文档和前端 API 类型是否同步 |
 
 ## 质量策略
 
-本项目不维护复杂自动化测试体系，不追求测试覆盖率。当前采用轻量质量策略：后端 `go vet`、后端 `go build`、前端 TypeScript 类型检查、前端 lint、前端生产构建、Docker Compose 配置校验，以及发布前人工冒烟测试。
+本项目不维护复杂自动化测试体系，不追求测试覆盖率。当前采用轻量质量策略：后端 `go vet`、后端 `go build`、前端 TypeScript 类型检查、前端 lint、API 类型同步检查、前端生产构建、Docker Compose 配置校验，以及发布前人工冒烟测试。
 
-本项目不维护 API 自动化测试、RBAC 自动化测试、Contract 测试、E2E 测试和覆盖率报告。
+本项目不维护 API 自动化测试、RBAC 自动化测试、E2E 测试和覆盖率报告。`admin/src/api/contract-check.ts` 只做编译期类型契约检查，用来约束手写前端 DTO 不偏离 OpenAPI 生成类型。
 
 本地轻量验证：
 
@@ -137,7 +136,8 @@ make verify
 
 ```bash
 cd server && go mod tidy && go vet ./... && go build ./...
-cd admin && pnpm install --frozen-lockfile && pnpm type-check && pnpm lint && pnpm build
+make swagger
+cd admin && pnpm install --frozen-lockfile && pnpm type-check && pnpm lint && pnpm check:api-types && pnpm build
 docker compose -f deploy/compose.local.yml config --quiet
 EZ_AUTH_JWT_SECRET=placeholder docker compose -f deploy/compose.prod.yml config --quiet
 docker compose -f deploy/compose.server.yml config --quiet

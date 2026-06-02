@@ -26,7 +26,7 @@ func NewRefreshHandler(service *authapp.RefreshService, env string, log *zap.Log
 // @Tags         认证
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  httpx.Body{data=authdomain.LoginResponse}
+// @Success      200  {object}  httpx.Body{data=LoginResponse}
 // @Failure      401  {object}  httpx.Body
 // @Router       /auth/refresh [post]
 func (h *RefreshHandler) Refresh(c *gin.Context) {
