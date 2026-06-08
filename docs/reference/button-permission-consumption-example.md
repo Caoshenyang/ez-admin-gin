@@ -143,6 +143,7 @@ function canUse(code: string) {
 canUse('system:user:update')
 canUse('system:user:status')
 canUse('system:user:assign-role')
+canUse('system:user:delete')
 ```
 
 适合：
@@ -174,10 +175,15 @@ canUse('system:user:assign-role')
 
 | 页面 | 典型按钮权限码 |
 | --- | --- |
-| `UserView.vue` | `system:user:create` / `system:user:update` / `system:user:status` / `system:user:assign-role` |
+| `UserView.vue` | `system:user:create` / `system:user:update` / `system:user:status` / `system:user:assign-role` / `system:user:delete` |
+| `RoleView.vue` | `system:role:create` / `system:role:update` / `system:role:status` / `system:role:delete` |
+| `PostView.vue` | `system:post:create` / `system:post:update` / `system:post:status` / `system:post:delete` |
+| `ConfigView.vue` | `system:config:create` / `system:config:update` / `system:config:status` / `system:config:delete` |
+| `DictView.vue` | `system:dict:type:create` / `system:dict:type:update` / `system:dict:type:delete` / `system:dict:item:create` / `system:dict:item:delete` |
+| `NoticeView.vue` | `system:notice:create` / `system:notice:update` / `system:notice:status` / `system:notice:delete` |
 | `FileView.vue` | `system:file:upload` |
-| `NoticeView.vue` | `system:notice:create` / `system:notice:update` / `system:notice:status` |
 | `MenuView.vue` | `system:menu:create` / `system:menu:update` / `system:menu:status` / `system:menu:delete` |
+| `DepartmentView.vue` | `system:department:create` / `system:department:update` / `system:department:status` / `system:department:delete` |
 
 ## 新页面最小可复用模板
 

@@ -5,7 +5,6 @@ import (
 	stdlog "log"
 	"net"
 	"strings"
-	"time"
 
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
 	authzPlatform "ez-admin-gin/server/internal/platform/authz"
@@ -68,11 +67,6 @@ func MustRun(migrationsFS fs.FS, rbacModelPath string) {
 	tokenManager, err := authnPlatform.NewManager(cfg.Auth)
 	if err != nil {
 		log.Fatal("create token manager", zap.Error(err))
-	}
-
-	refreshTTL := time.Duration(cfg.Auth.RefreshTokenTTL) * time.Second
-	if refreshTTL <= 0 {
-		refreshTTL = 7 * 24 * time.Hour
 	}
 
 	permissionEnforcer, err := authzPlatform.NewEnforcer(db, rbacModelPath)

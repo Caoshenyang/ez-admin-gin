@@ -113,3 +113,15 @@ func (r *Repository) UpdateStatus(db *gorm.DB, item *model.Post, status model.Po
 	item.Status = status
 	return nil
 }
+
+// CountUsers 统计绑定到该岗位的用户数量。
+func (r *Repository) CountUsers(db *gorm.DB, postID uint) (int64, error) {
+	var count int64
+	err := db.Model(&model.UserPost{}).Where("post_id = ?", postID).Count(&count).Error
+	return count, err
+}
+
+// Delete 软删除岗位记录。
+func (r *Repository) Delete(db *gorm.DB, item *model.Post) error {
+	return db.Delete(item).Error
+}

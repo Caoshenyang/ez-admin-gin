@@ -8,7 +8,24 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 这页用于约束后台页面的视觉与结构写法。新增模块时，优先照这里的组件入口和 class 命名组织页面；已有页面改造时，也按同一套规范逐步收口。
 
 ::: tip 核心判断
-同一种区域只保留一种主写法：搜索区用 `EzSearchPanel`，列表区用 `EzTableCard`，表单区用 `ez-modal-form / ez-modal-section / ez-modal-footer`。
+同一种区域只保留一种主写法：搜索区用 `EzSearchPanel`，列表区用 `EzDataTable`，表单区用 `ez-modal-form / ez-modal-section / ez-modal-footer`。
+:::
+
+## 品牌组件风格
+
+后台业务组件统一走“紧凑控制台”视觉：中性面、清晰层级、稳定网格和低噪声边界。EZ 的品牌感不依赖重复色条、渐变或网格背景，而是通过更收紧的表单节奏、更一致的工具栏密度、更可扫描的表格结构和克制的主色使用建立。
+
+| 区域 | 视觉入口 | 使用方式 |
+| --- | --- | --- |
+| 页头 | `PageHeader` / `EzPageHeader` | 标题、说明和操作区保持同一行节奏，不手写额外标题块 |
+| 搜索区 | `EzSearchPanel` | 只放筛选字段和查询动作，避免重新包一层卡片 |
+| 列表区 | `EzDataTable` | 普通表格、顶部工具条、刷新按钮和分页底栏由公共组件负责 |
+| 弹窗表单 | `FormModalHeader` + `ez-modal-*` | 使用分组和网格收紧节奏，不在业务组件里重写弹窗头 |
+| 抽屉 | `NDrawer` + `ez-drawer` | 只用于通知、日志、审计详情等只读侧栏 |
+| 空状态 / 指标卡 | `EzEmptyState` / `EzMetricCard` | 使用共享组件，不再手写普通白卡 |
+
+::: warning 不要复制装饰样式
+业务页面不要再手写渐变、网格背景、彩色顶线、多层边框或大阴影。品牌表达集中在公共组件的间距、字号、边界、表格密度和主操作状态里，局部页面只补充必要布局。
 :::
 
 ## 页面骨架
@@ -38,7 +55,7 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 | 页面内容 | `admin-page-section` | 负责统一页头、搜索区、列表区之间的间距 |
 | 页头 | `PageHeader` / `EzPageHeader` | 标题、描述和主操作按钮 |
 | 搜索区 | `EzSearchPanel` | 筛选项和查询/重置按钮 |
-| 列表区 | `EzTableCard` | 表格、顶部统计条、底部分页 |
+| 列表区 | `EzDataTable` | 表格、顶部统计条、底部分页 |
 
 ## 弹窗与抽屉
 
@@ -85,41 +102,34 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 
 ## 列表区
 
-列表区统一使用 `EzTableCard`，内部顺序固定为顶部统计条、`NDataTable`、可选分页。
+列表区统一使用 `EzDataTable`。普通列表直接传 `columns / data / loading / page / pageSize / total`；需要勾选、树表、额外事件或自定义空态时，用 `body` 插槽接管内部 `NDataTable`，但仍复用统一工具条和分页外壳。
 
 ```vue
 <template>
-  <EzTableCard>
-    <TableStatsBar>
-      <span>共 {{ total }} 条</span>
-      <template #actions>
-        <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
-      </template>
-    </TableStatsBar>
-
-    <NDataTable
-      remote
-      :columns="columns"
-      :data="items"
-      :loading="loading"
-      :pagination="false"
-      :bordered="false"
-    />
-
-    <div class="ez-table-footer">
-      <span>共 {{ total }} 条</span>
-      <NPagination :page="query.page" :page-size="query.page_size" :item-count="total" />
-    </div>
-  </EzTableCard>
+  <EzDataTable
+    remote
+    :columns="columns"
+    :data="items"
+    :loading="loading"
+    :page="query.page"
+    :page-size="query.page_size"
+    :row-key="(row) => row.id"
+    :total="total"
+    @page-change="emit('pageChange', $event)"
+    @page-size-change="emit('pageSizeChange', $event)"
+    @refresh="emit('refresh')"
+  />
 </template>
 ```
 
 列表区约定：
 
-- 表格不直接使用 Naive UI 分页，统一把分页放到 `.ez-table-footer`。
+- 表格不直接使用 Naive UI 分页，普通列表由 `EzDataTable` 统一渲染分页。
 - 表格容器不再新增 `NCard class="ez-table-card"` 写法。
 - 顶部统计条只放统计、刷新、展开/收起、批量动作，不放搜索条件。
-- 长表格必须配置 `scroll-x`，避免操作列挤压正文列。
+- `EzTableCard` 只作为底层外壳使用，业务列表不要再手写 `EzTableCard + TableStatsBar + NDataTable + NPagination`。
+- 树表、勾选表和带自定义空态的表格可以通过 `EzDataTable` 的 `body` 插槽接管 `NDataTable`。
+- 长表格必须配置稳定列宽，避免操作列挤压正文列。
 - 操作列固定在右侧时，按钮数量超过两个应使用下拉菜单收纳。
 
 ## 表单区
@@ -172,7 +182,7 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 | --- | --- |
 | 页面骨架 | `admin-page > admin-page-section > PageHeader + Search + Table` |
 | 搜索区 | 使用 `EzSearchPanel`，没有手写 `.ez-toolbar` |
-| 列表区 | 使用 `EzTableCard`，表格和分页顺序一致 |
+| 列表区 | 使用 `EzDataTable`，特殊表格通过 `body` 插槽接管表体 |
 | 表单区 | 使用 `ez-modal-form`、`ez-modal-section`、`ez-modal-footer` |
 | 宽度 | 输入、选择器、表格 `scroll-x` 有稳定尺寸 |
 | 行为 | 查询、重置、刷新、分页事件由组件 emit 给页面/composable |

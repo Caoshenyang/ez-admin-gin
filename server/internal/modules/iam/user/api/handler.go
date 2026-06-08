@@ -212,3 +212,34 @@ func (h *Handler) UpdateRoles(c *gin.Context) {
 		"role_ids": roleIDs,
 	})
 }
+
+// Delete godoc
+// @Summary      删除用户
+// @Tags         IAM / 用户管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint  true  "用户 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /system/users/{id}/delete [post]
+func (h *Handler) Delete(c *gin.Context) {
+	actor, ok := httpx.CurrentActor(c, h.log)
+	if !ok {
+		return
+	}
+
+	userID, ok := httpx.UintIDParam(c, "id", "用户 ID", h.log)
+	if !ok {
+		return
+	}
+
+	currentUserID, _ := middleware.CurrentUserID(c)
+	if err := h.service.Delete(actor, userID, currentUserID); err != nil {
+		httpx.WriteError(c, err, "删除用户失败", h.log)
+		return
+	}
+
+	httpx.Success(c, gin.H{"id": userID})
+}

@@ -21,4 +21,5 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	group.POST("/roles/:id/status", handler.UpdateStatus)
 	group.POST("/roles/:id/permissions", handler.UpdatePermissions)
 	group.POST("/roles/:id/menus", handler.UpdateMenus)
+	group.POST("/roles/:id/delete", handler.Delete)
 }

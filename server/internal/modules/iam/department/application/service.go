@@ -177,6 +177,21 @@ func (s *Service) UpdateStatus(actor datascope.Actor, departmentID uint, status 
 	})
 }
 
+// Delete 删除部门，需确保无子部门、无关联用户且未用于角色数据范围。
+func (s *Service) Delete(actor datascope.Actor, departmentID uint) error {
+	return s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
+		current, err := s.repo.FindByIDInScope(tx, actor, departmentID)
+		if err != nil {
+			return err
+		}
+		if err := s.repo.CanDelete(tx, departmentID); err != nil {
+			return err
+		}
+
+		return s.repo.Delete(tx, &current)
+	})
+}
+
 func buildTree(items []model.Department) []departmentdomain.Response {
 	nodes := make(map[uint]*departmentdomain.Response, len(items))
 	roots := make([]*departmentdomain.Response, 0)

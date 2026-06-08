@@ -14,7 +14,7 @@ export interface DepartmentItem {
   ancestors: string
   name: string
   code: string
-  leader_user_id: number
+  leader_user_id: number | null
   sort: number
   status: DepartmentStatus
   remark: string
@@ -34,7 +34,7 @@ export interface CreateDepartmentPayload {
   parent_id: number
   name: string
   code: string
-  leader_user_id: number
+  leader_user_id: number | null
   sort: number
   status: DepartmentStatus
   remark: string

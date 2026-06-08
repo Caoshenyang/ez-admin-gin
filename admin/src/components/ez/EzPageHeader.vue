@@ -24,25 +24,25 @@ defineSlots<{
 <style scoped>
 .ez-page-header-shell {
   display: flex;
-  min-height: 44px;
+  min-height: 40px;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
 .ez-page-header-shell h1 {
   margin: 0;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--ez-text-main);
-  line-height: 28px;
+  line-height: 26px;
 }
 
 .ez-page-header-shell p {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: 3px 0 0;
+  font-size: 12px;
   color: var(--ez-text-secondary);
-  line-height: 20px;
+  line-height: 19px;
 }
 
 .ez-page-header-shell__actions {

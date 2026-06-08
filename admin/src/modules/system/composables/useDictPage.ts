@@ -4,7 +4,6 @@ import { h, onMounted, reactive, ref } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { useStatusToggle } from '@/composables/useStatusToggle'
 import { displayText } from '@/utils/format'
 import {
@@ -24,6 +23,8 @@ import {
 import {
   createDictItem as createDictItemRequest,
   createDictType as createDictTypeRequest,
+  deleteDictItem as deleteDictItemRequest,
+  deleteDictType as deleteDictTypeRequest,
   getDictItems as getDictItemsRequest,
   getDictTypes as getDictTypesRequest,
   updateDictItem as updateDictItemRequest,
@@ -51,7 +52,6 @@ function toTagType(value: string) {
 export function useDictPage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const typeLoading = ref(false)
   const itemLoading = ref(false)
@@ -163,14 +163,12 @@ export function useDictPage() {
 
   const { handleToggleStatus: handleToggleTypeStatus } = useStatusToggle(updateDictTypeStatus, {
     onSuccess: async () => {
-      showSuccess('字典类型状态已更新')
       await loadDictTypes()
     },
   })
 
   const { handleToggleStatus: handleToggleItemStatus } = useStatusToggle(updateDictItemStatus, {
     onSuccess: async () => {
-      showSuccess('字典项状态已更新')
       await loadDictItems()
     },
   })
@@ -200,11 +198,9 @@ export function useDictPage() {
   async function submitType() {
     if (typeFormMode.value === 'create') {
       await createDictTypeRequest(buildDictTypeCreatePayload(typeFormModel))
-      showSuccess('字典类型创建成功')
       message.success('字典类型创建成功')
     } else {
       await updateDictTypeRequest(typeFormModel.id, buildDictTypeUpdatePayload(typeFormModel))
-      showSuccess('字典类型已更新')
       message.success('字典类型更新成功')
     }
 
@@ -219,11 +215,9 @@ export function useDictPage() {
 
     if (itemFormMode.value === 'create') {
       await createDictItemRequest(buildDictItemCreatePayload(selectedTypeID.value, itemFormModel))
-      showSuccess('字典项创建成功')
       message.success('字典项创建成功')
     } else {
       await updateDictItemRequest(itemFormModel.id, buildDictItemUpdatePayload(itemFormModel))
-      showSuccess('字典项已更新')
       message.success('字典项更新成功')
     }
 
@@ -272,11 +266,23 @@ export function useDictPage() {
     void loadDictItems()
   }
 
+  async function handleDeleteType(row: DictTypeItem) {
+    await deleteDictTypeRequest(row.id)
+    message.success('字典类型已删除')
+    await loadDictTypes()
+  }
+
+  async function handleDeleteItem(row: DictItem) {
+    await deleteDictItemRequest(row.id)
+    message.success('字典项已删除')
+    await loadDictItems()
+  }
+
   const typeColumns: DataTableColumns<DictTypeItem> = [
     {
       title: '字典类型',
       key: 'code',
-      width: 168,
+      width: 148,
       render(row) {
         return h('div', { class: 'min-w-0 leading-5' }, [
           h('p', { class: 'truncate font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
@@ -287,13 +293,13 @@ export function useDictPage() {
     {
       title: '排序',
       key: 'sort',
-      width: 56,
+      width: 52,
       align: 'center',
     },
     {
       title: '状态',
       key: 'status',
-      width: 76,
+      width: 72,
       align: 'center',
       render(row) {
         return h(
@@ -306,7 +312,8 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 120,
+      width: 160,
+      fixed: 'right',
       render(row) {
         const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
 
@@ -342,6 +349,21 @@ export function useDictPage() {
                       },
                     )
                   : null,
+                canUse('system:dict:type:delete')
+                  ? h(
+                      NPopconfirm,
+                      { onPositiveClick: () => handleDeleteType(row) },
+                      {
+                        trigger: () =>
+                          h(
+                            NButton,
+                            { size: 'tiny', secondary: true, type: 'error' },
+                            { default: () => '删除' },
+                          ),
+                        default: () => '删除前请确认该字典类型下已经没有字典项。',
+                      },
+                    )
+                  : null,
               ].filter(Boolean),
           },
         )
@@ -353,7 +375,7 @@ export function useDictPage() {
     {
       title: '字典项',
       key: 'item_key',
-      minWidth: 220,
+      minWidth: 160,
       render(row) {
         return h('div', { class: 'leading-6' }, [
           h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.label)),
@@ -364,7 +386,7 @@ export function useDictPage() {
     {
       title: '标签样式',
       key: 'tag_type',
-      width: 120,
+      width: 88,
       render(row) {
         if (!row.tag_type) {
           return h('span', { class: 'text-[var(--ez-text-light)]' }, '-')
@@ -380,12 +402,12 @@ export function useDictPage() {
     {
       title: '排序',
       key: 'sort',
-      width: 76,
+      width: 56,
     },
     {
       title: '状态',
       key: 'status',
-      width: 90,
+      width: 72,
       render(row) {
         return h(
           NTag,
@@ -397,7 +419,7 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 176,
+      width: 160,
       fixed: 'right',
       render(row) {
         const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
@@ -434,6 +456,21 @@ export function useDictPage() {
                       },
                     )
                   : null,
+                canUse('system:dict:item:delete')
+                  ? h(
+                      NPopconfirm,
+                      { onPositiveClick: () => handleDeleteItem(row) },
+                      {
+                        trigger: () =>
+                          h(
+                            NButton,
+                            { size: 'small', ghost: true, type: 'error' },
+                            { default: () => '删除' },
+                          ),
+                        default: () => '确认删除该字典项？',
+                      },
+                    )
+                  : null,
               ].filter(Boolean),
           },
         )
@@ -456,7 +493,6 @@ export function useDictPage() {
 
   return {
     canUse,
-    closeSuccess,
     dictItemTotal,
     dictItems,
     dictTypeTotal,
@@ -484,7 +520,6 @@ export function useDictPage() {
     openItemCreate,
     openTypeCreate,
     selectedType,
-    successText,
     submitItem,
     submitType,
     typeColumns,

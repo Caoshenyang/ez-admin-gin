@@ -37,11 +37,12 @@ defineEmits<{ close: [] }>()
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
+  overflow: hidden;
   border-bottom: 1px solid var(--ez-border-light);
   background: var(--ez-card-bg);
-  padding: 16px 20px 14px;
+  padding: 12px 16px 11px;
 }
 
 .form-modal-header__copy {
@@ -51,24 +52,24 @@ defineEmits<{ close: [] }>()
 .form-modal-header__copy h2 {
   margin: 0;
   color: var(--ez-text-main);
-  font-size: var(--ez-text-xl);
+  font-size: var(--ez-text-lg);
   font-weight: 700;
-  line-height: 26px;
+  line-height: 23px;
 }
 
 .form-modal-header__copy p {
   max-width: 480px;
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--ez-text-sub);
-  font-size: var(--ez-text-sm);
-  line-height: 21px;
+  font-size: var(--ez-text-xs);
+  line-height: 19px;
 }
 
 .form-modal-header__close {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   justify-self: end;
-  margin-top: -3px;
+  margin-top: -2px;
   border: 1px solid transparent;
   border-radius: var(--ez-radius-control);
   color: var(--ez-text-sub);

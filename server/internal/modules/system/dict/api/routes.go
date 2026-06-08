@@ -19,9 +19,11 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	group.POST("/dict-types", handler.CreateType)
 	group.POST("/dict-types/:id/update", handler.UpdateType)
 	group.POST("/dict-types/:id/status", handler.UpdateTypeStatus)
+	group.POST("/dict-types/:id/delete", handler.DeleteType)
 
 	group.GET("/dict-items", handler.ListItems)
 	group.POST("/dict-items", handler.CreateItem)
 	group.POST("/dict-items/:id/update", handler.UpdateItem)
 	group.POST("/dict-items/:id/status", handler.UpdateItemStatus)
+	group.POST("/dict-items/:id/delete", handler.DeleteItem)
 }

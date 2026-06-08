@@ -24,6 +24,7 @@ type UserRepository interface {
 	UpdateStatus(db *gorm.DB, user *model.User, status model.UserStatus) error
 	ReplaceRoles(db *gorm.DB, userID uint, roleIDs []uint) error
 	ReplacePosts(db *gorm.DB, userID uint, postIDs []uint) error
+	Delete(db *gorm.DB, user *model.User) error
 }
 
 // UserTransactor 是用户模块使用的事务管理器类型别名。

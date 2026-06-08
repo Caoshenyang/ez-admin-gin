@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8" />
+<script>
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
+  localStorage.setItem('ez-admin-access-token', 'mock-token')
+  localStorage.setItem('ez-admin-token-type', 'Bearer')
+  localStorage.setItem(
+    'ez-admin-user-info',
+    JSON.stringify({
+      userId: 1,
+      username: 'admin',
+      nickname: '张晓明',
+      expiresAt,
+    }),
+  )
+
+  location.replace('/dashboard')
+</script>

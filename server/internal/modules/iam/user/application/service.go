@@ -216,3 +216,19 @@ func (s *Service) UpdateRoles(actor datascope.Actor, userID uint, currentUserID 
 
 	return normalizedRoleIDs, nil
 }
+
+// Delete 删除指定用户，并清理角色、岗位关联。
+func (s *Service) Delete(actor datascope.Actor, userID uint, currentUserID uint) error {
+	if currentUserID == userID {
+		return errorsx.BadRequest("不能删除当前登录用户")
+	}
+
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
+		user, err := s.repo.FindByIDInScope(tx, actor, userID)
+		if err != nil {
+			return err
+		}
+
+		return s.repo.Delete(tx, &user)
+	})
+}

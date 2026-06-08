@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import { EllipsisHorizontal } from '@vicons/ionicons5'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import {
   NButton,
   NDataTable,
-  NDropdown,
-  NIcon,
-  NPagination,
   NPopconfirm,
   NSpace,
   NTag,
 } from 'naive-ui'
 import { computed, h } from 'vue'
 
-import EzTableCard from '@/components/ez/EzTableCard.vue'
-import TableStatsBar from '@/components/TableStatsBar.vue'
+import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText, formatTime } from '@/utils/format'
 import { UserStatus, type UserItem } from '../types/user'
 
@@ -34,6 +29,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   checkedRowKeysChange: [keys: DataTableRowKey[]]
+  delete: [row: UserItem]
   edit: [row: UserItem]
   pageChange: [page: number]
   pageSizeChange: [pageSize: number]
@@ -47,7 +43,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '用户',
     key: 'username',
-    minWidth: 180,
+    minWidth: 150,
     render(row) {
       return h('div', { class: 'leading-6' }, [
         h('p', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.username)),
@@ -58,7 +54,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '部门',
     key: 'department_id',
-    minWidth: 180,
+    minWidth: 120,
     render(row) {
       if (row.department_id === 0) {
         return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未分配')
@@ -74,43 +70,39 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '角色',
     key: 'role_ids',
-    minWidth: 220,
+    minWidth: 150,
     render(row) {
       if (row.role_ids.length === 0) {
         return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未分配')
       }
 
-      return h(NSpace, { size: 6 }, {
-        default: () => row.role_ids.map((roleID) =>
-          h(NTag, { size: 'small', bordered: false }, { default: () => props.roleNameMap.get(roleID) ?? `角色 ${roleID}` }),
-        ),
-      })
+      return h('div', { class: 'flex flex-wrap gap-1' }, row.role_ids.map((roleID) =>
+        h(NTag, { size: 'small', bordered: false }, { default: () => props.roleNameMap.get(roleID) ?? `角色 ${roleID}` }),
+      ))
     },
   },
   {
     title: '岗位',
     key: 'post_ids',
-    minWidth: 220,
+    minWidth: 150,
     render(row) {
       if (row.post_ids.length === 0) {
         return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未绑定')
       }
 
-      return h(NSpace, { size: 6 }, {
-        default: () => row.post_ids.map((postID) =>
-          h(
-            NTag,
-            { size: 'small', bordered: false, type: 'info' },
-            { default: () => props.postNameMap.get(postID) ?? `岗位 ${postID}` },
-          ),
+      return h('div', { class: 'flex flex-wrap gap-1' }, row.post_ids.map((postID) =>
+        h(
+          NTag,
+          { size: 'small', bordered: false, type: 'info' },
+          { default: () => props.postNameMap.get(postID) ?? `岗位 ${postID}` },
         ),
-      })
+      ))
     },
   },
   {
     title: '状态',
     key: 'status',
-    width: 110,
+    width: 86,
     render(row) {
       return h(
         NTag,
@@ -122,7 +114,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '创建时间',
     key: 'created_at',
-    width: 190,
+    width: 150,
     render(row) {
       return formatTime(row.created_at)
     },
@@ -130,67 +122,77 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 220,
-    fixed: 'right',
+    minWidth: 190,
     render(row) {
       const nextStatus = row.status === UserStatus.Enabled ? UserStatus.Disabled : UserStatus.Enabled
-      const dropdownOptions = props.canUse('system:user:assign-role')
-        ? [{ label: '分配角色', key: `role:${row.id}` }]
-        : []
 
-      return h(NSpace, { size: 8, align: 'center' }, {
+      return h(NSpace, { size: 8, align: 'center', wrap: true }, {
         default: () => [
-          props.canUse('system:user:update')
-            ? h(
-                NButton,
-                {
-                  size: 'small',
-                  ghost: true,
-                  type: 'info',
-                  class: 'min-w-[48px]',
-                  onClick: () => emit('edit', row),
-                },
-                { default: () => '编辑' },
-              )
-            : null,
-          props.canUse('system:user:status')
-            ? h(
-                NPopconfirm,
-                { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
-                {
-                  trigger: () =>
-                    h(
-                      NButton,
-                      {
-                        size: 'small',
-                        ghost: true,
-                        type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
-                        class: 'min-w-[48px]',
-                      },
-                      { default: () => (nextStatus === UserStatus.Disabled ? '禁用' : '启用') },
-                    ),
-                  default: () => `确认${nextStatus === UserStatus.Disabled ? '禁用' : '启用'}该用户？`,
-                },
-              )
-            : null,
-          dropdownOptions.length > 0
-            ? h(
-                NDropdown,
-                {
-                  options: dropdownOptions,
-                  trigger: 'click',
-                  onSelect: () => emit('role', row),
-                },
-                {
-                  default: () =>
-                    h(
-                      NButton,
-                      { size: 'small', quaternary: true, class: 'min-w-[36px] px-2' },
-                      { icon: () => h(NIcon, null, { default: () => h(EllipsisHorizontal) }) },
-                    ),
-                },
-              )
-            : null,
+        props.canUse('system:user:update')
+          ? h(
+              NButton,
+              {
+                size: 'small',
+                ghost: true,
+                type: 'info',
+                class: 'min-w-[48px]',
+                onClick: () => emit('edit', row),
+              },
+              { default: () => '编辑' },
+            )
+          : null,
+        props.canUse('system:user:status')
+          ? h(
+              NPopconfirm,
+              { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
+              {
+                trigger: () =>
+                  h(
+                    NButton,
+                    {
+                      size: 'small',
+                      ghost: true,
+                      type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
+                      class: 'min-w-[48px]',
+                    },
+                    { default: () => (nextStatus === UserStatus.Disabled ? '禁用' : '启用') },
+                  ),
+                default: () => `确认${nextStatus === UserStatus.Disabled ? '禁用' : '启用'}该用户？`,
+              },
+            )
+          : null,
+        props.canUse('system:user:delete')
+          ? h(
+              NPopconfirm,
+              { onPositiveClick: () => emit('delete', row) },
+              {
+                trigger: () =>
+                  h(
+                    NButton,
+                    {
+                      size: 'small',
+                      ghost: true,
+                      type: 'error',
+                      class: 'min-w-[48px]',
+                    },
+                    { default: () => '删除' },
+                  ),
+                default: () => '删除后用户账号和角色/岗位关联会一起移除，确认继续？',
+              },
+            )
+          : null,
+        props.canUse('system:user:assign-role')
+          ? h(
+              NButton,
+              {
+                size: 'small',
+                ghost: true,
+                type: 'primary',
+                onClick: () => emit('role', row),
+              },
+              { default: () => '分配角色' },
+            )
+          : null,
         ].filter(Boolean),
       })
     },
@@ -199,38 +201,40 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 </script>
 
 <template>
-  <EzTableCard>
-    <TableStatsBar>
+  <EzDataTable
+    remote
+    :columns="columns"
+    :data="users"
+    :loading="loading"
+    :page="page"
+    :page-size="pageSize"
+    :total="displayTotal"
+    @page-change="(page) => emit('pageChange', page)"
+    @page-size-change="(pageSize) => emit('pageSizeChange', pageSize)"
+    @refresh="emit('refresh')"
+  >
+    <template #toolbarSummary>
       <span>已选 {{ selectedCount }} 项</span>
-      <template #actions>
-        <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
-      </template>
-    </TableStatsBar>
+    </template>
 
-    <NDataTable
-      remote
-      :columns="columns"
-      :data="users"
-      :loading="loading"
-      :pagination="false"
-      :row-key="(row: UserItem) => row.id"
-      :checked-row-keys="checkedRowKeys"
-      :bordered="false"
-      :scroll-x="1368"
-      @update:checked-row-keys="(keys) => emit('checkedRowKeysChange', keys)"
-    />
-
-    <div class="ez-table-footer">
-      <span>共 {{ displayTotal }} 条，已选择 {{ selectedCount }} 条</span>
-      <NPagination
-        :page="page"
-        :page-size="pageSize"
-        :item-count="displayTotal"
-        :page-sizes="[10, 20, 50]"
-        show-size-picker
-        @update:page="(page) => emit('pageChange', page)"
-        @update:page-size="(pageSize) => emit('pageSizeChange', pageSize)"
+    <template #body>
+      <NDataTable
+        remote
+        class="ez-table-fill-table"
+        :columns="columns"
+        :data="users"
+        :loading="loading"
+        :pagination="false"
+        :row-key="(row: UserItem) => row.id"
+        :checked-row-keys="checkedRowKeys"
+        :bordered="false"
+        flex-height
+        @update:checked-row-keys="(keys) => emit('checkedRowKeysChange', keys)"
       />
-    </div>
-  </EzTableCard>
+    </template>
+
+    <template #footerSummary>
+      <span>共 {{ displayTotal }} 条，已选择 {{ selectedCount }} 条</span>
+    </template>
+  </EzDataTable>
 </template>

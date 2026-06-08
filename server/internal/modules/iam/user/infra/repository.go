@@ -265,3 +265,14 @@ func (r *Repository) ReplacePosts(db *gorm.DB, userID uint, postIDs []uint) erro
 
 	return db.Create(&rows).Error
 }
+
+// Delete 软删除用户，并清理角色、岗位关联。
+func (r *Repository) Delete(db *gorm.DB, user *model.User) error {
+	if err := db.Where("user_id = ?", user.ID).Delete(&model.UserRole{}).Error; err != nil {
+		return err
+	}
+	if err := db.Where("user_id = ?", user.ID).Delete(&model.UserPost{}).Error; err != nil {
+		return err
+	}
+	return db.Delete(user).Error
+}

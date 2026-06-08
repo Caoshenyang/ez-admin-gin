@@ -35,3 +35,9 @@ export async function updatePostStatus(id: number, payload: UpdatePostStatusPayl
   )
   return response.data.data
 }
+
+// deletePost 删除指定岗位。
+export async function deletePost(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/posts/${id}/delete`)
+  return response.data.data
+}

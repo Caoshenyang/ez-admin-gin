@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import NoticeFilterBar from '../components/NoticeFilterBar.vue'
@@ -9,7 +9,6 @@ import { useNoticePage } from '../composables/useNoticePage'
 
 const {
   canUse,
-  closeSuccess,
   columns,
   formMode,
   formModel,
@@ -28,7 +27,6 @@ const {
   rules,
   saving,
   submitForm,
-  successText,
   total,
 } = useNoticePage()
 </script>
@@ -43,10 +41,6 @@ const {
           </NButton>
         </template>
       </PageHeader>
-
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
 
       <NoticeFilterBar v-model:query="query" @search="handleSearch" @reset="handleReset" />
 

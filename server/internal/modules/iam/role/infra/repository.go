@@ -150,6 +150,13 @@ func (r *Repository) UpdateStatus(db *gorm.DB, role *model.Role, status model.Ro
 	return nil
 }
 
+// CountUsers 统计绑定到该角色的用户数量。
+func (r *Repository) CountUsers(db *gorm.DB, roleID uint) (int64, error) {
+	var count int64
+	err := db.Model(&model.UserRole{}).Where("role_id = ?", roleID).Count(&count).Error
+	return count, err
+}
+
 // RolePermissions 批量查询指定角色编码的 Casbin 权限策略。
 func (r *Repository) RolePermissions(roleCodes []string) (map[string][]roledomain.PermissionItem, error) {
 	result := make(map[string][]roledomain.PermissionItem, len(roleCodes))
@@ -256,4 +263,9 @@ func (r *Repository) ReplaceCustomDepartments(db *gorm.DB, roleID uint, departme
 	}
 
 	return db.Create(&rows).Error
+}
+
+// Delete 软删除角色记录。
+func (r *Repository) Delete(db *gorm.DB, role *model.Role) error {
+	return db.Delete(role).Error
 }

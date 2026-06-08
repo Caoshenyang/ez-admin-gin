@@ -23,7 +23,7 @@ type Department struct {
 	Ancestors    string           `gorm:"size:500;not null;default:''" json:"ancestors"`
 	Name         string           `gorm:"size:64;not null" json:"name"`
 	Code         string           `gorm:"size:64;not null;uniqueIndex" json:"code"`
-	LeaderUserID uint             `gorm:"not null;default:0;index" json:"leader_user_id"`
+	LeaderUserID *uint            `gorm:"index" json:"leader_user_id"`
 	Sort         int              `gorm:"not null;default:0" json:"sort"`
 	Status       DepartmentStatus `gorm:"type:smallint;not null;default:1" json:"status"`
 	Remark       string           `gorm:"size:255;not null;default:''" json:"remark"`

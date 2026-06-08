@@ -141,6 +141,31 @@ func (h *Handler) UpdateTypeStatus(c *gin.Context) {
 	httpx.Success(c, gin.H{"id": typeID, "status": req.Status})
 }
 
+// DeleteType godoc
+// @Summary      删除字典类型
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint  true  "字典类型 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /system/dict-types/{id}/delete [post]
+func (h *Handler) DeleteType(c *gin.Context) {
+	typeID, ok := httpx.UintIDParam(c, "id", "字典类型 ID", h.log)
+	if !ok {
+		return
+	}
+
+	if err := h.service.DeleteType(typeID); err != nil {
+		httpx.WriteError(c, err, "删除字典类型失败", h.log)
+		return
+	}
+
+	httpx.Success(c, gin.H{"id": typeID})
+}
+
 // ListItems godoc
 // @Summary      查询字典项列表
 // @Tags         System / 字典管理
@@ -262,4 +287,29 @@ func (h *Handler) UpdateItemStatus(c *gin.Context) {
 	}
 
 	httpx.Success(c, gin.H{"id": itemID, "status": req.Status})
+}
+
+// DeleteItem godoc
+// @Summary      删除字典项
+// @Tags         System / 字典管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint  true  "字典项 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /system/dict-items/{id}/delete [post]
+func (h *Handler) DeleteItem(c *gin.Context) {
+	itemID, ok := httpx.UintIDParam(c, "id", "字典项 ID", h.log)
+	if !ok {
+		return
+	}
+
+	if err := h.service.DeleteItem(itemID); err != nil {
+		httpx.WriteError(c, err, "删除字典项失败", h.log)
+		return
+	}
+
+	httpx.Success(c, gin.H{"id": itemID})
 }

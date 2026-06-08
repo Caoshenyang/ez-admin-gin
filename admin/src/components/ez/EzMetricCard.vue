@@ -26,11 +26,7 @@ const trendClass = computed(() => {
         <p class="ez-metric-card__title">{{ title }}</p>
         <strong class="ez-metric-card__value">{{ value }}</strong>
       </div>
-      <EzIconBox
-        v-if="icon"
-        :icon="icon"
-        :color="iconColor ?? 'var(--ez-primary)'"
-      />
+      <EzIconBox v-if="icon" :icon="icon" :color="iconColor ?? 'var(--ez-primary)'" />
     </div>
     <p v-if="trend" class="ez-metric-card__trend" :class="trendClass">{{ trend }}</p>
   </article>
@@ -38,11 +34,12 @@ const trendClass = computed(() => {
 
 <style scoped>
 .ez-metric-card {
-  border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-card);
+  overflow: hidden;
+  border: 1px solid var(--ez-component-border);
+  border-radius: var(--ez-radius-control);
   background: var(--ez-card-bg);
-  padding: 18px;
-  box-shadow: var(--ez-shadow-sm);
+  padding: 15px;
+  box-shadow: var(--ez-component-shadow);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -65,21 +62,21 @@ const trendClass = computed(() => {
 .ez-metric-card__title {
   margin: 0;
   color: var(--ez-text-secondary);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: var(--ez-text-xs);
+  font-weight: 700;
 }
 
 .ez-metric-card__value {
   display: block;
-  margin-top: 7px;
+  margin-top: 6px;
   color: var(--ez-text-main);
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 600;
   line-height: 1.1;
 }
 
 .ez-metric-card__trend {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   font-size: 12px;
   font-weight: 600;
 }

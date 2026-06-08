@@ -21,12 +21,13 @@ defineSlots<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-card);
+  gap: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ez-component-border);
+  border-radius: var(--ez-radius-control);
   background: var(--ez-card-bg);
-  padding: 14px 16px;
-  box-shadow: var(--ez-shadow-sm);
+  padding: 11px 12px;
+  box-shadow: var(--ez-component-shadow);
 }
 
 .ez-search-panel__fields {
@@ -35,7 +36,7 @@ defineSlots<{
   flex: 1;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ez-search-panel__actions {
@@ -48,34 +49,35 @@ defineSlots<{
 }
 
 :slotted(.ez-search-field) {
-  width: 156px;
+  width: 148px;
   min-width: 0;
-  flex: 0 1 156px;
+  flex: 0 1 148px;
+  --n-height: 32px;
 }
 
 :slotted(.ez-search-field--xs) {
-  width: 132px;
-  flex-basis: 132px;
+  width: 124px;
+  flex-basis: 124px;
 }
 
 :slotted(.ez-search-field--sm) {
-  width: 148px;
-  flex-basis: 148px;
+  width: 140px;
+  flex-basis: 140px;
 }
 
 :slotted(.ez-search-field--md) {
-  width: 172px;
-  flex-basis: 172px;
+  width: 164px;
+  flex-basis: 164px;
 }
 
 :slotted(.ez-search-field--primary) {
-  width: 268px;
-  flex-basis: 268px;
+  width: 248px;
+  flex-basis: 248px;
 }
 
 :slotted(.ez-search-field--wide) {
-  width: 320px;
-  flex-basis: 320px;
+  width: 292px;
+  flex-basis: 292px;
 }
 
 @media (max-width: 720px) {

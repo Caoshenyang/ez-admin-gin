@@ -100,6 +100,7 @@ const (
 	PermissionUpdateStatus      = "system:role:update_status"
 	PermissionUpdatePermissions = "system:role:update_permissions"
 	PermissionUpdateMenus       = "system:role:update_menus"
+	PermissionDelete            = "system:role:delete"
 	SuperAdminRoleCode          = "super_admin"
 )
 

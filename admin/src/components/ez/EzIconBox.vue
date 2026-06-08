@@ -2,14 +2,17 @@
 import { NIcon } from 'naive-ui'
 import type { Component } from 'vue'
 
-withDefaults(defineProps<{
-  color?: string
-  icon: Component
-  softColor?: string
-}>(), {
-  color: 'var(--ez-primary)',
-  softColor: 'var(--ez-primary-light)',
-})
+withDefaults(
+  defineProps<{
+    color?: string
+    icon: Component
+    softColor?: string
+  }>(),
+  {
+    color: 'var(--ez-primary)',
+    softColor: 'var(--ez-primary-light)',
+  },
+)
 </script>
 
 <template>
@@ -21,11 +24,13 @@ withDefaults(defineProps<{
 <style scoped>
 .ez-icon-box {
   display: inline-flex;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border: 1px solid var(--ez-component-border);
+  border-radius: var(--ez-radius-control);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
 }
 </style>

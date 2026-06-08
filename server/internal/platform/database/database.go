@@ -14,6 +14,7 @@ import (
 	gormLogger "gorm.io/gorm/logger"
 )
 
+// New 打开数据库连接，配置连接池，并执行一次连通性检查。
 func New(cfg platformConfig.DatabaseConfig, log *zap.Logger) (*gorm.DB, error) {
 	dialector, err := openDialector(cfg)
 	if err != nil {
@@ -50,6 +51,7 @@ func New(cfg platformConfig.DatabaseConfig, log *zap.Logger) (*gorm.DB, error) {
 	return db, nil
 }
 
+// Ping 检查数据库连接是否可用。
 func Ping(db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
@@ -61,6 +63,7 @@ func Ping(db *gorm.DB) error {
 	return nil
 }
 
+// Close 关闭底层数据库连接池。
 func Close(db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
@@ -69,6 +72,7 @@ func Close(db *gorm.DB) error {
 	return sqlDB.Close()
 }
 
+// MigrateDSN 为迁移工具生成当前数据库驱动对应的连接串。
 func MigrateDSN(cfg platformConfig.DatabaseConfig) (string, error) {
 	switch cfg.Driver {
 	case "postgres":

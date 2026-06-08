@@ -36,3 +36,9 @@ export async function updateConfigStatus(id: number, payload: UpdateConfigStatus
   )
   return response.data.data
 }
+
+// 删除系统配置
+export async function deleteConfig(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/configs/${id}/delete`)
+  return response.data.data
+}

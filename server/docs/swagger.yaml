@@ -520,6 +520,7 @@ definitions:
         type: string
       leader_user_id:
         type: integer
+        x-nullable: true
       name:
         type: string
       parent_id:
@@ -537,6 +538,7 @@ definitions:
         type: string
       leader_user_id:
         type: integer
+        x-nullable: true
       name:
         type: string
       parent_id:
@@ -1869,6 +1871,36 @@ paths:
       summary: 创建系统配置
       tags:
       - System / 配置管理
+  /system/configs/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 配置 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除系统配置
+      tags:
+      - System / 配置管理
   /system/configs/{id}/status:
     post:
       consumes:
@@ -2036,6 +2068,32 @@ paths:
       summary: 创建部门
       tags:
       - IAM / 部门管理
+  /system/departments/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 部门 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除部门
+      tags:
+      - IAM / 部门管理
   /system/departments/{id}/status:
     post:
       consumes:
@@ -2184,6 +2242,36 @@ paths:
       security:
       - BearerAuth: []
       summary: 创建字典项
+      tags:
+      - System / 字典管理
+  /system/dict-items/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典项 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除字典项
       tags:
       - System / 字典管理
   /system/dict-items/{id}/status:
@@ -2342,6 +2430,36 @@ paths:
       security:
       - BearerAuth: []
       summary: 创建字典类型
+      tags:
+      - System / 字典管理
+  /system/dict-types/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 字典类型 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除字典类型
       tags:
       - System / 字典管理
   /system/dict-types/{id}/status:
@@ -2772,6 +2890,36 @@ paths:
       summary: 创建公告
       tags:
       - System / 公告管理
+  /system/notices/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 公告 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除公告
+      tags:
+      - System / 公告管理
   /system/notices/{id}/status:
     post:
       consumes:
@@ -3076,6 +3224,32 @@ paths:
       summary: 创建岗位
       tags:
       - IAM / 岗位管理
+  /system/posts/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 岗位 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除岗位
+      tags:
+      - IAM / 岗位管理
   /system/posts/{id}/status:
     post:
       consumes:
@@ -3193,6 +3367,32 @@ paths:
       security:
       - BearerAuth: []
       summary: 创建角色
+      tags:
+      - IAM / 角色管理
+  /system/roles/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 角色 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除角色
       tags:
       - IAM / 角色管理
   /system/roles/{id}/menus:
@@ -3396,6 +3596,36 @@ paths:
       security:
       - BearerAuth: []
       summary: 创建用户
+      tags:
+      - IAM / 用户管理
+  /system/users/{id}/delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户 ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 删除用户
       tags:
       - IAM / 用户管理
   /system/users/{id}/roles:

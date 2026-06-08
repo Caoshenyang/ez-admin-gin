@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import DictItemModal from '../components/DictItemModal.vue'
@@ -10,7 +10,6 @@ import { useDictPage } from '../composables/useDictPage'
 
 const {
   canUse,
-  closeSuccess,
   dictItemTotal,
   dictItems,
   dictTypeTotal,
@@ -38,7 +37,6 @@ const {
   openItemCreate,
   openTypeCreate,
   selectedType,
-  successText,
   submitItem,
   submitType,
   typeColumns,
@@ -55,7 +53,7 @@ const {
 
 <template>
   <main class="admin-page">
-    <section class="admin-page-section">
+    <section class="admin-page-section dict-page-section">
       <PageHeader title="字典管理" description="先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。">
         <template #actions>
           <NButton v-if="canUse('system:dict:type:create')" type="primary" @click="openTypeCreate">
@@ -64,11 +62,7 @@ const {
         </template>
       </PageHeader>
 
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[560px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
-
-      <div class="grid h-full min-h-[560px] flex-1 gap-4 xl:grid-cols-[520px_minmax(0,1fr)]">
+      <div class="dict-page-layout">
         <DictTypePanel
           :can-use="canUse"
           :columns="typeColumns"
@@ -123,3 +117,26 @@ const {
     />
   </main>
 </template>
+
+<style scoped>
+.dict-page-layout {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  grid-auto-rows: minmax(420px, auto);
+  gap: 14px;
+  overflow: auto;
+}
+
+.dict-page-section {
+  container: dict-page / inline-size;
+}
+
+@container dict-page (min-width: 1080px) {
+  .dict-page-layout {
+    grid-template-columns: minmax(520px, 0.46fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+}
+</style>

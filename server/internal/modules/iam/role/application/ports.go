@@ -26,10 +26,12 @@ type RoleRepository interface {
 	Create(db *gorm.DB, role *model.Role) error
 	UpdateBase(db *gorm.DB, role *model.Role, req roledomain.UpdateRequest) error
 	UpdateStatus(db *gorm.DB, role *model.Role, status model.RoleStatus) error
+	CountUsers(db *gorm.DB, roleID uint) (int64, error)
 	RolePermissions(roleCodes []string) (map[string][]roledomain.PermissionItem, error)
 	RoleMenuIDs(roleIDs []uint) (map[uint][]uint, error)
 	RoleCustomDepartmentIDs(roleIDs []uint) (map[uint][]uint, error)
 	ReplacePermissions(db *gorm.DB, roleCode string, permissions []roledomain.PermissionItem) error
 	ReplaceMenus(db *gorm.DB, roleID uint, menuIDs []uint) error
 	ReplaceCustomDepartments(db *gorm.DB, roleID uint, departmentIDs []uint) error
+	Delete(db *gorm.DB, role *model.Role) error
 }

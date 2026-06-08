@@ -105,14 +105,14 @@ func (r *Repository) CodeExists(db *gorm.DB, code string, excludeID uint) (bool,
 }
 
 // LeaderUsable 校验部门负责人是否存在且处于启用状态。
-func (r *Repository) LeaderUsable(db *gorm.DB, leaderUserID uint) error {
-	if leaderUserID == 0 {
+func (r *Repository) LeaderUsable(db *gorm.DB, leaderUserID *uint) error {
+	if leaderUserID == nil {
 		return nil
 	}
 
 	var count int64
 	err := db.Model(&model.User{}).
-		Where("id = ?", leaderUserID).
+		Where("id = ?", *leaderUserID).
 		Where("status = ?", model.UserStatusEnabled).
 		Count(&count).Error
 	if err != nil {
@@ -131,13 +131,20 @@ func (r *Repository) Create(db *gorm.DB, department *model.Department) error {
 }
 
 // Update 更新部门的所有可编辑字段。
-func (r *Repository) Update(db *gorm.DB, department *model.Department, parentID uint, ancestors string, name string, code string, leaderUserID uint, sort int, status model.DepartmentStatus, remark string) error {
+func (r *Repository) Update(db *gorm.DB, department *model.Department, parentID uint, ancestors string, name string, code string, leaderUserID *uint, sort int, status model.DepartmentStatus, remark string) error {
+	var leaderValue any
+	if leaderUserID == nil {
+		leaderValue = nil
+	} else {
+		leaderValue = *leaderUserID
+	}
+
 	if err := db.Model(department).Updates(map[string]any{
 		"parent_id":      parentID,
 		"ancestors":      ancestors,
 		"name":           name,
 		"code":           code,
-		"leader_user_id": leaderUserID,
+		"leader_user_id": leaderValue,
 		"sort":           sort,
 		"status":         status,
 		"remark":         remark,
@@ -163,6 +170,40 @@ func (r *Repository) UpdateStatus(db *gorm.DB, department *model.Department, sta
 	}
 	department.Status = status
 	return nil
+}
+
+// CanDelete 校验部门是否可以删除（无子部门、无用户归属、未被角色数据范围引用）。
+func (r *Repository) CanDelete(db *gorm.DB, departmentID uint) error {
+	var childCount int64
+	if err := db.Model(&model.Department{}).Where("parent_id = ?", departmentID).Count(&childCount).Error; err != nil {
+		return err
+	}
+	if childCount > 0 {
+		return errorsx.BadRequest("请先删除子部门")
+	}
+
+	var userCount int64
+	if err := db.Model(&model.User{}).Where("department_id = ?", departmentID).Count(&userCount).Error; err != nil {
+		return err
+	}
+	if userCount > 0 {
+		return errorsx.BadRequest("部门已关联用户，不能删除")
+	}
+
+	var roleDataScopeCount int64
+	if err := db.Model(&model.RoleDataScope{}).Where("department_id = ?", departmentID).Count(&roleDataScopeCount).Error; err != nil {
+		return err
+	}
+	if roleDataScopeCount > 0 {
+		return errorsx.BadRequest("部门已用于角色数据范围，不能删除")
+	}
+
+	return nil
+}
+
+// Delete 删除部门记录。
+func (r *Repository) Delete(db *gorm.DB, department *model.Department) error {
+	return db.Delete(department).Error
 }
 
 // Subtree 查询指定部门的整棵子树。

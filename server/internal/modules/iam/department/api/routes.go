@@ -19,4 +19,5 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	group.POST("/departments", handler.Create)
 	group.POST("/departments/:id/update", handler.Update)
 	group.POST("/departments/:id/status", handler.UpdateStatus)
+	group.POST("/departments/:id/delete", handler.Delete)
 }

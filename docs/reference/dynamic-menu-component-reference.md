@@ -91,6 +91,7 @@ function resolveRouteComponent(component: string) {
 当前白名单大致覆盖这些别名：
 
 - `dashboard`
+- `analytics` / `audit`
 - `health`
 - `user` / `users`
 - `role` / `roles`

@@ -165,6 +165,27 @@ func (s *Service) Value(ctx context.Context, key string) (configdomain.ValueResp
 	return configdomain.ValueResponse{Key: item.ConfigKey, Value: item.Value, Source: "db"}, nil
 }
 
+// Delete 删除指定配置，并清理缓存。
+func (s *Service) Delete(ctx context.Context, configID uint) error {
+	var configKey string
+
+	err := s.tx.WithinTransaction(ctx, func(tx *gorm.DB) error {
+		item, err := s.repo.FindByID(tx, configID)
+		if err != nil {
+			return err
+		}
+
+		configKey = item.ConfigKey
+		return s.repo.Delete(tx, &item)
+	})
+	if err != nil {
+		return err
+	}
+
+	s.deleteCache(ctx, configKey)
+	return nil
+}
+
 func (s *Service) cacheKey(key string) string {
 	return cachePrefix + key
 }

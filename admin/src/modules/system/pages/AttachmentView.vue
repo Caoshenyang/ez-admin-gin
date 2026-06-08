@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import { STATUS_FILTER_OPTIONS } from '@/constants/status'
@@ -12,7 +12,6 @@ import { useAttachmentPage } from '../composables/useAttachmentPage'
 const {
   attachments,
   canUse,
-  closeSuccess,
   editFormModel,
   editFormRef,
   editModalVisible,
@@ -35,7 +34,6 @@ const {
   saving,
   submitEdit,
   submitUpload,
-  successText,
   total,
   uploadFileList,
   uploadFormModel,
@@ -71,10 +69,6 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
           </NButton>
         </template>
       </PageHeader>
-
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
 
       <AttachmentFilterBar
         :biz-type="query.biz_type ?? ''"

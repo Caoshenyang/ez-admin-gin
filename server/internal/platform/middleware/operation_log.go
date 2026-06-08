@@ -78,9 +78,13 @@ func operationErrorMessage(c *gin.Context, statusCode int) string {
 
 func truncateOperationLogText(value string, maxLength int) string {
 	value = strings.TrimSpace(value)
-	if len(value) <= maxLength {
+	if maxLength <= 0 {
+		return ""
+	}
+	runes := []rune(value)
+	if len(runes) <= maxLength {
 		return value
 	}
 
-	return value[:maxLength]
+	return string(runes[:maxLength])
 }

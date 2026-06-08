@@ -32,6 +32,7 @@ type Manager struct {
 	now            func() time.Time
 }
 
+// NewManager 创建访问令牌管理器，并校验 JWT 基础配置。
 func NewManager(cfg config.AuthConfig) (*Manager, error) {
 	secret := strings.TrimSpace(cfg.JWTSecret)
 	if len(secret) < 32 {
@@ -49,7 +50,7 @@ func NewManager(cfg config.AuthConfig) (*Manager, error) {
 	return &Manager{
 		secret:         []byte(secret),
 		issuer:         issuer,
-		accessTokenTTL: time.Duration(cfg.AccessTokenTTL) * time.Second,
+		accessTokenTTL: cfg.AccessTokenDuration(),
 		now:            time.Now,
 	}, nil
 }

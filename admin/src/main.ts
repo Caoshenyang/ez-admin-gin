@@ -25,6 +25,14 @@ setMessageHandler((msg) => {
   globalMessage.error(msg, { duration: 3000 })
 })
 
+function isResizeObserverLoopError(message: unknown) {
+  return (
+    typeof message === 'string' &&
+    (message.includes('ResizeObserver loop completed with undelivered notifications') ||
+      message.includes('ResizeObserver loop limit exceeded'))
+  )
+}
+
 // app.config.errorHandler 捕获组件内的未处理异常，避免白屏。
 app.config.errorHandler = (_err, _instance, info) => {
   console.error(`[Vue Error] ${info}:`, _err)
@@ -33,6 +41,10 @@ app.config.errorHandler = (_err, _instance, info) => {
 
 // 全局兜底：捕获未被 Vue 接管的 JS 错误。
 window.onerror = (_message, _source, _lineno, _colno, _error) => {
+  if (isResizeObserverLoopError(_message)) {
+    return true
+  }
+
   console.error('[Global Error]', _message, _error)
   globalMessage.error('页面出现异常，请刷新重试', { duration: 3000 })
 }

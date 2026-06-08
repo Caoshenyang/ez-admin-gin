@@ -3,6 +3,7 @@ import type { FormInst, FormRules, SelectOption, TreeSelectOption } from 'naive-
 import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, NTreeSelect } from 'naive-ui'
 
 import FormModalHeader from '@/components/FormModalHeader.vue'
+import UserSelect from '@/components/UserSelect.vue'
 import type { DepartmentFormModel } from '../types/department-page'
 
 defineProps<{
@@ -47,8 +48,8 @@ const formModel = defineModel<DepartmentFormModel>('model', { required: true })
           />
         </NFormItem>
 
-        <NFormItem label="负责人用户 ID" path="leader_user_id">
-          <NInputNumber v-model:value="formModel.leader_user_id" :min="0" class="w-full" />
+        <NFormItem label="负责人" path="leader_user_id">
+          <UserSelect v-model:value="formModel.leader_user_id" placeholder="请选择负责人" />
         </NFormItem>
 
         <NFormItem label="部门名称" path="name">

@@ -60,6 +60,7 @@ const (
 	PermissionCreate       = "system:notice:create"
 	PermissionUpdate       = "system:notice:update"
 	PermissionUpdateStatus = "system:notice:update_status"
+	PermissionDelete       = "system:notice:delete"
 )
 
 func NormalizeCreateRequest(req CreateRequest) (CreateRequest, error) {

@@ -5,7 +5,6 @@ import { h, ref } from 'vue'
 
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { displayText, formatSize, formatTime } from '@/utils/format'
 import { getFiles, uploadFile } from '../api/file'
 import type { FileItem, FileListQuery } from '../types/file'
@@ -25,7 +24,6 @@ const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']
 export function useFilePage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const uploading = ref(false)
 
   const {
@@ -57,8 +55,7 @@ export function useFilePage() {
       const formData = new FormData()
       formData.append('file', file.file)
       await uploadFile(formData)
-      showSuccess(`文件 ${file.name} 上传成功`)
-      message.success('文件上传成功')
+      message.success(`文件 ${file.name} 上传成功`)
       await load()
     } catch {
       message.error('文件上传失败')
@@ -71,7 +68,7 @@ export function useFilePage() {
     {
       title: '文件',
       key: 'original_name',
-      minWidth: 260,
+      minWidth: 220,
       render(row) {
         const isImage = imageExts.includes(row.ext.toLowerCase())
         return h('div', { class: 'flex items-center gap-3' }, [
@@ -99,7 +96,7 @@ export function useFilePage() {
     {
       title: '类型',
       key: 'ext',
-      width: 100,
+      width: 84,
       render(row) {
         return h(NTag, { size: 'small', bordered: false }, { default: () => displayText(row.ext) })
       },
@@ -107,7 +104,7 @@ export function useFilePage() {
     {
       title: '大小',
       key: 'size',
-      width: 110,
+      width: 92,
       render(row) {
         return formatSize(row.size)
       },
@@ -115,7 +112,7 @@ export function useFilePage() {
     {
       title: '上传时间',
       key: 'created_at',
-      width: 180,
+      width: 150,
       render(row) {
         return formatTime(row.created_at)
       },
@@ -123,7 +120,7 @@ export function useFilePage() {
     {
       title: '操作',
       key: 'actions',
-      width: 100,
+      width: 76,
       fixed: 'right',
       render(row) {
         return h(
@@ -145,7 +142,6 @@ export function useFilePage() {
 
   return {
     canUse,
-    closeSuccess,
     columns,
     extFilterOptions,
     files,
@@ -157,7 +153,6 @@ export function useFilePage() {
     load,
     loading,
     query,
-    successText,
     total,
     uploading,
   }

@@ -117,6 +117,26 @@ func (s *Service) UpdateTypeStatus(typeID uint, status model.SystemDictStatus) e
 	})
 }
 
+// DeleteType 删除字典类型，要求已经清空字典项。
+func (s *Service) DeleteType(typeID uint) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
+		item, err := s.repo.FindTypeByID(tx, typeID)
+		if err != nil {
+			return err
+		}
+
+		itemCount, err := s.repo.CountItemsByType(tx, typeID)
+		if err != nil {
+			return err
+		}
+		if itemCount > 0 {
+			return errorsx.BadRequest("请先删除该字典类型下的字典项")
+		}
+
+		return s.repo.DeleteType(tx, &item)
+	})
+}
+
 // ListItems 按类型 ID、关键词和状态分页查询字典项列表。
 func (s *Service) ListItems(query dictdomain.ItemListQuery) (dictdomain.ItemListResponse, error) {
 	if query.TypeID == 0 {
@@ -220,5 +240,17 @@ func (s *Service) UpdateItemStatus(itemID uint, status model.SystemDictStatus) e
 			return err
 		}
 		return s.repo.UpdateItemStatus(tx, &item, status)
+	})
+}
+
+// DeleteItem 删除指定字典项。
+func (s *Service) DeleteItem(itemID uint) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
+		item, err := s.repo.FindItemByID(tx, itemID)
+		if err != nil {
+			return err
+		}
+
+		return s.repo.DeleteItem(tx, &item)
 	})
 }

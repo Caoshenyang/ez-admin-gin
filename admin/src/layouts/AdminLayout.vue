@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import {
-  LogOutOutline,
-  PersonCircleOutline,
-} from '@vicons/ionicons5'
+import { LogOutOutline, PersonCircleOutline } from '@vicons/ionicons5'
 import type { DropdownOption, MenuOption } from 'naive-ui'
 import { NIcon, NLayout, NLayoutContent, useMessage } from 'naive-ui'
-import { computed, h, onBeforeUnmount, onMounted, watch } from 'vue'
+import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import AppHeader from '@/components/app-shell/AppHeader.vue'
@@ -21,11 +18,7 @@ import {
 import { resetDynamicRoutes } from '../router'
 import { useAdminShellStore } from '../stores/admin-shell'
 import { useNotificationStore } from '../stores/notification'
-import {
-  AUTH_USER_INFO_UPDATED_EVENT,
-  clearAuthSession,
-  getAuthUserInfo,
-} from '../utils/auth'
+import { AUTH_USER_INFO_UPDATED_EVENT, clearAuthSession, getAuthUserInfo } from '../utils/auth'
 import { logout } from '../modules/auth/api/auth'
 
 const route = useRoute()
@@ -33,8 +26,13 @@ const router = useRouter()
 const message = useMessage()
 const shellStore = useAdminShellStore()
 const notificationStore = useNotificationStore()
+const isNarrowScreen = ref(false)
+
+let sidebarMediaQuery: MediaQueryList | null = null
 
 const currentUser = computed(() => getAuthUserInfo())
+
+const sidebarCollapsed = computed(() => isNarrowScreen.value || shellStore.sidebarCollapsed)
 
 const displayName = computed(() => {
   return currentUser.value?.nickname || currentUser.value?.username || '管理员'
@@ -206,7 +204,14 @@ function handleAuthUserUpdate() {
   syncShellByRoute()
 }
 
+function updateNarrowScreenState(event?: MediaQueryListEvent) {
+  isNarrowScreen.value = event?.matches ?? sidebarMediaQuery?.matches ?? false
+}
+
 onMounted(() => {
+  sidebarMediaQuery = window.matchMedia('(max-width: 760px)')
+  updateNarrowScreenState()
+  sidebarMediaQuery.addEventListener('change', updateNarrowScreenState)
   shellStore.hydrateTabs()
   syncShellByRoute()
   window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
@@ -214,6 +219,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  sidebarMediaQuery?.removeEventListener('change', updateNarrowScreenState)
   window.removeEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
   notificationStore.disconnectWS()
 })
@@ -223,7 +229,7 @@ onBeforeUnmount(() => {
   <NLayout class="h-screen overflow-hidden bg-[var(--ez-page-bg)]" has-sider>
     <AppSidebar
       :active-menu-key="shellStore.activeMenuKey"
-      :collapsed="shellStore.sidebarCollapsed"
+      :collapsed="sidebarCollapsed"
       :expanded-menu-keys="shellStore.expandedMenuKeys"
       :menu-options="naiveMenuOptions"
       @navigate="navigateTo"
@@ -232,8 +238,12 @@ onBeforeUnmount(() => {
       @toggle="shellStore.toggleSidebar()"
     />
 
-    <NLayout class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--ez-page-bg)]">
+    <NLayout
+      class="min-w-0 flex-1 overflow-hidden bg-[var(--ez-page-bg)]"
+      content-class="flex h-full min-h-0 flex-col overflow-hidden"
+    >
       <AppHeader
+        class="shrink-0"
         :breadcrumb-text="breadcrumbText"
         :display-name="displayName"
         :dropdown-options="dropdownOptions"
@@ -242,6 +252,7 @@ onBeforeUnmount(() => {
       />
 
       <WorkTabs
+        class="shrink-0"
         :active-full-path="route.fullPath"
         :tabs="shellStore.openTabs"
         @navigate="navigateTo"
@@ -255,7 +266,11 @@ onBeforeUnmount(() => {
         @pin-current="handlePinCurrentTab"
       />
 
-      <NLayoutContent class="min-h-0 flex-1" :native-scrollbar="false">
+      <NLayoutContent
+        class="min-h-0 flex-1 overflow-hidden"
+        content-class="h-full overflow-y-auto"
+        :native-scrollbar="true"
+      >
         <div class="ez-content-surface">
           <RouterView v-slot="{ Component, route: currentRoute }">
             <component :is="Component" :key="shellStore.getRouteViewKey(currentRoute.fullPath)" />

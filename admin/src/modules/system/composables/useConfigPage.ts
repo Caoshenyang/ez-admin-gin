@@ -5,10 +5,9 @@ import { h } from 'vue'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { useStatusToggle } from '@/composables/useStatusToggle'
 import { displayText } from '@/utils/format'
-import { createConfig, getConfigs, updateConfig, updateConfigStatus } from '../api/config'
+import { createConfig, deleteConfig, getConfigs, updateConfig, updateConfigStatus } from '../api/config'
 import { ConfigStatus, type ConfigItem, type ConfigListQuery } from '../types/config'
 import {
   buildConfigCreatePayload,
@@ -22,7 +21,6 @@ import {
 export function useConfigPage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const {
     items: configs,
@@ -50,7 +48,6 @@ export function useConfigPage() {
 
   const { handleToggleStatus } = useStatusToggle(updateConfigStatus, {
     onSuccess: async () => {
-      showSuccess('配置状态已更新')
       await load()
     },
   })
@@ -63,7 +60,7 @@ export function useConfigPage() {
     {
       title: '分组',
       key: 'group_code',
-      width: 140,
+      width: 112,
       render(row) {
         return h(NTag, { size: 'small', bordered: false, type: 'info' }, { default: () => displayText(row.group_code) })
       },
@@ -71,7 +68,7 @@ export function useConfigPage() {
     {
       title: '键',
       key: 'key',
-      width: 200,
+      width: 168,
       ellipsis: { tooltip: true },
       render(row) {
         return displayText(row.key)
@@ -80,7 +77,7 @@ export function useConfigPage() {
     {
       title: '名称',
       key: 'name',
-      width: 160,
+      width: 136,
       render(row) {
         return displayText(row.name)
       },
@@ -88,7 +85,7 @@ export function useConfigPage() {
     {
       title: '值',
       key: 'value',
-      minWidth: 180,
+      minWidth: 160,
       ellipsis: { tooltip: true },
       render(row) {
         return displayText(row.value)
@@ -97,12 +94,12 @@ export function useConfigPage() {
     {
       title: '排序',
       key: 'sort',
-      width: 80,
+      width: 66,
     },
     {
       title: '状态',
       key: 'status',
-      width: 90,
+      width: 78,
       render(row) {
         return h(
           NTag,
@@ -114,7 +111,7 @@ export function useConfigPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 160,
       fixed: 'right',
       render(row) {
         const nextStatus = row.status === ConfigStatus.Enabled ? ConfigStatus.Disabled : ConfigStatus.Enabled
@@ -151,6 +148,21 @@ export function useConfigPage() {
                       },
                     )
                   : null,
+                canUse('system:config:delete')
+                  ? h(
+                      NPopconfirm,
+                      { onPositiveClick: () => handleDelete(row) },
+                      {
+                        trigger: () =>
+                          h(
+                            NButton,
+                            { size: 'small', ghost: true, type: 'error' },
+                            { default: () => '删除' },
+                          ),
+                        default: () => '删除后该配置会从列表和缓存中移除，确认继续？',
+                      },
+                    )
+                  : null,
               ].filter(Boolean),
           },
         )
@@ -161,19 +173,22 @@ export function useConfigPage() {
   async function submitForm() {
     if (formMode.value === 'create') {
       await createConfig(buildConfigCreatePayload(formModel))
-      showSuccess('配置创建成功')
       message.success('配置创建成功')
     } else {
       await updateConfig(formModel.id, buildConfigUpdatePayload(formModel))
-      showSuccess('配置已更新')
       message.success('配置更新成功')
     }
     await load()
   }
 
+  async function handleDelete(row: ConfigItem) {
+    await deleteConfig(row.id)
+    message.success('配置已删除')
+    await load()
+  }
+
   return {
     canUse,
-    closeSuccess,
     columns,
     configs,
     formMode,
@@ -193,7 +208,6 @@ export function useConfigPage() {
     rules,
     saving,
     submitForm,
-    successText,
     total,
   }
 }

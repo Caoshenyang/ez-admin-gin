@@ -4,12 +4,12 @@ import { computed, onMounted, reactive, ref } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { getDepartments } from '../api/department'
 import { getPosts } from '../api/post'
 import { getRoles } from '../api/role'
 import {
   createUser,
+  deleteUser,
   getUsers,
   updateUser,
   updateUserRoles,
@@ -42,7 +42,6 @@ import {
 export function useUserPage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const roleSaving = ref(false)
   const departments = ref<DepartmentItem[]>([])
@@ -190,11 +189,9 @@ export function useUserPage() {
     try {
       if (formMode.value === 'create') {
         await createUser(buildUserCreatePayload(formModel))
-        showSuccess('用户创建成功，临时密码已生成')
         message.success('用户创建成功')
       } else {
         await updateUser(formModel.id, buildUserUpdatePayload(formModel))
-        showSuccess('用户信息已更新')
         message.success('用户更新成功')
       }
 
@@ -207,8 +204,13 @@ export function useUserPage() {
 
   async function handleToggleStatus(row: UserItem, status: UserStatus) {
     await updateUserStatus(row.id, { status })
-    showSuccess(`用户已${status === UserStatus.Enabled ? '启用' : '禁用'}`)
     message.success('用户状态已更新')
+    await loadUsers()
+  }
+
+  async function handleDelete(row: UserItem) {
+    await deleteUser(row.id)
+    message.success('用户已删除')
     await loadUsers()
   }
 
@@ -226,7 +228,6 @@ export function useUserPage() {
     roleSaving.value = true
     try {
       await updateUserRoles(roleUser.value.id, { role_ids: selectedRoleIDs.value })
-      showSuccess('用户角色已更新')
       message.success('用户角色已更新')
       roleVisible.value = false
       await loadUsers()
@@ -242,7 +243,6 @@ export function useUserPage() {
   return {
     canUse,
     checkedRowKeys,
-    closeSuccess,
     departmentNameMap,
     departmentCount,
     departmentFilterTreeOptions,
@@ -259,6 +259,7 @@ export function useUserPage() {
     handlePageChange,
     handlePageSizeChange,
     handleClearDepartment,
+    handleDelete,
     handleReset,
     handleSaveRoles,
     handleSearch,
@@ -284,6 +285,5 @@ export function useUserPage() {
     selectedRoleIDs,
     statusOptions: userStatusOptions,
     submitForm,
-    successText,
   }
 }

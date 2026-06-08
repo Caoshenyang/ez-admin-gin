@@ -19,6 +19,7 @@ type ConfigRepository interface {
 	Create(db *gorm.DB, item *model.SystemConfig) error
 	UpdateBase(db *gorm.DB, item *model.SystemConfig, req configdomain.UpdateRequest) error
 	UpdateStatus(db *gorm.DB, item *model.SystemConfig, status model.SystemConfigStatus) error
+	Delete(db *gorm.DB, item *model.SystemConfig) error
 }
 
 type ConfigCache interface {

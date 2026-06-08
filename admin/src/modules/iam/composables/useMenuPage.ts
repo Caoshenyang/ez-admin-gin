@@ -1,8 +1,7 @@
-import type { FormInst, FormRules, SelectOption } from 'naive-ui'
+import type { DataTableRowKey, FormInst, FormRules, SelectOption } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import {
   createMenu,
@@ -29,13 +28,13 @@ import {
 
 export function useMenuPage() {
   const message = useMessage()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const saving = ref(false)
   const menus = ref<AdminMenu[]>([])
   const formVisible = ref(false)
   const formMode = ref<'create' | 'edit'>('create')
   const formRef = ref<FormInst | null>(null)
+  const checkedRowKeys = ref<DataTableRowKey[]>([])
   const expandedRowKeys = ref<Array<string | number>>([])
 
   const query = reactive<MenuQuery>(defaultMenuQuery())
@@ -65,6 +64,8 @@ export function useMenuPage() {
 
   const buttonCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Button).length)
 
+  const selectedCount = computed(() => checkedRowKeys.value.length)
+
   const parentOptions = computed<SelectOption[]>(() => {
     return buildMenuParentOptions(flatMenus.value, formModel.id)
   })
@@ -85,6 +86,10 @@ export function useMenuPage() {
     expandedRowKeys.value = keys
   }
 
+  function handleCheckedRowKeys(keys: DataTableRowKey[]) {
+    checkedRowKeys.value = keys
+  }
+
   function resetForm() {
     Object.assign(formModel, defaultMenuFormModel())
   }
@@ -94,6 +99,7 @@ export function useMenuPage() {
     try {
       menus.value = await getAdminMenus()
       expandedRowKeys.value = allRowKeys.value
+      checkedRowKeys.value = checkedRowKeys.value.filter((key) => allRowKeys.value.includes(Number(key)))
     } finally {
       loading.value = false
     }
@@ -131,11 +137,9 @@ export function useMenuPage() {
           ...payload,
           code: formModel.code.trim(),
         })
-        showSuccess('菜单创建成功')
         message.success('菜单创建成功')
       } else {
         await updateMenu(formModel.id, payload)
-        showSuccess('菜单信息已更新')
         message.success('菜单信息已更新')
       }
 
@@ -148,18 +152,33 @@ export function useMenuPage() {
 
   async function handleToggleStatus(row: AdminMenu, status: MenuStatus) {
     await updateMenuStatus(row.id, { status })
-    showSuccess(`菜单已${status === MenuStatus.Enabled ? '启用' : '禁用'}`)
     message.success('菜单状态已更新')
     await loadMenus()
   }
 
   async function handleDelete(row: AdminMenu) {
     await deleteMenu(row.id)
-    showSuccess('菜单已删除')
     message.success('菜单已删除')
     await loadMenus()
+    checkedRowKeys.value = checkedRowKeys.value.filter((key) => Number(key) !== row.id)
 
     if (formModel.id === row.id) {
+      formVisible.value = false
+    }
+  }
+
+  async function handleDeleteSelected() {
+    const selectedIds = checkedRowKeys.value.map(Number)
+
+    for (const id of selectedIds) {
+      await deleteMenu(id)
+    }
+
+    message.success('选中菜单已删除')
+    checkedRowKeys.value = []
+    await loadMenus()
+
+    if (selectedIds.includes(formModel.id)) {
       formVisible.value = false
     }
   }
@@ -168,12 +187,16 @@ export function useMenuPage() {
     Object.assign(query, defaultMenuQuery())
   }
 
+  function handleSearch() {
+    expandedRowKeys.value = allRowKeys.value
+  }
+
   onMounted(loadMenus)
 
   return {
     buttonCount,
     canUse,
-    closeSuccess,
+    checkedRowKeys,
     collapseAll,
     componentOptions: routeComponentOptions,
     directoryCount,
@@ -186,9 +209,12 @@ export function useMenuPage() {
     formRef,
     formTypeOptions,
     formVisible,
+    handleCheckedRowKeys,
     handleDelete,
+    handleDeleteSelected,
     handleExpandedChange,
     handleResetQuery,
+    handleSearch,
     handleSubmit,
     handleToggleStatus,
     loadMenus,
@@ -201,8 +227,8 @@ export function useMenuPage() {
     query,
     rules,
     saving,
+    selectedCount,
     statusOptions,
-    successText,
     typeOptions,
   }
 }

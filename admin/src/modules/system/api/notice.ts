@@ -36,3 +36,9 @@ export async function updateNoticeStatus(id: number, payload: UpdateNoticeStatus
   )
   return response.data.data
 }
+
+// 删除公告
+export async function deleteNotice(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/notices/${id}/delete`)
+  return response.data.data
+}

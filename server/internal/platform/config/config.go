@@ -3,9 +3,12 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
+
+const defaultRefreshTokenTTL = 7 * 24 * time.Hour
 
 // Config 汇总整个服务端会读取的配置段。
 type Config struct {
@@ -21,19 +24,23 @@ type Config struct {
 	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
 }
 
+// SwaggerConfig 控制 Swagger UI 是否对外注册。
 type SwaggerConfig struct {
 	Enabled bool `mapstructure:"enabled"`
 }
 
+// AppConfig 描述应用名称和运行环境。
 type AppConfig struct {
 	Name string `mapstructure:"name"`
 	Env  string `mapstructure:"env"`
 }
 
+// ServerConfig 描述 HTTP 服务监听地址。
 type ServerConfig struct {
 	Addr string `mapstructure:"addr"`
 }
 
+// DatabaseConfig 描述数据库连接与连接池配置。
 type DatabaseConfig struct {
 	Driver          string `mapstructure:"driver"`
 	Host            string `mapstructure:"host"`
@@ -46,6 +53,7 @@ type DatabaseConfig struct {
 	ConnMaxLifetime int    `mapstructure:"conn_max_lifetime"`
 }
 
+// RedisConfig 描述 Redis 连接与连接池配置。
 type RedisConfig struct {
 	Host         string `mapstructure:"host"`
 	Port         int    `mapstructure:"port"`
@@ -56,6 +64,7 @@ type RedisConfig struct {
 	PoolSize     int    `mapstructure:"pool_size"`
 }
 
+// AuthConfig 描述 JWT 和刷新令牌配置。
 type AuthConfig struct {
 	JWTSecret       string `mapstructure:"jwt_secret"`
 	AccessTokenTTL  int    `mapstructure:"access_token_ttl"`
@@ -63,6 +72,7 @@ type AuthConfig struct {
 	Issuer          string `mapstructure:"issuer"`
 }
 
+// LogConfig 描述 zap 与日志轮转配置。
 type LogConfig struct {
 	Level      string `mapstructure:"level"`
 	Format     string `mapstructure:"format"`
@@ -73,6 +83,7 @@ type LogConfig struct {
 	Compress   bool   `mapstructure:"compress"`
 }
 
+// UploadConfig 描述本地上传目录、访问路径和文件限制。
 type UploadConfig struct {
 	Dir         string   `mapstructure:"dir"`
 	PublicPath  string   `mapstructure:"public_path"`
@@ -80,10 +91,12 @@ type UploadConfig struct {
 	AllowedExts []string `mapstructure:"allowed_exts"`
 }
 
+// CORSConfig 描述允许跨域访问的前端来源。
 type CORSConfig struct {
 	AllowedOrigins []string `mapstructure:"allowed_origins"`
 }
 
+// RateLimitConfig 描述登录接口的 IP 限流和账号锁定策略。
 type RateLimitConfig struct {
 	LoginMaxRequests      int `mapstructure:"login_max_requests"`
 	LoginWindowSec        int `mapstructure:"login_window_sec"`
@@ -91,6 +104,7 @@ type RateLimitConfig struct {
 	LoginLockoutSec       int `mapstructure:"login_lockout_sec"`
 }
 
+// Load 从 configs/config.yaml 和 EZ_* 环境变量加载服务端配置。
 func Load() (*Config, error) {
 	v := viper.New()
 	v.SetConfigName("config")
@@ -139,6 +153,19 @@ func (c *Config) ValidateProduction() error {
 	}
 
 	return nil
+}
+
+// AccessTokenDuration 返回访问令牌有效期。
+func (c AuthConfig) AccessTokenDuration() time.Duration {
+	return time.Duration(c.AccessTokenTTL) * time.Second
+}
+
+// RefreshTokenDuration 返回刷新令牌有效期；非正数时使用安全兜底值。
+func (c AuthConfig) RefreshTokenDuration() time.Duration {
+	if c.RefreshTokenTTL <= 0 {
+		return defaultRefreshTokenTTL
+	}
+	return time.Duration(c.RefreshTokenTTL) * time.Second
 }
 
 func setDefaults(v *viper.Viper) {

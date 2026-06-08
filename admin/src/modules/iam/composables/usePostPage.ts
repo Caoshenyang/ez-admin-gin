@@ -6,9 +6,8 @@ import { useListLoader } from '@/composables/useListLoader'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useStatusToggle } from '@/composables/useStatusToggle'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { displayText, formatTime } from '@/utils/format'
-import { createPost, getPosts, updatePost, updatePostStatus } from '../api/post'
+import { createPost, deletePost, getPosts, updatePost, updatePostStatus } from '../api/post'
 import { PostStatus, type PostItem } from '../types/post'
 import type { PostFormModel, PostPageQuery } from '../types/post-page'
 import { buildPostPayload, defaultPostFormModel, defaultPostQuery, toPostFormModel } from './post-page.utils'
@@ -21,7 +20,6 @@ const postFormRules: FormRules = {
 export function usePostPage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const {
     items: posts,
@@ -46,7 +44,6 @@ export function usePostPage() {
 
   const { handleToggleStatus: handleToggleStatusBase } = useStatusToggle(updatePostStatus, {
     onSuccess: async () => {
-      showSuccess('岗位状态已更新')
       await load()
     },
   })
@@ -55,7 +52,7 @@ export function usePostPage() {
     {
       title: '岗位',
       key: 'name',
-      minWidth: 240,
+      minWidth: 200,
       render(row) {
         return h('div', { class: 'leading-6' }, [
           h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
@@ -66,12 +63,12 @@ export function usePostPage() {
     {
       title: '排序',
       key: 'sort',
-      width: 90,
+      width: 72,
     },
     {
       title: '状态',
       key: 'status',
-      width: 100,
+      width: 84,
       render(row) {
         return h(
           NTag,
@@ -83,7 +80,7 @@ export function usePostPage() {
     {
       title: '更新时间',
       key: 'updated_at',
-      width: 180,
+      width: 150,
       render(row) {
         return formatTime(row.updated_at)
       },
@@ -91,7 +88,7 @@ export function usePostPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 160,
       render(row) {
         const nextStatus = row.status === PostStatus.Enabled ? PostStatus.Disabled : PostStatus.Enabled
 
@@ -122,7 +119,22 @@ export function usePostPage() {
                           },
                           { default: () => (nextStatus === PostStatus.Disabled ? '禁用' : '启用') },
                         ),
-                      default: () => `确认${nextStatus === PostStatus.Disabled ? '禁用' : '启用'}该岗位？`,
+                        default: () => `确认${nextStatus === PostStatus.Disabled ? '禁用' : '启用'}该岗位？`,
+                      },
+                    )
+                : null,
+              canUse('system:post:delete')
+                ? h(
+                    NPopconfirm,
+                    { onPositiveClick: () => handleDelete(row) },
+                    {
+                      trigger: () =>
+                        h(
+                          NButton,
+                          { size: 'small', ghost: true, type: 'error' },
+                          { default: () => '删除' },
+                        ),
+                      default: () => '删除前请确认该岗位没有绑定到任何用户。',
                     },
                   )
                 : null,
@@ -143,18 +155,21 @@ export function usePostPage() {
 
   async function submitForm() {
     const payload = buildPostPayload(formModel)
+    let createdPost: PostItem | null = null
 
     if (formMode.value === 'create') {
-      await createPost(payload)
-      showSuccess('岗位创建成功')
+      createdPost = await createPost(payload)
       message.success('岗位创建成功')
+      Object.assign(query, defaultPostQuery())
     } else {
       await updatePost(formModel.id, payload)
-      showSuccess('岗位更新成功')
       message.success('岗位更新成功')
     }
 
     await load()
+    if (createdPost && !posts.value.some((post) => post.id === createdPost.id)) {
+      posts.value = [createdPost, ...posts.value].sort((left, right) => left.sort - right.sort || left.id - right.id)
+    }
   }
 
   async function handleSubmit() {
@@ -165,9 +180,14 @@ export function usePostPage() {
     await handleToggleStatusBase(row, status)
   }
 
+  async function handleDelete(row: PostItem) {
+    await deletePost(row.id)
+    message.success('岗位已删除')
+    await load()
+  }
+
   return {
     canUse,
-    closeSuccess,
     columns,
     formMode,
     formModel,
@@ -184,6 +204,5 @@ export function usePostPage() {
     query,
     rules,
     saving,
-    successText,
   }
 }

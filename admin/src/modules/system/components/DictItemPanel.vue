@@ -29,7 +29,7 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 
 <template>
   <NCard class="ez-card h-full min-h-0 min-w-0 overflow-hidden rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
-    <div class="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)]">
+    <div class="dict-item-panel-body grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]">
       <div class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4">
         <div>
           <p class="text-[var(--ez-text-xs)] font-bold tracking-[0.14em] text-[var(--ez-text-light)] uppercase">Items</p>
@@ -55,11 +55,11 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
         </NButton>
       </div>
 
-      <div v-if="selectedType" class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
-        <div class="grid items-center gap-3 px-5 py-4 min-[1281px]:grid-cols-[minmax(240px,320px)_148px_auto] max-[720px]:px-4">
+      <div v-if="selectedType" class="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
+        <div class="dict-item-filter-grid px-5 py-4 max-[720px]:px-4">
           <NInput v-model:value="query.keyword" clearable placeholder="编码 / 名称 / 值" @keyup.enter="$emit('search')" />
           <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" />
-          <div class="ez-filter-actions">
+          <div class="dict-item-filter-actions ez-filter-actions">
             <NButton type="primary" @click="$emit('search')">查询</NButton>
             <NButton @click="$emit('reset')">重置</NButton>
           </div>
@@ -74,7 +74,6 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
           :pagination="false"
           :row-key="(row: DictItem) => row.id"
           :bordered="false"
-          :scroll-x="682"
           flex-height
         />
 
@@ -103,4 +102,32 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 </template>
 
 <style scoped>
+.dict-item-panel-body {
+  container: dict-item-panel / inline-size;
+}
+
+.dict-item-filter-grid {
+  display: grid;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.dict-item-filter-actions {
+  justify-content: flex-start;
+}
+
+@container dict-item-panel (min-width: 560px) {
+  .dict-item-filter-grid {
+    grid-template-columns: minmax(220px, 1fr) 128px max-content;
+  }
+
+  .dict-item-filter-actions {
+    grid-column: auto;
+    justify-content: flex-end;
+  }
+}
 </style>

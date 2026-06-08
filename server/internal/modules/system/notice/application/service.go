@@ -5,6 +5,7 @@ import (
 	"context"
 
 	noticedomain "ez-admin-gin/server/internal/modules/system/notice/domain"
+	errorsx "ez-admin-gin/server/internal/pkg/errorsx"
 	"ez-admin-gin/server/internal/pkg/paging"
 	"ez-admin-gin/server/internal/platform/model"
 
@@ -105,5 +106,20 @@ func (s *Service) UpdateStatus(noticeID uint, status model.NoticeStatus) error {
 			return err
 		}
 		return s.repo.UpdateStatus(tx, &item, status)
+	})
+}
+
+// Delete 删除指定公告。
+func (s *Service) Delete(noticeID uint) error {
+	if noticeID == 0 {
+		return errorsx.BadRequest("公告 ID 不正确")
+	}
+
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
+		item, err := s.repo.FindByID(tx, noticeID)
+		if err != nil {
+			return err
+		}
+		return s.repo.Delete(tx, &item)
 	})
 }

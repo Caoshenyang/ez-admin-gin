@@ -76,6 +76,7 @@ const (
 	PermissionCreate       = "system:config:create"
 	PermissionUpdate       = "system:config:update"
 	PermissionUpdateStatus = "system:config:update_status"
+	PermissionDelete       = "system:config:delete"
 )
 
 func NormalizeCreateRequest(req CreateRequest) (CreateRequest, error) {

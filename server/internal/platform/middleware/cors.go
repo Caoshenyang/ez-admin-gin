@@ -62,7 +62,20 @@ func CORS(cfg platformConfig.CORSConfig, env string) gin.HandlerFunc {
 }
 
 func isLocalhost(origin string) bool {
-	return strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "http://127.0.0.1:")
+	parsed, err := url.Parse(strings.TrimSpace(origin))
+	if err != nil {
+		return false
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return false
+	}
+
+	switch strings.ToLower(parsed.Hostname()) {
+	case "localhost", "127.0.0.1", "::1":
+		return true
+	default:
+		return false
+	}
 }
 
 // AllowedWebSocketOriginPatterns 从 CORS 配置中提取 WebSocket OriginPatterns。
@@ -86,6 +99,7 @@ func AllowedWebSocketOriginPatterns(cfg platformConfig.CORSConfig, env string) [
 	if env != "prod" {
 		add("localhost:*")
 		add("127.0.0.1:*")
+		add("[::1]:*")
 	}
 
 	for _, origin := range cfg.AllowedOrigins {
@@ -110,5 +124,6 @@ func originHost(origin string) string {
 		return parsed.Host
 	}
 
-	return strings.TrimPrefix(origin, "http://")
+	origin = strings.TrimPrefix(origin, "http://")
+	return strings.TrimPrefix(origin, "https://")
 }

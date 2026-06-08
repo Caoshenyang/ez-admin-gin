@@ -105,6 +105,18 @@ func (r *Repository) UpdateTypeStatus(db *gorm.DB, item *dictdomain.DictTypeEnti
 	return nil
 }
 
+// CountItemsByType 统计指定字典类型下仍存在的字典项数量。
+func (r *Repository) CountItemsByType(db *gorm.DB, typeID uint) (int64, error) {
+	var count int64
+	err := db.Model(&dictdomain.DictItemEntity{}).Where("type_id = ?", typeID).Count(&count).Error
+	return count, err
+}
+
+// DeleteType 软删除字典类型记录。
+func (r *Repository) DeleteType(db *gorm.DB, item *dictdomain.DictTypeEntity) error {
+	return db.Delete(item).Error
+}
+
 // ListItems 按类型 ID、关键词和状态分页查询字典项列表。
 func (r *Repository) ListItems(query dictdomain.ItemListQuery, page int, pageSize int, status *model.SystemDictStatus) ([]dictdomain.DictItemEntity, int64, error) {
 	queryDB := r.db.Model(&dictdomain.DictItemEntity{}).Where("type_id = ?", query.TypeID)
@@ -190,4 +202,9 @@ func (r *Repository) UpdateItemStatus(db *gorm.DB, item *dictdomain.DictItemEnti
 	}
 	item.Status = status
 	return nil
+}
+
+// DeleteItem 软删除字典项记录。
+func (r *Repository) DeleteItem(db *gorm.DB, item *dictdomain.DictItemEntity) error {
+	return db.Delete(item).Error
 }

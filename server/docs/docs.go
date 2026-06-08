@@ -986,6 +986,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/configs/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 配置管理"
+                ],
+                "summary": "删除系统配置",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
         "/system/configs/{id}/status": {
             "post": {
                 "security": [
@@ -1183,6 +1231,48 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/departments/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IAM / 部门管理"
+                ],
+                "summary": "删除部门",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "部门 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1447,6 +1537,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/dict-items/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 字典管理"
+                ],
+                "summary": "删除字典项",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "字典项 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
         "/system/dict-items/{id}/status": {
             "post": {
                 "security": [
@@ -1693,6 +1831,54 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/dict-types/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 字典管理"
+                ],
+                "summary": "删除字典类型",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "字典类型 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
                         }
                     },
                     "400": {
@@ -2416,6 +2602,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/notices/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "System / 公告管理"
+                ],
+                "summary": "删除公告",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "公告 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
         "/system/notices/{id}/status": {
             "post": {
                 "security": [
@@ -2919,6 +3153,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/posts/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IAM / 岗位管理"
+                ],
+                "summary": "删除岗位",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "岗位 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
         "/system/posts/{id}/status": {
             "post": {
                 "security": [
@@ -3092,6 +3368,48 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/ez-admin-gin_server_internal_modules_iam_role_api.CreateRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/roles/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IAM / 角色管理"
+                ],
+                "summary": "删除角色",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "角色 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -3409,6 +3727,54 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/ez-admin-gin_server_internal_modules_iam_user_api.CreateRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
+        "/system/users/{id}/delete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IAM / 用户管理"
+                ],
+                "summary": "删除用户",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -4390,7 +4756,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "leader_user_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "x-nullable": true
                 },
                 "name": {
                     "type": "string"
@@ -4416,7 +4783,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "leader_user_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "x-nullable": true
                 },
                 "name": {
                     "type": "string"

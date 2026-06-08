@@ -6,6 +6,8 @@ import type { DashboardData } from '../types/dashboard'
 import { authMenus } from '@/router/dynamic-menu'
 import { displayText } from '@/utils/format'
 import {
+  dashboardChartStats,
+  dashboardCommandItems,
   dashboardCurrentDateLabel,
   dashboardCurrentUserLabel,
   dashboardErrorMessage,
@@ -14,12 +16,23 @@ import {
   dashboardHealthTagType,
   dashboardHeroIcon,
   dashboardHeroStatusText,
+  dashboardInsightCards,
   dashboardIsHealthy,
+  dashboardLatencyBars,
+  dashboardLatencyLabel,
+  dashboardLatencyTone,
   dashboardLoginStatusLabel,
   dashboardLoginStatusTagType,
   dashboardMetricCards,
+  dashboardModuleBars,
   dashboardOperationStatusTagType,
+  dashboardOperationSegments,
   dashboardQuickLinks,
+  dashboardResourceItems,
+  dashboardResourceBars,
+  dashboardRingMetrics,
+  dashboardTrendPoints,
+  dashboardLoginSegments,
   findMenuPathByTitle,
   flattenPageMenus,
   formatDashboardDateTime,
@@ -41,11 +54,30 @@ export function useDashboardHomePage() {
   const visiblePageTotal = computed(() => visiblePageMenus.value.length + 1)
 
   const healthPath = computed(() => findMenuPathByTitle(visiblePageMenus.value, '系统状态'))
+  const loginLogPath = computed(() => findMenuPathByTitle(visiblePageMenus.value, '登录日志'))
+  const operationLogPath = computed(() => findMenuPathByTitle(visiblePageMenus.value, '操作日志'))
   const userManagePath = computed(() => findMenuPathByTitle(visiblePageMenus.value, '用户管理'))
 
   const isHealthy = computed(() => dashboardIsHealthy(dashboard.value))
   const heroStatusText = computed(() => dashboardHeroStatusText(dashboard.value, loading.value))
+  const commandItems = computed(() => {
+    return dashboardCommandItems(dashboard.value, {
+      healthPath: healthPath.value,
+      loginLogPath: loginLogPath.value,
+      operationLogPath: operationLogPath.value,
+    })
+  })
+  const insightCards = computed(() => dashboardInsightCards(dashboard.value, visiblePageTotal.value))
+  const chartStats = computed(() => dashboardChartStats(dashboard.value, visiblePageTotal.value))
+  const latencyBars = computed(() => dashboardLatencyBars(dashboard.value))
+  const loginSegments = computed(() => dashboardLoginSegments(dashboard.value))
   const metricCards = computed(() => dashboardMetricCards(dashboard.value, visiblePageTotal.value))
+  const moduleBars = computed(() => dashboardModuleBars(dashboard.value))
+  const operationSegments = computed(() => dashboardOperationSegments(dashboard.value))
+  const resourceBars = computed(() => dashboardResourceBars(dashboard.value))
+  const resourceItems = computed(() => dashboardResourceItems(dashboard.value))
+  const ringMetrics = computed(() => dashboardRingMetrics(dashboard.value))
+  const trendPoints = computed(() => dashboardTrendPoints(dashboard.value))
   const healthItems = computed(() => dashboardHealthItems(dashboard.value))
   const quickLinks = computed(() => dashboardQuickLinks(visiblePageMenus.value))
   const recentOperations = computed(() => dashboard.value?.recent_operations ?? [])
@@ -87,6 +119,8 @@ export function useDashboardHomePage() {
   })
 
   return {
+    chartStats,
+    commandItems,
     currentDateLabel,
     currentUserLabel,
     dashboard,
@@ -101,17 +135,30 @@ export function useDashboardHomePage() {
     heroIcon: dashboardHeroIcon,
     heroStatusText,
     isHealthy,
+    insightCards,
+    latencyBars,
     latestNotices,
+    loginLogPath,
+    loginSegments,
     loading,
     loadDashboard,
     navigateTo,
+    moduleBars,
+    operationLogPath,
+    operationSegments,
     quickLinks,
     recentLogins,
     recentOperations,
     refreshedLabel,
+    trendPoints,
+    resourceBars,
+    resourceItems,
+    ringMetrics,
     userManagePath,
     visiblePageTotal,
     getHealthTagType: dashboardHealthTagType,
+    getLatencyLabel: dashboardLatencyLabel,
+    getLatencyTone: dashboardLatencyTone,
     getLoginStatusLabel: dashboardLoginStatusLabel,
     getLoginStatusTagType: dashboardLoginStatusTagType,
     getStatusTagType: dashboardOperationStatusTagType,

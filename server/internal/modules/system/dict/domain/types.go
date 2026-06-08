@@ -117,10 +117,12 @@ const (
 	PermissionTypeCreate = "system:dict:type:create"
 	PermissionTypeUpdate = "system:dict:type:update"
 	PermissionTypeStatus = "system:dict:type:update_status"
+	PermissionTypeDelete = "system:dict:type:delete"
 	PermissionItemList   = "system:dict:item:list"
 	PermissionItemCreate = "system:dict:item:create"
 	PermissionItemUpdate = "system:dict:item:update"
 	PermissionItemStatus = "system:dict:item:update_status"
+	PermissionItemDelete = "system:dict:item:delete"
 )
 
 func NormalizeTypeStatusFilter(value int) (*model.SystemDictStatus, error) {

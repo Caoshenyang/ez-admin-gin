@@ -19,4 +19,6 @@ type PostRepository interface {
 	Create(db *gorm.DB, item *model.Post) error
 	Update(db *gorm.DB, item *model.Post, code string, name string, sort int, status model.PostStatus, remark string) error
 	UpdateStatus(db *gorm.DB, item *model.Post, status model.PostStatus) error
+	CountUsers(db *gorm.DB, postID uint) (int64, error)
+	Delete(db *gorm.DB, item *model.Post) error
 }

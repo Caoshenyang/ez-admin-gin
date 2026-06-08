@@ -9,23 +9,33 @@ import { useDepartmentPage } from '../composables/useDepartmentPage'
 
 const {
   canUse,
+  checkedRowKeys,
+  collapseAll,
   departments,
+  expandAll,
+  expandedRowKeys,
   formMode,
   formModel,
   formRef,
   formStatusOptions,
   formVisible,
+  handleCheckedRowKeys,
+  handleDeleteSelected,
+  handleExpandedRowKeys,
   handleReset,
   handleSearch,
   handleSubmit,
   handleToggleStatus,
+  leaderNameMap,
   loading,
   openCreate,
+  openCreateChild,
   openEdit,
   parentOptions,
   query,
   rules,
   saving,
+  selectedCount,
   statusOptions,
 } = useDepartmentPage()
 </script>
@@ -53,9 +63,20 @@ const {
 
       <DepartmentTable
         :can-use="canUse"
+        :checked-row-keys="checkedRowKeys"
         :departments="departments"
+        :expanded-row-keys="expandedRowKeys"
+        :leader-name-map="leaderNameMap"
         :loading="loading"
+        :selected-count="selectedCount"
+        @checked-row-keys-change="handleCheckedRowKeys"
+        @collapse-all="collapseAll"
+        @create-child="openCreateChild"
+        @delete-selected="handleDeleteSelected"
         @edit="openEdit"
+        @expanded-row-keys-change="handleExpandedRowKeys"
+        @expand-all="expandAll"
+        @refresh="handleSearch"
         @toggle-status="handleToggleStatus"
       />
     </section>

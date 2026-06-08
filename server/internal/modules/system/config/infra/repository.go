@@ -133,3 +133,8 @@ func (r *Repository) UpdateStatus(db *gorm.DB, item *model.SystemConfig, status 
 	item.Status = status
 	return nil
 }
+
+// Delete 软删除配置记录。
+func (r *Repository) Delete(db *gorm.DB, item *model.SystemConfig) error {
+	return db.Delete(item).Error
+}

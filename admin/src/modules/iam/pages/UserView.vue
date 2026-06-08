@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton, NCard, NInput, NTree } from 'naive-ui'
+import { NButton, NCard, NInput, NTree } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import UserFilterBar from '../components/UserFilterBar.vue'
@@ -12,7 +12,6 @@ import type { UserStatus } from '../types/user'
 const {
   canUse,
   checkedRowKeys,
-  closeSuccess,
   departmentCount,
   departmentKeyword,
   departmentNameMap,
@@ -26,6 +25,7 @@ const {
   formVisible,
   handleCheckedRowKeys,
   handleClearDepartment,
+  handleDelete,
   handlePageChange,
   handlePageSizeChange,
   handleReset,
@@ -53,7 +53,6 @@ const {
   selectedRoleIDs,
   statusOptions,
   submitForm,
-  successText,
 } = useUserPage()
 </script>
 
@@ -68,22 +67,13 @@ const {
         </template>
       </PageHeader>
 
-      <NAlert
-        v-if="successText"
-        type="success"
-        :show-icon="true"
-        closable
-        class="mx-auto w-full max-w-[520px]"
-        @close="closeSuccess"
-      >
-        {{ successText }}
-      </NAlert>
-
       <div class="user-page-layout">
         <NCard class="user-dept-card" :bordered="false" content-class="ez-card-content-fill">
           <div class="user-dept-card__head">
             <strong>部门树</strong>
-            <NButton size="tiny" text type="primary" @click="handleClearDepartment">全部部门</NButton>
+            <NButton size="tiny" text type="primary" @click="handleClearDepartment"
+              >全部部门</NButton
+            >
           </div>
           <NInput v-model:value="departmentKeyword" size="small" placeholder="搜索部门" clearable />
           <NTree
@@ -127,6 +117,7 @@ const {
             :users="displayUsers"
             :can-use="canUse"
             @checked-row-keys-change="handleCheckedRowKeys"
+            @delete="handleDelete"
             @edit="openEdit"
             @page-change="handlePageChange"
             @page-size-change="handlePageSizeChange"
@@ -169,15 +160,18 @@ const {
   min-height: 0;
   flex: 1;
   grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 14px;
   overflow: hidden;
 }
 
 .user-dept-card {
   min-height: 0;
-  border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-card);
-  box-shadow: var(--ez-shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--ez-component-border);
+  border-radius: var(--ez-radius-control);
+  background: var(--ez-card-bg);
+  box-shadow: var(--ez-component-shadow);
 }
 
 .user-dept-card__head {
@@ -185,12 +179,13 @@ const {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 9px;
   color: var(--ez-text-main);
+  font-size: var(--ez-text-sm);
 }
 
 .user-dept-card__foot {
-  margin-top: 12px;
+  margin-top: 10px;
   color: var(--ez-text-secondary);
   font-size: 12px;
 }
@@ -200,7 +195,7 @@ const {
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 @media (max-width: 1024px) {

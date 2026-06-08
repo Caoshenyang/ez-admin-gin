@@ -15,6 +15,7 @@ defineProps<{
 }>()
 
 defineEmits<{
+  delete: [role: RoleItem]
   edit: [role: RoleItem]
   reset: []
   search: []
@@ -26,7 +27,11 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="ez-card min-h-0 rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
+  <NCard
+    class="ez-card h-full min-h-0 overflow-hidden rounded-[var(--ez-radius-sm)]"
+    :bordered="false"
+    content-class="ez-card-content-fill"
+  >
     <div class="flex h-full flex-col overflow-hidden">
       <div class="mb-4">
         <h2 class="text-lg font-bold text-[var(--ez-text-main)]">角色列表</h2>
@@ -34,7 +39,12 @@ const query = defineModel<RoleListQuery>('query', { required: true })
       </div>
 
       <NSpace vertical :size="10" class="mb-4">
-        <NInput v-model:value="query.keyword" clearable placeholder="角色编码 / 名称" @keyup.enter="$emit('search')" />
+        <NInput
+          v-model:value="query.keyword"
+          clearable
+          placeholder="角色编码 / 名称"
+          @keyup.enter="$emit('search')"
+        />
         <div class="grid grid-cols-[1fr_auto] gap-2">
           <NSelect v-model:value="query.status" :options="statusOptions" />
           <NButton @click="$emit('reset')">重置</NButton>
@@ -59,17 +69,40 @@ const query = defineModel<RoleListQuery>('query', { required: true })
             </NTag>
           </span>
           <span class="mt-1 block text-left text-xs text-[var(--ez-text-sub)]">
-            {{ role.code }} · 菜单 {{ (role.menu_ids ?? []).length }} · 接口 {{ (role.permissions ?? []).length }}
+            {{ role.code }} · 菜单 {{ (role.menu_ids ?? []).length }} · 接口
+            {{ (role.permissions ?? []).length }}
           </span>
           <span class="mt-2 flex items-center gap-2">
-            <NButton v-if="canUse('system:role:update')" size="tiny" @click.stop="$emit('edit', role)">编辑</NButton>
-            <NPopconfirm v-if="canUse('system:role:status') && role.code !== superAdminRoleCode" @positive-click="$emit('toggleStatus', role)">
+            <NButton
+              v-if="canUse('system:role:update')"
+              size="tiny"
+              @click.stop="$emit('edit', role)"
+              >编辑</NButton
+            >
+            <NPopconfirm
+              v-if="canUse('system:role:status') && role.code !== superAdminRoleCode"
+              @positive-click="$emit('toggleStatus', role)"
+            >
               <template #trigger>
-                <NButton size="tiny" :type="role.status === 1 ? 'error' : 'success'" ghost @click.stop>
+                <NButton
+                  size="tiny"
+                  :type="role.status === 1 ? 'error' : 'success'"
+                  ghost
+                  @click.stop
+                >
                   {{ role.status === 1 ? '禁用' : '启用' }}
                 </NButton>
               </template>
               确认{{ role.status === 1 ? '禁用' : '启用' }}该角色？
+            </NPopconfirm>
+            <NPopconfirm
+              v-if="canUse('system:role:delete') && role.code !== superAdminRoleCode"
+              @positive-click="$emit('delete', role)"
+            >
+              <template #trigger>
+                <NButton size="tiny" type="error" ghost @click.stop>删除</NButton>
+              </template>
+              删除前请确认该角色没有分配给任何用户。
             </NPopconfirm>
           </span>
         </button>
@@ -81,10 +114,11 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 <style scoped>
 .role-card {
   width: 100%;
-  border: 1px solid var(--ez-border);
+  overflow: hidden;
+  border: 1px solid var(--ez-component-border);
   border-radius: var(--ez-radius-sm);
   background: var(--ez-card-bg);
-  padding: 14px 12px;
+  padding: 12px;
   text-align: left;
   transition:
     border-color 0.2s ease,
@@ -93,8 +127,9 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 }
 
 .role-card:hover {
-  border-color: var(--ez-brand);
-  box-shadow: var(--ez-shadow-md);
+  border-color: var(--ez-border);
+  background: var(--ez-surface-subtle);
+  box-shadow: var(--ez-shadow-sm);
 }
 
 .role-card--active {

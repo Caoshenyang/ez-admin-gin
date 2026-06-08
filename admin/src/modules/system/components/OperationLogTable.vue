@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NDataTable, NPagination, NTag } from 'naive-ui'
+import { NButton, NTag } from 'naive-ui'
 import { h } from 'vue'
 
-import EzTableCard from '@/components/ez/EzTableCard.vue'
-import TableStatsBar from '@/components/TableStatsBar.vue'
+import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText, formatTime } from '@/utils/format'
 import type { OperationLogItem } from '../types/operation-log'
 import {
@@ -40,7 +39,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '操作时间',
     key: 'created_at',
-    width: 180,
+    width: 150,
     render(row) {
       return h('span', { class: 'text-[var(--ez-text-main)]' }, formatTime(row.created_at))
     },
@@ -48,7 +47,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '操作人',
     key: 'username',
-    width: 120,
+    width: 104,
     render(row) {
       return h('span', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.username))
     },
@@ -56,7 +55,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '模块',
     key: 'path',
-    width: 120,
+    width: 104,
     render(row) {
       return h('span', { class: 'text-[var(--ez-text-main)]' }, getModule(row.path))
     },
@@ -64,7 +63,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '方法',
     key: 'method',
-    width: 100,
+    width: 84,
     render(row) {
       return h(NTag, { bordered: false, type: row.method === 'GET' ? 'success' : 'info' }, { default: () => displayText(row.method) })
     },
@@ -72,7 +71,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '行为',
     key: 'action',
-    minWidth: 180,
+    minWidth: 160,
     ellipsis: { tooltip: true },
     render(row) {
       return h('span', { class: 'text-[var(--ez-text-main)]' }, getAction(row))
@@ -81,7 +80,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '风险',
     key: 'risk',
-    width: 110,
+    width: 92,
     render(row) {
       const risk = riskMeta[getRiskLevel(row)]
       return h(NTag, { bordered: false, type: risk.tagType }, { default: () => risk.label })
@@ -90,7 +89,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '结果',
     key: 'success',
-    width: 90,
+    width: 78,
     render(row) {
       return h(
         NTag,
@@ -102,7 +101,7 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '详情',
     key: 'detail',
-    width: 80,
+    width: 70,
     fixed: 'right',
     render(row) {
       return h(
@@ -116,38 +115,19 @@ const columns: DataTableColumns<OperationLogItem> = [
 </script>
 
 <template>
-  <EzTableCard>
-    <TableStatsBar>
-      <span>共 {{ total }} 条</span>
-      <template #actions>
-        <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
-      </template>
-    </TableStatsBar>
-
-    <NDataTable
-      remote
-      class="operation-table"
-      :columns="columns"
-      :data="logs"
-      :loading="loading"
-      :pagination="false"
-      :row-key="(row: OperationLogItem) => row.id"
-      :row-props="rowProps"
-      :bordered="false"
-      :scroll-x="980"
-    />
-
-    <div class="ez-table-footer">
-      <span>共 {{ total }} 条</span>
-      <NPagination
-        :page="page"
-        :page-size="pageSize"
-        :item-count="total"
-        :page-sizes="[10, 20, 50]"
-        show-size-picker
-        @update:page="emit('pageChange', $event)"
-        @update:page-size="emit('pageSizeChange', $event)"
-      />
-    </div>
-  </EzTableCard>
+  <EzDataTable
+    remote
+    class="operation-table"
+    :columns="columns"
+    :data="logs"
+    :loading="loading"
+    :page="page"
+    :page-size="pageSize"
+    :row-key="(row: OperationLogItem) => row.id"
+    :row-props="rowProps"
+    :total="total"
+    @page-change="emit('pageChange', $event)"
+    @page-size-change="emit('pageSizeChange', $event)"
+    @refresh="emit('refresh')"
+  />
 </template>

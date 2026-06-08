@@ -19,10 +19,12 @@ type DepartmentRepository interface {
 	FindByID(db *gorm.DB, departmentID uint) (model.Department, error)
 	FindParent(db *gorm.DB, parentID uint) (model.Department, error)
 	CodeExists(db *gorm.DB, code string, excludeID uint) (bool, error)
-	LeaderUsable(db *gorm.DB, leaderUserID uint) error
+	LeaderUsable(db *gorm.DB, leaderUserID *uint) error
 	Create(db *gorm.DB, department *model.Department) error
-	Update(db *gorm.DB, department *model.Department, parentID uint, ancestors string, name string, code string, leaderUserID uint, sort int, status model.DepartmentStatus, remark string) error
+	Update(db *gorm.DB, department *model.Department, parentID uint, ancestors string, name string, code string, leaderUserID *uint, sort int, status model.DepartmentStatus, remark string) error
 	UpdateStatus(db *gorm.DB, department *model.Department, status model.DepartmentStatus) error
+	CanDelete(db *gorm.DB, departmentID uint) error
+	Delete(db *gorm.DB, department *model.Department) error
 	Subtree(db *gorm.DB, departmentID uint, fullPath string) ([]model.Department, error)
 	UpdateAncestors(db *gorm.DB, departmentID uint, ancestors string) error
 }

@@ -154,3 +154,32 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 
 	httpx.Success(c, gin.H{"id": departmentID, "status": req.Status})
 }
+
+// Delete godoc
+// @Summary      删除部门
+// @Tags         IAM / 部门管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint  true  "部门 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /system/departments/{id}/delete [post]
+func (h *Handler) Delete(c *gin.Context) {
+	actor, ok := httpx.CurrentActor(c, h.log)
+	if !ok {
+		return
+	}
+
+	departmentID, ok := httpx.UintIDParam(c, "id", "部门 ID", h.log)
+	if !ok {
+		return
+	}
+
+	if err := h.service.Delete(actor, departmentID); err != nil {
+		httpx.WriteError(c, err, "删除部门失败", h.log)
+		return
+	}
+
+	httpx.Success(c, gin.H{"id": departmentID})
+}

@@ -5,10 +5,9 @@ import { h } from 'vue'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { useStatusToggle } from '@/composables/useStatusToggle'
 import { displayText, formatTime } from '@/utils/format'
-import { createNotice, getNotices, updateNotice, updateNoticeStatus } from '../api/notice'
+import { createNotice, deleteNotice, getNotices, updateNotice, updateNoticeStatus } from '../api/notice'
 import { NoticeStatus, type NoticeItem, type NoticeListQuery } from '../types/notice'
 import {
   buildNoticePayload,
@@ -21,7 +20,6 @@ import {
 export function useNoticePage() {
   const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
 
   const {
     items: notices,
@@ -48,7 +46,6 @@ export function useNoticePage() {
 
   const { handleToggleStatus } = useStatusToggle(updateNoticeStatus, {
     onSuccess: async () => {
-      showSuccess('公告状态已更新')
       await load()
     },
   })
@@ -57,7 +54,7 @@ export function useNoticePage() {
     {
       title: '标题',
       key: 'title',
-      width: 220,
+      width: 180,
       ellipsis: { tooltip: true },
       render(row) {
         return h('span', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.title))
@@ -66,7 +63,7 @@ export function useNoticePage() {
     {
       title: '内容',
       key: 'content',
-      minWidth: 240,
+      minWidth: 200,
       ellipsis: { tooltip: true },
       render(row) {
         return h('span', { class: 'text-[var(--ez-text-body)]' }, displayText(row.content))
@@ -75,13 +72,13 @@ export function useNoticePage() {
     {
       title: '排序',
       key: 'sort',
-      width: 80,
+      width: 66,
       align: 'center',
     },
     {
       title: '状态',
       key: 'status',
-      width: 90,
+      width: 78,
       align: 'center',
       render(row) {
         return h(
@@ -94,7 +91,7 @@ export function useNoticePage() {
     {
       title: '更新时间',
       key: 'updated_at',
-      width: 160,
+      width: 150,
       render(row) {
         return h('span', { class: 'tabular-nums text-[var(--ez-text-muted)]' }, formatTime(row.updated_at))
       },
@@ -102,7 +99,7 @@ export function useNoticePage() {
     {
       title: '操作',
       key: 'actions',
-      width: 180,
+      width: 160,
       fixed: 'right',
       render(row) {
         const nextStatus = row.status === NoticeStatus.Enabled ? NoticeStatus.Disabled : NoticeStatus.Enabled
@@ -139,6 +136,21 @@ export function useNoticePage() {
                       },
                     )
                   : null,
+                canUse('system:notice:delete')
+                  ? h(
+                      NPopconfirm,
+                      { onPositiveClick: () => handleDelete(row) },
+                      {
+                        trigger: () =>
+                          h(
+                            NButton,
+                            { size: 'small', ghost: true, type: 'error' },
+                            { default: () => '删除' },
+                          ),
+                        default: () => '确认删除该公告？删除后将不再出现在列表里。',
+                      },
+                    )
+                  : null,
               ].filter(Boolean),
           },
         )
@@ -149,19 +161,22 @@ export function useNoticePage() {
   async function submitForm() {
     if (formMode.value === 'create') {
       await createNotice(buildNoticePayload(formModel))
-      showSuccess('公告创建成功')
       message.success('公告创建成功')
     } else {
       await updateNotice(formModel.id, buildNoticePayload(formModel))
-      showSuccess('公告已更新')
       message.success('公告更新成功')
     }
     await load()
   }
 
+  async function handleDelete(row: NoticeItem) {
+    await deleteNotice(row.id)
+    message.success('公告已删除')
+    await load()
+  }
+
   return {
     canUse,
-    closeSuccess,
     columns,
     formMode,
     formModel,
@@ -181,7 +196,6 @@ export function useNoticePage() {
     rules,
     saving,
     submitForm,
-    successText,
     total,
   }
 }

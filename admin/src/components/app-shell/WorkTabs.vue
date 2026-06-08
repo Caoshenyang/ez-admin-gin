@@ -120,12 +120,22 @@ const scrollRef = ref<HTMLElement>()
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
 let resizeObserver: ResizeObserver | null = null
+let scrollStateFrame = 0
 
 function updateScrollState() {
   const el = scrollRef.value
   if (!el) return
   canScrollLeft.value = el.scrollLeft > 2
   canScrollRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 2
+}
+
+function scheduleScrollStateUpdate() {
+  if (scrollStateFrame) return
+
+  scrollStateFrame = window.requestAnimationFrame(() => {
+    scrollStateFrame = 0
+    updateScrollState()
+  })
 }
 
 function handleWheel(e: WheelEvent) {
@@ -140,15 +150,18 @@ onMounted(() => {
   const el = scrollRef.value
   if (!el) return
   el.addEventListener('scroll', updateScrollState, { passive: true })
-  resizeObserver = new ResizeObserver(() => updateScrollState())
+  resizeObserver = new ResizeObserver(scheduleScrollStateUpdate)
   resizeObserver.observe(el)
-  updateScrollState()
+  scheduleScrollStateUpdate()
 })
 
-watch(() => props.tabs.length, () => nextTick(updateScrollState))
+watch(() => props.tabs.length, () => nextTick(scheduleScrollStateUpdate))
 
 onBeforeUnmount(() => {
   scrollRef.value?.removeEventListener('scroll', updateScrollState)
+  if (scrollStateFrame) {
+    window.cancelAnimationFrame(scrollStateFrame)
+  }
   resizeObserver?.disconnect()
 })
 </script>

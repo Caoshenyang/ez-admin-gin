@@ -56,6 +56,7 @@ const (
 
 - `system:user:list`
 - `system:user:create`
+- `system:user:delete`
 - `system:role:update_permissions`
 - `system:menu:delete`
 - `system:operation-log:list`
@@ -103,7 +104,8 @@ buttonPermissionCodes.value.includes("system:notice:create")
 
 - 新增按钮：`system:user:create`
 - 编辑按钮：`system:user:update`
-- 启停按钮：`system:user:update_status`
+- 启停按钮：`system:user:status`
+- 删除按钮：`system:user:delete`
 
 这样做的好处是：
 
@@ -169,13 +171,15 @@ buttonPermissionCodes.value.includes("system:notice:create")
 
 | 模块 | 典型权限码 |
 | --- | --- |
-| 用户 | `system:user:list`、`system:user:create`、`system:user:update` |
-| 角色 | `system:role:update_permissions`、`system:role:update_menus` |
+| 用户 | `system:user:list`、`system:user:create`、`system:user:update`、`system:user:delete` |
+| 角色 | `system:role:status`、`system:role:delete`、`system:role:update_permissions` |
 | 菜单 | `system:menu:create`、`system:menu:delete` |
-| 部门 | `system:department:update_status` |
-| 岗位 | `system:post:update_status` |
+| 部门 | `system:department:status`、`system:department:delete` |
+| 岗位 | `system:post:status`、`system:post:delete` |
+| 配置 | `system:config:value`、`system:config:delete` |
+| 字典 | `system:dict:type:delete`、`system:dict:item:delete` |
+| 公告 | `system:notice:status`、`system:notice:delete` |
 | 文件 | `system:file:upload` |
-| 配置 | `system:config:value` |
 | 日志 | `system:operation-log:list`、`system:login-log:list` |
 
 ## 新模块命名时最值得遵守的规则

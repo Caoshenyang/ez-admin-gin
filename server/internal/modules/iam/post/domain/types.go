@@ -52,6 +52,7 @@ const (
 	PermissionCreate       = "system:post:create"
 	PermissionUpdate       = "system:post:update"
 	PermissionUpdateStatus = "system:post:status"
+	PermissionDelete       = "system:post:delete"
 )
 
 func NormalizeInput(code string, name string, sort int, status model.PostStatus, remark string) (string, string, int, model.PostStatus, string, error) {

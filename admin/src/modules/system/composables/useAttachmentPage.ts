@@ -1,12 +1,11 @@
 import axios from 'axios'
-import type { FormInst, UploadFileInfo } from 'naive-ui'
+import { useMessage, type FormInst, type UploadFileInfo } from 'naive-ui'
 import { computed, ref } from 'vue'
 
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
 import { useStatusToggle } from '@/composables/useStatusToggle'
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { createAttachment, getAttachments, updateAttachment, updateAttachmentStatus } from '../api/attachment'
 import type { AttachmentItem, AttachmentListQuery } from '../types/attachment'
 import type { AttachmentEditFormModel, AttachmentUploadFormModel } from '../types/attachment-page'
@@ -22,8 +21,8 @@ import {
 } from './attachment-page.utils'
 
 export function useAttachmentPage() {
+  const message = useMessage()
   const { canUse } = usePermission()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const uploadModalVisible = ref(false)
   const selectedUploadFile = ref<File | null>(null)
   const uploadFileList = ref<UploadFileInfo[]>([])
@@ -57,7 +56,6 @@ export function useAttachmentPage() {
 
   const { handleToggleStatus } = useStatusToggle(updateAttachmentStatus, {
     onSuccess: async () => {
-      showSuccess('附件状态已更新')
       await load()
     },
   })
@@ -95,7 +93,7 @@ export function useAttachmentPage() {
       await createAttachment(selectedUploadFile.value, buildAttachmentUploadPayload(uploadFormModel.value))
       uploadModalVisible.value = false
       resetUploadModal()
-      showSuccess('附件上传成功')
+      message.success('附件上传成功')
       await load()
     } finally {
       saving.value = false
@@ -104,7 +102,7 @@ export function useAttachmentPage() {
 
   async function submitEdit() {
     await updateAttachment(editFormModel.id, buildAttachmentEditPayload(editFormModel))
-    showSuccess('附件信息已更新')
+    message.success('附件信息已更新')
     await load()
   }
 
@@ -121,7 +119,6 @@ export function useAttachmentPage() {
   return {
     attachments,
     canUse,
-    closeSuccess,
     editFormModel,
     editFormRef,
     editModalVisible,
@@ -144,7 +141,6 @@ export function useAttachmentPage() {
     saving,
     submitEdit,
     submitUpload,
-    successText,
     total,
     uploadRules: attachmentUploadRules,
     uploadFileList,

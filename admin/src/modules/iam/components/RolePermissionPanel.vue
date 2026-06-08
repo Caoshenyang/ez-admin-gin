@@ -39,7 +39,11 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 </script>
 
 <template>
-  <NCard class="ez-card min-h-0 rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
+  <NCard
+    class="ez-card h-full min-h-0 overflow-hidden rounded-[var(--ez-radius-sm)]"
+    :bordered="false"
+    content-class="ez-card-content-fill"
+  >
     <div class="flex h-full flex-col overflow-hidden">
       <div class="border-b border-[var(--ez-border)] px-5 py-5">
         <div class="flex items-start justify-between gap-4">
@@ -59,7 +63,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
 
       <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <NTabs v-model:value="activeTab" type="line" animated>
-          <NTabPane name="base" tab="基础信息">
+          <NTabPane name="base" tab="基础">
             <div class="role-basic-grid">
               <div>
                 <span>角色名称</span>
@@ -83,7 +87,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
             </div>
           </NTabPane>
 
-          <NTabPane name="menu" tab="菜单权限">
+          <NTabPane name="menu" tab="菜单">
             <div class="permission-toolbar">
               <NCheckbox :checked="checkedTotal > 0" @update:checked="$emit('checkAll')">全选</NCheckbox>
               <NButton text type="primary" @click="$emit('checkAll')">全选可用节点</NButton>
@@ -101,7 +105,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
             />
           </NTabPane>
 
-          <NTabPane name="button" tab="按钮权限">
+          <NTabPane name="button" tab="按钮">
             <div class="permission-toolbar">
               <NButton text type="primary" @click="$emit('checkAll')">全选可用节点</NButton>
               <NButton text type="primary" @click="$emit('clearAll')">清空全部</NButton>
@@ -118,7 +122,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
             />
           </NTabPane>
 
-          <NTabPane name="api" tab="接口权限">
+          <NTabPane name="api" tab="接口">
             <div class="mb-3 flex items-center justify-between">
               <p class="text-sm text-[var(--ez-text-sub)]">接口权限按请求路径和方法保存到 Casbin 策略表。</p>
               <NButton size="small" type="primary" ghost :disabled="!canEditSelectedRole" @click="$emit('addPermission')">
@@ -137,7 +141,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
             </div>
           </NTabPane>
 
-          <NTabPane name="data" tab="数据权限">
+          <NTabPane name="data" tab="数据">
             <div class="data-scope-panel">
               <div
                 v-for="option in roleDataScopeOptions"
@@ -170,7 +174,7 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
             </div>
           </NTabPane>
 
-          <NTabPane name="users" tab="关联用户">
+          <NTabPane name="users" tab="用户">
             <div class="related-users-panel">
               <div class="related-users-panel__head">
                 <strong>{{ selectedRole?.name ?? '当前角色' }}</strong>
@@ -226,6 +230,29 @@ const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required
   background: var(--ez-brand-soft);
   color: var(--ez-brand);
   font-weight: 700;
+}
+
+:deep(.n-tabs-nav-scroll-wrapper) {
+  overflow-x: auto;
+}
+
+:deep(.n-tabs-nav-scroll-content) {
+  min-width: 0;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+:deep(.n-tabs-tab) {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+@media (max-width: 1200px) {
+  :deep(.n-tabs-tab) {
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: var(--ez-text-sm);
+  }
 }
 
 .role-basic-grid {

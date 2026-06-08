@@ -2,8 +2,6 @@
 package bootstrap
 
 import (
-	"time"
-
 	authModule "ez-admin-gin/server/internal/modules/auth"
 	iamModule "ez-admin-gin/server/internal/modules/iam"
 	setupModule "ez-admin-gin/server/internal/modules/setup"
@@ -15,8 +13,8 @@ import (
 	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	goredis "github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -54,10 +52,9 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		RegisterSwagger(r)
 	}
 
-	// Create RefreshTokenStore and attach to Token manager.
 	var refreshStore *authnPlatform.RefreshTokenStore
-	if opts.Redis != nil && opts.Config.Auth.RefreshTokenTTL > 0 {
-		refreshStore = authnPlatform.NewRefreshTokenStore(opts.Redis, time.Duration(opts.Config.Auth.RefreshTokenTTL)*time.Second)
+	if opts.Redis != nil {
+		refreshStore = authnPlatform.NewRefreshTokenStore(opts.Redis, opts.Config.Auth.RefreshTokenDuration())
 		opts.Token.SetRefreshStore(refreshStore)
 	}
 

@@ -17,7 +17,7 @@ defineSlots<{
   height: 100%;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   background: var(--ez-page-bg);
 }
 </style>

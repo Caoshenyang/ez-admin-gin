@@ -13,7 +13,7 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "oxfmt src/",
-    "generate:api": "openapi-typescript ../server/docs/swagger.json -o src/api/generated.ts",
+    "generate:api": "openapi-typescript ../server/docs/swagger.json --x-nullable-as-nullable -o src/api/generated.ts",
     "check:api-types": "pnpm generate:api && git diff --exit-code src/api/generated.ts"
   },
   "dependencies": {

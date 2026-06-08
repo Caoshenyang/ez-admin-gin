@@ -15,6 +15,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   reset: []
+  search: []
   'update:keyword': [value: string]
   'update:status': [value: 0 | MenuStatus]
   'update:type': [value: 0 | MenuType]
@@ -29,11 +30,13 @@ const emit = defineEmits<{
       placeholder="菜单名称 / 路由 / 权限标识"
       class="ez-search-field ez-search-field--primary"
       @update:value="emit('update:keyword', $event ?? '')"
+      @keyup.enter="emit('search')"
     />
     <NSelect :value="props.type" :options="typeOptions" class="ez-search-field ez-search-field--md" @update:value="emit('update:type', $event as 0 | MenuType)" />
     <NSelect :value="props.status" :options="statusOptions" class="ez-search-field ez-search-field--sm" @update:value="emit('update:status', $event as 0 | MenuStatus)" />
 
     <template #actions>
+      <NButton type="primary" @click="emit('search')">查询</NButton>
       <NButton @click="emit('reset')">重置</NButton>
     </template>
   </EzSearchPanel>

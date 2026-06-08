@@ -91,3 +91,8 @@ func (r *Repository) UpdateStatus(db *gorm.DB, item *noticedomain.Entity, status
 	item.Status = status
 	return nil
 }
+
+// Delete 软删除公告记录。
+func (r *Repository) Delete(db *gorm.DB, item *noticedomain.Entity) error {
+	return db.Delete(item).Error
+}

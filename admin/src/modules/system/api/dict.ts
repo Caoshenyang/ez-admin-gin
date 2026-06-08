@@ -43,6 +43,12 @@ export async function updateDictTypeStatus(id: number, payload: UpdateDictTypeSt
   return response.data.data
 }
 
+// 删除字典类型
+export async function deleteDictType(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/dict-types/${id}/delete`)
+  return response.data.data
+}
+
 // 获取字典项列表（分页查询）
 export async function getDictItems(params: DictItemListQuery) {
   const response = await http.get<ApiResponse<DictItemListResponse>>('/system/dict-items', { params })
@@ -67,5 +73,11 @@ export async function updateDictItemStatus(id: number, payload: UpdateDictItemSt
     `/system/dict-items/${id}/status`,
     payload,
   )
+  return response.data.data
+}
+
+// 删除字典项
+export async function deleteDictItem(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/dict-items/${id}/delete`)
   return response.data.data
 }

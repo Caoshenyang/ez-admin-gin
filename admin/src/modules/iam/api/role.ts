@@ -70,3 +70,9 @@ export async function updateRoleMenus(id: number, payload: UpdateRoleMenusPayloa
   )
   return response.data.data
 }
+
+// deleteRole 删除指定角色。
+export async function deleteRole(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/roles/${id}/delete`)
+  return response.data.data
+}

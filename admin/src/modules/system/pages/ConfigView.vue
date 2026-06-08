@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton, NCard, NInput, NInputNumber, NSelect, NSwitch } from 'naive-ui'
+import { NButton, NCard, NInput, NInputNumber, NSelect, NSwitch } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import ConfigFilterBar from '../components/ConfigFilterBar.vue'
@@ -9,7 +9,6 @@ import { useConfigPage } from '../composables/useConfigPage'
 
 const {
   canUse,
-  closeSuccess,
   columns,
   configs,
   formMode,
@@ -28,7 +27,6 @@ const {
   rules,
   saving,
   submitForm,
-  successText,
   total,
 } = useConfigPage()
 
@@ -52,10 +50,6 @@ const configCategories = [
         </template>
       </PageHeader>
 
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
-
       <div class="config-page-layout">
         <NCard class="config-category-card" :bordered="false">
           <button
@@ -71,7 +65,7 @@ const configCategories = [
         </NCard>
 
         <section class="config-main-panel">
-          <NCard class="ez-card-elevated" :bordered="false">
+          <NCard class="config-setting-card ez-card-elevated" :bordered="false">
             <template #header>
               <span class="config-card-title">安全配置</span>
             </template>
@@ -149,6 +143,7 @@ const configCategories = [
   min-height: 0;
   flex: 1;
   grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 16px;
   overflow: hidden;
 }
@@ -201,8 +196,9 @@ const configCategories = [
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .config-card-title {
@@ -213,7 +209,7 @@ const configCategories = [
 
 .config-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 16px 20px;
 }
 
@@ -238,6 +234,58 @@ const configCategories = [
 
   .config-form-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.config-setting-card :deep(.n-card-header) {
+  padding: 16px 18px 8px;
+}
+
+.config-setting-card :deep(.n-card__content) {
+  padding: 0 18px 10px;
+}
+
+.config-setting-card :deep(.n-card__footer) {
+  padding: 8px 18px 12px;
+}
+
+@media (max-height: 760px) and (min-width: 1025px) {
+  .config-main-panel {
+    gap: 10px;
+  }
+
+  .config-category {
+    padding: 9px 12px;
+  }
+
+  .config-category + .config-category {
+    margin-top: 6px;
+  }
+
+  .config-category span {
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+
+  .config-setting-card :deep(.n-card-header) {
+    padding: 12px 18px 6px;
+  }
+
+  .config-setting-card :deep(.n-card__content) {
+    padding: 0 18px 8px;
+  }
+
+  .config-setting-card :deep(.n-card__footer) {
+    padding: 6px 18px 10px;
+  }
+
+  .config-form-grid {
+    gap: 8px 14px;
+  }
+
+  .config-form-grid label > span {
+    margin-bottom: 5px;
+    font-size: 12px;
   }
 }
 </style>

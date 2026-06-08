@@ -7,7 +7,7 @@ export const loginProductFeatures = [
   'RBAC 权限体系',
   '动态菜单与按钮权限',
   '五级数据权限',
-  '系统日志与公告通知',
+  '公告通知管理',
   '高性能 WebSocket 推送',
 ]
 

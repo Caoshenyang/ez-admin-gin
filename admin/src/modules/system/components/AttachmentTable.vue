@@ -5,7 +5,6 @@ import {
   NButton,
   NDataTable,
   NIcon,
-  NPagination,
   NPopconfirm,
   NSpace,
   NTag,
@@ -14,8 +13,7 @@ import {
 import { computed, h } from 'vue'
 
 import EmptyState from '@/components/EmptyState.vue'
-import EzTableCard from '@/components/ez/EzTableCard.vue'
-import TableStatsBar from '@/components/TableStatsBar.vue'
+import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText, formatSize, formatTime } from '@/utils/format'
 import { AttachmentStatus, type AttachmentItem } from '../types/attachment'
 
@@ -39,10 +37,10 @@ const emit = defineEmits<{
 }>()
 
 const columns = computed<DataTableColumns<AttachmentItem>>(() => [
-  {
-    title: '附件',
-    key: 'display_name',
-    minWidth: 260,
+    {
+      title: '附件',
+      key: 'display_name',
+      minWidth: 220,
     render(row) {
       return h('div', { class: 'flex items-center gap-3' }, [
         h(
@@ -57,34 +55,34 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
       ])
     },
   },
-  {
-    title: '分类 / 业务',
-    key: 'category',
-    width: 180,
+    {
+      title: '分类 / 业务',
+      key: 'category',
+      width: 150,
     render(row) {
       return h('span', { class: 'text-sm text-[var(--ez-text-main)]' }, [displayText(row.category, '未分类'), displayText(row.biz_type, '通用')].join(' / '))
     },
   },
   {
-    title: '类型',
-    key: 'ext',
-    width: 100,
+      title: '类型',
+      key: 'ext',
+      width: 84,
     render(row) {
       return h(NTag, { size: 'small', bordered: false }, { default: () => row.ext || '-' })
     },
   },
   {
-    title: '大小',
-    key: 'size',
-    width: 110,
+      title: '大小',
+      key: 'size',
+      width: 92,
     render(row) {
       return formatSize(row.size)
     },
   },
   {
-    title: '状态',
-    key: 'status',
-    width: 90,
+      title: '状态',
+      key: 'status',
+      width: 78,
     render(row) {
       return h(
         NTag,
@@ -94,17 +92,17 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
     },
   },
   {
-    title: '上传时间',
-    key: 'created_at',
-    width: 180,
+      title: '上传时间',
+      key: 'created_at',
+      width: 150,
     render(row) {
       return formatTime(row.created_at)
     },
   },
   {
-    title: '操作',
-    key: 'actions',
-    width: 220,
+      title: '操作',
+      key: 'actions',
+      width: 188,
     fixed: 'right',
     render(row) {
       const nextStatus = row.status === AttachmentStatus.Enabled ? AttachmentStatus.Disabled : AttachmentStatus.Enabled
@@ -158,23 +156,26 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
 </script>
 
 <template>
-  <EzTableCard>
-    <TableStatsBar>
-      <span>共 {{ total }} 个附件</span>
-      <template #actions>
-        <NButton text type="primary" @click="emit('refresh')">刷新</NButton>
-      </template>
-    </TableStatsBar>
-
-    <div class="flex min-h-0 flex-1 flex-col">
+  <EzDataTable
+    :columns="columns"
+    :data="attachments"
+    :loading="loading"
+    :page="page"
+    :page-size="pageSize"
+    :summary-text="`共 ${total} 个附件`"
+    :total="total"
+    @page-change="(page) => emit('pageChange', page)"
+    @page-size-change="(pageSize) => emit('pageSizeChange', pageSize)"
+    @refresh="emit('refresh')"
+  >
+    <template #body>
       <NDataTable
         :columns="columns"
         :data="attachments"
         :loading="loading"
         :bordered="false"
-        :scroll-x="1140"
         flex-height
-        class="flex-1"
+        class="ez-table-fill-table"
       />
 
       <div
@@ -183,19 +184,6 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
       >
         <EmptyState title="当前没有附件记录" description="先上传一份业务附件吧。" kind="create" />
       </div>
-
-      <div class="ez-table-footer">
-        <span>共 {{ total }} 个附件</span>
-        <NPagination
-          :page="page"
-          :page-size="pageSize"
-          :item-count="total"
-          show-size-picker
-          :page-sizes="[10, 20, 50]"
-          @update:page="(page) => emit('pageChange', page)"
-          @update:page-size="(pageSize) => emit('pageSizeChange', pageSize)"
-        />
-      </div>
-    </div>
-  </EzTableCard>
+    </template>
+  </EzDataTable>
 </template>

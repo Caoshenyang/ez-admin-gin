@@ -2,12 +2,12 @@ import type { FormRules, SelectOption, TreeOption } from 'naive-ui'
 import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 
-import { useSuccessFeedback } from '@/composables/useSuccessFeedback'
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
 import { getDepartments } from '../api/department'
 import { getAdminMenus } from '../api/menu'
 import {
   createRole,
+  deleteRole,
   getRoles,
   updateRole,
   updateRoleMenus,
@@ -47,7 +47,6 @@ import {
 
 export function useRolePage() {
   const message = useMessage()
-  const { closeSuccess, showSuccess, successText } = useSuccessFeedback()
   const loading = ref(false)
   const saving = ref(false)
   const relatedUsersLoading = ref(false)
@@ -238,11 +237,9 @@ export function useRolePage() {
       if (formMode.value === 'create') {
         const created = await createRole(buildRoleCreatePayload(formModel))
         selectedRoleID.value = created.id
-        showSuccess('角色创建成功')
         message.success('角色创建成功')
       } else {
         await updateRole(formModel.id, buildRoleUpdatePayload(formModel))
-        showSuccess('角色信息已更新')
         message.success('角色信息已更新')
       }
 
@@ -256,8 +253,13 @@ export function useRolePage() {
   async function handleToggleRoleStatus(role: RoleItem) {
     const status = role.status === RoleStatus.Enabled ? RoleStatus.Disabled : RoleStatus.Enabled
     await updateRoleStatus(role.id, { status })
-    showSuccess(`角色已${status === RoleStatus.Enabled ? '启用' : '禁用'}`)
     message.success('角色状态已更新')
+    await loadRoles()
+  }
+
+  async function handleDeleteRole(role: RoleItem) {
+    await deleteRole(role.id)
+    message.success('角色已删除')
     await loadRoles()
   }
 
@@ -287,13 +289,11 @@ export function useRolePage() {
       if (activeTab.value === 'api') {
         const permissions = normalizeRolePermissions(permissionRows.value)
         await updateRolePermissions(selectedRole.value.id, { permissions })
-        showSuccess('接口权限已更新')
         message.success('接口权限已更新')
       } else {
         await updateRoleMenus(selectedRole.value.id, {
           menu_ids: checkedMenuIDs.value.map(Number),
         })
-        showSuccess('菜单与按钮权限已更新')
         message.success('菜单与按钮权限已更新')
       }
 
@@ -320,7 +320,6 @@ export function useRolePage() {
     checkedMenuCount,
     checkedMenuIDs,
     checkedTotal,
-    closeSuccess,
     dataScopeDescription,
     dataScopeOptions,
     departmentNameMap,
@@ -332,6 +331,7 @@ export function useRolePage() {
     formVisible,
     handleCheckAll,
     handleClearAll,
+    handleDeleteRole,
     handleReset,
     handleSavePermissions,
     handleSearch,
@@ -355,7 +355,6 @@ export function useRolePage() {
     statusOptions,
     statusType,
     submitRole,
-    successText,
     superAdminRoleCode,
     loading,
   }

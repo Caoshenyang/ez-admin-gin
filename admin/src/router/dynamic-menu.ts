@@ -1,5 +1,6 @@
 import {
   AlbumsOutline,
+  AnalyticsOutline,
   AppsOutline,
   BriefcaseOutline,
   BeakerOutline,
@@ -47,6 +48,7 @@ const defaultMenuIcon = AppsOutline
 // builtinMenuCodeIconMap 内置菜单编码到图标的映射，优先级最高。
 const builtinMenuCodeIconMap: Record<string, MenuIconComponent> = {
   dashboard: AppsOutline,
+  audit: AnalyticsOutline,
   system: SettingsOutline,
   'system:health': PulseOutline,
   'system:user': PeopleOutline,
@@ -68,6 +70,7 @@ const builtinMenuCodeIconMap: Record<string, MenuIconComponent> = {
 // 后端 icon 字段只允许命中这份前端白名单，避免把任意字符串直接当组件渲染。
 const menuIconMap: Record<string, MenuIconComponent> = {
   albums: AlbumsOutline,
+  analytics: AnalyticsOutline,
   app: AppsOutline,
   apps: AppsOutline,
   beaker: BeakerOutline,
@@ -99,6 +102,7 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   menu: LayersOutline,
   menus: LayersOutline,
   monitor: PulseOutline,
+  audit: AnalyticsOutline,
   notice: NotificationsOutline,
   notices: NotificationsOutline,
   notification: NotificationsOutline,

@@ -218,3 +218,50 @@ func (s *Service) UpdateMenus(roleID uint, menuIDs []uint) ([]uint, error) {
 
 	return normalizedMenuIDs, nil
 }
+
+// Delete 删除角色，要求不是超级管理员且未分配给任何用户。
+func (s *Service) Delete(roleID uint) error {
+	var roleCode string
+
+	err := s.tx.WithinTransaction(nil, func(tx *gorm.DB) error {
+		role, err := s.repo.FindByID(tx, roleID)
+		if err != nil {
+			return err
+		}
+		if role.Code == roledomain.SuperAdminRoleCode {
+			return errorsx.BadRequest("不能删除超级管理员角色")
+		}
+
+		userCount, err := s.repo.CountUsers(tx, roleID)
+		if err != nil {
+			return err
+		}
+		if userCount > 0 {
+			return errorsx.BadRequest("角色已分配给用户，不能删除")
+		}
+
+		roleCode = role.Code
+		if err := s.repo.ReplacePermissions(tx, role.Code, nil); err != nil {
+			return err
+		}
+		if err := s.repo.ReplaceMenus(tx, role.ID, nil); err != nil {
+			return err
+		}
+		if err := s.repo.ReplaceCustomDepartments(tx, role.ID, nil); err != nil {
+			return err
+		}
+
+		return s.repo.Delete(tx, &role)
+	})
+	if err != nil {
+		return err
+	}
+
+	if roleCode != "" {
+		if err := s.enforcer.ReloadPolicy(); err != nil {
+			return fmt.Errorf("reload casbin policy: %w", err)
+		}
+	}
+
+	return nil
+}

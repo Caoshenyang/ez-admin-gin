@@ -117,4 +117,4 @@ const { canUse } = usePermission()
 
 - 系统管理目录（用户、角色、菜单、部门、岗位）
 - 系统工具目录（配置、字典、文件、日志、公告）
-- 每个菜单下的标准按钮权限（list/create/update/delete）
+- 每个菜单按资源动作补按钮权限，当前主线里最常见的是 `list/create/update/status/delete`

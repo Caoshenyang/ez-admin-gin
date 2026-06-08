@@ -59,3 +59,9 @@ export async function updateUserRoles(id: number, payload: UpdateUserRolesPayloa
   )
   return response.data.data
 }
+
+// deleteUser 删除指定用户。
+export async function deleteUser(id: number) {
+  const response = await http.post<ApiResponse<{ id: number }>>(`/system/users/${id}/delete`)
+  return response.data.data
+}

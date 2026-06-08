@@ -28,26 +28,13 @@ defineProps<{
 
     <!-- info grid -->
     <div class="overview-panel__grid">
-      <div
-        v-for="item in healthItems"
-        :key="item.label"
-        class="overview-cell"
-      >
+      <div v-for="item in healthItems" :key="item.label" class="overview-cell">
         <span class="overview-cell__label">{{ item.label }}</span>
-        <NTag
-          :type="getHealthTagType(item.status)"
-          size="small"
-          round
-          :bordered="false"
-        >
+        <NTag :type="getHealthTagType(item.status)" size="small" round :bordered="false">
           {{ item.value }}
         </NTag>
       </div>
-      <div
-        v-for="fact in focusFacts"
-        :key="fact.label"
-        class="overview-cell"
-      >
+      <div v-for="fact in focusFacts" :key="fact.label" class="overview-cell">
         <span class="overview-cell__label">{{ fact.label }}</span>
         <span class="overview-cell__value">{{ fact.value }}</span>
         <span class="overview-cell__hint">{{ fact.hint }}</span>
@@ -58,43 +45,40 @@ defineProps<{
 
 <style scoped>
 .overview-panel {
-  padding: 28px;
-  background: linear-gradient(135deg, var(--ez-brand-soft) 0%, var(--ez-accent-blue-soft) 100%);
-  border-radius: var(--ez-radius-xl);
+  padding: 18px;
+  border: 1px solid var(--ez-component-border);
+  border-radius: var(--ez-radius-control);
+  background: var(--ez-card-bg);
 }
 
 .overview-panel__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: var(--ez-radius-md);
-  background: linear-gradient(135deg, var(--ez-brand) 0%, var(--ez-brand-pressed) 100%);
-  color: var(--ez-on-brand);
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--ez-component-border);
+  border-radius: var(--ez-radius-control);
+  background: var(--ez-surface-subtle);
+  color: var(--ez-brand);
   flex-shrink: 0;
 }
 
 .overview-panel__grid {
   display: grid;
-  margin-top: 22px;
+  margin-top: 16px;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 10px;
 }
 
 .overview-cell {
-  background: var(--ez-card-bg);
-  border-radius: var(--ez-radius-lg);
-  padding: 16px 18px;
-  box-shadow: var(--ez-shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: box-shadow 0.2s ease;
-}
-
-.overview-cell:hover {
-  box-shadow: var(--ez-shadow-md);
+  gap: 5px;
+  border: 1px solid var(--ez-border-light);
+  border-radius: var(--ez-radius-sm);
+  background: var(--ez-surface-subtle);
+  padding: 11px 12px;
 }
 
 .overview-cell__label {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CloudUploadOutline } from '@vicons/ionicons5'
-import { NAlert, NButton, NIcon, NUpload } from 'naive-ui'
+import { NButton, NIcon, NUpload } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import FileFilterBar from '../components/FileFilterBar.vue'
@@ -9,7 +9,6 @@ import { useFilePage } from '../composables/useFilePage'
 
 const {
   canUse,
-  closeSuccess,
   columns,
   extFilterOptions,
   files,
@@ -21,7 +20,6 @@ const {
   load,
   loading,
   query,
-  successText,
   total,
   uploading,
 } = useFilePage()
@@ -42,10 +40,6 @@ const {
           </NUpload>
         </template>
       </PageHeader>
-
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
 
       <FileFilterBar v-model:query="query" :ext-filter-options="extFilterOptions" @search="handleSearch" @reset="handleReset" />
 

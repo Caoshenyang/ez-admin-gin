@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import PostFilterBar from '../components/PostFilterBar.vue'
@@ -9,7 +9,6 @@ import { usePostPage } from '../composables/usePostPage'
 
 const {
   canUse,
-  closeSuccess,
   columns,
   formMode,
   formModel,
@@ -24,7 +23,6 @@ const {
   query,
   rules,
   saving,
-  successText,
 } = usePostPage()
 </script>
 
@@ -38,10 +36,6 @@ const {
           </NButton>
         </template>
       </PageHeader>
-
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
 
       <PostFilterBar v-model:query="query" @search="handleSearch" @reset="handleReset" />
 

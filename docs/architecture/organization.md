@@ -37,7 +37,7 @@ sys_department
 ├── ancestors       祖先路径（逗号分隔，如 "0,1,2"）
 ├── name            部门名称
 ├── code            部门编码
-├── leader_user_id  负责人用户 ID
+├── leader_user_id  负责人用户 ID（未设置时为 NULL）
 ├── sort            排序值
 ├── status          状态（启用/禁用）
 ├── created_at / updated_at / deleted_at
@@ -61,10 +61,11 @@ sys_department
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/v1/iam/departments/tree` | 获取部门树 |
-| POST | `/api/v1/iam/departments` | 创建部门 |
-| PUT | `/api/v1/iam/departments/:id` | 更新部门 |
-| DELETE | `/api/v1/iam/departments/:id` | 删除部门 |
+| GET | `/api/v1/system/departments` | 获取部门树 |
+| POST | `/api/v1/system/departments` | 创建部门 |
+| POST | `/api/v1/system/departments/:id/update` | 更新部门 |
+| POST | `/api/v1/system/departments/:id/status` | 更新部门状态 |
+| POST | `/api/v1/system/departments/:id/delete` | 删除部门 |
 
 ## 岗位（Post）
 

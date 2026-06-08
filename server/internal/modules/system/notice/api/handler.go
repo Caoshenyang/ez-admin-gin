@@ -132,4 +132,27 @@ func (h *Handler) UpdateStatus(c *gin.Context) {
 	httpx.Success(c, gin.H{"id": noticeID, "status": req.Status})
 }
 
+// Delete godoc
+// @Summary      删除公告
+// @Tags         System / 公告管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path  uint  true  "公告 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Failure      401  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /system/notices/{id}/delete [post]
+func (h *Handler) Delete(c *gin.Context) {
+	noticeID, ok := httpx.UintIDParam(c, "id", "公告 ID", h.log)
+	if !ok {
+		return
+	}
+	if err := h.service.Delete(noticeID); err != nil {
+		httpx.WriteError(c, err, "删除公告失败", h.log)
+		return
+	}
+	httpx.Success(c, gin.H{"id": noticeID})
+}
+
 var _ = noticedomain.PermissionList

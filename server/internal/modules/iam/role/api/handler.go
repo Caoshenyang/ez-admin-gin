@@ -198,3 +198,27 @@ func (h *Handler) UpdateMenus(c *gin.Context) {
 
 	httpx.Success(c, gin.H{"id": roleID, "menu_ids": menuIDs})
 }
+
+// Delete godoc
+// @Summary      删除角色
+// @Tags         IAM / 角色管理
+// @Accept       json
+// @Produce      json
+// @Param        id    path      uint  true  "角色 ID"
+// @Success      200  {object}  httpx.Body
+// @Failure      400  {object}  httpx.Body
+// @Security     BearerAuth
+// @Router       /system/roles/{id}/delete [post]
+func (h *Handler) Delete(c *gin.Context) {
+	roleID, ok := httpx.UintIDParam(c, "id", "角色 ID", h.log)
+	if !ok {
+		return
+	}
+
+	if err := h.service.Delete(roleID); err != nil {
+		httpx.WriteError(c, err, "删除角色失败", h.log)
+		return
+	}
+
+	httpx.Success(c, gin.H{"id": roleID})
+}

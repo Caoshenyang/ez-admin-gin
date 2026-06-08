@@ -16,11 +16,16 @@ const emit = defineEmits<{
 <template>
   <div>
     <div class="flex items-center justify-between">
-      <p class="text-[var(--ez-text-lg)] font-semibold text-[var(--ez-text-main)]">快捷入口</p>
+      <div>
+        <p class="text-[var(--ez-text-lg)] font-bold text-[var(--ez-text-main)]">常用入口</p>
+        <p class="mt-1 text-[var(--ez-text-xs)] text-[var(--ez-text-light)]">
+          按当前角色开放的高频处理页面。
+        </p>
+      </div>
       <NTag round :bordered="false" type="info" size="small">{{ links.length }} 项</NTag>
     </div>
 
-    <div v-if="links.length > 0" class="mt-4 grid gap-2.5">
+    <div v-if="links.length > 0" class="mt-4 grid gap-2">
       <button
         v-for="item in links"
         :key="item.path"
@@ -29,8 +34,12 @@ const emit = defineEmits<{
         @click="emit('navigate', item.path)"
       >
         <div class="min-w-0">
-          <p class="text-[var(--ez-text-base)] font-medium text-[var(--ez-text-main)]">{{ item.title }}</p>
-          <p class="mt-0.5 truncate text-[13px] text-[var(--ez-text-sub)]">{{ item.description }}</p>
+          <p class="text-[var(--ez-text-sm)] font-bold text-[var(--ez-text-main)]">
+            {{ item.title }}
+          </p>
+          <p class="mt-0.5 truncate text-[13px] text-[var(--ez-text-sub)]">
+            {{ item.description }}
+          </p>
         </div>
         <NIcon :component="ChevronForwardOutline" :size="16" class="quick-entry__arrow" />
       </button>
@@ -47,10 +56,10 @@ const emit = defineEmits<{
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  border: 1px solid var(--ez-border);
-  border-radius: var(--ez-radius-lg);
-  background: var(--ez-card-bg);
-  padding: 14px 16px;
+  border: 1px solid var(--ez-border-light);
+  border-radius: var(--ez-radius-sm);
+  background: var(--ez-surface-subtle);
+  padding: 11px 12px;
   text-align: left;
   cursor: pointer;
   transition:
@@ -62,7 +71,6 @@ const emit = defineEmits<{
 .quick-entry:hover {
   background: var(--ez-brand-soft);
   border-color: var(--ez-brand-border);
-  box-shadow: var(--ez-shadow-sm);
 }
 
 .quick-entry__arrow {

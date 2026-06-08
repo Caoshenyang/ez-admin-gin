@@ -120,3 +120,23 @@ func (s *Service) UpdateStatus(postID uint, status model.PostStatus) error {
 		return s.repo.UpdateStatus(tx, &item, status)
 	})
 }
+
+// Delete 删除岗位，要求没有用户仍绑定该岗位。
+func (s *Service) Delete(postID uint) error {
+	return s.tx.WithinTransaction(context.Background(), func(tx *gorm.DB) error {
+		item, err := s.repo.FindByID(tx, postID)
+		if err != nil {
+			return err
+		}
+
+		userCount, err := s.repo.CountUsers(tx, postID)
+		if err != nil {
+			return err
+		}
+		if userCount > 0 {
+			return errorsx.BadRequest("岗位已绑定用户，不能删除")
+		}
+
+		return s.repo.Delete(tx, &item)
+	})
+}

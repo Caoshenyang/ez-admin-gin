@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {
-  CheckmarkOutline,
-  NotificationsOutline,
-} from '@vicons/ionicons5'
+import { CheckmarkOutline, NotificationsOutline } from '@vicons/ionicons5'
 import {
   NButton,
   NDrawer,
@@ -60,8 +57,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <NDrawer :show="store.drawerVisible" :width="400" placement="right" @update:show="(v: boolean) => !v && store.closeDrawer()">
-    <NDrawerContent closable>
+  <NDrawer
+    :show="store.drawerVisible"
+    :width="400"
+    placement="right"
+    class="ez-drawer"
+    @update:show="(v: boolean) => !v && store.closeDrawer()"
+  >
+    <NDrawerContent closable header-class="ez-drawer-header" body-content-class="ez-drawer-body">
       <template #header>
         <div class="flex items-center justify-between gap-3">
           <span>通知中心</span>
@@ -107,7 +110,11 @@ onMounted(() => {
 
             <template #footer>
               <div class="flex items-center justify-between">
-                <NTime :time="new Date(item.created_at)" type="relative" class="text-[var(--ez-text-xs)] text-[var(--ez-text-light)]" />
+                <NTime
+                  :time="new Date(item.created_at)"
+                  type="relative"
+                  class="text-[var(--ez-text-xs)] text-[var(--ez-text-light)]"
+                />
                 <NButton v-if="!item.is_read" text size="tiny" @click="handleMarkRead(item.id)">
                   <template #icon>
                     <NIcon :component="CheckmarkOutline" :size="14" />

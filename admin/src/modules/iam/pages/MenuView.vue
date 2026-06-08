@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import MenuFilterBar from '../components/MenuFilterBar.vue'
@@ -10,7 +10,7 @@ import { useMenuPage } from '../composables/useMenuPage'
 const {
   buttonCount,
   canUse,
-  closeSuccess,
+  checkedRowKeys,
   collapseAll,
   componentOptions,
   directoryCount,
@@ -23,8 +23,11 @@ const {
   formRef,
   formTypeOptions,
   formVisible,
+  handleCheckedRowKeys,
   handleDelete,
+  handleDeleteSelected,
   handleResetQuery,
+  handleSearch,
   handleSubmit,
   handleToggleStatus,
   loadMenus,
@@ -37,8 +40,8 @@ const {
   query,
   rules,
   saving,
+  selectedCount,
   statusOptions,
-  successText,
   typeOptions,
 } = useMenuPage()
 </script>
@@ -54,17 +57,6 @@ const {
         </template>
       </PageHeader>
 
-      <NAlert
-        v-if="successText"
-        type="success"
-        :show-icon="true"
-        closable
-        class="mx-auto w-full max-w-[520px]"
-        @close="closeSuccess"
-      >
-        {{ successText }}
-      </NAlert>
-
       <MenuFilterBar
         :keyword="query.keyword"
         :type="query.type"
@@ -75,18 +67,23 @@ const {
         @update:type="query.type = $event"
         @update:status="query.status = $event"
         @reset="handleResetQuery"
+        @search="handleSearch"
       />
 
       <MenuTable
         v-model:expanded-row-keys="expandedRowKeys"
         :can-use="canUse"
+        :checked-row-keys="checkedRowKeys"
         :display-menus="displayMenus"
         :flat-menu-count="flatMenus.length"
         :loading="loading"
+        :selected-count="selectedCount"
         :stats="{ directoryCount, menuCount, buttonCount }"
+        @checked-row-keys-change="handleCheckedRowKeys"
         @collapse-all="collapseAll"
         @create-child="openCreateChild"
         @delete="handleDelete"
+        @delete-selected="handleDeleteSelected"
         @edit="openEdit"
         @expand-all="expandAll"
         @refresh="loadMenus"

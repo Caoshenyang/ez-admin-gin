@@ -407,6 +407,30 @@ export interface paths {
       };
     };
   };
+  "/system/configs/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 配置 ID */
+          id: number;
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
   "/system/configs/{id}/status": {
     post: {
       parameters: {
@@ -491,6 +515,26 @@ export interface paths {
         body: {
           /** 部门信息 */
           body: definitions["ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/departments/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 部门 ID */
+          id: number;
         };
       };
       responses: {
@@ -611,6 +655,30 @@ export interface paths {
       };
     };
   };
+  "/system/dict-items/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 字典项 ID */
+          id: number;
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
   "/system/dict-items/{id}/status": {
     post: {
       parameters: {
@@ -713,6 +781,30 @@ export interface paths {
           schema: definitions["httpx.Body"] & {
             data?: definitions["api.TypeResponse"];
           };
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/dict-types/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 字典类型 ID */
+          id: number;
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
         };
         /** Bad Request */
         400: {
@@ -1031,6 +1123,30 @@ export interface paths {
       };
     };
   };
+  "/system/notices/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 公告 ID */
+          id: number;
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
   "/system/notices/{id}/status": {
     post: {
       parameters: {
@@ -1251,6 +1367,26 @@ export interface paths {
       };
     };
   };
+  "/system/posts/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 岗位 ID */
+          id: number;
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
   "/system/posts/{id}/status": {
     post: {
       parameters: {
@@ -1325,6 +1461,26 @@ export interface paths {
         body: {
           /** 角色信息 */
           body: definitions["ez-admin-gin_server_internal_modules_iam_role_api.CreateRequest"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/roles/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 角色 ID */
+          id: number;
         };
       };
       responses: {
@@ -1469,6 +1625,30 @@ export interface paths {
         body: {
           /** 用户信息 */
           body: definitions["ez-admin-gin_server_internal_modules_iam_user_api.CreateRequest"];
+        };
+      };
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Bad Request */
+        400: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
+  "/system/users/{id}/delete": {
+    post: {
+      parameters: {
+        path: {
+          /** 用户 ID */
+          id: number;
         };
       };
       responses: {
@@ -1827,7 +2007,7 @@ export interface definitions {
   "errorsx.Code": 0 | 40000 | 40100 | 40300 | 40400 | 42900 | 50300 | 50000;
   "ez-admin-gin_server_internal_modules_iam_department_api.CreateRequest": {
     code?: string;
-    leader_user_id?: number;
+    leader_user_id?: number | null;
     name?: string;
     parent_id?: number;
     remark?: string;
@@ -1836,7 +2016,7 @@ export interface definitions {
   };
   "ez-admin-gin_server_internal_modules_iam_department_api.UpdateRequest": {
     code?: string;
-    leader_user_id?: number;
+    leader_user_id?: number | null;
     name?: string;
     parent_id?: number;
     remark?: string;

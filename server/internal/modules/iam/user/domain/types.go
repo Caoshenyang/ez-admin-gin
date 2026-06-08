@@ -81,6 +81,7 @@ const (
 	PermissionUpdate       = "system:user:update"
 	PermissionUpdateStatus = "system:user:update_status"
 	PermissionUpdateRoles  = "system:user:update_roles"
+	PermissionDelete       = "system:user:delete"
 )
 
 // NormalizeCreateRequest 规范化并校验用户创建请求参数。

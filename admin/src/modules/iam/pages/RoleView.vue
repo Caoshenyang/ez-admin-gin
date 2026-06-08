@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NAlert, NButton, NSpace } from 'naive-ui'
+import { NButton, NSpace } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import RoleFormModal from '../components/RoleFormModal.vue'
@@ -17,7 +17,6 @@ const {
   checkedMenuCount,
   checkedMenuIDs,
   checkedTotal,
-  closeSuccess,
   dataScopeDescription,
   dataScopeOptions,
   departmentNameMap,
@@ -29,6 +28,7 @@ const {
   formVisible,
   handleCheckAll,
   handleClearAll,
+  handleDeleteRole,
   handleReset,
   handleSavePermissions,
   handleSearch,
@@ -53,7 +53,6 @@ const {
   statusOptions,
   statusType,
   submitRole,
-  successText,
   superAdminRoleCode,
 } = useRolePage()
 </script>
@@ -74,11 +73,7 @@ const {
         </template>
       </PageHeader>
 
-      <NAlert v-if="successText" type="success" :show-icon="true" closable class="mx-auto w-full max-w-[520px]" @close="closeSuccess">
-        {{ successText }}
-      </NAlert>
-
-      <div class="grid min-h-0 flex-1 grid-cols-[320px_minmax(0,1fr)] gap-4 overflow-hidden max-[1080px]:grid-cols-1">
+      <div class="role-page-layout">
         <RoleListPanel
           v-model:query="query"
           :can-use="canUse"
@@ -89,6 +84,7 @@ const {
           :status-type="statusType"
           :super-admin-role-code="superAdminRoleCode"
           @edit="openEdit"
+          @delete="handleDeleteRole"
           @reset="handleReset"
           @search="handleSearch"
           @select="selectRole"
@@ -135,3 +131,32 @@ const {
     />
   </main>
 </template>
+
+<style scoped>
+.role-page-layout {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  gap: 14px;
+}
+
+@media (min-width: 1024px) {
+  .role-page-layout {
+    grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 1200px) {
+  .role-page-layout {
+    grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .role-page-layout {
+    grid-auto-rows: minmax(420px, auto);
+  }
+}
+</style>
