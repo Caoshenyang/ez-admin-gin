@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NButton, NSpace } from 'naive-ui'
+import { NButton } from 'naive-ui'
 
 import PageHeader from '@/components/PageHeader.vue'
 import RoleFormModal from '../components/RoleFormModal.vue'
@@ -10,14 +10,17 @@ import { useRolePage } from '../composables/useRolePage'
 const {
   activeTab,
   addPermissionRow,
+  canEditBaseRole,
+  canDeleteSelectedRole,
+  canEditPermissionTab,
   canEditSelectedRole,
   canSavePermissionTab,
+  canToggleSelectedRoleStatus,
   canUse,
-  checkedButtonCount,
-  checkedMenuCount,
+  checkedFeatureCount,
   checkedMenuIDs,
-  checkedTotal,
-  dataScopeDescription,
+  dataScopeHelp,
+  dataScopeLabel,
   dataScopeOptions,
   departmentNameMap,
   departmentTreeOptions,
@@ -39,6 +42,7 @@ const {
   methodOptions,
   openCreate,
   openEdit,
+  permissionSaveLabel,
   permissionRows,
   query,
   relatedUsers,
@@ -60,59 +64,61 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <PageHeader title="角色权限" description="维护角色本身，以及角色拥有的菜单、按钮和接口权限。">
+      <PageHeader title="角色管理" description="维护角色基础信息、功能权限、接口策略与数据范围。">
         <template #actions>
-          <NSpace>
-            <NButton v-if="canUse('system:role:create')" type="primary" @click="openCreate">
-              + 新增角色
-            </NButton>
-            <NButton type="primary" :loading="saving" :disabled="!canSavePermissionTab" @click="handleSavePermissions">
-              保存权限
-            </NButton>
-          </NSpace>
+          <NButton secondary :loading="loading" @click="handleSearch">刷新</NButton>
+          <NButton v-if="canUse('system:role:create')" type="primary" @click="openCreate">
+            + 新增角色
+          </NButton>
         </template>
       </PageHeader>
 
       <div class="role-page-layout">
         <RoleListPanel
           v-model:query="query"
-          :can-use="canUse"
           :loading="loading"
           :roles="filteredRoles"
           :selected-role-id="selectedRoleID"
           :status-options="statusOptions"
           :status-type="statusType"
           :super-admin-role-code="superAdminRoleCode"
-          @edit="openEdit"
-          @delete="handleDeleteRole"
           @reset="handleReset"
           @search="handleSearch"
           @select="selectRole"
-          @toggle-status="handleToggleRoleStatus"
         />
 
         <RolePermissionPanel
           v-model:active-tab="activeTab"
           v-model:checked-menu-ids="checkedMenuIDs"
           v-model:permission-rows="permissionRows"
+          :can-edit-base-role="canEditBaseRole"
+          :can-delete-selected-role="canDeleteSelectedRole"
+          :can-edit-permission-tab="canEditPermissionTab"
           :can-edit-selected-role="canEditSelectedRole"
-          :checked-button-count="checkedButtonCount"
-          :checked-menu-count="checkedMenuCount"
-          :checked-total="checkedTotal"
-          :data-scope-description="dataScopeDescription"
+          :checked-feature-count="checkedFeatureCount"
+          :can-save-permission-tab="canSavePermissionTab"
+          :can-toggle-selected-role-status="canToggleSelectedRoleStatus"
+          :data-scope-help="dataScopeHelp"
+          :data-scope-label="dataScopeLabel"
           :department-name-map="departmentNameMap"
           :menu-tree-options="menuTreeOptions"
           :method-options="methodOptions"
+          :permission-save-label="permissionSaveLabel"
           :related-users="relatedUsers"
           :related-users-loading="relatedUsersLoading"
           :related-users-total="relatedUsersTotal"
+          :saving="saving"
           :selected-role="selectedRole"
           :super-admin-role-code="superAdminRoleCode"
           @add-permission="addPermissionRow"
           @check-all="handleCheckAll"
           @clear-all="handleClearAll"
+          @delete-role="handleDeleteRole"
+          @edit-role="openEdit"
           @refresh-related-users="loadRelatedUsers"
           @remove-permission="removePermissionRow"
+          @save-permissions="handleSavePermissions"
+          @toggle-status="handleToggleRoleStatus"
         />
       </div>
     </section>
@@ -137,12 +143,12 @@ const {
   display: grid;
   min-height: 0;
   flex: 1;
-  gap: 14px;
+  gap: 12px;
 }
 
 @media (min-width: 1024px) {
   .role-page-layout {
-    grid-template-columns: minmax(220px, 240px) minmax(0, 1fr);
+    grid-template-columns: minmax(292px, 320px) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
     overflow: hidden;
   }
@@ -150,13 +156,14 @@ const {
 
 @media (min-width: 1200px) {
   .role-page-layout {
-    grid-template-columns: minmax(260px, 280px) minmax(0, 1fr);
+    grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
   }
 }
 
 @media (max-width: 1023px) {
   .role-page-layout {
     grid-auto-rows: minmax(420px, auto);
+    overflow: auto;
   }
 }
 </style>

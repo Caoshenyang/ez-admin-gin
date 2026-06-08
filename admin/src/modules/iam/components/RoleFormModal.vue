@@ -54,7 +54,6 @@ const formModel = defineModel<RoleFormModel>('model', { required: true })
           v-model:value="formModel.custom_department_ids"
           :options="departmentTreeOptions"
           multiple
-          cascade
           checkable
           default-expand-all
           placeholder="请选择授权部门"

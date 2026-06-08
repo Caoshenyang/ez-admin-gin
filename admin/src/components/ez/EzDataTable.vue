@@ -165,7 +165,7 @@ function resetColumns() {
   visibleColumnKeys.value = [...configurableColumnKeys.value]
 }
 
-function resolveColumnWidth(column: TableColumn) {
+function resolveColumnWidth(column: TableColumn): number {
   if (column.type === 'selection') {
     return toWidthNumber(column.width) ?? 48
   }
@@ -177,7 +177,7 @@ function resolveColumnWidth(column: TableColumn) {
   return toWidthNumber(column.width) ?? toWidthNumber(column.minWidth) ?? 120
 }
 
-function toWidthNumber(value: unknown) {
+function toWidthNumber(value: unknown): number | undefined {
   if (typeof value === 'number') {
     return value
   }

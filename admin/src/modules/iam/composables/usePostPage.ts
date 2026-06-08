@@ -1,6 +1,6 @@
-import type { DataTableColumns, FormRules } from 'naive-ui'
+import type { DataTableColumns, DataTableRowKey, FormRules } from 'naive-ui'
 import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
-import { h } from 'vue'
+import { computed, h, ref } from 'vue'
 
 import { useListLoader } from '@/composables/useListLoader'
 import { useModalForm } from '@/composables/useModalForm'
@@ -20,6 +20,7 @@ const postFormRules: FormRules = {
 export function usePostPage() {
   const message = useMessage()
   const { canUse } = usePermission()
+  const checkedRowKeys = ref<DataTableRowKey[]>([])
 
   const {
     items: posts,
@@ -49,15 +50,22 @@ export function usePostPage() {
   })
 
   const columns: DataTableColumns<PostItem> = [
+    { type: 'selection', width: 48 },
     {
-      title: '岗位',
+      title: '岗位名称',
       key: 'name',
-      minWidth: 200,
+      minWidth: 180,
       render(row) {
-        return h('div', { class: 'leading-6' }, [
-          h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
-          h('p', { class: 'text-xs text-[var(--ez-text-muted)]' }, displayText(row.code)),
-        ])
+        return h('span', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name))
+      },
+    },
+    {
+      title: '岗位编码',
+      key: 'code',
+      minWidth: 150,
+      ellipsis: { tooltip: true },
+      render(row) {
+        return h('span', { class: 'font-mono text-[var(--ez-text-regular)]' }, displayText(row.code))
       },
     },
     {
@@ -146,6 +154,8 @@ export function usePostPage() {
     },
   ]
 
+  const selectedCount = computed(() => checkedRowKeys.value.length)
+
   function openCreate() {
     openCreateBase()
   }
@@ -183,12 +193,30 @@ export function usePostPage() {
 
   async function handleDelete(row: PostItem) {
     await deletePost(row.id)
+    checkedRowKeys.value = checkedRowKeys.value.filter((key) => key !== row.id)
     message.success('岗位已删除')
     await load()
   }
 
+  async function handleDeleteSelected() {
+    const ids = checkedRowKeys.value.filter((key): key is number => typeof key === 'number')
+    if (ids.length === 0) {
+      return
+    }
+
+    await Promise.all(ids.map((id) => deletePost(id)))
+    checkedRowKeys.value = []
+    message.success(`已删除 ${ids.length} 个岗位`)
+    await load()
+  }
+
+  function handleCheckedRowKeysChange(keys: DataTableRowKey[]) {
+    checkedRowKeys.value = keys
+  }
+
   return {
     canUse,
+    checkedRowKeys,
     columns,
     formMode,
     formModel,
@@ -197,6 +225,8 @@ export function usePostPage() {
     handleReset,
     handleSearch,
     handleSubmit,
+    handleCheckedRowKeysChange,
+    handleDeleteSelected,
     handleToggleStatus,
     loading,
     openCreate,
@@ -205,5 +235,6 @@ export function usePostPage() {
     query,
     rules,
     saving,
+    selectedCount,
   }
 }

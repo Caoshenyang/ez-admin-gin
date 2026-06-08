@@ -9,11 +9,14 @@ import { usePostPage } from '../composables/usePostPage'
 
 const {
   canUse,
+  checkedRowKeys,
   columns,
   formMode,
   formModel,
   formRef,
   formVisible,
+  handleCheckedRowKeysChange,
+  handleDeleteSelected,
   handleReset,
   handleSearch,
   handleSubmit,
@@ -23,6 +26,7 @@ const {
   query,
   rules,
   saving,
+  selectedCount,
 } = usePostPage()
 </script>
 
@@ -39,7 +43,17 @@ const {
 
       <PostFilterBar v-model:query="query" @search="handleSearch" @reset="handleReset" />
 
-      <PostTable :columns="columns" :items="posts" :loading="loading" @refresh="handleSearch" />
+      <PostTable
+        :can-use="canUse"
+        :checked-row-keys="checkedRowKeys"
+        :columns="columns"
+        :items="posts"
+        :loading="loading"
+        :selected-count="selectedCount"
+        @checked-row-keys-change="handleCheckedRowKeysChange"
+        @delete-selected="handleDeleteSelected"
+        @refresh="handleSearch"
+      />
     </section>
 
     <PostFormModal

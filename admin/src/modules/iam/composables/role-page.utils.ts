@@ -1,6 +1,6 @@
 import type { FormRules, SelectOption, TreeOption } from 'naive-ui'
 
-import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
+import { MenuStatus, type AdminMenu } from '@/modules/iam/types/menu'
 import {
   RoleDataScope,
   RoleStatus,
@@ -27,12 +27,16 @@ export const roleDataScopeOptions: SelectOption[] = [
   { label: '自定义部门', value: RoleDataScope.CustomDept },
 ]
 
-export const roleDataScopeDescriptions = new Map<RoleDataScope, string>([
+export const roleDataScopeLabels = new Map<RoleDataScope, string>(
+  roleDataScopeOptions.map((option) => [option.value as RoleDataScope, String(option.label)]),
+)
+
+export const roleDataScopeHelps = new Map<RoleDataScope, string>([
   [RoleDataScope.All, '可查看所有组织与业务数据'],
   [RoleDataScope.Dept, '仅查看当前归属部门数据'],
-  [RoleDataScope.DeptAndChildren, '适合部门负责人和区域管理员'],
-  [RoleDataScope.Self, '限制为当前登录用户创建或归属的数据'],
-  [RoleDataScope.CustomDept, '按勾选部门精细控制可见数据范围'],
+  [RoleDataScope.DeptAndChildren, '包含本部门和下级部门数据'],
+  [RoleDataScope.Self, '仅查看本人创建或归属的数据'],
+  [RoleDataScope.CustomDept, '按已选授权部门控制可见数据'],
 ])
 
 export const permissionMethodOptions: SelectOption[] = [
@@ -87,16 +91,8 @@ export function toRoleFormModel(role: RoleItem): RoleFormModel {
   }
 }
 
-export function toRoleMenuTreeOption(menu: AdminMenu): TreeOption {
-  const typeText = menu.type === MenuType.Directory ? '目录' : menu.type === MenuType.Menu ? '菜单' : '按钮'
-  const statusText = menu.status === MenuStatus.Enabled ? '' : '（禁用）'
-
-  return {
-    key: menu.id,
-    label: `${menu.title}  ${typeText}  ${menu.code}${statusText}`,
-    children: menu.children?.map(toRoleMenuTreeOption),
-    disabled: menu.status !== MenuStatus.Enabled,
-  }
+export function toFeaturePermissionTreeOptions(menus: AdminMenu[]): TreeOption[] {
+  return menus.map(toFeaturePermissionTreeOption)
 }
 
 export function flattenRoleMenus(items: AdminMenu[]) {
@@ -108,6 +104,19 @@ export function flattenRoleMenus(items: AdminMenu[]) {
   }
 
   return result
+}
+
+function toFeaturePermissionTreeOption(menu: AdminMenu): TreeOption {
+  const children = (menu.children ?? []).map(toFeaturePermissionTreeOption)
+  const statusText = menu.status === MenuStatus.Enabled ? '' : ' · 禁用'
+  const codeText = menu.code ? ` · ${menu.code}` : ''
+
+  return {
+    key: menu.id,
+    label: `${menu.title}${codeText}${statusText}`,
+    children,
+    disabled: menu.status !== MenuStatus.Enabled,
+  }
 }
 
 export function toPermissionRows(role: RoleItem): PermissionRow[] {
@@ -148,14 +157,21 @@ export function normalizeRolePermissions(rows: PermissionRow[]): RolePermissionI
   return result
 }
 
+function normalizeCustomDepartmentIDs(formModel: RoleFormModel) {
+  if (formModel.data_scope !== RoleDataScope.CustomDept) {
+    return []
+  }
+
+  return [...new Set(formModel.custom_department_ids.map(Number).filter((id) => Number.isFinite(id) && id > 0))]
+}
+
 export function buildRoleCreatePayload(formModel: RoleFormModel) {
   return {
     code: formModel.code.trim(),
     name: formModel.name.trim(),
     sort: formModel.sort,
     data_scope: formModel.data_scope,
-    custom_department_ids:
-      formModel.data_scope === RoleDataScope.CustomDept ? formModel.custom_department_ids : [],
+    custom_department_ids: normalizeCustomDepartmentIDs(formModel),
     status: formModel.status,
     remark: formModel.remark.trim(),
   }
@@ -166,8 +182,7 @@ export function buildRoleUpdatePayload(formModel: RoleFormModel) {
     name: formModel.name.trim(),
     sort: formModel.sort,
     data_scope: formModel.data_scope,
-    custom_department_ids:
-      formModel.data_scope === RoleDataScope.CustomDept ? formModel.custom_department_ids : [],
+    custom_department_ids: normalizeCustomDepartmentIDs(formModel),
     status: formModel.status,
     remark: formModel.remark.trim(),
   }

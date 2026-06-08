@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NCard, NInput, NPopconfirm, NSelect, NSpace, NTag } from 'naive-ui'
+import { NButton, NCard, NEmpty, NInput, NSelect, NSpin, NTag } from 'naive-ui'
 
-import type { RoleListQuery, RoleItem, RoleStatus } from '../types/role'
+import type { RoleItem, RoleListQuery, RoleStatus } from '../types/role'
 
 defineProps<{
-  canUse: (code: string) => boolean
   loading: boolean
   roles: RoleItem[]
   selectedRoleId: number | null
@@ -15,12 +14,9 @@ defineProps<{
 }>()
 
 defineEmits<{
-  delete: [role: RoleItem]
-  edit: [role: RoleItem]
   reset: []
   search: []
   select: [role: RoleItem]
-  toggleStatus: [role: RoleItem]
 }>()
 
 const query = defineModel<RoleListQuery>('query', { required: true })
@@ -28,112 +24,201 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 
 <template>
   <NCard
-    class="ez-card h-full min-h-0 overflow-hidden rounded-[var(--ez-radius-sm)]"
+    class="ez-card role-rail-card h-full min-h-0 overflow-hidden rounded-[var(--ez-radius-sm)]"
     :bordered="false"
     content-class="ez-card-content-fill"
   >
-    <div class="flex h-full flex-col overflow-hidden">
-      <div class="mb-4">
-        <h2 class="text-lg font-bold text-[var(--ez-text-main)]">角色列表</h2>
-        <p class="mt-1 text-xs text-[var(--ez-text-sub)]">点击左侧角色后，在右侧维护权限。</p>
-      </div>
+    <div class="role-rail">
+      <header class="role-rail-head">
+        <div>
+          <h2>角色列表</h2>
+          <p>{{ roles.length }} 个角色</p>
+        </div>
+      </header>
 
-      <NSpace vertical :size="10" class="mb-4">
+      <div class="role-rail-search">
         <NInput
           v-model:value="query.keyword"
           clearable
-          placeholder="角色编码 / 名称"
+          placeholder="搜索角色名称 / 编码"
           @keyup.enter="$emit('search')"
         />
-        <div class="grid grid-cols-[1fr_auto] gap-2">
+        <div class="role-rail-filter">
           <NSelect v-model:value="query.status" :options="statusOptions" />
-          <NButton @click="$emit('reset')">重置</NButton>
+          <NButton type="primary" secondary @click="$emit('search')">查询</NButton>
+          <NButton secondary @click="$emit('reset')">重置</NButton>
         </div>
-      </NSpace>
-
-      <div class="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-        <button
-          v-for="role in roles"
-          :key="role.id"
-          type="button"
-          class="role-card"
-          :class="{ 'role-card--active': role.id === selectedRoleId }"
-          @click="$emit('select', role)"
-        >
-          <span class="flex items-center justify-between gap-2">
-            <span class="min-w-0 truncate text-base font-bold text-[var(--ez-text-main)]">
-              {{ role.name }}
-            </span>
-            <NTag :type="statusType(role.status)" :bordered="false" size="small">
-              {{ role.status === 1 ? '启用' : '禁用' }}
-            </NTag>
-          </span>
-          <span class="mt-1 block text-left text-xs text-[var(--ez-text-sub)]">
-            {{ role.code }} · 菜单 {{ (role.menu_ids ?? []).length }} · 接口
-            {{ (role.permissions ?? []).length }}
-          </span>
-          <span class="mt-2 flex items-center gap-2">
-            <NButton
-              v-if="canUse('system:role:update')"
-              size="tiny"
-              @click.stop="$emit('edit', role)"
-              >编辑</NButton
-            >
-            <NPopconfirm
-              v-if="canUse('system:role:status') && role.code !== superAdminRoleCode"
-              @positive-click="$emit('toggleStatus', role)"
-            >
-              <template #trigger>
-                <NButton
-                  size="tiny"
-                  :type="role.status === 1 ? 'error' : 'success'"
-                  ghost
-                  @click.stop
-                >
-                  {{ role.status === 1 ? '禁用' : '启用' }}
-                </NButton>
-              </template>
-              确认{{ role.status === 1 ? '禁用' : '启用' }}该角色？
-            </NPopconfirm>
-            <NPopconfirm
-              v-if="canUse('system:role:delete') && role.code !== superAdminRoleCode"
-              @positive-click="$emit('delete', role)"
-            >
-              <template #trigger>
-                <NButton size="tiny" type="error" ghost @click.stop>删除</NButton>
-              </template>
-              删除前请确认该角色没有分配给任何用户。
-            </NPopconfirm>
-          </span>
-        </button>
       </div>
+
+      <NSpin :show="loading" class="min-h-0 flex-1">
+        <div class="role-nav-list">
+          <div
+            v-for="role in roles"
+            :key="role.id"
+            class="role-nav-item"
+            :class="{ 'role-nav-item--active': role.id === selectedRoleId }"
+            role="button"
+            tabindex="0"
+            @click="$emit('select', role)"
+            @keyup.enter="$emit('select', role)"
+          >
+            <span class="role-nav-content">
+              <span class="role-nav-main">
+                <strong>{{ role.name }}</strong>
+                <span class="role-nav-tags">
+                  <NTag :type="statusType(role.status)" :bordered="false" size="small">
+                    {{ role.status === 1 ? '启用' : '禁用' }}
+                  </NTag>
+                  <NTag v-if="role.code === superAdminRoleCode" type="warning" :bordered="false" size="small">
+                    保护
+                  </NTag>
+                </span>
+              </span>
+              <span class="role-nav-code">{{ role.code }}</span>
+            </span>
+          </div>
+
+          <div v-if="roles.length === 0" class="role-rail-empty">
+            <NEmpty size="small" description="暂无匹配角色" />
+          </div>
+        </div>
+      </NSpin>
     </div>
   </NCard>
 </template>
 
 <style scoped>
-.role-card {
-  width: 100%;
+.role-rail-card {
+  background: #fff;
+}
+
+.role-rail {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--ez-component-border);
-  border-radius: var(--ez-radius-sm);
-  background: var(--ez-card-bg);
-  padding: 12px;
-  text-align: left;
+}
+
+.role-rail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.86);
+  padding: 14px 16px 12px;
+}
+
+.role-rail-head h2 {
+  margin: 0;
+  color: var(--ez-text-main);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.role-rail-head p {
+  margin: 3px 0 0;
+  color: var(--ez-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.role-rail-search {
+  display: grid;
+  gap: 10px;
+  padding: 14px 14px 12px;
+}
+
+.role-rail-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.role-nav-list {
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 4px 12px 12px;
+}
+
+.role-nav-item {
+  position: relative;
+  display: block;
+  border: 1px solid rgba(226, 232, 240, 0.92);
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 11px 12px;
+  cursor: pointer;
+  outline: none;
   transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
-.role-card:hover {
-  border-color: var(--ez-border);
-  background: var(--ez-surface-subtle);
-  box-shadow: var(--ez-shadow-sm);
+.role-nav-item + .role-nav-item {
+  margin-top: 8px;
 }
 
-.role-card--active {
-  border-color: var(--ez-brand);
-  background: var(--ez-brand-soft);
+.role-nav-item:hover {
+  border-color: rgba(148, 163, 184, 0.68);
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  transform: translateY(-1px);
+}
+
+.role-nav-item--active {
+  border-color: rgba(37, 99, 255, 0.38);
+  background: rgba(37, 99, 255, 0.07);
+  box-shadow:
+    inset 3px 0 0 var(--ez-primary),
+    0 4px 14px rgba(37, 99, 255, 0.08);
+  transform: none;
+}
+
+.role-nav-content {
+  min-width: 0;
+}
+
+.role-nav-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.role-nav-tags {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.role-nav-main strong {
+  overflow: hidden;
+  color: var(--ez-text-main);
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-nav-code {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--ez-text-light);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-rail-empty {
+  padding: 38px 12px;
 }
 </style>
