@@ -102,7 +102,7 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 
 ## 列表区
 
-列表区统一使用 `EzDataTable`。普通列表直接传 `columns / data / loading / page / pageSize / total`；需要勾选、树表、额外事件或自定义空态时，用 `body` 插槽接管内部 `NDataTable`，但仍复用统一工具条和分页外壳。
+列表区统一使用 `EzDataTable`。普通列表直接传 `columns / data / loading / page / pageSize / total`；需要勾选、树表、额外事件或自定义空态时，用 `body` 插槽接管内部 `NDataTable`，但仍复用统一工具条、刷新、密度、列设置和分页外壳。
 
 ```vue
 <template>
@@ -122,11 +122,37 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 </template>
 ```
 
+树表、勾选表或自定义空态接管表体时，必须继续使用 `body` 插槽提供的 `tableColumns / tableSize`，否则列显隐和密度设置不会生效：
+
+```vue
+<template>
+  <EzDataTable :columns="columns" :data="items" :loading="loading">
+    <template #toolbarActions>
+      <NButton secondary size="small" @click="emit('expandAll')">展开全部</NButton>
+    </template>
+
+    <template #body="{ tableColumns, tableSize }">
+      <NDataTable
+        class="ez-table-fill-table"
+        :columns="tableColumns"
+        :data="items"
+        :loading="loading"
+        :size="tableSize"
+        :pagination="false"
+        :bordered="false"
+        flex-height
+      />
+    </template>
+  </EzDataTable>
+</template>
+```
+
 列表区约定：
 
 - 表格不直接使用 Naive UI 分页，普通列表由 `EzDataTable` 统一渲染分页。
 - 表格容器不再新增 `NCard class="ez-table-card"` 写法。
 - 顶部统计条只放统计、刷新、展开/收起、批量动作，不放搜索条件。
+- 刷新、密度、列设置由 `EzDataTable` 统一提供，并作为右侧图标型视图控制组展示；业务侧扩展按钮放入 `toolbarActions`，作为文字操作组展示，不要覆盖整段 `actions`。
 - `EzTableCard` 只作为底层外壳使用，业务列表不要再手写 `EzTableCard + TableStatsBar + NDataTable + NPagination`。
 - 树表、勾选表和带自定义空态的表格可以通过 `EzDataTable` 的 `body` 插槽接管 `NDataTable`。
 - 长表格必须配置稳定列宽，避免操作列挤压正文列。

@@ -103,7 +103,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 224,
+    width: 196,
     fixed: 'right',
     render(row) {
       const nextStatus =
@@ -120,7 +120,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
               ? h(
                   NButton,
                   {
-                    size: 'small',
+                    size: 'tiny',
                     secondary: true,
                     type: 'primary',
                     onClick: () => emit('createChild', row),
@@ -132,8 +132,8 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
               ? h(
                   NButton,
                   {
-                    size: 'small',
-                    ghost: true,
+                    size: 'tiny',
+                    secondary: true,
                     type: 'info',
                     onClick: () => emit('edit', row),
                   },
@@ -149,8 +149,8 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
                       h(
                         NButton,
                         {
-                          size: 'small',
-                          ghost: true,
+                          size: 'tiny',
+                          secondary: true,
                           type: nextStatus === DepartmentStatus.Disabled ? 'error' : 'success',
                         },
                         { default: () => (nextStatus === DepartmentStatus.Disabled ? '禁用' : '启用') },
@@ -169,39 +169,39 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
 </script>
 
 <template>
-  <EzDataTable :columns="columns" :data="departments" :loading="loading">
+  <EzDataTable :columns="columns" :data="departments" :loading="loading" @refresh="emit('refresh')">
     <template #toolbarSummary>
       <span>共 {{ departmentCount }} 个部门节点，已选 {{ selectedCount }} 项</span>
     </template>
 
-    <template #actions>
+    <template #toolbarActions>
       <NSpace :size="12">
-        <NButton text size="small" @click="emit('expandAll')">展开全部</NButton>
-        <NButton text size="small" @click="emit('collapseAll')">收起全部</NButton>
+        <NButton quaternary size="small" @click="emit('expandAll')">展开全部</NButton>
+        <NButton quaternary size="small" @click="emit('collapseAll')">收起全部</NButton>
         <NPopconfirm
           v-if="canUse('system:department:delete')"
           :disabled="selectedCount === 0"
           @positive-click="emit('deleteSelected')"
         >
           <template #trigger>
-            <NButton text size="small" type="error" :disabled="selectedCount === 0">删除选中</NButton>
+            <NButton quaternary size="small" type="error" :disabled="selectedCount === 0">删除选中</NButton>
           </template>
           删除前请确认选中的部门没有关联用户、角色数据范围，且子部门也已一并选中。
         </NPopconfirm>
-        <NButton text size="small" type="primary" @click="emit('refresh')">刷新</NButton>
       </NSpace>
     </template>
 
-    <template #body>
+    <template #body="{ tableColumns, tableSize }">
       <NDataTable
         class="ez-table-fill-table department-table"
-        :columns="columns"
+        :columns="tableColumns"
         :data="departments"
         :loading="loading"
         :row-key="(row: DepartmentItem) => row.id"
         :checked-row-keys="checkedRowKeys"
         :expanded-row-keys="expandedRowKeys"
         :pagination="false"
+        :size="tableSize"
         :bordered="false"
         children-key="children"
         flex-height

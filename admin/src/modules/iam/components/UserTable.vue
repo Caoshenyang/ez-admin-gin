@@ -128,71 +128,71 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
 
       return h(NSpace, { size: 8, align: 'center', wrap: true }, {
         default: () => [
-        props.canUse('system:user:update')
-          ? h(
-              NButton,
-              {
-                size: 'small',
-                ghost: true,
-                type: 'info',
-                class: 'min-w-[48px]',
-                onClick: () => emit('edit', row),
-              },
-              { default: () => '编辑' },
-            )
-          : null,
-        props.canUse('system:user:status')
-          ? h(
-              NPopconfirm,
-              { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
-              {
-                trigger: () =>
-                  h(
-                    NButton,
-                    {
-                      size: 'small',
-                      ghost: true,
-                      type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
-                      class: 'min-w-[48px]',
-                    },
-                    { default: () => (nextStatus === UserStatus.Disabled ? '禁用' : '启用') },
-                  ),
-                default: () => `确认${nextStatus === UserStatus.Disabled ? '禁用' : '启用'}该用户？`,
-              },
-            )
-          : null,
-        props.canUse('system:user:delete')
-          ? h(
-              NPopconfirm,
-              { onPositiveClick: () => emit('delete', row) },
-              {
-                trigger: () =>
-                  h(
-                    NButton,
-                    {
-                      size: 'small',
-                      ghost: true,
-                      type: 'error',
-                      class: 'min-w-[48px]',
-                    },
-                    { default: () => '删除' },
-                  ),
-                default: () => '删除后用户账号和角色/岗位关联会一起移除，确认继续？',
-              },
-            )
-          : null,
-        props.canUse('system:user:assign-role')
-          ? h(
-              NButton,
-              {
-                size: 'small',
-                ghost: true,
-                type: 'primary',
-                onClick: () => emit('role', row),
-              },
-              { default: () => '分配角色' },
-            )
-          : null,
+          props.canUse('system:user:update')
+            ? h(
+                NButton,
+                {
+                  size: 'tiny',
+                  secondary: true,
+                  type: 'info',
+                  class: 'min-w-[48px]',
+                  onClick: () => emit('edit', row),
+                },
+                { default: () => '编辑' },
+              )
+            : null,
+          props.canUse('system:user:status')
+            ? h(
+                NPopconfirm,
+                { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
+                {
+                  trigger: () =>
+                    h(
+                      NButton,
+                      {
+                        size: 'tiny',
+                        secondary: true,
+                        type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
+                        class: 'min-w-[48px]',
+                      },
+                      { default: () => (nextStatus === UserStatus.Disabled ? '禁用' : '启用') },
+                    ),
+                  default: () => `确认${nextStatus === UserStatus.Disabled ? '禁用' : '启用'}该用户？`,
+                },
+              )
+            : null,
+          props.canUse('system:user:delete')
+            ? h(
+                NPopconfirm,
+                { onPositiveClick: () => emit('delete', row) },
+                {
+                  trigger: () =>
+                    h(
+                      NButton,
+                      {
+                        size: 'tiny',
+                        secondary: true,
+                        type: 'error',
+                        class: 'min-w-[48px]',
+                      },
+                      { default: () => '删除' },
+                    ),
+                  default: () => '删除后用户账号和角色/岗位关联会一起移除，确认继续？',
+                },
+              )
+            : null,
+          props.canUse('system:user:assign-role')
+            ? h(
+                NButton,
+                {
+                  size: 'tiny',
+                  secondary: true,
+                  type: 'primary',
+                  onClick: () => emit('role', row),
+                },
+                { default: () => '分配角色' },
+              )
+            : null,
         ].filter(Boolean),
       })
     },
@@ -217,16 +217,17 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
       <span>已选 {{ selectedCount }} 项</span>
     </template>
 
-    <template #body>
+    <template #body="{ tableColumns, tableSize }">
       <NDataTable
         remote
         class="ez-table-fill-table"
-        :columns="columns"
+        :columns="tableColumns"
         :data="users"
         :loading="loading"
         :pagination="false"
         :row-key="(row: UserItem) => row.id"
         :checked-row-keys="checkedRowKeys"
+        :size="tableSize"
         :bordered="false"
         flex-height
         @update:checked-row-keys="(keys) => emit('checkedRowKeysChange', keys)"

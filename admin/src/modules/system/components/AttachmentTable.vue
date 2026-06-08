@@ -168,12 +168,13 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
     @page-size-change="(pageSize) => emit('pageSizeChange', pageSize)"
     @refresh="emit('refresh')"
   >
-    <template #body>
+    <template #body="{ tableColumns, tableSize }">
       <NDataTable
-        :columns="columns"
+        :columns="tableColumns"
         :data="attachments"
         :loading="loading"
         :bordered="false"
+        :size="tableSize"
         flex-height
         class="ez-table-fill-table"
       />
