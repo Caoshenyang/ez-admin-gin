@@ -3,7 +3,9 @@ import { createRouter, createWebHistory, type Router, type RouterHistory } from 
 import { hasAccessToken } from '../utils/auth'
 import { createAuthGuardController } from './guard'
 
-export function createAppRouter(history: RouterHistory = createWebHistory(import.meta.env.BASE_URL)) {
+export function createAppRouter(
+  history: RouterHistory = createWebHistory(import.meta.env.BASE_URL),
+) {
   const router = createRouter({
     history,
     routes: [
@@ -52,7 +54,8 @@ export function createAppRouter(history: RouterHistory = createWebHistory(import
 function attachAuthGuard(router: Router) {
   const controller = createAuthGuardController(router)
   router.beforeEach(controller.guard)
-  ;(router as Router & { resetDynamicRoutes: () => void }).resetDynamicRoutes = controller.resetDynamicRoutes
+  ;(router as Router & { resetDynamicRoutes: () => void }).resetDynamicRoutes =
+    controller.resetDynamicRoutes
 }
 
 const router = createAppRouter()

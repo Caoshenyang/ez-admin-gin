@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NInput, NSelect } from 'naive-ui'
+import { NInput, NSelect } from 'naive-ui'
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzSearchPanel from '@/components/ez/EzSearchPanel.vue'
 
 defineProps<{
@@ -44,8 +45,8 @@ const emit = defineEmits<{
     />
 
     <template #actions>
-      <NButton type="primary" @click="emit('search')">查询</NButton>
-      <NButton @click="emit('reset')">重置</NButton>
+      <EzActionButton kind="search" label="查询" type="primary" @click="emit('search')" />
+      <EzActionButton kind="reset" label="重置" @click="emit('reset')" />
     </template>
   </EzSearchPanel>
 </template>

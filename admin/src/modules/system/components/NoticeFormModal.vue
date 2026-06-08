@@ -23,17 +23,34 @@ const formModel = defineModel<NoticeFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-md" @update:show="(value) => $emit('update:show', value)">
+  <NModal
+    :show="show"
+    preset="card"
+    :closable="false"
+    class="ez-modal-width-md"
+    @update:show="(value) => $emit('update:show', value)"
+  >
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增公告' : '编辑公告'"
-        :subtitle="formMode === 'create' ? '填写公告标题和内容，保存后可立即展示。' : '修改标题和内容后，状态变更会立即生效。'"
+        :subtitle="
+          formMode === 'create'
+            ? '填写公告标题和内容，保存后可立即展示。'
+            : '修改标题和内容后，状态变更会立即生效。'
+        "
         @close="$emit('update:show', false)"
       />
     </template>
 
     <div class="ez-modal-shell">
-      <NForm ref="formRef" class="ez-modal-form" :model="formModel" :rules="rules" label-placement="left" label-width="76">
+      <NForm
+        ref="formRef"
+        class="ez-modal-form"
+        :model="formModel"
+        :rules="rules"
+        label-placement="left"
+        label-width="76"
+      >
         <section class="ez-modal-section ez-modal-section--soft">
           <div class="ez-modal-section__head">
             <h3>公告信息</h3>
@@ -57,7 +74,12 @@ const formModel = defineModel<NoticeFormModel>('model', { required: true })
           </div>
 
           <NFormItem label="内容">
-            <NInput v-model:value="formModel.content" type="textarea" :rows="4" placeholder="请输入公告内容" />
+            <NInput
+              v-model:value="formModel.content"
+              type="textarea"
+              :rows="4"
+              placeholder="请输入公告内容"
+            />
           </NFormItem>
         </section>
 
@@ -78,7 +100,9 @@ const formModel = defineModel<NoticeFormModel>('model', { required: true })
     <template #footer>
       <div class="ez-modal-footer">
         <NButton quaternary class="min-w-[92px]" @click="$emit('update:show', false)">取消</NButton>
-        <NButton type="primary" class="min-w-[92px]" :loading="saving" @click="$emit('submit')">保存</NButton>
+        <NButton type="primary" class="min-w-[92px]" :loading="saving" @click="$emit('submit')"
+          >保存</NButton
+        >
       </div>
     </template>
   </NModal>

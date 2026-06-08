@@ -23,13 +23,19 @@ export async function getAccountProfile() {
 
 // updateAccountProfile 修改当前登录人的基础资料。
 export async function updateAccountProfile(payload: UpdateAccountProfileRequest) {
-  const response = await http.post<ApiResponse<AccountProfileResponse>>('/auth/account/profile', payload)
+  const response = await http.post<ApiResponse<AccountProfileResponse>>(
+    '/auth/account/profile',
+    payload,
+  )
   return response.data.data
 }
 
 // updateAccountPassword 修改当前登录人的登录密码。
 export async function updateAccountPassword(payload: UpdateAccountPasswordRequest) {
-  const response = await http.post<ApiResponse<{ updated: boolean }>>('/auth/account/password', payload)
+  const response = await http.post<ApiResponse<{ updated: boolean }>>(
+    '/auth/account/password',
+    payload,
+  )
   return response.data.data
 }
 

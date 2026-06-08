@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NCard, NDataTable, NInput, NPagination, NSelect, NTag } from 'naive-ui'
+import { NCard, NDataTable, NInput, NPagination, NSelect, NTag } from 'naive-ui'
 
 import EmptyState from '@/components/EmptyState.vue'
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { STATUS_FILTER_OPTIONS } from '@/constants/status'
 import { formatTime } from '@/utils/format'
 import type { DictItem, DictItemListQuery, DictTypeItem } from '../types/dict'
@@ -28,13 +29,25 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="ez-card h-full min-h-0 min-w-0 overflow-hidden rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
+  <NCard
+    class="ez-card h-full min-h-0 min-w-0 overflow-hidden rounded-[var(--ez-radius-sm)]"
+    :bordered="false"
+    content-class="ez-card-content-fill"
+  >
     <div class="dict-item-panel-body grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)]">
-      <div class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4">
+      <div
+        class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4"
+      >
         <div>
-          <p class="text-[var(--ez-text-xs)] font-bold tracking-[0.14em] text-[var(--ez-text-light)] uppercase">Items</p>
+          <p
+            class="text-[var(--ez-text-xs)] font-bold tracking-[0.14em] text-[var(--ez-text-light)] uppercase"
+          >
+            Items
+          </p>
           <div class="flex items-center gap-2">
-            <h2 class="mt-1.5 text-[var(--ez-text-xl)] font-bold text-[var(--ez-text-main)]">字典项</h2>
+            <h2 class="mt-1.5 text-[var(--ez-text-xl)] font-bold text-[var(--ez-text-main)]">
+              字典项
+            </h2>
             <NTag v-if="selectedType" size="small" type="info" :bordered="false">
               {{ selectedType.name }}
             </NTag>
@@ -43,25 +56,33 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
             {{ selectedType.code }} · 最近更新 {{ formatTime(selectedType.updated_at) }}
           </p>
         </div>
-        <NButton
+        <EzActionButton
           v-if="canUse('system:dict:item:create')"
+          kind="add"
+          label="新增"
           size="small"
           type="primary"
           ghost
           :disabled="!selectedType"
           @click="$emit('create')"
-        >
-          新增
-        </NButton>
+        />
       </div>
 
-      <div v-if="selectedType" class="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
+      <div
+        v-if="selectedType"
+        class="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden"
+      >
         <div class="dict-item-filter-grid px-5 py-4 max-[720px]:px-4">
-          <NInput v-model:value="query.keyword" clearable placeholder="编码 / 名称 / 值" @keyup.enter="$emit('search')" />
+          <NInput
+            v-model:value="query.keyword"
+            clearable
+            placeholder="编码 / 名称 / 值"
+            @keyup.enter="$emit('search')"
+          />
           <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" />
           <div class="dict-item-filter-actions ez-filter-actions">
-            <NButton type="primary" @click="$emit('search')">查询</NButton>
-            <NButton @click="$emit('reset')">重置</NButton>
+            <EzActionButton kind="search" label="查询" type="primary" @click="$emit('search')" />
+            <EzActionButton kind="reset" label="重置" @click="$emit('reset')" />
           </div>
         </div>
 
@@ -91,11 +112,11 @@ const query = defineModel<DictItemListQuery>('query', { required: true })
         </div>
       </div>
 
-      <div
-        v-else
-        class="m-4 flex flex-1 items-center justify-center"
-      >
-        <EmptyState title="先选择字典类型" description="从左侧选择一个字典类型后，再维护它的字典项。" />
+      <div v-else class="m-4 flex flex-1 items-center justify-center">
+        <EmptyState
+          title="先选择字典类型"
+          description="从左侧选择一个字典类型后，再维护它的字典项。"
+        />
       </div>
     </div>
   </NCard>

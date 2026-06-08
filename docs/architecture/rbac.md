@@ -57,17 +57,20 @@ type Claims struct {
 
 ```
 sys_user ──M:N── sys_role ──M:N── sys_menu
+                       └──M:N── sys_api ──sync── casbin_rule
 ```
 
 - 一个用户可以拥有多个角色
-- 一个角色可以关联多个菜单/权限
-- 角色的权限通过 `sys_role_menu` 关联表管理
+- 一个角色可以关联多个菜单/按钮权限
+- 一个角色可以关联多个接口权限元数据
+- 菜单和按钮权限通过 `sys_role_menu` 管理
+- 接口权限通过 `sys_api` + `sys_role_api` 管理，再同步到 `casbin_rule` 给 Casbin 执行
 
 **角色数据范围：** 每个角色可以配置数据权限作用域（详见[数据权限](#数据权限)）。
 
 ## Casbin 接口权限
 
-使用 Casbin 进行接口级（URL + HTTP 方法）权限控制。
+使用接口元数据管理可选权限点，使用 Casbin 进行接口级（URL + HTTP 方法）权限控制。
 
 **RBAC 模型（`configs/rbac_model.conf`）：**
 
@@ -86,10 +89,10 @@ m = r.sub == p.sub && keyMatch2(r.obj, p.obj) && (r.act == p.act || p.act == "*"
 ```
 
 - **sub**：角色编码（如 `super_admin`）
-- **obj**：URL 路径模式（如 `/api/v1/iam/users/*`）
+- **obj**：URL 路径模式（如 `/api/v1/system/users/:id/update`）
 - **act**：HTTP 方法（GET/POST/PUT/DELETE），`*` 表示全部放行
 
-**策略存储在 `casbin_rule` 数据库表中**，支持动态增删，无需重启服务。
+**接口权限元数据存储在 `sys_api`，角色关联存储在 `sys_role_api`。** 保存角色接口权限时，后端会用角色关联重建该角色的 `casbin_rule`，并重新加载 Casbin 策略。
 
 **权限匹配流程：**
 
@@ -97,6 +100,13 @@ m = r.sub == p.sub && keyMatch2(r.obj, p.obj) && (r.act == p.act || p.act == "*"
 2. 构造 Casbin 请求 `(角色, URL路径, HTTP方法)`
 3. 逐一匹配 Casbin 策略
 4. 任一角色匹配即放行，全部不匹配返回 403
+
+**管理流程：**
+
+1. `sys_api` 维护接口名称、权限编码、路径和方法
+2. 角色接口权限页从 `/api/v1/system/apis` 拉取接口元数据
+3. 保存角色时写入 `sys_role_api`
+4. 同步生成该角色的 `casbin_rule`
 
 ## 按钮权限
 

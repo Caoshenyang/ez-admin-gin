@@ -474,6 +474,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/apis": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IAM / 接口权限"
+                ],
+                "summary": "查询接口权限元数据",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpx.Body"
+                        }
+                    }
+                }
+            }
+        },
         "/system/attachments": {
             "get": {
                 "security": [
@@ -4383,10 +4416,10 @@ const docTemplate = `{
         "api.UpdatePermissionsRequest": {
             "type": "object",
             "properties": {
-                "permissions": {
+                "api_ids": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/domain.PermissionItem"
+                        "type": "integer"
                     }
                 }
             }
@@ -4683,17 +4716,6 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/model.MenuType"
-                }
-            }
-        },
-        "domain.PermissionItem": {
-            "type": "object",
-            "properties": {
-                "method": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
                 }
             }
         },

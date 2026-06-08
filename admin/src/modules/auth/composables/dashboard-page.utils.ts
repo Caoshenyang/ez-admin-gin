@@ -344,7 +344,9 @@ export function dashboardResourceItems(dashboard: DashboardData | null): Dashboa
 
 export function dashboardTrendPoints(dashboard: DashboardData | null): DashboardTrendPoint[] {
   const operations = [...(dashboard?.recent_operations ?? [])]
-    .sort((left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime())
+    .sort(
+      (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
+    )
     .slice(-6)
 
   if (operations.length === 0) {
@@ -414,7 +416,9 @@ export function dashboardRingMetrics(dashboard: DashboardData | null): Dashboard
   ]
 }
 
-export function dashboardOperationSegments(dashboard: DashboardData | null): DashboardChartSegment[] {
+export function dashboardOperationSegments(
+  dashboard: DashboardData | null,
+): DashboardChartSegment[] {
   const metrics = dashboard?.metrics
   const total = metrics?.today_operation_total ?? 0
   const failed = metrics?.today_risk_operation_total ?? 0

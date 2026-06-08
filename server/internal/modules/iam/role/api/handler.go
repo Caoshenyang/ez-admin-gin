@@ -158,13 +158,13 @@ func (h *Handler) UpdatePermissions(c *gin.Context) {
 		return
 	}
 
-	permissions, roleCode, err := h.service.UpdatePermissions(roleID, req.Permissions)
+	apiIDs, roleCode, err := h.service.UpdatePermissions(roleID, req.APIIDs)
 	if err != nil {
 		httpx.WriteError(c, err, "更新角色接口权限失败", h.log)
 		return
 	}
 
-	httpx.Success(c, gin.H{"id": roleID, "code": roleCode, "permissions": permissions})
+	httpx.Success(c, gin.H{"id": roleID, "code": roleCode, "api_ids": apiIDs})
 }
 
 // UpdateMenus godoc

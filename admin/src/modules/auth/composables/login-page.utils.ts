@@ -42,6 +42,6 @@ export function loginFooterText(year = new Date().getFullYear()) {
 
 export function loginErrorMessage(error: unknown) {
   return axios.isAxiosError<{ message?: string }>(error)
-    ? error.response?.data?.message ?? '登录失败，请稍后重试'
+    ? (error.response?.data?.message ?? '登录失败，请稍后重试')
     : '登录失败，请稍后重试'
 }

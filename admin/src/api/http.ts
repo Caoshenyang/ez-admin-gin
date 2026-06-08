@@ -2,7 +2,12 @@ import axios from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 import router from '../router'
-import { clearAuthSession, getAuthorizationHeader, setAuthSession, getAuthUserInfo } from '../utils/auth'
+import {
+  clearAuthSession,
+  getAuthorizationHeader,
+  setAuthSession,
+  getAuthUserInfo,
+} from '../utils/auth'
 
 interface ApiResponse<T> {
   code: number
@@ -113,7 +118,8 @@ http.interceptors.response.use(
       try {
         const refreshed = await silentRefresh()
         if (config) {
-          (config as InternalAxiosRequestConfig).headers.Authorization = `Bearer ${refreshed.access_token}`
+          ;(config as InternalAxiosRequestConfig).headers.Authorization =
+            `Bearer ${refreshed.access_token}`
           return http(config)
         }
       } catch {

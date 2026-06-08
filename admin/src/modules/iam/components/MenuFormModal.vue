@@ -37,7 +37,11 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增菜单' : '编辑菜单'"
-        :subtitle="formMode === 'create' ? '选择节点类型后填写对应字段。' : '权限标识保持只读，避免影响按钮权限判断。'"
+        :subtitle="
+          formMode === 'create'
+            ? '选择节点类型后填写对应字段。'
+            : '权限标识保持只读，避免影响按钮权限判断。'
+        "
         @close="$emit('update:show', false)"
       />
     </template>
@@ -67,11 +71,7 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
       </NFormItem>
 
       <NFormItem label="父级节点" path="parent_id">
-        <NSelect
-          v-model:value="formModel.parent_id"
-          filterable
-          :options="parentOptions"
-        />
+        <NSelect v-model:value="formModel.parent_id" filterable :options="parentOptions" />
       </NFormItem>
 
       <NFormItem label="菜单名称" path="title">
@@ -90,11 +90,7 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
         <NInput v-model:value="formModel.path" placeholder="/system/example" />
       </NFormItem>
 
-      <NFormItem
-        v-if="formModel.type === MenuType.Menu"
-        label="组件路径"
-        path="component"
-      >
+      <NFormItem v-if="formModel.type === MenuType.Menu" label="组件路径" path="component">
         <NSelect
           v-model:value="formModel.component"
           filterable
@@ -106,7 +102,10 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
 
       <NFormItem label="图标 / 排序">
         <div class="ez-form-grid ez-form-grid--2 menu-form-grid">
-          <NInput v-model:value="formModel.icon" placeholder="setting / notification / layout-dashboard" />
+          <NInput
+            v-model:value="formModel.icon"
+            placeholder="setting / notification / layout-dashboard"
+          />
           <NInputNumber v-model:value="formModel.sort" :min="0" />
         </div>
       </NFormItem>
@@ -163,7 +162,9 @@ const formModel = defineModel<MenuFormModel>('model', { required: true })
   color: var(--ez-text-muted);
   font-size: var(--ez-text-sm);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .type-segment__btn--active {

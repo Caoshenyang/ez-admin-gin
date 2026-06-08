@@ -1,4 +1,10 @@
-import { NoticeStatus, type CreateNoticePayload, type NoticeItem, type NoticeListQuery, type UpdateNoticePayload } from '../types/notice'
+import {
+  NoticeStatus,
+  type CreateNoticePayload,
+  type NoticeItem,
+  type NoticeListQuery,
+  type UpdateNoticePayload,
+} from '../types/notice'
 
 export interface NoticeFormModel {
   id: number
@@ -40,7 +46,9 @@ export function toNoticeFormModel(notice: NoticeItem): NoticeFormModel {
   }
 }
 
-export function buildNoticePayload(formModel: NoticeFormModel): CreateNoticePayload | UpdateNoticePayload {
+export function buildNoticePayload(
+  formModel: NoticeFormModel,
+): CreateNoticePayload | UpdateNoticePayload {
   return {
     title: formModel.title,
     content: formModel.content,

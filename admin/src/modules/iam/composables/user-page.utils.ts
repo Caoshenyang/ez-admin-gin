@@ -18,7 +18,9 @@ export const userFormRules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  department_id: [{ required: true, type: 'number', message: '请选择部门', trigger: ['change', 'blur'] }],
+  department_id: [
+    { required: true, type: 'number', message: '请选择部门', trigger: ['change', 'blur'] },
+  ],
 }
 
 export function defaultUserFormModel(): UserFormModel {
@@ -95,11 +97,16 @@ export function buildUserDepartmentTreeOptions(departments: DepartmentItem[]): T
   return [{ label: '未分配部门', value: 0 }, ...buildDepartmentTreeOptions(departments)]
 }
 
-export function buildUserDepartmentFilterTreeOptions(departments: DepartmentItem[]): TreeSelectOption[] {
+export function buildUserDepartmentFilterTreeOptions(
+  departments: DepartmentItem[],
+): TreeSelectOption[] {
   return buildDepartmentTreeOptions(departments)
 }
 
-export function filterDepartmentTreeOptions(options: TreeSelectOption[], keyword: string): TreeSelectOption[] {
+export function filterDepartmentTreeOptions(
+  options: TreeSelectOption[],
+  keyword: string,
+): TreeSelectOption[] {
   const normalizedKeyword = keyword.trim().toLowerCase()
   if (!normalizedKeyword) {
     return options
@@ -112,7 +119,11 @@ export function filterDepartmentTreeOptions(options: TreeSelectOption[], keyword
     const label = String(option.label ?? '').toLowerCase()
     const value = String(option.value ?? '').toLowerCase()
 
-    if (label.includes(normalizedKeyword) || value.includes(normalizedKeyword) || children.length > 0) {
+    if (
+      label.includes(normalizedKeyword) ||
+      value.includes(normalizedKeyword) ||
+      children.length > 0
+    ) {
       return [{ ...option, children: children.length > 0 ? children : undefined }]
     }
 
@@ -146,7 +157,9 @@ export function buildRoleFilterOptions(roles: RoleItem[]): SelectOption[] {
 
 export function buildDepartmentNameMap(departments: DepartmentItem[]) {
   // 用户列表和详情都需要按部门 ID 反查名称，这里统一复用同一份扁平索引。
-  return new Map(flattenDepartments(departments).map((department) => [department.id, department.name]))
+  return new Map(
+    flattenDepartments(departments).map((department) => [department.id, department.name]),
+  )
 }
 
 export function countDepartments(departments: DepartmentItem[]) {

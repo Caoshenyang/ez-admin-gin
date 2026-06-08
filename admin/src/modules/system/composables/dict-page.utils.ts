@@ -1,4 +1,10 @@
-import type { DictItem, DictItemListQuery, DictStatus, DictTypeItem, DictTypeListQuery } from '../types/dict'
+import type {
+  DictItem,
+  DictItemListQuery,
+  DictStatus,
+  DictTypeItem,
+  DictTypeListQuery,
+} from '../types/dict'
 import type {
   DictItemCreatePayload,
   DictItemFormModel,
@@ -41,7 +47,10 @@ export function normalizeDictTypeQuery(query: DictTypeListQuery): DictTypeListQu
   }
 }
 
-export function normalizeDictItemQuery(query: DictItemListQuery, typeID: number): DictItemListQuery {
+export function normalizeDictItemQuery(
+  query: DictItemListQuery,
+  typeID: number,
+): DictItemListQuery {
   return {
     ...query,
     type_id: typeID,
@@ -119,7 +128,10 @@ export function buildDictTypeUpdatePayload(formModel: DictTypeFormModel): DictTy
   }
 }
 
-export function buildDictItemCreatePayload(typeID: number, formModel: DictItemFormModel): DictItemCreatePayload {
+export function buildDictItemCreatePayload(
+  typeID: number,
+  formModel: DictItemFormModel,
+): DictItemCreatePayload {
   return {
     type_id: typeID,
     item_key: formModel.item_key.trim(),

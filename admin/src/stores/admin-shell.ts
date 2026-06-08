@@ -69,7 +69,10 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
 
   function hydrateTabs() {
     const storedTabs = safeParseTabs()
-    const mergedTabs = [dashboardTab, ...storedTabs.filter((tab) => tab.fullPath !== dashboardTab.fullPath)]
+    const mergedTabs = [
+      dashboardTab,
+      ...storedTabs.filter((tab) => tab.fullPath !== dashboardTab.fullPath),
+    ]
     openTabs.value = mergedTabs.map(normalizeTab)
     persistTabs()
   }
@@ -115,7 +118,11 @@ export const useAdminShellStore = defineStore('admin-shell', () => {
     if (closedFullPath !== activeFullPath) {
       return activeFullPath
     }
-    return openTabs.value[index + 1]?.fullPath ?? openTabs.value[index - 1]?.fullPath ?? dashboardTab.fullPath
+    return (
+      openTabs.value[index + 1]?.fullPath ??
+      openTabs.value[index - 1]?.fullPath ??
+      dashboardTab.fullPath
+    )
   }
 
   function closeTab(fullPath: string, activeFullPath = fullPath) {

@@ -287,18 +287,17 @@ function resolveMenuIcon(code: string, icon: string) {
 // renderMenuIcon 将图标组件包装为 Naive UI 菜单所需的渲染函数。
 function renderMenuIcon(icon: MenuIconComponent) {
   return () =>
-    h(
-      NIcon,
-      null,
-      {
-        default: () => h(icon),
-      },
-    )
+    h(NIcon, null, {
+      default: () => h(icon),
+    })
 }
 
 // normalizeMenuIcon 将后端 icon 字段标准化：去空格、转小写、移除非字母数字字符。
 function normalizeMenuIcon(icon: string) {
-  return icon.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+  return icon
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
 }
 
 // normalizeMenuCode 将菜单编码标准化：去空格、转小写。
@@ -312,7 +311,11 @@ function toChildRoutePath(path: string) {
 }
 
 // findMenuCodeChainByPath 递归查找目标路径在菜单树中的编码链（含自身），用于侧栏自动展开。
-function findMenuCodeChainByPath(menus: AuthMenu[], path: string, parents: string[] = []): string[] {
+function findMenuCodeChainByPath(
+  menus: AuthMenu[],
+  path: string,
+  parents: string[] = [],
+): string[] {
   for (const menu of menus) {
     const nextParents = [...parents, menu.code]
     if (menu.type === MenuType.Menu && menu.path === path) {

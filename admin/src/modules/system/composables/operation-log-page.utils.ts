@@ -3,7 +3,10 @@ import type { OperationLogPageQuery } from '../types/operation-log-page'
 
 export type RiskLevel = 'high' | 'medium' | 'low'
 
-export const riskMeta: Record<RiskLevel, { label: string; tagType: 'error' | 'warning' | 'success'; bg: string }> = {
+export const riskMeta: Record<
+  RiskLevel,
+  { label: string; tagType: 'error' | 'warning' | 'success'; bg: string }
+> = {
   high: { label: '高风险', tagType: 'error', bg: 'var(--ez-danger-bg)' },
   medium: { label: '中风险', tagType: 'warning', bg: 'var(--ez-warning-bg)' },
   low: { label: '低风险', tagType: 'success', bg: 'var(--ez-success-bg)' },

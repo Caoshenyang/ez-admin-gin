@@ -25,11 +25,7 @@ const workspaceCards = [
 
 const workspaceNavItems = ['工作台', '权限中心', '系统管理', '运行配置']
 
-const workspaceQuickEntries = [
-  '动态菜单',
-  '数据权限',
-  '公告通知',
-]
+const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 </script>
 
 <template>

@@ -19,7 +19,12 @@ const overrides = computed(() => (themeStore.isDark ? darkThemeOverrides : light
 </script>
 
 <template>
-  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme="naiveTheme" :theme-overrides="overrides">
+  <n-config-provider
+    :locale="zhCN"
+    :date-locale="dateZhCN"
+    :theme="naiveTheme"
+    :theme-overrides="overrides"
+  >
     <n-loading-bar-provider>
       <n-dialog-provider>
         <n-notification-provider>

@@ -6,7 +6,12 @@ import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
 import { useStatusToggle } from '@/composables/useStatusToggle'
-import { createAttachment, getAttachments, updateAttachment, updateAttachmentStatus } from '../api/attachment'
+import {
+  createAttachment,
+  getAttachments,
+  updateAttachment,
+  updateAttachmentStatus,
+} from '../api/attachment'
 import type { AttachmentItem, AttachmentListQuery } from '../types/attachment'
 import type { AttachmentEditFormModel, AttachmentUploadFormModel } from '../types/attachment-page'
 import {
@@ -38,7 +43,9 @@ export function useAttachmentPage() {
     rules,
     openEdit: openEditModal,
     handleSubmit: handleEditSubmit,
-  } = useModalForm<AttachmentEditFormModel>(defaultAttachmentEditForm, { rules: attachmentEditRules })
+  } = useModalForm<AttachmentEditFormModel>(defaultAttachmentEditForm, {
+    rules: attachmentEditRules,
+  })
 
   const {
     items: attachments,
@@ -90,7 +97,10 @@ export function useAttachmentPage() {
 
     saving.value = true
     try {
-      await createAttachment(selectedUploadFile.value, buildAttachmentUploadPayload(uploadFormModel.value))
+      await createAttachment(
+        selectedUploadFile.value,
+        buildAttachmentUploadPayload(uploadFormModel.value),
+      )
       uploadModalVisible.value = false
       resetUploadModal()
       message.success('附件上传成功')
@@ -112,7 +122,7 @@ export function useAttachmentPage() {
     }
 
     return axios.isAxiosError<{ message?: string }>(error)
-      ? error.response?.data?.message ?? '附件上传失败'
+      ? (error.response?.data?.message ?? '附件上传失败')
       : '附件上传失败'
   }
 

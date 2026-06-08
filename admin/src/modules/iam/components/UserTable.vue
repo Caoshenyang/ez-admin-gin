@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
-import {
-  NButton,
-  NDataTable,
-  NPopconfirm,
-  NSpace,
-  NTag,
-} from 'naive-ui'
+import { NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
 import { computed, h } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText, formatTime } from '@/utils/format'
 import { UserStatus, type UserItem } from '../types/user'
@@ -63,7 +58,10 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
       return h(
         NTag,
         { size: 'small', bordered: false, type: 'warning' },
-        { default: () => props.departmentNameMap.get(row.department_id) ?? `部门 ${row.department_id}` },
+        {
+          default: () =>
+            props.departmentNameMap.get(row.department_id) ?? `部门 ${row.department_id}`,
+        },
       )
     },
   },
@@ -76,9 +74,17 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
         return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未分配')
       }
 
-      return h('div', { class: 'flex flex-wrap gap-1' }, row.role_ids.map((roleID) =>
-        h(NTag, { size: 'small', bordered: false }, { default: () => props.roleNameMap.get(roleID) ?? `角色 ${roleID}` }),
-      ))
+      return h(
+        'div',
+        { class: 'flex flex-wrap gap-1' },
+        row.role_ids.map((roleID) =>
+          h(
+            NTag,
+            { size: 'small', bordered: false },
+            { default: () => props.roleNameMap.get(roleID) ?? `角色 ${roleID}` },
+          ),
+        ),
+      )
     },
   },
   {
@@ -90,13 +96,17 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
         return h('span', { class: 'text-sm text-[var(--ez-text-light)]' }, '未绑定')
       }
 
-      return h('div', { class: 'flex flex-wrap gap-1' }, row.post_ids.map((postID) =>
-        h(
-          NTag,
-          { size: 'small', bordered: false, type: 'info' },
-          { default: () => props.postNameMap.get(postID) ?? `岗位 ${postID}` },
+      return h(
+        'div',
+        { class: 'flex flex-wrap gap-1' },
+        row.post_ids.map((postID) =>
+          h(
+            NTag,
+            { size: 'small', bordered: false, type: 'info' },
+            { default: () => props.postNameMap.get(postID) ?? `岗位 ${postID}` },
+          ),
         ),
-      ))
+      )
     },
   },
   {
@@ -122,77 +132,82 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 248,
+    width: 164,
     fixed: 'right',
     render(row) {
-      const nextStatus = row.status === UserStatus.Enabled ? UserStatus.Disabled : UserStatus.Enabled
+      const nextStatus =
+        row.status === UserStatus.Enabled ? UserStatus.Disabled : UserStatus.Enabled
 
-      return h(NSpace, { class: 'ez-row-actions', size: 6, align: 'center', wrap: false }, {
-        default: () => [
-          props.canUse('system:user:update')
-            ? h(
-                NButton,
-                {
-                  size: 'tiny',
-                  secondary: true,
-                  type: 'info',
-                  onClick: () => emit('edit', row),
-                },
-                { default: () => '编辑' },
-              )
-            : null,
-          props.canUse('system:user:status')
-            ? h(
-                NPopconfirm,
-                { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
-                {
-                  trigger: () =>
-                    h(
-                      NButton,
-                      {
-                        size: 'tiny',
-                        secondary: true,
-                        type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
-                      },
-                      { default: () => (nextStatus === UserStatus.Disabled ? '禁用' : '启用') },
-                    ),
-                  default: () => `确认${nextStatus === UserStatus.Disabled ? '禁用' : '启用'}该用户？`,
-                },
-              )
-            : null,
-          props.canUse('system:user:delete')
-            ? h(
-                NPopconfirm,
-                { onPositiveClick: () => emit('delete', row) },
-                {
-                  trigger: () =>
-                    h(
-                      NButton,
-                      {
-                        size: 'tiny',
-                        secondary: true,
-                        type: 'error',
-                      },
-                      { default: () => '删除' },
-                    ),
-                  default: () => '删除后用户账号和角色/岗位关联会一起移除，确认继续？',
-                },
-              )
-            : null,
-          props.canUse('system:user:assign-role')
-            ? h(
-                NButton,
-                {
-                  size: 'tiny',
-                  secondary: true,
-                  type: 'primary',
-                  onClick: () => emit('role', row),
-                },
-                { default: () => '分配角色' },
-              )
-            : null,
-        ].filter(Boolean),
-      })
+      return h(
+        NSpace,
+        { class: 'ez-row-actions', size: 6, align: 'center', wrap: false },
+        {
+          default: () =>
+            [
+              props.canUse('system:user:update')
+                ? h(EzActionButton, {
+                    iconOnly: true,
+                    kind: 'edit',
+                    label: '编辑',
+                    size: 'tiny',
+                    secondary: true,
+                    type: 'info',
+                    onClick: () => emit('edit', row),
+                  })
+                : null,
+              props.canUse('system:user:status')
+                ? h(
+                    NPopconfirm,
+                    { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
+                    {
+                      trigger: () =>
+                        h(EzActionButton, {
+                          iconOnly: true,
+                          kind: nextStatus === UserStatus.Disabled ? 'disable' : 'enable',
+                          label: nextStatus === UserStatus.Disabled ? '禁用' : '启用',
+                          size: 'tiny',
+                          secondary: true,
+                          tooltip: false,
+                          type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
+                        }),
+                      default: () =>
+                        `确认${nextStatus === UserStatus.Disabled ? '禁用' : '启用'}该用户？`,
+                    },
+                  )
+                : null,
+              props.canUse('system:user:delete')
+                ? h(
+                    NPopconfirm,
+                    { onPositiveClick: () => emit('delete', row) },
+                    {
+                      trigger: () =>
+                        h(EzActionButton, {
+                          iconOnly: true,
+                          kind: 'delete',
+                          label: '删除',
+                          size: 'tiny',
+                          secondary: true,
+                          tooltip: false,
+                          type: 'error',
+                        }),
+                      default: () => '删除后用户账号和角色/岗位关联会一起移除，确认继续？',
+                    },
+                  )
+                : null,
+              props.canUse('system:user:assign-role')
+                ? h(EzActionButton, {
+                    iconOnly: true,
+                    kind: 'assign',
+                    label: '分配角色',
+                    size: 'tiny',
+                    secondary: true,
+                    type: 'primary',
+                    onClick: () => emit('role', row),
+                  })
+                : null,
+            ].filter(Boolean),
+        },
+      )
     },
   },
 ])

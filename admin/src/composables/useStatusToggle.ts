@@ -13,10 +13,7 @@ interface StatusPayload<S extends number = number> {
  * @param toggleFn 调用后端 API 切换状态的函数
  * @param options 成功后的回调
  */
-export function useStatusToggle<
-  T extends StatusItem,
-  P extends StatusPayload,
->(
+export function useStatusToggle<T extends StatusItem, P extends StatusPayload>(
   toggleFn: (id: number, payload: P) => Promise<unknown>,
   options?: { onSuccess?: () => Promise<void> | void },
 ) {

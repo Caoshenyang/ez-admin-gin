@@ -1,6 +1,7 @@
 package iam
 
 import (
+	apiresourcemodule "ez-admin-gin/server/internal/modules/iam/apiresource"
 	departmentmodule "ez-admin-gin/server/internal/modules/iam/department"
 	menumodule "ez-admin-gin/server/internal/modules/iam/menu"
 	postmodule "ez-admin-gin/server/internal/modules/iam/post"
@@ -51,6 +52,10 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Log: opts.Log,
 	})
 	menumodule.RegisterRoutes(system, menumodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	apiresourcemodule.RegisterRoutes(system, apiresourcemodule.RouteOptions{
 		DB:  opts.DB,
 		Log: opts.Log,
 	})

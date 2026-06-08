@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NInput, NSelect } from 'naive-ui'
+import { NInput, NSelect } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzSearchPanel from '@/components/ez/EzSearchPanel.vue'
 import { DepartmentStatus } from '@/modules/iam/types/department'
 
@@ -29,11 +30,16 @@ const emit = defineEmits<{
       @update:value="emit('update:keyword', $event ?? '')"
       @keyup.enter="emit('search')"
     />
-    <NSelect :value="props.status" :options="statusOptions" class="ez-search-field ez-search-field--sm" @update:value="emit('update:status', $event as 0 | DepartmentStatus)" />
+    <NSelect
+      :value="props.status"
+      :options="statusOptions"
+      class="ez-search-field ez-search-field--sm"
+      @update:value="emit('update:status', $event as 0 | DepartmentStatus)"
+    />
 
     <template #actions>
-      <NButton type="primary" @click="emit('search')">查询</NButton>
-      <NButton @click="emit('reset')">重置</NButton>
+      <EzActionButton kind="search" label="查询" type="primary" @click="emit('search')" />
+      <EzActionButton kind="reset" label="重置" @click="emit('reset')" />
     </template>
   </EzSearchPanel>
 </template>

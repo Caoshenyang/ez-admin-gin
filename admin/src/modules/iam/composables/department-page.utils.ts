@@ -144,6 +144,8 @@ export function buildDepartmentTreeOptions(
       key: item.id,
       label: `${item.name}（${item.code}）`,
       value: item.id,
-      children: item.children?.length ? buildDepartmentTreeOptions(item.children, excludedIDs) : undefined,
+      children: item.children?.length
+        ? buildDepartmentTreeOptions(item.children, excludedIDs)
+        : undefined,
     }))
 }

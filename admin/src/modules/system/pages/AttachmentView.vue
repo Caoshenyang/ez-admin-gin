@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { STATUS_FILTER_OPTIONS } from '@/constants/status'
 import AttachmentEditModal from '../components/AttachmentEditModal.vue'
@@ -54,7 +53,10 @@ async function handleEditSubmitAction() {
   await handleEditSubmit(submitEdit)
 }
 
-async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0], status: Parameters<typeof handleToggleStatus>[1]) {
+async function handleStatusChange(
+  row: Parameters<typeof handleToggleStatus>[0],
+  status: Parameters<typeof handleToggleStatus>[1],
+) {
   await handleToggleStatus(row, status)
 }
 </script>
@@ -62,11 +64,18 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <PageHeader title="附件中心" description="复用底层文件上传链路，把附件整理成可分类、可检索、可业务复用的统一资源。">
+      <PageHeader
+        title="附件中心"
+        description="复用底层文件上传链路，把附件整理成可分类、可检索、可业务复用的统一资源。"
+      >
         <template #actions>
-          <NButton v-if="canUse('system:attachment:upload')" type="primary" @click="openUploadModal">
-            上传附件
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:attachment:upload')"
+            kind="upload"
+            label="上传附件"
+            type="primary"
+            @click="openUploadModal"
+          />
         </template>
       </PageHeader>
 
@@ -112,7 +121,12 @@ async function handleStatusChange(row: Parameters<typeof handleToggleStatus>[0],
       :rules="uploadRules"
       :saving="saving"
       @update:file-list="handleUpdateFileList"
-      @update:show="(value) => { uploadModalVisible = value; if (!value) resetUploadModal() }"
+      @update:show="
+        (value) => {
+          uploadModalVisible = value
+          if (!value) resetUploadModal()
+        }
+      "
       @submit="handleUploadSubmit"
     />
 

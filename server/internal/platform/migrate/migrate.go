@@ -159,7 +159,7 @@ func fullInitializationState(db *sql.DB, driver string) (initialized bool, parti
 		return false, false, nil
 	}
 
-	requiredTables := []string{"sys_role", "sys_menu", "casbin_rule"}
+	requiredTables := []string{"sys_role", "sys_menu", "sys_api", "sys_role_api", "casbin_rule"}
 	for _, table := range requiredTables {
 		exists, err := tableExists(db, driver, table)
 		if err != nil {
@@ -182,8 +182,16 @@ func fullInitializationState(db *sql.DB, driver string) (initialized bool, parti
 	if err := db.QueryRow("SELECT COUNT(*) FROM casbin_rule WHERE ptype = 'p' AND v0 = 'super_admin'").Scan(&policyCount); err != nil {
 		return false, false, err
 	}
+	var apiCount int
+	if err := db.QueryRow("SELECT COUNT(*) FROM sys_api").Scan(&apiCount); err != nil {
+		return false, false, err
+	}
+	var roleAPICount int
+	if err := db.QueryRow("SELECT COUNT(*) FROM sys_role_api WHERE role_id = 1").Scan(&roleAPICount); err != nil {
+		return false, false, err
+	}
 
-	return roleCount > 0 && menuCount >= 3 && policyCount > 0, true, nil
+	return roleCount > 0 && menuCount >= 3 && apiCount > 0 && roleAPICount > 0 && policyCount > 0, true, nil
 }
 
 func tableExists(db *sql.DB, driver, table string) (bool, error) {

@@ -67,7 +67,9 @@ export function useDashboardHomePage() {
       operationLogPath: operationLogPath.value,
     })
   })
-  const insightCards = computed(() => dashboardInsightCards(dashboard.value, visiblePageTotal.value))
+  const insightCards = computed(() =>
+    dashboardInsightCards(dashboard.value, visiblePageTotal.value),
+  )
   const chartStats = computed(() => dashboardChartStats(dashboard.value, visiblePageTotal.value))
   const latencyBars = computed(() => dashboardLatencyBars(dashboard.value))
   const loginSegments = computed(() => dashboardLoginSegments(dashboard.value))

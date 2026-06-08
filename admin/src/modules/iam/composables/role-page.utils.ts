@@ -1,15 +1,15 @@
 import type { FormRules, SelectOption, TreeOption } from 'naive-ui'
 
+import { ApiStatus, type AdminAPI } from '@/modules/iam/types/api-resource'
 import { MenuStatus, type AdminMenu } from '@/modules/iam/types/menu'
 import {
   RoleDataScope,
   RoleStatus,
   type RoleItem,
   type RoleListQuery,
-  type RolePermissionItem,
 } from '@/modules/iam/types/role'
 
-import type { PermissionRow, RoleFormModel } from '../types/role-page'
+import type { RoleFormModel } from '../types/role-page'
 
 export const superAdminRoleCode = 'super_admin'
 
@@ -38,13 +38,6 @@ export const roleDataScopeHelps = new Map<RoleDataScope, string>([
   [RoleDataScope.Self, '仅查看本人创建或归属的数据'],
   [RoleDataScope.CustomDept, '按已选授权部门控制可见数据'],
 ])
-
-export const permissionMethodOptions: SelectOption[] = [
-  { label: 'GET', value: 'GET' },
-  { label: 'POST', value: 'POST' },
-  { label: 'PUT', value: 'PUT' },
-  { label: 'DELETE', value: 'DELETE' },
-]
 
 export const roleFormRules: FormRules = {
   code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }],
@@ -106,6 +99,29 @@ export function flattenRoleMenus(items: AdminMenu[]) {
   return result
 }
 
+export function flattenRoleAPIs(items: AdminAPI[]) {
+  return items
+}
+
+export function toAPIPermissionTreeOptions(apis: AdminAPI[]): TreeOption[] {
+  const groups = new Map<string, AdminAPI[]>()
+  for (const api of apis) {
+    const module = api.module || 'other'
+    groups.set(module, [...(groups.get(module) ?? []), api])
+  }
+
+  return [...groups.entries()]
+    .sort(([left], [right]) => moduleOrder(left) - moduleOrder(right) || left.localeCompare(right))
+    .map(([module, items]) => ({
+      key: `api-module:${module}`,
+      label: moduleLabel(module),
+      children: items
+        .slice()
+        .sort((left, right) => left.sort - right.sort || left.id - right.id)
+        .map(toAPIPermissionTreeOption),
+    }))
+}
+
 function toFeaturePermissionTreeOption(menu: AdminMenu): TreeOption {
   const children = (menu.children ?? []).map(toFeaturePermissionTreeOption)
   const statusText = menu.status === MenuStatus.Enabled ? '' : ' · 禁用'
@@ -119,42 +135,31 @@ function toFeaturePermissionTreeOption(menu: AdminMenu): TreeOption {
   }
 }
 
-export function toPermissionRows(role: RoleItem): PermissionRow[] {
-  // 权限面板需要本地行 ID，切换角色时在这里一次性补齐。
-  return (role.permissions ?? []).map((permission, index) => ({
-    id: index + 1,
-    path: permission.path,
-    method: permission.method,
-  }))
-}
-
-export function defaultPermissionRow(): PermissionRow {
+function toAPIPermissionTreeOption(api: AdminAPI): TreeOption {
+  const statusText = api.status === ApiStatus.Enabled ? '' : ' · 禁用'
   return {
-    id: Date.now(),
-    path: '',
-    method: 'GET',
+    key: api.id,
+    label: `${api.name} · ${api.method} ${api.path}${statusText}`,
+    disabled: api.status !== ApiStatus.Enabled,
   }
 }
 
-export function normalizeRolePermissions(rows: PermissionRow[]): RolePermissionItem[] {
-  const seen = new Set<string>()
-  const result: RolePermissionItem[] = []
+function moduleOrder(module: string) {
+  const orders = new Map([
+    ['iam', 10],
+    ['system', 20],
+    ['audit', 30],
+  ])
+  return orders.get(module) ?? 999
+}
 
-  for (const row of rows) {
-    const path = row.path.trim()
-    const method = row.method.trim().toUpperCase()
-
-    if (!path || !method) continue
-
-    const key = `${method} ${path}`
-    if (seen.has(key)) continue
-
-    // API 权限按 “METHOD + PATH” 去重，避免同一行被重复保存到后端。
-    seen.add(key)
-    result.push({ path, method })
-  }
-
-  return result
+function moduleLabel(module: string) {
+  const labels = new Map([
+    ['iam', '权限管理接口'],
+    ['system', '系统设置接口'],
+    ['audit', '审计监控接口'],
+  ])
+  return labels.get(module) ?? `${module} 接口`
 }
 
 function normalizeCustomDepartmentIDs(formModel: RoleFormModel) {
@@ -162,7 +167,11 @@ function normalizeCustomDepartmentIDs(formModel: RoleFormModel) {
     return []
   }
 
-  return [...new Set(formModel.custom_department_ids.map(Number).filter((id) => Number.isFinite(id) && id > 0))]
+  return [
+    ...new Set(
+      formModel.custom_department_ids.map(Number).filter((id) => Number.isFinite(id) && id > 0),
+    ),
+  ]
 }
 
 export function buildRoleCreatePayload(formModel: RoleFormModel) {

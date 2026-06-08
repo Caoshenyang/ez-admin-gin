@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { NButton, NInput, NSelect } from 'naive-ui'
+import { NInput, NSelect } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzSearchPanel from '@/components/ez/EzSearchPanel.vue'
 import { methodOptions, successOptions } from '../composables/operation-log-page.utils'
 
@@ -31,7 +32,12 @@ const emit = defineEmits<{
       @update:value="emit('update:username', $event ?? '')"
       @keyup.enter="emit('search')"
     />
-    <NSelect :value="props.method" :options="methodOptions" class="ez-search-field ez-search-field--xs" @update:value="emit('update:method', $event ?? '')" />
+    <NSelect
+      :value="props.method"
+      :options="methodOptions"
+      class="ez-search-field ez-search-field--xs"
+      @update:value="emit('update:method', $event ?? '')"
+    />
     <NInput
       :value="props.path"
       clearable
@@ -40,11 +46,16 @@ const emit = defineEmits<{
       @update:value="emit('update:path', $event ?? '')"
       @keyup.enter="emit('search')"
     />
-    <NSelect :value="props.success" :options="successOptions" class="ez-search-field ez-search-field--sm" @update:value="emit('update:success', $event ?? '')" />
+    <NSelect
+      :value="props.success"
+      :options="successOptions"
+      class="ez-search-field ez-search-field--sm"
+      @update:value="emit('update:success', $event ?? '')"
+    />
 
     <template #actions>
-      <NButton type="primary" @click="emit('search')">查询</NButton>
-      <NButton @click="emit('reset')">重置</NButton>
+      <EzActionButton kind="search" label="查询" type="primary" @click="emit('search')" />
+      <EzActionButton kind="reset" label="重置" @click="emit('reset')" />
     </template>
   </EzSearchPanel>
 </template>

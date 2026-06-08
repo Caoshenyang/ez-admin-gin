@@ -1,6 +1,11 @@
 import type { SelectOption } from 'naive-ui'
 
-import { MenuStatus, MenuType, type AdminMenu, type UpdateMenuPayload } from '@/modules/iam/types/menu'
+import {
+  MenuStatus,
+  MenuType,
+  type AdminMenu,
+  type UpdateMenuPayload,
+} from '@/modules/iam/types/menu'
 
 import type { MenuFormModel, MenuQuery } from '../types/menu-page'
 
@@ -116,7 +121,10 @@ export function filterMenus(items: AdminMenu[], query: MenuQuery): AdminMenu[] {
 }
 
 // 构建上级菜单选择选项，排除按钮类型和当前编辑的菜单
-export function buildMenuParentOptions(flatMenus: AdminMenu[], currentMenuID: number): SelectOption[] {
+export function buildMenuParentOptions(
+  flatMenus: AdminMenu[],
+  currentMenuID: number,
+): SelectOption[] {
   const options: SelectOption[] = [{ label: '根节点', value: 0 }]
 
   for (const menu of flatMenus) {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PostFilterBar from '../components/PostFilterBar.vue'
 import PostFormModal from '../components/PostFormModal.vue'
@@ -33,11 +32,18 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <PageHeader title="岗位管理" description="收口岗位基础信息，给用户归属、协作流程和扩展模块提供统一的岗位字典。">
+      <PageHeader
+        title="岗位管理"
+        description="收口岗位基础信息，给用户归属、协作流程和扩展模块提供统一的岗位字典。"
+      >
         <template #actions>
-          <NButton v-if="canUse('system:post:create')" type="primary" @click="openCreate">
-            + 新增岗位
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:post:create')"
+            kind="add"
+            label="新增岗位"
+            type="primary"
+            @click="openCreate"
+          />
         </template>
       </PageHeader>
 

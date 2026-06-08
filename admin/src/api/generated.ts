@@ -193,6 +193,20 @@ export interface paths {
       };
     };
   };
+  "/system/apis": {
+    get: {
+      responses: {
+        /** OK */
+        200: {
+          schema: definitions["httpx.Body"];
+        };
+        /** Unauthorized */
+        401: {
+          schema: definitions["httpx.Body"];
+        };
+      };
+    };
+  };
   "/system/attachments": {
     get: {
       parameters: {
@@ -1886,7 +1900,7 @@ export interface definitions {
     menu_ids?: number[];
   };
   "api.UpdatePermissionsRequest": {
-    permissions?: definitions["domain.PermissionItem"][];
+    api_ids?: number[];
   };
   "api.UpdateRolesRequest": {
     role_ids?: number[];
@@ -1988,10 +2002,6 @@ export interface definitions {
     sort?: number;
     title?: string;
     type?: definitions["model.MenuType"];
-  };
-  "domain.PermissionItem": {
-    method?: string;
-    path?: string;
   };
   "domain.TypeResponse": {
     code?: string;

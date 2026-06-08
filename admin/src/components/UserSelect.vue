@@ -6,13 +6,16 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getUsers } from '@/modules/iam/api/user'
 import { UserStatus, type UserItem } from '@/modules/iam/types/user'
 
-withDefaults(defineProps<{
-  disabled?: boolean
-  placeholder?: string
-}>(), {
-  disabled: false,
-  placeholder: '请选择人员',
-})
+withDefaults(
+  defineProps<{
+    disabled?: boolean
+    placeholder?: string
+  }>(),
+  {
+    disabled: false,
+    placeholder: '请选择人员',
+  },
+)
 
 const selectedValue = defineModel<number | null>('value', { required: true })
 

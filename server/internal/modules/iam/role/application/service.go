@@ -33,17 +33,19 @@ func (s *Service) List(query roledomain.ListQuery) (roledomain.ListResponse, err
 	}
 
 	roleIDs := make([]uint, 0, len(roles))
-	roleCodes := make([]string, 0, len(roles))
 	for _, item := range roles {
 		roleIDs = append(roleIDs, item.ID)
-		roleCodes = append(roleCodes, item.Code)
 	}
 
 	customDepartmentIDsByRole, err := s.repo.RoleCustomDepartmentIDs(roleIDs)
 	if err != nil {
 		return roledomain.ListResponse{}, err
 	}
-	permissionsByRole, err := s.repo.RolePermissions(roleCodes)
+	apiIDsByRole, err := s.repo.RoleAPIIDs(roleIDs)
+	if err != nil {
+		return roledomain.ListResponse{}, err
+	}
+	permissionsByRole, err := s.repo.RolePermissions(roleIDs)
 	if err != nil {
 		return roledomain.ListResponse{}, err
 	}
@@ -54,7 +56,7 @@ func (s *Service) List(query roledomain.ListQuery) (roledomain.ListResponse, err
 
 	items := make([]roledomain.Response, 0, len(roles))
 	for _, item := range roles {
-		items = append(items, roledomain.BuildResponse(item, customDepartmentIDsByRole[item.ID], permissionsByRole[item.Code], menuIDsByRole[item.ID]))
+		items = append(items, roledomain.BuildResponse(item, customDepartmentIDsByRole[item.ID], permissionsByRole[item.ID], apiIDsByRole[item.ID], menuIDsByRole[item.ID]))
 	}
 
 	return roledomain.ListResponse{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
@@ -98,7 +100,7 @@ func (s *Service) Create(req roledomain.CreateRequest) (roledomain.Response, err
 		return roledomain.Response{}, err
 	}
 
-	return roledomain.BuildResponse(created, req.CustomDepartmentIDs, nil, nil), nil
+	return roledomain.BuildResponse(created, req.CustomDepartmentIDs, nil, nil, nil), nil
 }
 
 // Update 更新角色基本信息和自定义数据范围。
@@ -138,7 +140,7 @@ func (s *Service) Update(roleID uint, req roledomain.UpdateRequest) (roledomain.
 		return roledomain.Response{}, err
 	}
 
-	return roledomain.BuildResponse(updated, req.CustomDepartmentIDs, nil, nil), nil
+	return roledomain.BuildResponse(updated, req.CustomDepartmentIDs, nil, nil, nil), nil
 }
 
 // UpdateStatus 切换角色的启用/禁用状态。
@@ -160,9 +162,9 @@ func (s *Service) UpdateStatus(roleID uint, status model.RoleStatus) error {
 	})
 }
 
-// UpdatePermissions 更新角色的 Casbin 权限策略。
-func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.PermissionItem) ([]roledomain.PermissionItem, string, error) {
-	normalizedPermissions, err := roledomain.NormalizePermissions(permissions)
+// UpdatePermissions 更新角色的接口权限关联，并同步 Casbin 执行策略。
+func (s *Service) UpdatePermissions(roleID uint, apiIDs []uint) ([]uint, string, error) {
+	normalizedAPIIDs, err := roledomain.NormalizeIDs(apiIDs, "接口权限 ID 不正确")
 	if err != nil {
 		return nil, "", err
 	}
@@ -178,7 +180,13 @@ func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.Permis
 		}
 
 		roleCode = role.Code
-		return s.repo.ReplacePermissions(tx, role.Code, normalizedPermissions)
+		if err := s.repo.APIsUsable(tx, normalizedAPIIDs); err != nil {
+			return err
+		}
+		if err := s.repo.ReplaceAPIs(tx, role.ID, normalizedAPIIDs); err != nil {
+			return err
+		}
+		return s.repo.ReplacePoliciesByAPIs(tx, role.Code, normalizedAPIIDs)
 	})
 	if err != nil {
 		return nil, "", err
@@ -188,7 +196,7 @@ func (s *Service) UpdatePermissions(roleID uint, permissions []roledomain.Permis
 		return nil, "", fmt.Errorf("reload casbin policy: %w", err)
 	}
 
-	return normalizedPermissions, roleCode, nil
+	return normalizedAPIIDs, roleCode, nil
 }
 
 // UpdateMenus 更新角色的菜单分配。
@@ -241,7 +249,10 @@ func (s *Service) Delete(roleID uint) error {
 		}
 
 		roleCode = role.Code
-		if err := s.repo.ReplacePermissions(tx, role.Code, nil); err != nil {
+		if err := s.repo.ReplaceAPIs(tx, role.ID, nil); err != nil {
+			return err
+		}
+		if err := s.repo.ReplacePoliciesByAPIs(tx, role.Code, nil); err != nil {
 			return err
 		}
 		if err := s.repo.ReplaceMenus(tx, role.ID, nil); err != nil {

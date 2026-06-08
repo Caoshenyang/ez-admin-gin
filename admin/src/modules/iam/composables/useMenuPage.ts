@@ -3,13 +3,7 @@ import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref } from 'vue'
 
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
-import {
-  createMenu,
-  deleteMenu,
-  getAdminMenus,
-  updateMenu,
-  updateMenuStatus,
-} from '../api/menu'
+import { createMenu, deleteMenu, getAdminMenus, updateMenu, updateMenuStatus } from '../api/menu'
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
 import { routeComponentOptions } from '@/router/route-components'
 import type { MenuFormModel, MenuQuery } from '../types/menu-page'
@@ -58,11 +52,17 @@ export function useMenuPage() {
 
   const displayMenus = computed(() => filterMenus(menus.value, query))
 
-  const directoryCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Directory).length)
+  const directoryCount = computed(
+    () => flatMenus.value.filter((menu) => menu.type === MenuType.Directory).length,
+  )
 
-  const menuCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Menu).length)
+  const menuCount = computed(
+    () => flatMenus.value.filter((menu) => menu.type === MenuType.Menu).length,
+  )
 
-  const buttonCount = computed(() => flatMenus.value.filter((menu) => menu.type === MenuType.Button).length)
+  const buttonCount = computed(
+    () => flatMenus.value.filter((menu) => menu.type === MenuType.Button).length,
+  )
 
   const selectedCount = computed(() => checkedRowKeys.value.length)
 
@@ -99,7 +99,9 @@ export function useMenuPage() {
     try {
       menus.value = await getAdminMenus()
       expandedRowKeys.value = allRowKeys.value
-      checkedRowKeys.value = checkedRowKeys.value.filter((key) => allRowKeys.value.includes(Number(key)))
+      checkedRowKeys.value = checkedRowKeys.value.filter((key) =>
+        allRowKeys.value.includes(Number(key)),
+      )
     } finally {
       loading.value = false
     }

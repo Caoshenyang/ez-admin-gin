@@ -33,13 +33,24 @@ const formModel = defineModel<DictTypeFormModel>('model', { required: true })
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增字典类型' : '编辑字典类型'"
-        :subtitle="formMode === 'create' ? '先定义稳定的字典编码，再让字典项围绕它展开。' : '修改字典展示信息，不影响已有字典项的主键归属。'"
+        :subtitle="
+          formMode === 'create'
+            ? '先定义稳定的字典编码，再让字典项围绕它展开。'
+            : '修改字典展示信息，不影响已有字典项的主键归属。'
+        "
         @close="$emit('update:show', false)"
       />
     </template>
 
     <div class="ez-modal-shell">
-      <NForm ref="formRef" class="ez-modal-form" :model="formModel" :rules="rules" label-placement="left" label-width="76">
+      <NForm
+        ref="formRef"
+        class="ez-modal-form"
+        :model="formModel"
+        :rules="rules"
+        label-placement="left"
+        label-width="76"
+      >
         <section class="ez-modal-section ez-modal-section--soft">
           <div class="ez-modal-section__head">
             <h3>基础信息</h3>
@@ -48,7 +59,11 @@ const formModel = defineModel<DictTypeFormModel>('model', { required: true })
 
           <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="字典编码" path="code">
-              <NInput v-model:value="formModel.code" placeholder="例如 common:status" :disabled="formMode === 'edit'" />
+              <NInput
+                v-model:value="formModel.code"
+                placeholder="例如 common:status"
+                :disabled="formMode === 'edit'"
+              />
             </NFormItem>
 
             <NFormItem label="字典名称" path="name">
@@ -67,7 +82,12 @@ const formModel = defineModel<DictTypeFormModel>('model', { required: true })
 
         <section class="ez-modal-section">
           <NFormItem label="备注">
-            <NInput v-model:value="formModel.remark" type="textarea" :rows="3" placeholder="补充这个字典的适用场景或业务备注" />
+            <NInput
+              v-model:value="formModel.remark"
+              type="textarea"
+              :rows="3"
+              placeholder="补充这个字典的适用场景或业务备注"
+            />
           </NFormItem>
         </section>
       </NForm>

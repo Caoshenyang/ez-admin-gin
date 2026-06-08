@@ -1,4 +1,10 @@
-import { ConfigStatus, type CreateConfigPayload, type UpdateConfigPayload, type ConfigItem, type ConfigListQuery } from '../types/config'
+import {
+  ConfigStatus,
+  type CreateConfigPayload,
+  type UpdateConfigPayload,
+  type ConfigItem,
+  type ConfigListQuery,
+} from '../types/config'
 
 export interface ConfigFormModel {
   id: number

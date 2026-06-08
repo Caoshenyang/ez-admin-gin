@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { SelectOption } from 'naive-ui'
-import { NButton, NCard, NEmpty, NInput, NSelect, NSpin, NTag } from 'naive-ui'
+import { NCard, NEmpty, NInput, NSelect, NSpin, NTag } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import type { RoleItem, RoleListQuery, RoleStatus } from '../types/role'
 
 defineProps<{
@@ -45,8 +46,14 @@ const query = defineModel<RoleListQuery>('query', { required: true })
         />
         <div class="role-rail-filter">
           <NSelect v-model:value="query.status" :options="statusOptions" />
-          <NButton type="primary" secondary @click="$emit('search')">查询</NButton>
-          <NButton secondary @click="$emit('reset')">重置</NButton>
+          <EzActionButton
+            kind="search"
+            label="查询"
+            type="primary"
+            secondary
+            @click="$emit('search')"
+          />
+          <EzActionButton kind="reset" label="重置" secondary @click="$emit('reset')" />
         </div>
       </div>
 
@@ -69,7 +76,12 @@ const query = defineModel<RoleListQuery>('query', { required: true })
                   <NTag :type="statusType(role.status)" :bordered="false" size="small">
                     {{ role.status === 1 ? '启用' : '禁用' }}
                   </NTag>
-                  <NTag v-if="role.code === superAdminRoleCode" type="warning" :bordered="false" size="small">
+                  <NTag
+                    v-if="role.code === superAdminRoleCode"
+                    type="warning"
+                    :bordered="false"
+                    size="small"
+                  >
                     保护
                   </NTag>
                 </span>

@@ -22,7 +22,14 @@ const formModel = defineModel<AttachmentEditFormModel>('model', { required: true
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-lg" :bordered="false" @update:show="(value) => $emit('update:show', value)">
+  <NModal
+    :show="show"
+    preset="card"
+    :closable="false"
+    class="ez-modal-width-lg"
+    :bordered="false"
+    @update:show="(value) => $emit('update:show', value)"
+  >
     <template #header>
       <FormModalHeader
         title="编辑附件"
@@ -31,7 +38,13 @@ const formModel = defineModel<AttachmentEditFormModel>('model', { required: true
       />
     </template>
 
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="ez-modal-form">
+    <NForm
+      ref="formRef"
+      :model="formModel"
+      :rules="rules"
+      label-placement="top"
+      class="ez-modal-form"
+    >
       <NFormItem label="附件名称" path="display_name">
         <NInput v-model:value="formModel.display_name" placeholder="请输入附件名称" />
       </NFormItem>

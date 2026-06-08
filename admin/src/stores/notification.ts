@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getNotifications, getUnreadCount, markRead, markAllRead } from '@/modules/system/api/notification'
+import {
+  getNotifications,
+  getUnreadCount,
+  markRead,
+  markAllRead,
+} from '@/modules/system/api/notification'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { getAccessToken } from '@/utils/auth'
 import type { NotificationItem, NotificationListQuery, WSMessage } from '@/types/notification'

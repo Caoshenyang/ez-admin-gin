@@ -67,12 +67,7 @@ defineEmits<{
     <template #footer>
       <div class="ez-modal-footer">
         <NButton quaternary class="min-w-[92px]" @click="$emit('update:show', false)">取消</NButton>
-        <NButton
-          type="primary"
-          class="min-w-[92px]"
-          :loading="roleSaving"
-          @click="$emit('submit')"
-        >
+        <NButton type="primary" class="min-w-[92px]" :loading="roleSaving" @click="$emit('submit')">
           保存
         </NButton>
       </div>

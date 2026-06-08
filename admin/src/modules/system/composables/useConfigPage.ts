@@ -1,13 +1,20 @@
 import type { DataTableColumns, FormRules } from 'naive-ui'
-import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { h } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
 import { useStatusToggle } from '@/composables/useStatusToggle'
 import { displayText } from '@/utils/format'
-import { createConfig, deleteConfig, getConfigs, updateConfig, updateConfigStatus } from '../api/config'
+import {
+  createConfig,
+  deleteConfig,
+  getConfigs,
+  updateConfig,
+  updateConfigStatus,
+} from '../api/config'
 import { ConfigStatus, type ConfigItem, type ConfigListQuery } from '../types/config'
 import {
   buildConfigCreatePayload,
@@ -36,15 +43,24 @@ export function useConfigPage() {
     ...defaultConfigListQuery(),
   })
 
-  const { formRef, formVisible, formMode, formModel, saving, rules, openCreate, openEdit, handleSubmit } =
-    useModalForm<ConfigFormModel>(defaultConfigFormModel, {
-      rules: {
-        group_code: [{ required: true, message: '请输入配置分组', trigger: 'blur' }],
-        key: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
-        name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
-        value: [{ required: true, message: '请输入配置值', trigger: 'blur' }],
-      } as FormRules,
-    })
+  const {
+    formRef,
+    formVisible,
+    formMode,
+    formModel,
+    saving,
+    rules,
+    openCreate,
+    openEdit,
+    handleSubmit,
+  } = useModalForm<ConfigFormModel>(defaultConfigFormModel, {
+    rules: {
+      group_code: [{ required: true, message: '请输入配置分组', trigger: 'blur' }],
+      key: [{ required: true, message: '请输入配置键', trigger: 'blur' }],
+      name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
+      value: [{ required: true, message: '请输入配置值', trigger: 'blur' }],
+    } as FormRules,
+  })
 
   const { handleToggleStatus } = useStatusToggle(updateConfigStatus, {
     onSuccess: async () => {
@@ -62,7 +78,11 @@ export function useConfigPage() {
       key: 'group_code',
       width: 112,
       render(row) {
-        return h(NTag, { size: 'small', bordered: false, type: 'info' }, { default: () => displayText(row.group_code) })
+        return h(
+          NTag,
+          { size: 'small', bordered: false, type: 'info' },
+          { default: () => displayText(row.group_code) },
+        )
       },
     },
     {
@@ -111,10 +131,11 @@ export function useConfigPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 172,
+      width: 128,
       fixed: 'right',
       render(row) {
-        const nextStatus = row.status === ConfigStatus.Enabled ? ConfigStatus.Disabled : ConfigStatus.Enabled
+        const nextStatus =
+          row.status === ConfigStatus.Enabled ? ConfigStatus.Disabled : ConfigStatus.Enabled
 
         return h(
           NSpace,
@@ -123,11 +144,15 @@ export function useConfigPage() {
             default: () =>
               [
                 canUse('system:config:update')
-                  ? h(
-                      NButton,
-                      { size: 'tiny', secondary: true, type: 'info', onClick: () => openEditForm(row) },
-                      { default: () => '编辑' },
-                    )
+                  ? h(EzActionButton, {
+                      iconOnly: true,
+                      kind: 'edit',
+                      label: '编辑',
+                      size: 'tiny',
+                      secondary: true,
+                      type: 'info',
+                      onClick: () => openEditForm(row),
+                    })
                   : null,
                 canUse('system:config:status')
                   ? h(
@@ -135,16 +160,17 @@ export function useConfigPage() {
                       { onPositiveClick: () => handleToggleStatus(row, nextStatus) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            {
-                              size: 'tiny',
-                              secondary: true,
-                              type: nextStatus === ConfigStatus.Disabled ? 'error' : 'success',
-                            },
-                            { default: () => (nextStatus === ConfigStatus.Disabled ? '禁用' : '启用') },
-                          ),
-                        default: () => `确认${nextStatus === ConfigStatus.Disabled ? '禁用' : '启用'}该配置？`,
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: nextStatus === ConfigStatus.Disabled ? 'disable' : 'enable',
+                            label: nextStatus === ConfigStatus.Disabled ? '禁用' : '启用',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: nextStatus === ConfigStatus.Disabled ? 'error' : 'success',
+                          }),
+                        default: () =>
+                          `确认${nextStatus === ConfigStatus.Disabled ? '禁用' : '启用'}该配置？`,
                       },
                     )
                   : null,
@@ -154,11 +180,15 @@ export function useConfigPage() {
                       { onPositiveClick: () => handleDelete(row) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            { size: 'tiny', secondary: true, type: 'error' },
-                            { default: () => '删除' },
-                          ),
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: 'delete',
+                            label: '删除',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: 'error',
+                          }),
                         default: () => '删除后该配置会从列表和缓存中移除，确认继续？',
                       },
                     )

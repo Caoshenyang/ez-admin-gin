@@ -85,8 +85,8 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
     <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" class="w-36" />
 
     <template #actions>
-      <NButton type="primary" @click="emit('search')">查询</NButton>
-      <NButton @click="emit('reset')">重置</NButton>
+      <EzActionButton kind="search" label="查询" type="primary" @click="emit('search')" />
+      <EzActionButton kind="reset" label="重置" @click="emit('reset')" />
     </template>
   </EzSearchPanel>
 </template>
@@ -96,7 +96,7 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 
 - 关键词输入宽度优先用 `w-56` / `w-64`。
 - 状态、类型、扩展名这类短选择器优先用 `w-36` / `w-40`。
-- 查询按钮始终放在 actions 插槽第一位，重置按钮第二位。
+- 查询按钮始终放在 actions 插槽第一位，重置按钮第二位，使用 `EzActionButton` 的图标 + 短文字样式。
 - 支持回车查询的字段绑定 `@keyup.enter="emit('search')"`。
 - 不再新增手写 `<div class="ez-toolbar">` 筛选条。
 
@@ -128,7 +128,7 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 <template>
   <EzDataTable :columns="columns" :data="items" :loading="loading">
     <template #toolbarActions>
-      <NButton secondary size="small" @click="emit('expandAll')">展开全部</NButton>
+      <EzActionButton kind="expand" label="展开全部" secondary size="small" @click="emit('expandAll')" />
     </template>
 
     <template #body="{ tableColumns, tableScrollX, tableSize }">
@@ -153,14 +153,14 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 - 表格不直接使用 Naive UI 分页，普通列表由 `EzDataTable` 统一渲染分页。
 - 表格容器不再新增 `NCard class="ez-table-card"` 写法。
 - 顶部统计条只放统计、刷新、展开/收起、批量动作，不放搜索条件。
-- 刷新、密度、列设置由 `EzDataTable` 统一提供，并作为右侧图标型视图控制组展示；业务侧扩展按钮放入 `toolbarActions`，作为文字操作组展示，不要覆盖整段 `actions`。
+- 刷新、密度、列设置由 `EzDataTable` 统一提供，并作为右侧图标型视图控制组展示；业务侧扩展按钮放入 `toolbarActions`，优先使用 `EzActionButton` 的图标 + 短文字样式，不要覆盖整段 `actions`。
 - `EzTableCard` 只作为底层外壳使用，业务列表不要再手写 `EzTableCard + TableStatsBar + NDataTable + NPagination`。
 - 树表、勾选表和带自定义空态的表格可以通过 `EzDataTable` 的 `body` 插槽接管 `NDataTable`。
 - 表头统一保持 13px / 700 的信息层级，避免比正文弱太多。
 - 长表格必须配置稳定列宽，避免操作列挤压正文列。
 - `EzDataTable` 会根据可见列宽自动计算 `scroll-x`；业务自定义表体必须透传 `tableScrollX`，确保列展示不全时有横向滚动条。
 - 操作列统一固定在右侧，按按钮数量配置稳定宽度，并使用 `ez-row-actions` 承接统一按钮样式。
-- 操作列按钮优先使用 `size="tiny" secondary`，按钮数量超过四个时再考虑下拉菜单收纳。
+- 操作列按钮优先使用 `EzActionButton icon-only size="tiny" secondary`，通过 tooltip / `aria-label` 暴露完整动作名称；按钮数量超过四个时再考虑下拉菜单收纳。
 
 ## 表单区
 

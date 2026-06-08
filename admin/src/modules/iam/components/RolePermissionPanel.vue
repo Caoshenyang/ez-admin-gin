@@ -1,39 +1,29 @@
 <!-- RolePermissionPanel 承接角色权限主流程：功能权限与接口权限。 -->
 <script setup lang="ts">
-import type { SelectOption, TreeOption } from 'naive-ui'
-import {
-  NButton,
-  NCard,
-  NDrawer,
-  NDrawerContent,
-  NEmpty,
-  NInput,
-  NPopconfirm,
-  NSelect,
-  NSpin,
-  NTag,
-  NTree,
-} from 'naive-ui'
+import type { TreeOption } from 'naive-ui'
+import { NCard, NDrawer, NDrawerContent, NEmpty, NPopconfirm, NSpin, NTag, NTree } from 'naive-ui'
 import { ref } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { formatTime } from '@/utils/format'
 import type { RoleItem } from '../types/role'
-import type { PermissionRow, PermissionTab } from '../types/role-page'
+import type { PermissionTab } from '../types/role-page'
 import type { UserItem } from '../types/user'
 
 defineProps<{
+  apiTreeOptions: TreeOption[]
   canDeleteSelectedRole: boolean
   canEditBaseRole: boolean
   canEditPermissionTab: boolean
   canEditSelectedRole: boolean
   canSavePermissionTab: boolean
   canToggleSelectedRoleStatus: boolean
+  checkedApiCount: number
   checkedFeatureCount: number
   dataScopeHelp: string
   dataScopeLabel: string
   departmentNameMap: Map<number, string>
   menuTreeOptions: TreeOption[]
-  methodOptions: SelectOption[]
   permissionSaveLabel: string
   relatedUsers: UserItem[]
   relatedUsersLoading: boolean
@@ -44,23 +34,20 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  addPermission: []
   checkAll: []
   clearAll: []
   deleteRole: [role: RoleItem]
   editRole: [role: RoleItem]
   refreshRelatedUsers: []
-  removePermission: [id: number]
   savePermissions: []
   toggleStatus: [role: RoleItem]
 }>()
 
 const activeTab = defineModel<PermissionTab>('activeTab', { required: true })
+const checkedAPIIDs = defineModel<Array<string | number>>('checkedApiIds', { required: true })
 const checkedMenuIDs = defineModel<Array<string | number>>('checkedMenuIds', { required: true })
-const permissionRows = defineModel<PermissionRow[]>('permissionRows', { required: true })
 
 const relatedUsersVisible = ref(false)
-const customApiVisible = ref(false)
 
 const permissionTabs: Array<{ label: string; value: PermissionTab }> = [
   { label: '功能权限', value: 'feature' },
@@ -84,38 +71,44 @@ function openRelatedUsers() {
         <div class="permission-identity">
           <div class="permission-identity__main">
             <h2>{{ selectedRole?.name ?? '选择一个角色' }}</h2>
-            <NTag v-if="selectedRole" :type="selectedRole.status === 1 ? 'success' : 'error'" :bordered="false">
+            <NTag
+              v-if="selectedRole"
+              :type="selectedRole.status === 1 ? 'success' : 'error'"
+              :bordered="false"
+            >
               {{ selectedRole.status === 1 ? '启用' : '禁用' }}
             </NTag>
             <NTag v-if="selectedRole?.code === superAdminRoleCode" type="warning" :bordered="false">
               受保护
             </NTag>
           </div>
-          <p>{{ selectedRole ? `编码：${selectedRole.code}` : '从左侧角色列表选择后开始配置权限' }}</p>
+          <p>
+            {{ selectedRole ? `编码：${selectedRole.code}` : '从左侧角色列表选择后开始配置权限' }}
+          </p>
         </div>
 
         <div class="permission-command__actions">
-          <NButton
+          <EzActionButton
             v-if="selectedRole"
+            kind="edit"
+            label="编辑角色"
             secondary
             :disabled="!canEditBaseRole"
             @click="emit('editRole', selectedRole)"
-          >
-            编辑角色
-          </NButton>
+          />
           <NPopconfirm
             v-if="selectedRole"
             :disabled="!canToggleSelectedRoleStatus"
             @positive-click="emit('toggleStatus', selectedRole)"
           >
             <template #trigger>
-              <NButton
+              <EzActionButton
+                :kind="selectedRole.status === 1 ? 'disable' : 'enable'"
+                :label="selectedRole.status === 1 ? '禁用角色' : '启用角色'"
                 secondary
                 :type="selectedRole.status === 1 ? 'warning' : 'success'"
                 :disabled="!canToggleSelectedRoleStatus"
-              >
-                {{ selectedRole.status === 1 ? '禁用角色' : '启用角色' }}
-              </NButton>
+              />
             </template>
             确认{{ selectedRole.status === 1 ? '禁用' : '启用' }}该角色？
           </NPopconfirm>
@@ -125,18 +118,24 @@ function openRelatedUsers() {
             @positive-click="emit('deleteRole', selectedRole)"
           >
             <template #trigger>
-              <NButton secondary type="error" :disabled="!canDeleteSelectedRole">删除角色</NButton>
+              <EzActionButton
+                kind="delete"
+                label="删除角色"
+                secondary
+                type="error"
+                :disabled="!canDeleteSelectedRole"
+              />
             </template>
             删除前请确认该角色没有分配给任何用户。
           </NPopconfirm>
-          <NButton
+          <EzActionButton
+            kind="save"
+            :label="permissionSaveLabel"
             type="primary"
             :loading="saving"
             :disabled="!canSavePermissionTab"
             @click="emit('savePermissions')"
-          >
-            {{ permissionSaveLabel }}
-          </NButton>
+          />
         </div>
       </header>
 
@@ -150,191 +149,186 @@ function openRelatedUsers() {
         </section>
 
         <template v-else>
-        <section class="permission-editor">
-          <div class="role-detail-strip">
-            <span>排序 {{ selectedRole.sort }}</span>
-            <span>创建 {{ formatTime(selectedRole.created_at) }}</span>
-            <span>更新 {{ formatTime(selectedRole.updated_at) }}</span>
-          </div>
-
-          <div class="permission-editor-tabs">
-            <button
-              v-for="tab in permissionTabs"
-              :key="tab.value"
-              type="button"
-              :class="{ 'permission-editor-tab--active': activeTab === tab.value }"
-              class="permission-editor-tab"
-              @click="activeTab = tab.value"
-            >
-              {{ tab.label }}
-            </button>
-          </div>
-
-          <div v-if="activeTab === 'feature'" class="permission-editor-panel">
-            <div v-if="!canEditSelectedRole" class="permission-warning">
-              <span>!</span>
-              <strong>当前角色为内置保护角色，基础信息和权限配置保持只读。</strong>
-            </div>
-            <div v-else-if="!canEditPermissionTab" class="permission-warning">
-              <span>!</span>
-              <strong>当前账号没有分配功能权限的操作权限。</strong>
+          <section class="permission-editor">
+            <div class="role-detail-strip">
+              <span>排序 {{ selectedRole.sort }}</span>
+              <span>创建 {{ formatTime(selectedRole.created_at) }}</span>
+              <span>更新 {{ formatTime(selectedRole.updated_at) }}</span>
             </div>
 
-            <div class="tree-workspace">
-              <div class="tree-workspace__head">
+            <div class="permission-editor-tabs">
+              <button
+                v-for="tab in permissionTabs"
+                :key="tab.value"
+                type="button"
+                :class="{ 'permission-editor-tab--active': activeTab === tab.value }"
+                class="permission-editor-tab"
+                @click="activeTab = tab.value"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+
+            <div v-if="activeTab === 'feature'" class="permission-editor-panel">
+              <div v-if="!canEditSelectedRole" class="permission-warning">
+                <span>!</span>
+                <strong>当前角色为内置保护角色，基础信息和权限配置保持只读。</strong>
+              </div>
+              <div v-else-if="!canEditPermissionTab" class="permission-warning">
+                <span>!</span>
+                <strong>当前账号没有分配功能权限的操作权限。</strong>
+              </div>
+
+              <div class="tree-workspace">
+                <div class="tree-workspace__head">
+                  <div>
+                    <strong>{{ checkedFeatureCount }} 项已选</strong>
+                  </div>
+                  <div class="tree-workspace__actions">
+                    <EzActionButton
+                      kind="enable"
+                      label="全选"
+                      size="small"
+                      secondary
+                      type="primary"
+                      :disabled="!canEditPermissionTab"
+                      @click="emit('checkAll')"
+                    />
+                    <EzActionButton
+                      kind="reset"
+                      label="清空"
+                      size="small"
+                      secondary
+                      :disabled="!canEditPermissionTab"
+                      @click="emit('clearAll')"
+                    />
+                  </div>
+                </div>
+                <NEmpty
+                  v-if="menuTreeOptions.length === 0"
+                  size="small"
+                  description="暂无功能权限节点"
+                />
+                <NTree
+                  v-else
+                  v-model:checked-keys="checkedMenuIDs"
+                  checkable
+                  cascade
+                  block-line
+                  selectable
+                  :data="menuTreeOptions"
+                  :disabled="!canEditPermissionTab"
+                />
+              </div>
+            </div>
+
+            <div v-else class="permission-editor-panel">
+              <div v-if="!canEditSelectedRole" class="permission-warning">
+                <span>!</span>
+                <strong>当前角色为内置保护角色，接口策略保持只读。</strong>
+              </div>
+              <div v-else-if="!canEditPermissionTab" class="permission-warning">
+                <span>!</span>
+                <strong>当前账号没有分配接口权限的操作权限。</strong>
+              </div>
+
+              <div class="tree-workspace">
+                <div class="tree-workspace__head">
+                  <div>
+                    <strong>{{ checkedApiCount }} 项已选</strong>
+                  </div>
+                  <div class="tree-workspace__actions">
+                    <EzActionButton
+                      kind="enable"
+                      label="全选"
+                      size="small"
+                      secondary
+                      type="primary"
+                      :disabled="!canEditPermissionTab"
+                      @click="emit('checkAll')"
+                    />
+                    <EzActionButton
+                      kind="reset"
+                      label="清空"
+                      size="small"
+                      secondary
+                      :disabled="!canEditPermissionTab"
+                      @click="emit('clearAll')"
+                    />
+                  </div>
+                </div>
+                <NEmpty
+                  v-if="apiTreeOptions.length === 0"
+                  size="small"
+                  description="暂无接口权限元数据"
+                />
+                <NTree
+                  v-else
+                  v-model:checked-keys="checkedAPIIDs"
+                  checkable
+                  cascade
+                  block-line
+                  selectable
+                  :data="apiTreeOptions"
+                  :disabled="!canEditPermissionTab"
+                />
+              </div>
+            </div>
+          </section>
+
+          <aside class="permission-inspector">
+            <div class="inspector-block">
+              <h3>权限摘要</h3>
+              <dl>
                 <div>
-                  <strong>{{ checkedFeatureCount }} 项已选</strong>
+                  <dt>功能</dt>
+                  <dd>{{ checkedFeatureCount }}</dd>
                 </div>
-                <div class="tree-workspace__actions">
-                  <NButton
-                    size="small"
-                    secondary
-                    type="primary"
-                    :disabled="!canEditPermissionTab"
-                    @click="emit('checkAll')"
-                  >
-                    全选
-                  </NButton>
-                  <NButton size="small" secondary :disabled="!canEditPermissionTab" @click="emit('clearAll')">
-                    清空
-                  </NButton>
+                <div>
+                  <dt>接口</dt>
+                  <dd>{{ checkedApiCount }}</dd>
                 </div>
-              </div>
-              <NEmpty
-                v-if="menuTreeOptions.length === 0"
-                size="small"
-                description="暂无功能权限节点"
-              />
-              <NTree
-                v-else
-                v-model:checked-keys="checkedMenuIDs"
-                checkable
-                cascade
-                block-line
-                selectable
-                :data="menuTreeOptions"
-                :disabled="!canEditPermissionTab"
-              />
-            </div>
-          </div>
-
-          <div v-else class="permission-editor-panel">
-            <div class="permission-warning">
-              <span>!</span>
-              <strong>当前后端暂未提供接口元数据列表，先维护已保存的 METHOD + PATH 策略。</strong>
-            </div>
-            <div v-if="!canEditSelectedRole" class="permission-warning">
-              <span>!</span>
-              <strong>当前角色为内置保护角色，接口策略保持只读。</strong>
-            </div>
-            <div v-else-if="!canEditPermissionTab" class="permission-warning">
-              <span>!</span>
-              <strong>当前账号没有分配接口权限的操作权限。</strong>
-            </div>
-
-            <div class="api-toolbar">
-              <div>
-                <strong>当前接口策略</strong>
-                <span>{{ permissionRows.length }} 条策略</span>
-              </div>
-              <NButton
+                <div>
+                  <dt>用户</dt>
+                  <dd>{{ relatedUsersTotal }}</dd>
+                </div>
+              </dl>
+              <EzActionButton
+                kind="view"
+                label="查看关联用户"
                 size="small"
                 secondary
-                type="primary"
-                :disabled="!canEditPermissionTab"
-                @click="customApiVisible = !customApiVisible"
-              >
-                自定义策略
-              </NButton>
+                block
+                :disabled="!selectedRole"
+                @click="openRelatedUsers"
+              />
             </div>
 
-            <div v-if="permissionRows.length === 0" class="api-empty">
-              <NEmpty size="small" description="暂无接口策略" />
+            <div class="inspector-block">
+              <h3>数据范围</h3>
+              <strong>{{ selectedRole ? dataScopeLabel : '-' }}</strong>
+              <p v-if="selectedRole && dataScopeHelp">{{ dataScopeHelp }}</p>
             </div>
 
-            <div v-else class="api-policy-table">
-              <div class="api-policy-row api-policy-row--head">
-                <span>方法</span>
-                <span>路径</span>
-                <span>操作</span>
-              </div>
-              <div v-for="row in permissionRows" :key="row.id" class="api-policy-row">
-                <NSelect v-model:value="row.method" :options="methodOptions" :disabled="!canEditPermissionTab" />
-                <NInput v-model:value="row.path" placeholder="/api/v1/system/users" :disabled="!canEditPermissionTab" />
-                <NButton
+            <div v-if="selectedRole.custom_department_ids.length > 0" class="inspector-block">
+              <h3>授权部门</h3>
+              <div class="department-chip-list">
+                <NTag
+                  v-for="departmentID in selectedRole.custom_department_ids"
+                  :key="departmentID"
                   size="small"
-                  type="error"
-                  secondary
-                  :disabled="!canEditPermissionTab"
-                  @click="emit('removePermission', row.id)"
+                  :bordered="false"
                 >
-                  删除
-                </NButton>
+                  {{ departmentNameMap.get(departmentID) ?? `部门 ${departmentID}` }}
+                </NTag>
               </div>
             </div>
 
-            <div v-if="customApiVisible" class="custom-api-entry">
-              <NButton
-                size="small"
-                type="primary"
-                ghost
-                :disabled="!canEditPermissionTab"
-                @click="emit('addPermission')"
-              >
-                添加一条自定义接口策略
-              </NButton>
-              <span>仅用于临时补录；建议后续从接口元数据中勾选。</span>
+            <div class="inspector-block">
+              <h3>备注</h3>
+              <p>{{ selectedRole.remark || '暂无备注' }}</p>
             </div>
-          </div>
-        </section>
-
-        <aside class="permission-inspector">
-          <div class="inspector-block">
-            <h3>权限摘要</h3>
-            <dl>
-              <div>
-                <dt>功能</dt>
-                <dd>{{ checkedFeatureCount }}</dd>
-              </div>
-              <div>
-                <dt>接口</dt>
-                <dd>{{ permissionRows.length }}</dd>
-              </div>
-              <div>
-                <dt>用户</dt>
-                <dd>{{ relatedUsersTotal }}</dd>
-              </div>
-            </dl>
-            <NButton size="small" secondary block :disabled="!selectedRole" @click="openRelatedUsers">
-              查看关联用户
-            </NButton>
-          </div>
-
-          <div class="inspector-block">
-            <h3>数据范围</h3>
-            <strong>{{ selectedRole ? dataScopeLabel : '-' }}</strong>
-            <p v-if="selectedRole && dataScopeHelp">{{ dataScopeHelp }}</p>
-          </div>
-
-          <div v-if="selectedRole.custom_department_ids.length > 0" class="inspector-block">
-            <h3>授权部门</h3>
-            <div class="department-chip-list">
-              <NTag
-                v-for="departmentID in selectedRole.custom_department_ids"
-                :key="departmentID"
-                size="small"
-                :bordered="false"
-              >
-                {{ departmentNameMap.get(departmentID) ?? `部门 ${departmentID}` }}
-              </NTag>
-            </div>
-          </div>
-
-          <div class="inspector-block">
-            <h3>备注</h3>
-            <p>{{ selectedRole.remark || '暂无备注' }}</p>
-          </div>
-        </aside>
+          </aside>
         </template>
       </div>
     </section>
@@ -346,7 +340,13 @@ function openRelatedUsers() {
             <strong>{{ selectedRole?.name ?? '当前角色' }}</strong>
             <span>{{ relatedUsersTotal }} 人</span>
           </div>
-          <NButton size="small" secondary @click="emit('refreshRelatedUsers')">刷新</NButton>
+          <EzActionButton
+            kind="refresh"
+            label="刷新"
+            size="small"
+            secondary
+            @click="emit('refreshRelatedUsers')"
+          />
         </div>
 
         <NSpin :show="relatedUsersLoading">
@@ -356,7 +356,11 @@ function openRelatedUsers() {
               <strong>{{ user.nickname || user.username }}</strong>
               <span>
                 {{ user.username }} ·
-                {{ user.department_id === 0 ? '未分配部门' : departmentNameMap.get(user.department_id) ?? `部门 ${user.department_id}` }}
+                {{
+                  user.department_id === 0
+                    ? '未分配部门'
+                    : (departmentNameMap.get(user.department_id) ?? `部门 ${user.department_id}`)
+                }}
               </span>
             </div>
           </div>
@@ -553,32 +557,6 @@ function openRelatedUsers() {
   white-space: nowrap;
 }
 
-.api-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 8px;
-  background: #fff;
-  padding: 11px 12px;
-}
-
-.api-toolbar strong {
-  display: block;
-  color: var(--ez-text-main);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.api-toolbar span,
-.custom-api-entry span {
-  display: block;
-  margin-top: 3px;
-  color: var(--ez-text-sub);
-  font-size: 12px;
-}
-
 .tree-workspace {
   flex: 1;
   min-height: 0;
@@ -616,56 +594,52 @@ function openRelatedUsers() {
   padding: 12px;
 }
 
+:deep(.tree-workspace .n-tree-node) {
+  align-items: center;
+  min-height: 36px;
+}
+
+:deep(.tree-workspace .n-tree-node-switcher),
+:deep(.tree-workspace .n-tree-node-checkbox) {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+}
+
+:deep(.tree-workspace .n-tree-node-checkbox) {
+  margin-top: 0;
+}
+
 :deep(.tree-workspace .n-tree-node-content) {
-  min-height: 32px;
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
   border-radius: 7px;
+  line-height: 20px;
+  vertical-align: middle;
+}
+
+:deep(.tree-workspace .n-tree-node-content__text) {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  line-height: 20px;
+}
+
+:deep(.tree-workspace .n-checkbox) {
+  display: inline-flex;
+  align-items: center;
 }
 
 :deep(.tree-workspace .n-tree-node-content:hover) {
   background: rgba(37, 99, 255, 0.055);
 }
 
-.api-empty,
-.custom-api-entry,
 .related-user-item {
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 8px;
   background: #fff;
   padding: 14px;
-}
-
-.custom-api-entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.api-policy-table {
-  overflow: auto;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.api-policy-row {
-  display: grid;
-  grid-template-columns: 120px minmax(240px, 1fr) 76px;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.72);
-  padding: 10px 12px;
-}
-
-.api-policy-row:last-child {
-  border-bottom: 0;
-}
-
-.api-policy-row--head {
-  background: #f8fafc;
-  color: var(--ez-text-sub);
-  font-size: 12px;
-  font-weight: 900;
 }
 
 .permission-inspector {
@@ -784,8 +758,7 @@ function openRelatedUsers() {
 
 @media (max-width: 900px) {
   .permission-command,
-  .api-toolbar,
-  .custom-api-entry {
+  .tree-workspace__head {
     align-items: stretch;
     flex-direction: column;
   }
@@ -795,8 +768,7 @@ function openRelatedUsers() {
     justify-content: flex-start;
   }
 
-  .permission-inspector,
-  .api-policy-row {
+  .permission-inspector {
     grid-template-columns: 1fr;
   }
 }

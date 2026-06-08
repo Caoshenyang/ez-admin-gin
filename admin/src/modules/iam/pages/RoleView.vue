@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import RoleFormModal from '../components/RoleFormModal.vue'
 import RoleListPanel from '../components/RoleListPanel.vue'
@@ -9,7 +8,7 @@ import { useRolePage } from '../composables/useRolePage'
 
 const {
   activeTab,
-  addPermissionRow,
+  apiTreeOptions,
   canEditBaseRole,
   canDeleteSelectedRole,
   canEditPermissionTab,
@@ -17,6 +16,8 @@ const {
   canSavePermissionTab,
   canToggleSelectedRoleStatus,
   canUse,
+  checkedAPICount,
+  checkedAPIIDs,
   checkedFeatureCount,
   checkedMenuIDs,
   dataScopeHelp,
@@ -39,16 +40,13 @@ const {
   loadRelatedUsers,
   loading,
   menuTreeOptions,
-  methodOptions,
   openCreate,
   openEdit,
   permissionSaveLabel,
-  permissionRows,
   query,
   relatedUsers,
   relatedUsersLoading,
   relatedUsersTotal,
-  removePermissionRow,
   rules,
   saving,
   selectRole,
@@ -66,10 +64,20 @@ const {
     <section class="admin-page-section">
       <PageHeader title="角色管理" description="维护角色基础信息、功能权限、接口策略与数据范围。">
         <template #actions>
-          <NButton secondary :loading="loading" @click="handleSearch">刷新</NButton>
-          <NButton v-if="canUse('system:role:create')" type="primary" @click="openCreate">
-            + 新增角色
-          </NButton>
+          <EzActionButton
+            kind="refresh"
+            label="刷新"
+            secondary
+            :loading="loading"
+            @click="handleSearch"
+          />
+          <EzActionButton
+            v-if="canUse('system:role:create')"
+            kind="add"
+            label="新增角色"
+            type="primary"
+            @click="openCreate"
+          />
         </template>
       </PageHeader>
 
@@ -89,12 +97,14 @@ const {
 
         <RolePermissionPanel
           v-model:active-tab="activeTab"
+          v-model:checked-api-ids="checkedAPIIDs"
           v-model:checked-menu-ids="checkedMenuIDs"
-          v-model:permission-rows="permissionRows"
+          :api-tree-options="apiTreeOptions"
           :can-edit-base-role="canEditBaseRole"
           :can-delete-selected-role="canDeleteSelectedRole"
           :can-edit-permission-tab="canEditPermissionTab"
           :can-edit-selected-role="canEditSelectedRole"
+          :checked-api-count="checkedAPICount"
           :checked-feature-count="checkedFeatureCount"
           :can-save-permission-tab="canSavePermissionTab"
           :can-toggle-selected-role-status="canToggleSelectedRoleStatus"
@@ -102,7 +112,6 @@ const {
           :data-scope-label="dataScopeLabel"
           :department-name-map="departmentNameMap"
           :menu-tree-options="menuTreeOptions"
-          :method-options="methodOptions"
           :permission-save-label="permissionSaveLabel"
           :related-users="relatedUsers"
           :related-users-loading="relatedUsersLoading"
@@ -110,13 +119,11 @@ const {
           :saving="saving"
           :selected-role="selectedRole"
           :super-admin-role-code="superAdminRoleCode"
-          @add-permission="addPermissionRow"
           @check-all="handleCheckAll"
           @clear-all="handleClearAll"
           @delete-role="handleDeleteRole"
           @edit-role="openEdit"
           @refresh-related-users="loadRelatedUsers"
-          @remove-permission="removePermissionRow"
           @save-permissions="handleSavePermissions"
           @toggle-status="handleToggleRoleStatus"
         />

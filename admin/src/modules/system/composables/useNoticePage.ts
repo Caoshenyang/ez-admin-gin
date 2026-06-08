@@ -1,13 +1,20 @@
 import type { DataTableColumns, FormRules } from 'naive-ui'
-import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { h } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
 import { useStatusToggle } from '@/composables/useStatusToggle'
 import { displayText, formatTime } from '@/utils/format'
-import { createNotice, deleteNotice, getNotices, updateNotice, updateNoticeStatus } from '../api/notice'
+import {
+  createNotice,
+  deleteNotice,
+  getNotices,
+  updateNotice,
+  updateNoticeStatus,
+} from '../api/notice'
 import { NoticeStatus, type NoticeItem, type NoticeListQuery } from '../types/notice'
 import {
   buildNoticePayload,
@@ -35,10 +42,19 @@ export function useNoticePage() {
     ...defaultNoticeListQuery(),
   })
 
-  const { formRef, formVisible, formMode, formModel, saving, rules, openCreate, openEdit, handleSubmit } =
-    useModalForm<NoticeFormModel>(defaultNoticeFormModel, {
-      rules: { title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }] } as FormRules,
-    })
+  const {
+    formRef,
+    formVisible,
+    formMode,
+    formModel,
+    saving,
+    rules,
+    openCreate,
+    openEdit,
+    handleSubmit,
+  } = useModalForm<NoticeFormModel>(defaultNoticeFormModel, {
+    rules: { title: [{ required: true, message: '请输入公告标题', trigger: 'blur' }] } as FormRules,
+  })
 
   const openEditForm = (row: NoticeItem) => {
     openEdit(toNoticeFormModel(row))
@@ -57,7 +73,11 @@ export function useNoticePage() {
       width: 180,
       ellipsis: { tooltip: true },
       render(row) {
-        return h('span', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.title))
+        return h(
+          'span',
+          { class: 'font-semibold text-[var(--ez-text-heading)]' },
+          displayText(row.title),
+        )
       },
     },
     {
@@ -93,16 +113,21 @@ export function useNoticePage() {
       key: 'updated_at',
       width: 150,
       render(row) {
-        return h('span', { class: 'tabular-nums text-[var(--ez-text-muted)]' }, formatTime(row.updated_at))
+        return h(
+          'span',
+          { class: 'tabular-nums text-[var(--ez-text-muted)]' },
+          formatTime(row.updated_at),
+        )
       },
     },
     {
       title: '操作',
       key: 'actions',
-      width: 172,
+      width: 128,
       fixed: 'right',
       render(row) {
-        const nextStatus = row.status === NoticeStatus.Enabled ? NoticeStatus.Disabled : NoticeStatus.Enabled
+        const nextStatus =
+          row.status === NoticeStatus.Enabled ? NoticeStatus.Disabled : NoticeStatus.Enabled
 
         return h(
           NSpace,
@@ -111,11 +136,15 @@ export function useNoticePage() {
             default: () =>
               [
                 canUse('system:notice:update')
-                  ? h(
-                      NButton,
-                      { size: 'tiny', secondary: true, type: 'info', onClick: () => openEditForm(row) },
-                      { default: () => '编辑' },
-                    )
+                  ? h(EzActionButton, {
+                      iconOnly: true,
+                      kind: 'edit',
+                      label: '编辑',
+                      size: 'tiny',
+                      secondary: true,
+                      type: 'info',
+                      onClick: () => openEditForm(row),
+                    })
                   : null,
                 canUse('system:notice:status')
                   ? h(
@@ -123,16 +152,17 @@ export function useNoticePage() {
                       { onPositiveClick: () => handleToggleStatus(row, nextStatus) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            {
-                              size: 'tiny',
-                              secondary: true,
-                              type: nextStatus === NoticeStatus.Disabled ? 'error' : 'success',
-                            },
-                            { default: () => (nextStatus === NoticeStatus.Disabled ? '禁用' : '启用') },
-                          ),
-                        default: () => `确认${nextStatus === NoticeStatus.Disabled ? '禁用' : '启用'}该公告？`,
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: nextStatus === NoticeStatus.Disabled ? 'disable' : 'enable',
+                            label: nextStatus === NoticeStatus.Disabled ? '禁用' : '启用',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: nextStatus === NoticeStatus.Disabled ? 'error' : 'success',
+                          }),
+                        default: () =>
+                          `确认${nextStatus === NoticeStatus.Disabled ? '禁用' : '启用'}该公告？`,
                       },
                     )
                   : null,
@@ -142,11 +172,15 @@ export function useNoticePage() {
                       { onPositiveClick: () => handleDelete(row) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            { size: 'tiny', secondary: true, type: 'error' },
-                            { default: () => '删除' },
-                          ),
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: 'delete',
+                            label: '删除',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: 'error',
+                          }),
                         default: () => '确认删除该公告？删除后将不再出现在列表里。',
                       },
                     )

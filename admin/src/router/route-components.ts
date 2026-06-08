@@ -8,7 +8,10 @@ type RouteComponent = NonNullable<RouteRecordRaw['component']>
 const placeholderPage = () => import('@/modules/system/pages/PlaceholderPage.vue')
 
 // routeModules 通过 Vite 的 import.meta.glob 批量加载所有模块下的页面视图组件。
-const routeModules = import.meta.glob('../modules/**/pages/*View.vue') as Record<string, RouteComponent>
+const routeModules = import.meta.glob('../modules/**/pages/*View.vue') as Record<
+  string,
+  RouteComponent
+>
 
 // legacyComponentNamespace 历史遗留的模块命名空间，用于向后兼容旧的菜单组件路径。
 const legacyComponentNamespace = 'system'

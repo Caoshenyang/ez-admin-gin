@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  NAlert,
-  NButton,
-  NCard,
-  NForm,
-  NFormItem,
-  NInput,
-  NTag,
-} from 'naive-ui'
+import { NAlert, NButton, NCard, NForm, NFormItem, NInput, NTag } from 'naive-ui'
 import { useAccountCenterPage } from '../composables/useAccountCenterPage'
 
 const {
@@ -43,24 +35,34 @@ const {
       >
         <div v-if="profile" class="grid gap-3 sm:grid-cols-2">
           <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">登录账号</p>
-            <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">{{ profile.username }}</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">
+              登录账号
+            </p>
+            <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">
+              {{ profile.username }}
+            </p>
           </div>
 
           <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">所属部门</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">
+              所属部门
+            </p>
             <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">
               {{ profile.department_name || `部门 #${profile.department_id}` }}
             </p>
           </div>
 
           <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">角色集合</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">
+              角色集合
+            </p>
             <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">{{ roleText }}</p>
           </div>
 
           <div class="rounded-2xl bg-[var(--ez-page-bg)] px-4 py-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">数据范围</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-[var(--ez-text-sub)]">
+              数据范围
+            </p>
             <p class="mt-1 text-sm font-semibold text-[var(--ez-text-main)]">{{ dataScopeText }}</p>
           </div>
         </div>
@@ -88,19 +90,21 @@ const {
             />
           </NFormItem>
 
-          <NButton type="primary" :loading="profileSaving" :disabled="loading" @click="handleSaveProfile">
+          <NButton
+            type="primary"
+            :loading="profileSaving"
+            :disabled="loading"
+            @click="handleSaveProfile"
+          >
             保存资料
           </NButton>
         </NForm>
       </NCard>
 
-      <NCard
-        title="账号安全"
-        class="rounded-2xl"
-        :bordered="false"
-        content-class="space-y-5"
-      >
-        <div class="rounded-[var(--ez-radius-2xl)] bg-[var(--ez-panel-dark)] px-4 py-4 text-[var(--ez-on-dark)]">
+      <NCard title="账号安全" class="rounded-2xl" :bordered="false" content-class="space-y-5">
+        <div
+          class="rounded-[var(--ez-radius-2xl)] bg-[var(--ez-panel-dark)] px-4 py-4 text-[var(--ez-on-dark)]"
+        >
           <p class="text-sm font-semibold">密码修改后立即生效</p>
           <p class="mt-1 text-xs leading-6 text-[var(--ez-on-dark-sub)]">
             当前实现不会修改其他用户，也不会触碰角色、岗位和部门归属。

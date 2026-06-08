@@ -1,10 +1,5 @@
 <script setup lang="ts" generic="T extends object">
-import {
-  EyeOffOutline,
-  OptionsOutline,
-  RefreshOutline,
-  ResizeOutline,
-} from '@vicons/ionicons5'
+import { EyeOffOutline, OptionsOutline, RefreshOutline, ResizeOutline } from '@vicons/ionicons5'
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
 import {
   NButton,
@@ -20,6 +15,7 @@ import {
 } from 'naive-ui'
 import { computed, ref, watch } from 'vue'
 
+import EzActionButton from './EzActionButton.vue'
 import EzTableCard from './EzTableCard.vue'
 import TableStatsBar from '../TableStatsBar.vue'
 
@@ -141,7 +137,11 @@ const hasHiddenColumns = computed(() => {
 })
 
 const hasViewControls = computed(() => {
-  return props.showRefresh || props.showDensity || (props.showColumnSettings && columnSettings.value.length > 0)
+  return (
+    props.showRefresh ||
+    props.showDensity ||
+    (props.showColumnSettings && columnSettings.value.length > 0)
+  )
 })
 
 watch(
@@ -171,7 +171,10 @@ function resolveColumnWidth(column: TableColumn): number {
   }
 
   if ('children' in column && Array.isArray(column.children)) {
-    return column.children.reduce((total, childColumn) => total + resolveColumnWidth(childColumn), 0)
+    return column.children.reduce(
+      (total, childColumn) => total + resolveColumnWidth(childColumn),
+      0,
+    )
   }
 
   return toWidthNumber(column.width) ?? toWidthNumber(column.minWidth) ?? 120
@@ -200,7 +203,10 @@ function toWidthNumber(value: unknown): number | undefined {
       <template #actions>
         <slot name="actions">
           <div class="ez-table-actions">
-            <div v-if="$slots.toolbarActions" class="ez-table-action-group ez-table-action-group--business">
+            <div
+              v-if="$slots.toolbarActions"
+              class="ez-table-action-group ez-table-action-group--business"
+            >
               <slot name="toolbarActions" />
             </div>
 
@@ -223,7 +229,11 @@ function toWidthNumber(value: unknown): number | undefined {
                 </template>
                 刷新
               </NTooltip>
-              <span v-if="showRefresh && showDensity" class="ez-table-view-divider" aria-hidden="true" />
+              <span
+                v-if="showRefresh && showDensity"
+                class="ez-table-view-divider"
+                aria-hidden="true"
+              />
               <NPopover v-if="showDensity" trigger="click" placement="bottom-end">
                 <template #trigger>
                   <NButton
@@ -248,7 +258,9 @@ function toWidthNumber(value: unknown): number | undefined {
                 </div>
               </NPopover>
               <span
-                v-if="showColumnSettings && columnSettings.length > 0 && (showRefresh || showDensity)"
+                v-if="
+                  showColumnSettings && columnSettings.length > 0 && (showRefresh || showDensity)
+                "
                 class="ez-table-view-divider"
                 aria-hidden="true"
               />
@@ -261,7 +273,10 @@ function toWidthNumber(value: unknown): number | undefined {
                   <NButton
                     quaternary
                     size="small"
-                    :class="['ez-table-view-button', { 'ez-table-view-button--active': hasHiddenColumns }]"
+                    :class="[
+                      'ez-table-view-button',
+                      { 'ez-table-view-button--active': hasHiddenColumns },
+                    ]"
                     :type="hasHiddenColumns ? 'primary' : 'default'"
                     aria-label="设置显示列"
                     title="列设置"
@@ -274,7 +289,14 @@ function toWidthNumber(value: unknown): number | undefined {
                 <div class="ez-table-popover ez-table-column-panel">
                   <div class="ez-table-popover__header">
                     <span class="ez-table-popover__title">显示列</span>
-                    <NButton text size="tiny" type="primary" @click="resetColumns">重置</NButton>
+                    <EzActionButton
+                      kind="reset"
+                      label="重置"
+                      text
+                      size="tiny"
+                      type="primary"
+                      @click="resetColumns"
+                    />
                   </div>
                   <NCheckboxGroup v-model:value="visibleColumnKeys">
                     <div class="ez-table-column-panel__checks">
@@ -305,7 +327,12 @@ function toWidthNumber(value: unknown): number | undefined {
         普通列表只传 columns/data/rowKey 即可；需要勾选、行样式或额外事件时，
         用 body 插槽接管 NDataTable，仍复用统一工具条和分页外壳。
       -->
-      <slot name="body" :table-columns="tableColumns" :table-scroll-x="tableScrollX" :table-size="tableSize">
+      <slot
+        name="body"
+        :table-columns="tableColumns"
+        :table-scroll-x="tableScrollX"
+        :table-size="tableSize"
+      >
         <NDataTable
           :remote="remote"
           class="ez-table-fill-table"

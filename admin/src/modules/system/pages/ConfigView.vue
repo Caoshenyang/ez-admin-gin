@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { NButton, NCard, NInput, NInputNumber, NSelect, NSwitch } from 'naive-ui'
+import { NCard, NInput, NInputNumber, NSelect, NSwitch } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import ConfigFilterBar from '../components/ConfigFilterBar.vue'
 import ConfigFormModal from '../components/ConfigFormModal.vue'
@@ -44,9 +45,13 @@ const configCategories = [
     <section class="admin-page-section">
       <PageHeader title="配置管理" description="维护系统键值配置，按分组归类管理。">
         <template #actions>
-          <NButton v-if="canUse('system:config:create')" type="primary" @click="openCreate">
-            + 新增配置
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:config:create')"
+            kind="add"
+            label="新增配置"
+            type="primary"
+            @click="openCreate"
+          />
         </template>
       </PageHeader>
 
@@ -90,7 +95,13 @@ const configCategories = [
               </label>
               <label>
                 <span>密码强度规则</span>
-                <NSelect :value="'medium'" :options="[{ label: '中等（字母+数字）', value: 'medium' }, { label: '强（大小写+数字+符号）', value: 'strong' }]" />
+                <NSelect
+                  :value="'medium'"
+                  :options="[
+                    { label: '中等（字母+数字）', value: 'medium' },
+                    { label: '强（大小写+数字+符号）', value: 'strong' },
+                  ]"
+                />
               </label>
               <label>
                 <span>是否开启验证码</span>
@@ -103,8 +114,8 @@ const configCategories = [
             </div>
             <template #footer>
               <div class="config-form-actions">
-                <NButton>重置</NButton>
-                <NButton type="primary">保存配置</NButton>
+                <EzActionButton kind="reset" label="重置" />
+                <EzActionButton kind="save" label="保存配置" type="primary" />
               </div>
             </template>
           </NCard>

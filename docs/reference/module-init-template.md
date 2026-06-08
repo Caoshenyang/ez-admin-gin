@@ -178,18 +178,24 @@ const (
 
 ## 初始化数据最少要补什么
 
-如果模块需要真正进入后台界面，通常至少还要补三类初始化数据：
+如果模块需要真正进入后台界面，通常至少还要补五类初始化数据：
 
-1. Casbin 策略
-2. 菜单节点
-3. 按钮节点
+1. 接口权限元数据
+2. 角色接口权限关系
+3. Casbin 策略
+4. 菜单节点
+5. 按钮节点
 
 最小思路是：
 
 ```text
 policy.go
   ↓
-casbin_rule
+sys_api
+  ↓
+sys_role_api
+  ↓
+casbin_rule（由 sys_api 同步生成）
   ↓
 sys_menu（目录 / 菜单 / 按钮）
   ↓
@@ -225,7 +231,7 @@ sys_role_menu
 | 后端目录 | `dto / repository / service / handler / routes / policy` 已有 |
 | 路由 | 已注册到对应聚合路由 |
 | 权限常量 | `policy.go` 已固定命名 |
-| 初始化数据 | Casbin、菜单、按钮节点已补 |
+| 初始化数据 | 接口元数据、角色接口关联、Casbin、菜单、按钮节点已补 |
 | 前端页面 | 页面文件和 API 已接通 |
 | 动态路由 | `component` 已命中前端白名单 |
 | 按钮权限 | 页面 `canUse(...)` 与按钮节点 `code` 对齐 |

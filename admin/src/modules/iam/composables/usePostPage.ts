@@ -1,7 +1,8 @@
 import type { DataTableColumns, DataTableRowKey, FormRules } from 'naive-ui'
-import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, h, ref } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { useListLoader } from '@/composables/useListLoader'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
@@ -10,7 +11,12 @@ import { displayText, formatTime } from '@/utils/format'
 import { createPost, deletePost, getPosts, updatePost, updatePostStatus } from '../api/post'
 import { PostStatus, type PostItem } from '../types/post'
 import type { PostFormModel, PostPageQuery } from '../types/post-page'
-import { buildPostPayload, defaultPostFormModel, defaultPostQuery, toPostFormModel } from './post-page.utils'
+import {
+  buildPostPayload,
+  defaultPostFormModel,
+  defaultPostQuery,
+  toPostFormModel,
+} from './post-page.utils'
 
 const postFormRules: FormRules = {
   code: [{ required: true, message: '请输入岗位编码', trigger: ['blur', 'input'] }],
@@ -56,7 +62,11 @@ export function usePostPage() {
       key: 'name',
       minWidth: 180,
       render(row) {
-        return h('span', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name))
+        return h(
+          'span',
+          { class: 'font-semibold text-[var(--ez-text-heading)]' },
+          displayText(row.name),
+        )
       },
     },
     {
@@ -65,7 +75,11 @@ export function usePostPage() {
       minWidth: 150,
       ellipsis: { tooltip: true },
       render(row) {
-        return h('span', { class: 'font-mono text-[var(--ez-text-regular)]' }, displayText(row.code))
+        return h(
+          'span',
+          { class: 'font-mono text-[var(--ez-text-regular)]' },
+          displayText(row.code),
+        )
       },
     },
     {
@@ -96,10 +110,11 @@ export function usePostPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 172,
+      width: 128,
       fixed: 'right',
       render(row) {
-        const nextStatus = row.status === PostStatus.Enabled ? PostStatus.Disabled : PostStatus.Enabled
+        const nextStatus =
+          row.status === PostStatus.Enabled ? PostStatus.Disabled : PostStatus.Enabled
 
         return h(
           NSpace,
@@ -107,11 +122,15 @@ export function usePostPage() {
           {
             default: () => [
               canUse('system:post:update')
-                ? h(
-                    NButton,
-                    { size: 'tiny', secondary: true, type: 'info', onClick: () => openEdit(row) },
-                    { default: () => '编辑' },
-                  )
+                ? h(EzActionButton, {
+                    iconOnly: true,
+                    kind: 'edit',
+                    label: '编辑',
+                    size: 'tiny',
+                    secondary: true,
+                    type: 'info',
+                    onClick: () => openEdit(row),
+                  })
                 : null,
               canUse('system:post:status')
                 ? h(
@@ -119,18 +138,19 @@ export function usePostPage() {
                     { onPositiveClick: () => handleToggleStatus(row, nextStatus) },
                     {
                       trigger: () =>
-                        h(
-                          NButton,
-                          {
-                            size: 'tiny',
-                            secondary: true,
-                            type: nextStatus === PostStatus.Disabled ? 'error' : 'success',
-                          },
-                          { default: () => (nextStatus === PostStatus.Disabled ? '禁用' : '启用') },
-                        ),
-                        default: () => `确认${nextStatus === PostStatus.Disabled ? '禁用' : '启用'}该岗位？`,
-                      },
-                    )
+                        h(EzActionButton, {
+                          iconOnly: true,
+                          kind: nextStatus === PostStatus.Disabled ? 'disable' : 'enable',
+                          label: nextStatus === PostStatus.Disabled ? '禁用' : '启用',
+                          size: 'tiny',
+                          secondary: true,
+                          tooltip: false,
+                          type: nextStatus === PostStatus.Disabled ? 'error' : 'success',
+                        }),
+                      default: () =>
+                        `确认${nextStatus === PostStatus.Disabled ? '禁用' : '启用'}该岗位？`,
+                    },
+                  )
                 : null,
               canUse('system:post:delete')
                 ? h(
@@ -138,11 +158,15 @@ export function usePostPage() {
                     { onPositiveClick: () => handleDelete(row) },
                     {
                       trigger: () =>
-                        h(
-                          NButton,
-                          { size: 'tiny', secondary: true, type: 'error' },
-                          { default: () => '删除' },
-                        ),
+                        h(EzActionButton, {
+                          iconOnly: true,
+                          kind: 'delete',
+                          label: '删除',
+                          size: 'tiny',
+                          secondary: true,
+                          tooltip: false,
+                          type: 'error',
+                        }),
                       default: () => '删除前请确认该岗位没有绑定到任何用户。',
                     },
                   )
@@ -179,7 +203,9 @@ export function usePostPage() {
 
     await load()
     if (createdPost && !posts.value.some((post) => post.id === createdPost.id)) {
-      posts.value = [createdPost, ...posts.value].sort((left, right) => left.sort - right.sort || left.id - right.id)
+      posts.value = [createdPost, ...posts.value].sort(
+        (left, right) => left.sort - right.sort || left.id - right.id,
+      )
     }
   }
 

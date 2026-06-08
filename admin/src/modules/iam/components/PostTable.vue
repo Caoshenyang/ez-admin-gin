@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
-import { NButton, NDataTable, NPopconfirm, NSpace } from 'naive-ui'
+import { NDataTable, NPopconfirm, NSpace } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzDataTable from '@/components/ez/EzDataTable.vue'
 import type { PostItem } from '../types/post'
 
@@ -35,9 +36,14 @@ defineEmits<{
           @positive-click="$emit('deleteSelected')"
         >
           <template #trigger>
-            <NButton quaternary size="small" type="error" :disabled="selectedCount === 0">
-              删除选中
-            </NButton>
+            <EzActionButton
+              kind="delete"
+              label="删除选中"
+              quaternary
+              size="small"
+              type="error"
+              :disabled="selectedCount === 0"
+            />
           </template>
           删除前请确认选中的岗位没有绑定到任何用户。
         </NPopconfirm>

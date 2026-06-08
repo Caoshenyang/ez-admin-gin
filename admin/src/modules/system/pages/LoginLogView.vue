@@ -20,7 +20,10 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <PageHeader title="登录日志" description="按用户名、IP 和登录状态回看账号登录轨迹，快速识别异常登录或失败重试。" />
+      <PageHeader
+        title="登录日志"
+        description="按用户名、IP 和登录状态回看账号登录轨迹，快速识别异常登录或失败重试。"
+      />
 
       <LoginLogFilterBar
         :query="query"

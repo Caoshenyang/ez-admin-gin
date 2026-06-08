@@ -1,3 +1,5 @@
+import type { AdminAPI } from './api-resource'
+
 // 角色状态常量：启用、禁用
 export const RoleStatus = {
   Enabled: 1,
@@ -19,6 +21,11 @@ export const RoleDataScope = {
 // 角色数据权限范围联合类型
 export type RoleDataScope = (typeof RoleDataScope)[keyof typeof RoleDataScope]
 
+export type RolePermissionItem = Pick<
+  AdminAPI,
+  'id' | 'code' | 'name' | 'module' | 'method' | 'path' | 'status'
+>
+
 // 角色列表项数据结构
 export interface RoleItem {
   id: number
@@ -30,10 +37,8 @@ export interface RoleItem {
   status: RoleStatus
   remark: string
   menu_ids: number[]
-  permissions: Array<{
-    path: string
-    method: string
-  }>
+  permissions: RolePermissionItem[]
+  api_ids: number[]
   created_at: string
   updated_at: string
 }
@@ -80,15 +85,9 @@ export interface UpdateRoleStatusPayload {
   status: RoleStatus
 }
 
-// API权限项数据结构
-export interface RolePermissionItem {
-  path: string
-  method: string
-}
-
 // 更新角色API权限的请求载荷
 export interface UpdateRolePermissionsPayload {
-  permissions: RolePermissionItem[]
+  api_ids: number[]
 }
 
 // 更新角色菜单权限的请求载荷

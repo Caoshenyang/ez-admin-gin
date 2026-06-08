@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
-import { NButton, NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
+import { NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
 import { h } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText } from '@/utils/format'
 import { MenuStatus, MenuType, type AdminMenu } from '@/modules/iam/types/menu'
@@ -59,11 +60,7 @@ const columns: DataTableColumns<AdminMenu> = [
     render(row) {
       const cfg = menuTypeConfig[row.type]
 
-      return h(
-        NTag,
-        { bordered: false, type: cfg.type },
-        { default: () => cfg.label },
-      )
+      return h(NTag, { bordered: false, type: cfg.type }, { default: () => cfg.label })
     },
   },
   {
@@ -117,7 +114,7 @@ const columns: DataTableColumns<AdminMenu> = [
   {
     title: '操作',
     key: 'actions',
-    width: 228,
+    width: 164,
     fixed: 'right',
     render(row) {
       const canCreateChild = row.type !== MenuType.Button && props.canUse('system:menu:create')
@@ -131,27 +128,25 @@ const columns: DataTableColumns<AdminMenu> = [
           default: () =>
             [
               canCreateChild
-                ? h(
-                    NButton,
-                    {
-                      size: 'tiny',
-                      type: 'primary',
-                      secondary: true,
-                      onClick: () => emit('createChild', row),
-                    },
-                    { default: () => (row.type === MenuType.Menu ? '+ 按钮' : '+ 子级') },
-                  )
+                ? h(EzActionButton, {
+                    iconOnly: true,
+                    kind: 'add-child',
+                    label: row.type === MenuType.Menu ? '新增按钮' : '新增子级',
+                    size: 'tiny',
+                    type: 'primary',
+                    secondary: true,
+                    onClick: () => emit('createChild', row),
+                  })
                 : null,
               props.canUse('system:menu:update')
-                ? h(
-                    NButton,
-                    {
-                      size: 'tiny',
-                      secondary: true,
-                      onClick: () => emit('edit', row),
-                    },
-                    { default: () => '编辑' },
-                  )
+                ? h(EzActionButton, {
+                    iconOnly: true,
+                    kind: 'edit',
+                    label: '编辑',
+                    size: 'tiny',
+                    secondary: true,
+                    onClick: () => emit('edit', row),
+                  })
                 : null,
               props.canUse('system:menu:status')
                 ? h(
@@ -159,12 +154,14 @@ const columns: DataTableColumns<AdminMenu> = [
                     { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
                     {
                       trigger: () =>
-                        h(NButton, {
+                        h(EzActionButton, {
+                          iconOnly: true,
+                          kind: nextStatus === MenuStatus.Disabled ? 'disable' : 'enable',
+                          label: nextStatus === MenuStatus.Disabled ? '禁用' : '启用',
                           size: 'tiny',
                           secondary: true,
+                          tooltip: false,
                           type: nextStatus === MenuStatus.Disabled ? 'error' : 'success',
-                        }, {
-                          default: () => (nextStatus === MenuStatus.Disabled ? '禁用' : '启用'),
                         }),
                       default: () =>
                         `确认${nextStatus === MenuStatus.Disabled ? '禁用' : '启用'}该菜单？`,
@@ -177,15 +174,15 @@ const columns: DataTableColumns<AdminMenu> = [
                     { onPositiveClick: () => emit('delete', row) },
                     {
                       trigger: () =>
-                        h(
-                          NButton,
-                          {
-                            size: 'tiny',
-                            secondary: true,
-                            type: 'error',
-                          },
-                          { default: () => '删除' },
-                        ),
+                        h(EzActionButton, {
+                          iconOnly: true,
+                          kind: 'delete',
+                          label: '删除',
+                          size: 'tiny',
+                          secondary: true,
+                          tooltip: false,
+                          type: 'error',
+                        }),
                       default: () => '删除前请确认它没有子菜单，也没有分配给任何角色。',
                     },
                   )
@@ -203,24 +200,49 @@ function rowKey(row: AdminMenu) {
 </script>
 
 <template>
-  <EzDataTable :columns="columns" :data="displayMenus" :loading="loading" @refresh="emit('refresh')">
+  <EzDataTable
+    :columns="columns"
+    :data="displayMenus"
+    :loading="loading"
+    @refresh="emit('refresh')"
+  >
     <template #toolbarSummary>
       <span>
-        共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单 {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }} · 已选 {{ selectedCount }} 项
+        共 {{ flatMenuCount }} 个节点 · 目录 {{ stats.directoryCount }} · 菜单
+        {{ stats.menuCount }} · 按钮 {{ stats.buttonCount }} · 已选 {{ selectedCount }} 项
       </span>
     </template>
 
     <template #toolbarActions>
       <NSpace :size="12">
-        <NButton quaternary size="small" @click="emit('expandAll')">展开全部</NButton>
-        <NButton quaternary size="small" @click="emit('collapseAll')">收起全部</NButton>
+        <EzActionButton
+          kind="expand"
+          label="展开全部"
+          quaternary
+          size="small"
+          @click="emit('expandAll')"
+        />
+        <EzActionButton
+          kind="collapse"
+          label="收起全部"
+          quaternary
+          size="small"
+          @click="emit('collapseAll')"
+        />
         <NPopconfirm
           v-if="canUse('system:menu:delete')"
           :disabled="selectedCount === 0"
           @positive-click="emit('deleteSelected')"
         >
           <template #trigger>
-            <NButton quaternary size="small" type="error" :disabled="selectedCount === 0">删除选中</NButton>
+            <EzActionButton
+              kind="delete"
+              label="删除选中"
+              quaternary
+              size="small"
+              type="error"
+              :disabled="selectedCount === 0"
+            />
           </template>
           删除前请确认选中的菜单没有子菜单，也没有分配给任何角色。
         </NPopconfirm>

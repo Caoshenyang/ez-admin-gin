@@ -94,6 +94,41 @@ CREATE TABLE `sys_role_menu` (
   KEY `idx_sys_role_menu_menu_id` (`menu_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色菜单关系表';
 
+-- 接口权限元数据表
+CREATE TABLE `sys_api` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '接口权限记录主键，数据库自增生成',
+  `code` VARCHAR(128) NOT NULL COMMENT '接口权限编码，系统内唯一',
+  `name` VARCHAR(64) NOT NULL COMMENT '接口权限名称',
+  `module` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '所属模块，例如 iam、system、audit',
+  `method` VARCHAR(16) NOT NULL COMMENT 'HTTP 方法',
+  `path` VARCHAR(255) NOT NULL COMMENT '接口路径模式',
+  `sort` INT NOT NULL DEFAULT 0 COMMENT '排序值，数字越小越靠前',
+  `status` SMALLINT NOT NULL DEFAULT 1 COMMENT '接口权限状态：1 启用，2 禁用',
+  `remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `created_at` DATETIME(3) NOT NULL COMMENT '创建时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  `deleted_at` DATETIME(3) NULL DEFAULT NULL COMMENT '逻辑删除时间，NULL 表示未删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_api_code` (`code`),
+  UNIQUE KEY `uk_sys_api_method_path` (`method`, `path`),
+  KEY `idx_sys_api_module` (`module`),
+  KEY `idx_sys_api_status` (`status`),
+  KEY `idx_sys_api_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='接口权限元数据表';
+
+-- 角色接口权限关系表
+CREATE TABLE `sys_role_api` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '关系记录主键，数据库自增生成',
+  `role_id` BIGINT UNSIGNED NOT NULL COMMENT '角色 ID，对应 sys_role.id',
+  `api_id` BIGINT UNSIGNED NOT NULL COMMENT '接口权限 ID，对应 sys_api.id',
+  `created_at` DATETIME(3) NOT NULL COMMENT '绑定时间',
+  `updated_at` DATETIME(3) NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sys_role_api_role_api` (`role_id`, `api_id`),
+  KEY `idx_sys_role_api_role_id` (`role_id`),
+  KEY `idx_sys_role_api_api_id` (`api_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色接口权限关系表';
+
 -- 系统配置表
 CREATE TABLE `sys_config` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '配置记录主键，数据库自增生成',
@@ -456,70 +491,83 @@ VALUES
   (3, 2, 'info', '普通公告', 'info', 'info', 10, 1, '系统内置公告字典项', NOW(3), NOW(3)),
   (4, 2, 'warning', '重要公告', 'warning', 'warning', 20, 1, '系统内置公告字典项', NOW(3), NOW(3));
 
-INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`)
+INSERT INTO `sys_api` (`id`, `code`, `name`, `module`, `method`, `path`, `sort`, `status`, `remark`, `created_at`, `updated_at`)
 VALUES
-  ('p', 'super_admin', '/api/v1/system/health', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/users', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/users', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/users/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/users/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/users/:id/roles', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/users/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/roles', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/roles', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/roles/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/roles/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/roles/:id/permissions', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/roles/:id/menus', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/roles/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/menus', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/menus', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/menus/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/menus/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/menus/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/departments', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/departments', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/departments/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/departments/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/departments/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/posts', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/posts', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/posts/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/posts/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/posts/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/configs', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/configs', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/configs/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/configs/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/configs/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/configs/value/:key', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/dict-types', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/dict-types', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-types/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-types/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-types/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-items', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/dict-items', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-items/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-items/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/dict-items/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/files', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/files', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/attachments', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/attachments', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/attachments/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/attachments/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/notices', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/notices', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/notices/:id/update', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/notices/:id/status', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/notices/:id/delete', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/operation-logs', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/login-logs', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/notifications', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/notifications/unread-count', 'GET'),
-  ('p', 'super_admin', '/api/v1/system/notifications/mark-read', 'POST'),
-  ('p', 'super_admin', '/api/v1/system/notifications/mark-all-read', 'POST');
+  (1, 'system:api:list', '查看接口权限元数据', 'iam', 'GET', '/api/v1/system/apis', 10, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (2, 'system:health:view', '查看系统状态', 'audit', 'GET', '/api/v1/system/health', 10, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (3, 'system:user:list', '查看用户', 'iam', 'GET', '/api/v1/system/users', 30, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (4, 'system:user:create', '创建用户', 'iam', 'POST', '/api/v1/system/users', 31, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (5, 'system:user:update', '编辑用户', 'iam', 'POST', '/api/v1/system/users/:id/update', 32, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (6, 'system:user:status', '修改用户状态', 'iam', 'POST', '/api/v1/system/users/:id/status', 33, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (7, 'system:user:assign-role', '分配用户角色', 'iam', 'POST', '/api/v1/system/users/:id/roles', 34, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (8, 'system:user:delete', '删除用户', 'iam', 'POST', '/api/v1/system/users/:id/delete', 35, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (9, 'system:role:list', '查看角色', 'iam', 'GET', '/api/v1/system/roles', 40, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (10, 'system:role:create', '创建角色', 'iam', 'POST', '/api/v1/system/roles', 41, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (11, 'system:role:update', '编辑角色', 'iam', 'POST', '/api/v1/system/roles/:id/update', 42, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (12, 'system:role:status', '修改角色状态', 'iam', 'POST', '/api/v1/system/roles/:id/status', 43, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (13, 'system:role:permission', '分配接口权限', 'iam', 'POST', '/api/v1/system/roles/:id/permissions', 44, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (14, 'system:role:menu', '分配菜单权限', 'iam', 'POST', '/api/v1/system/roles/:id/menus', 45, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (15, 'system:role:delete', '删除角色', 'iam', 'POST', '/api/v1/system/roles/:id/delete', 46, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (16, 'system:menu:list', '查看菜单', 'iam', 'GET', '/api/v1/system/menus', 50, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (17, 'system:menu:create', '创建菜单', 'iam', 'POST', '/api/v1/system/menus', 51, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (18, 'system:menu:update', '编辑菜单', 'iam', 'POST', '/api/v1/system/menus/:id/update', 52, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (19, 'system:menu:status', '修改菜单状态', 'iam', 'POST', '/api/v1/system/menus/:id/status', 53, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (20, 'system:menu:delete', '删除菜单', 'iam', 'POST', '/api/v1/system/menus/:id/delete', 54, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (21, 'system:department:list', '查看部门', 'iam', 'GET', '/api/v1/system/departments', 60, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (22, 'system:department:create', '创建部门', 'iam', 'POST', '/api/v1/system/departments', 61, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (23, 'system:department:update', '编辑部门', 'iam', 'POST', '/api/v1/system/departments/:id/update', 62, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (24, 'system:department:status', '修改部门状态', 'iam', 'POST', '/api/v1/system/departments/:id/status', 63, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (25, 'system:department:delete', '删除部门', 'iam', 'POST', '/api/v1/system/departments/:id/delete', 64, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (26, 'system:post:list', '查看岗位', 'iam', 'GET', '/api/v1/system/posts', 70, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (27, 'system:post:create', '创建岗位', 'iam', 'POST', '/api/v1/system/posts', 71, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (28, 'system:post:update', '编辑岗位', 'iam', 'POST', '/api/v1/system/posts/:id/update', 72, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (29, 'system:post:status', '修改岗位状态', 'iam', 'POST', '/api/v1/system/posts/:id/status', 73, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (30, 'system:post:delete', '删除岗位', 'iam', 'POST', '/api/v1/system/posts/:id/delete', 74, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (31, 'system:config:list', '查看配置', 'system', 'GET', '/api/v1/system/configs', 10, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (32, 'system:config:create', '创建配置', 'system', 'POST', '/api/v1/system/configs', 11, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (33, 'system:config:update', '编辑配置', 'system', 'POST', '/api/v1/system/configs/:id/update', 12, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (34, 'system:config:status', '修改配置状态', 'system', 'POST', '/api/v1/system/configs/:id/status', 13, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (35, 'system:config:delete', '删除配置', 'system', 'POST', '/api/v1/system/configs/:id/delete', 14, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (36, 'system:config:value', '读取配置值', 'system', 'GET', '/api/v1/system/configs/value/:key', 15, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (37, 'system:dict:type:list', '查看字典类型', 'system', 'GET', '/api/v1/system/dict-types', 20, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (38, 'system:dict:type:create', '创建字典类型', 'system', 'POST', '/api/v1/system/dict-types', 21, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (39, 'system:dict:type:update', '编辑字典类型', 'system', 'POST', '/api/v1/system/dict-types/:id/update', 22, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (40, 'system:dict:type:status', '修改字典类型状态', 'system', 'POST', '/api/v1/system/dict-types/:id/status', 23, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (41, 'system:dict:type:delete', '删除字典类型', 'system', 'POST', '/api/v1/system/dict-types/:id/delete', 24, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (42, 'system:dict:item:list', '查看字典项', 'system', 'GET', '/api/v1/system/dict-items', 25, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (43, 'system:dict:item:create', '创建字典项', 'system', 'POST', '/api/v1/system/dict-items', 26, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (44, 'system:dict:item:update', '编辑字典项', 'system', 'POST', '/api/v1/system/dict-items/:id/update', 27, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (45, 'system:dict:item:status', '修改字典项状态', 'system', 'POST', '/api/v1/system/dict-items/:id/status', 28, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (46, 'system:dict:item:delete', '删除字典项', 'system', 'POST', '/api/v1/system/dict-items/:id/delete', 29, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (47, 'system:file:list', '查看文件', 'system', 'GET', '/api/v1/system/files', 30, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (48, 'system:file:upload', '上传文件', 'system', 'POST', '/api/v1/system/files', 31, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (49, 'system:attachment:list', '查看附件', 'system', 'GET', '/api/v1/system/attachments', 40, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (50, 'system:attachment:upload', '上传附件', 'system', 'POST', '/api/v1/system/attachments', 41, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (51, 'system:attachment:update', '编辑附件', 'system', 'POST', '/api/v1/system/attachments/:id/update', 42, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (52, 'system:attachment:status', '修改附件状态', 'system', 'POST', '/api/v1/system/attachments/:id/status', 43, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (53, 'system:notice:list', '查看公告', 'system', 'GET', '/api/v1/system/notices', 50, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (54, 'system:notice:create', '创建公告', 'system', 'POST', '/api/v1/system/notices', 51, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (55, 'system:notice:update', '编辑公告', 'system', 'POST', '/api/v1/system/notices/:id/update', 52, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (56, 'system:notice:status', '修改公告状态', 'system', 'POST', '/api/v1/system/notices/:id/status', 53, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (57, 'system:notice:delete', '删除公告', 'system', 'POST', '/api/v1/system/notices/:id/delete', 54, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (58, 'system:operation-log:list', '查看操作日志', 'audit', 'GET', '/api/v1/system/operation-logs', 20, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (59, 'system:login-log:list', '查看登录日志', 'audit', 'GET', '/api/v1/system/login-logs', 30, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (60, 'system:notification:list', '查看通知', 'system', 'GET', '/api/v1/system/notifications', 60, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (61, 'system:notification:unread-count', '查看未读通知数', 'system', 'GET', '/api/v1/system/notifications/unread-count', 61, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (62, 'system:notification:mark-read', '标记通知已读', 'system', 'POST', '/api/v1/system/notifications/mark-read', 62, 1, '系统内置接口权限', NOW(3), NOW(3)),
+  (63, 'system:notification:mark-all-read', '全部通知已读', 'system', 'POST', '/api/v1/system/notifications/mark-all-read', 63, 1, '系统内置接口权限', NOW(3), NOW(3));
+
+INSERT INTO `sys_role_api` (`role_id`, `api_id`, `created_at`, `updated_at`)
+SELECT 1, `id`, NOW(3), NOW(3)
+FROM `sys_api`
+WHERE `status` = 1
+ORDER BY `id`;
+
+INSERT INTO `casbin_rule` (`ptype`, `v0`, `v1`, `v2`)
+SELECT 'p', 'super_admin', `path`, `method`
+FROM `sys_api`
+WHERE `status` = 1
+ORDER BY `id`;
 
 INSERT INTO `sys_role_menu` (`role_id`, `menu_id`, `created_at`, `updated_at`)
 VALUES

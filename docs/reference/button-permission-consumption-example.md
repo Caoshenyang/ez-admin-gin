@@ -176,7 +176,7 @@ canUse('system:user:delete')
 | 页面 | 典型按钮权限码 |
 | --- | --- |
 | `UserView.vue` | `system:user:create` / `system:user:update` / `system:user:status` / `system:user:assign-role` / `system:user:delete` |
-| `RoleView.vue` | `system:role:create` / `system:role:update` / `system:role:status` / `system:role:delete` |
+| `RoleView.vue` | `system:role:create` / `system:role:update` / `system:role:status` / `system:role:permission` / `system:role:menu` / `system:role:delete` |
 | `PostView.vue` | `system:post:create` / `system:post:update` / `system:post:status` / `system:post:delete` |
 | `ConfigView.vue` | `system:config:create` / `system:config:update` / `system:config:status` / `system:config:delete` |
 | `DictView.vue` | `system:dict:type:create` / `system:dict:type:update` / `system:dict:type:delete` / `system:dict:item:create` / `system:dict:item:delete` |

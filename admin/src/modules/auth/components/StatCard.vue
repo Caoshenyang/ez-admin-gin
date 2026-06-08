@@ -16,7 +16,9 @@ defineProps<{
     <div class="flex items-start justify-between">
       <div>
         <p class="text-[var(--ez-text-sm)] font-medium text-[var(--ez-text-light)]">{{ label }}</p>
-        <p class="mt-2 text-[var(--ez-text-hero)] font-bold tracking-tight text-[var(--ez-text-main)]">
+        <p
+          class="mt-2 text-[var(--ez-text-hero)] font-bold tracking-tight text-[var(--ez-text-main)]"
+        >
           {{ value }}
         </p>
       </div>

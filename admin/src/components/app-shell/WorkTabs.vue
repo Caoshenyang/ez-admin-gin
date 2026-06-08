@@ -155,7 +155,10 @@ onMounted(() => {
   scheduleScrollStateUpdate()
 })
 
-watch(() => props.tabs.length, () => nextTick(scheduleScrollStateUpdate))
+watch(
+  () => props.tabs.length,
+  () => nextTick(scheduleScrollStateUpdate),
+)
 
 onBeforeUnmount(() => {
   scrollRef.value?.removeEventListener('scroll', updateScrollState)

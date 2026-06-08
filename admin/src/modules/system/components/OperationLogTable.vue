@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NTag } from 'naive-ui'
+import { NTag } from 'naive-ui'
 import { h } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText, formatTime } from '@/utils/format'
 import type { OperationLogItem } from '../types/operation-log'
@@ -49,7 +50,11 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'username',
     width: 104,
     render(row) {
-      return h('span', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.username))
+      return h(
+        'span',
+        { class: 'font-semibold text-[var(--ez-text-main)]' },
+        displayText(row.username),
+      )
     },
   },
   {
@@ -65,7 +70,11 @@ const columns: DataTableColumns<OperationLogItem> = [
     key: 'method',
     width: 84,
     render(row) {
-      return h(NTag, { bordered: false, type: row.method === 'GET' ? 'success' : 'info' }, { default: () => displayText(row.method) })
+      return h(
+        NTag,
+        { bordered: false, type: row.method === 'GET' ? 'success' : 'info' },
+        { default: () => displayText(row.method) },
+      )
     },
   },
   {
@@ -101,14 +110,19 @@ const columns: DataTableColumns<OperationLogItem> = [
   {
     title: '操作',
     key: 'detail',
-    width: 88,
+    width: 70,
     fixed: 'right',
     render(row) {
-      return h(
-        NButton,
-        { class: 'ez-row-actions', size: 'tiny', secondary: true, type: 'primary', onClick: () => emit('detail', row) },
-        { default: () => '查看' },
-      )
+      return h(EzActionButton, {
+        class: 'ez-row-actions',
+        iconOnly: true,
+        kind: 'view',
+        label: '查看详情',
+        size: 'tiny',
+        secondary: true,
+        type: 'primary',
+        onClick: () => emit('detail', row),
+      })
     },
   },
 ]

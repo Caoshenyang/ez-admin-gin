@@ -12,7 +12,9 @@ import type {
 
 // 获取附件列表（分页查询）
 export async function getAttachments(params: AttachmentListQuery) {
-  const response = await http.get<ApiResponse<AttachmentListResponse>>('/system/attachments', { params })
+  const response = await http.get<ApiResponse<AttachmentListResponse>>('/system/attachments', {
+    params,
+  })
   return response.data.data
 }
 
@@ -44,13 +46,16 @@ export async function createAttachment(file: File, payload: CreateAttachmentPayl
 
 // 更新附件信息
 export async function updateAttachment(id: number, payload: UpdateAttachmentPayload) {
-  const response = await http.post<ApiResponse<AttachmentItem>>(`/system/attachments/${id}/update`, payload)
+  const response = await http.post<ApiResponse<AttachmentItem>>(
+    `/system/attachments/${id}/update`,
+    payload,
+  )
   return response.data.data
 }
 
 // 更新附件状态（启用/禁用）
 export async function updateAttachmentStatus(id: number, payload: UpdateAttachmentStatusPayload) {
-  const response = await http.post<ApiResponse<{ id: number, status: number }>>(
+  const response = await http.post<ApiResponse<{ id: number; status: number }>>(
     `/system/attachments/${id}/status`,
     payload,
   )

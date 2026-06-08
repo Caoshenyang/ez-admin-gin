@@ -74,9 +74,13 @@ export function useUserPage() {
 
   const postNameMap = computed(() => new Map(posts.value.map((post) => [post.id, post.name])))
 
-  const departmentTreeOptions = computed<TreeSelectOption[]>(() => buildUserDepartmentTreeOptions(departments.value))
+  const departmentTreeOptions = computed<TreeSelectOption[]>(() =>
+    buildUserDepartmentTreeOptions(departments.value),
+  )
 
-  const departmentFilterTreeOptions = computed<TreeSelectOption[]>(() => buildUserDepartmentFilterTreeOptions(departments.value))
+  const departmentFilterTreeOptions = computed<TreeSelectOption[]>(() =>
+    buildUserDepartmentFilterTreeOptions(departments.value),
+  )
 
   const filteredDepartmentTreeOptions = computed<TreeSelectOption[]>(() =>
     filterDepartmentTreeOptions(departmentFilterTreeOptions.value, departmentKeyword.value),

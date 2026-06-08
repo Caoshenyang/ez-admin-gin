@@ -38,6 +38,8 @@ description: "当前系统表结构与完整版 SQL 交付物入口。"
 | `sys_user_role` | 用户角色关系表 |
 | `sys_menu` | 菜单与按钮表 |
 | `sys_role_menu` | 角色菜单关系表 |
+| `sys_api` | 接口权限元数据表 |
+| `sys_role_api` | 角色接口权限关系表 |
 | `sys_config` | 系统配置表 |
 | `sys_file` | 文件上传记录表 |
 | `sys_attachment` | 附件中心表 |

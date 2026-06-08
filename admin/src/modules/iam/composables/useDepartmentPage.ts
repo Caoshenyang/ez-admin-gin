@@ -11,10 +11,7 @@ import {
   updateDepartmentStatus,
 } from '../api/department'
 import { getUsers } from '../api/user'
-import {
-  DepartmentStatus,
-  type DepartmentItem,
-} from '../types/department'
+import { DepartmentStatus, type DepartmentItem } from '../types/department'
 import { UserStatus, type UserItem } from '../types/user'
 import type { DepartmentFormModel, DepartmentPageQuery } from '../types/department-page'
 import {
@@ -60,9 +57,10 @@ export function useDepartmentPage() {
 
   // 上级部门树形选择选项，包含"作为根部门"选项
   const parentOptions = computed<TreeSelectOption[]>(() => {
-    const excludedIDs = formMode.value === 'edit'
-      ? collectDepartmentSubtreeIDs(departments.value, formModel.id)
-      : new Set<number>()
+    const excludedIDs =
+      formMode.value === 'edit'
+        ? collectDepartmentSubtreeIDs(departments.value, formModel.id)
+        : new Set<number>()
 
     return [
       { key: 0, label: '作为根部门', value: 0 },

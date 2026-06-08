@@ -16,7 +16,10 @@ import type {
 function normalizeRoleItem(item: RoleItem): RoleItem {
   return {
     ...item,
-    custom_department_ids: Array.isArray(item.custom_department_ids) ? item.custom_department_ids : [],
+    custom_department_ids: Array.isArray(item.custom_department_ids)
+      ? item.custom_department_ids
+      : [],
+    api_ids: Array.isArray(item.api_ids) ? item.api_ids : [],
     menu_ids: Array.isArray(item.menu_ids) ? item.menu_ids : [],
     permissions: Array.isArray(item.permissions) ? item.permissions : [],
   }
@@ -53,9 +56,9 @@ export async function updateRoleStatus(id: number, payload: UpdateRoleStatusPayl
   return response.data.data
 }
 
-// updateRolePermissions 更新角色的 Casbin 权限策略。
+// updateRolePermissions 更新角色的接口权限关联，后端会同步 Casbin 策略。
 export async function updateRolePermissions(id: number, payload: UpdateRolePermissionsPayload) {
-  const response = await http.post<ApiResponse<{ id: number; permissions: unknown[] }>>(
+  const response = await http.post<ApiResponse<{ id: number; code: string; api_ids: number[] }>>(
     `/system/roles/${id}/permissions`,
     payload,
   )

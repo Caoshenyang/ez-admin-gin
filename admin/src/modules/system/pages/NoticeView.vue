@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import NoticeFilterBar from '../components/NoticeFilterBar.vue'
 import NoticeFormModal from '../components/NoticeFormModal.vue'
@@ -36,9 +35,13 @@ const {
     <section class="admin-page-section">
       <PageHeader title="公告管理" description="管理系统公告，支持按标题搜索和状态筛选。">
         <template #actions>
-          <NButton v-if="canUse('system:notice:create')" type="primary" @click="openCreate">
-            + 新增公告
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:notice:create')"
+            kind="add"
+            label="新增公告"
+            type="primary"
+            @click="openCreate"
+          />
         </template>
       </PageHeader>
 

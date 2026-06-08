@@ -11,10 +11,4 @@ export interface RoleFormModel {
   remark: string
 }
 
-export interface PermissionRow {
-  id: number
-  path: string
-  method: string
-}
-
 export type PermissionTab = 'feature' | 'api'

@@ -25,7 +25,10 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section">
-      <PageHeader title="操作日志" description="追踪后台接口操作行为，快速查看风险等级、执行结果和具体请求细节。" />
+      <PageHeader
+        title="操作日志"
+        description="追踪后台接口操作行为，快速查看风险等级、执行结果和具体请求细节。"
+      />
 
       <OperationLogFilterBar
         :username="query.username"

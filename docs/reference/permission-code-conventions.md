@@ -1,6 +1,6 @@
 ---
 title: 权限码约定
-description: "集中说明当前底座里 policy.go、菜单 code、component 编码和按钮权限码之间的关系，以及命名时最值得保持稳定的约定。"
+description: "集中说明接口权限元数据、菜单 code、component 编码和按钮权限码之间的关系，以及命名时最值得保持稳定的约定。"
 ---
 
 # 权限码约定
@@ -12,7 +12,7 @@ description: "集中说明当前底座里 policy.go、菜单 code、component �
 ::: tip 🎯 这页解决什么
 快速确认下面这些问题：
 
-- `policy.go` 里的权限码是给谁用的
+- `sys_api`、`sys_role_api` 和 `casbin_rule` 分别负责什么
 - `sys_menu.code` 和按钮显隐是什么关系
 - `component` 编码为什么必须稳定
 :::
@@ -23,15 +23,41 @@ description: "集中说明当前底座里 policy.go、菜单 code、component �
 
 | 类型 | 当前落点 | 主要用途 |
 | --- | --- | --- |
-| 接口权限码 | `module/*/policy.go` | 给 Casbin 和后端接口鉴权用 |
+| 接口权限码 | `sys_api.code`，模块常量通常放在 `domain/types.go` | 维护接口元数据，并同步生成 Casbin 执行策略 |
 | 菜单 / 按钮编码 | `sys_menu.code` | 给前端菜单树和按钮显隐用 |
 | 页面组件编码 | `sys_menu.component` | 给前端动态路由映射真实页面组件 |
 
 这三者经常会互相关联，但不应该被当成同一个东西。
 
-## `policy.go` 里的权限码是做什么的
+## 接口权限现在怎么维护
 
-当前每个模块都会把稳定权限点收在自己的 `policy.go` 里，例如：
+接口权限不再让角色页手动填写 `path + method`。
+
+当前主线是三层结构：
+
+| 表 | 职责 |
+| --- | --- |
+| `sys_api` | 保存接口权限元数据：权限码、名称、模块、HTTP 方法、路径、状态 |
+| `sys_role_api` | 保存角色和接口权限的多对多关联 |
+| `casbin_rule` | 保存 Casbin 运行时真正拦截用的策略 |
+
+角色保存接口权限时，后端会做三件事：
+
+1. 校验提交的 `api_ids` 是否存在且启用
+2. 替换该角色的 `sys_role_api` 关联
+3. 根据这些接口元数据重建该角色的 `casbin_rule`，并重新加载 Casbin 策略
+
+这样做以后，角色页看到的是可选择的接口权限树，而不是一张需要人工维护的 Casbin 策略表。
+
+::: warning ⚠️ 种子数据要同时维护三块
+新增内置接口时，至少要把接口元数据写入 `sys_api`。
+
+如果希望 `super_admin` 初始化后立刻拥有权限，完整版初始化 SQL 需要让 `sys_role_api` 关联全部启用接口，并从 `sys_api` 同步生成 `casbin_rule`。
+:::
+
+## 权限码应该放在哪里
+
+模块里的权限码常量用于固定命名，例如：
 
 ```go
 const (
@@ -43,7 +69,7 @@ const (
 它们的主要作用是：
 
 - 作为接口权限的稳定命名
-- 让 Casbin 策略和业务模块共用同一套标识
+- 让接口元数据、菜单按钮和排障语义可以对齐
 - 避免权限码散落在 Handler、Service、前端页面里
 
 当前已经落地的典型命名大多是：
@@ -57,31 +83,33 @@ const (
 - `system:user:list`
 - `system:user:create`
 - `system:user:delete`
-- `system:role:update_permissions`
-- `system:menu:delete`
+- `system:role:permission`
+- `system:role:menu`
 - `system:operation-log:list`
 
-## 为什么 `policy.go` 要尽量稳定
+## 为什么权限码要尽量稳定
 
 因为它一旦变化，会同时影响：
 
-- Casbin 策略种子
-- 接口权限判断
+- `sys_api` 接口元数据
+- `sys_role_api` 角色接口关联
+- Casbin 运行时策略同步
 - 角色权限配置
 - 排障时对“这个接口到底该有什么权限”的理解
 
-所以当前主线里，`policy.go` 的职责不是“凑几个常量”，而是：
+所以当前主线里，权限码的职责不是“凑几个字符串”，而是：
 
-> 为模块固定一套长期可复用的权限码命名。
+> 为模块固定一套长期可复用的权限命名。
 
-## `sys_menu.code` 和 `policy.go` 是什么关系
+## `sys_menu.code` 和接口权限码是什么关系
 
-当前菜单树里，每个节点也有一个稳定 `code`。
+菜单树里，每个节点也有一个稳定 `code`。
 
-它和 `policy.go` 的关系通常是：
+它和接口权限码的关系通常是：
 
 - 页面菜单节点：表达页面入口
 - 按钮节点：表达页面内具体操作点
+- 接口权限节点：表达后端接口是否允许访问
 
 前端页面里的典型消费方式是：
 
@@ -114,7 +142,7 @@ buttonPermissionCodes.value.includes("system:notice:create")
 - 排查“为什么按钮不显示、接口也不通”时更直接
 
 ::: warning ⚠️ 不要把按钮码和接口码随意命成两套
-如果前端页面判断的是 `system:user:assign-role`，而后端接口策略写的是另一套完全不同的命名，后面查问题会非常痛苦。
+如果前端页面判断的是 `system:user:assign-role`，而后端接口元数据写的是另一套完全不同的命名，后面查问题会非常痛苦。
 当前更稳的做法是：能复用同一命名就尽量复用。
 :::
 
@@ -151,19 +179,14 @@ buttonPermissionCodes.value.includes("system:notice:create")
 | 查询列表 | `list` |
 | 创建 | `create` |
 | 编辑 | `update` |
-| 状态切换 | `update_status` / `status` |
+| 状态切换 | `status` |
 | 删除 | `delete` |
 | 上传 | `upload` |
-| 改角色 | `update_roles` |
-| 改接口权限 | `update_permissions` |
-| 改菜单授权 | `update_menus` |
+| 改角色 | `assign-role` |
+| 分配接口权限 | `permission` |
+| 分配菜单授权 | `menu` |
 
-当前代码里有个小的历史差异：
-
-- 有的模块用 `update_status`
-- 有的模块用 `status`
-
-这说明命名正在逐步收口，但还没有完全统一。
+当前代码里仍有少量历史差异，例如部分模块还保留 `update_status` 这类动作名。新模块优先使用上表的收口命名。
 
 ## 当前已经落地的典型权限码
 
@@ -172,7 +195,7 @@ buttonPermissionCodes.value.includes("system:notice:create")
 | 模块 | 典型权限码 |
 | --- | --- |
 | 用户 | `system:user:list`、`system:user:create`、`system:user:update`、`system:user:delete` |
-| 角色 | `system:role:status`、`system:role:delete`、`system:role:update_permissions` |
+| 角色 | `system:role:status`、`system:role:permission`、`system:role:menu`、`system:role:delete` |
 | 菜单 | `system:menu:create`、`system:menu:delete` |
 | 部门 | `system:department:status`、`system:department:delete` |
 | 岗位 | `system:post:status`、`system:post:delete` |
@@ -184,7 +207,7 @@ buttonPermissionCodes.value.includes("system:notice:create")
 
 ## 新模块命名时最值得遵守的规则
 
-如果你要给新模块补 `policy.go`、菜单和按钮节点，当前最稳的规则是：
+如果你要给新模块补权限常量、接口元数据、菜单和按钮节点，当前最稳的规则是：
 
 1. 先固定资源分组，例如 `system`, `project`, `sales`
 2. 再固定资源名，例如 `customer`, `task`, `invoice`
@@ -209,21 +232,26 @@ customer:create:button
 
 当前最常见的几种失效方式是：
 
-1. `policy.go` 改了，但 Casbin 策略种子没同步
-2. 菜单按钮节点的 `code` 和页面里的 `canUse(code)` 对不上
-3. `component` 编码没有命中前端白名单
-4. 角色授权改完后，没有意识到接口权限当前不会自动热刷新
+1. 新增接口后，只写了路由，没有维护 `sys_api`
+2. `sys_api` 路径或方法和真实接口对不上
+3. 菜单按钮节点的 `code` 和页面里的 `canUse(code)` 对不上
+4. `component` 编码没有命中前端白名单
+5. 修改角色接口权限后，没有同步重建 Casbin 策略
 
 ## 相关代码和教程页
 
 如果你要继续查真实实现，优先看：
 
-- `server/internal/module/*/policy.go`
-- `server/internal/model/menu.go`
+- `server/internal/platform/model/api.go`
+- `server/internal/platform/model/role_api.go`
+- `server/internal/modules/iam/apiresource`
+- `server/internal/modules/iam/role`
+- `server/migrations/*/full_schema_and_seed.sql`
 - `admin/src/router/dynamic-menu.ts`
 
 对应教程页：
 
 - [数据库迁移](/backend/migration)
-- [路由与菜单](/frontend/route-and-menu)
+- [RBAC 权限架构](/architecture/rbac)
+- [初始化数据参考](/reference/init-data-reference)
 - [前端概览](/frontend/overview)

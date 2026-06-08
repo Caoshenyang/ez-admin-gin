@@ -1,6 +1,10 @@
 import type { FormRules } from 'naive-ui'
 
-import { AttachmentStatus, type AttachmentItem, type AttachmentListQuery } from '../types/attachment'
+import {
+  AttachmentStatus,
+  type AttachmentItem,
+  type AttachmentListQuery,
+} from '../types/attachment'
 import type { AttachmentEditFormModel, AttachmentUploadFormModel } from '../types/attachment-page'
 
 export const attachmentUploadRules: FormRules = {

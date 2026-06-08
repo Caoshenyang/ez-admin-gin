@@ -35,13 +35,24 @@ const formModel = defineModel<DictItemFormModel>('model', { required: true })
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增字典项' : '编辑字典项'"
-        :subtitle="selectedType ? `当前归属：${selectedType.name}（${selectedType.code}）` : '请选择字典类型后再维护字典项。'"
+        :subtitle="
+          selectedType
+            ? `当前归属：${selectedType.name}（${selectedType.code}）`
+            : '请选择字典类型后再维护字典项。'
+        "
         @close="$emit('update:show', false)"
       />
     </template>
 
     <div class="ez-modal-shell">
-      <NForm ref="formRef" class="ez-modal-form" :model="formModel" :rules="rules" label-placement="left" label-width="76">
+      <NForm
+        ref="formRef"
+        class="ez-modal-form"
+        :model="formModel"
+        :rules="rules"
+        label-placement="left"
+        label-width="76"
+      >
         <section class="ez-modal-section ez-modal-section--soft">
           <div class="ez-modal-section__head">
             <h3>基础信息</h3>
@@ -50,7 +61,11 @@ const formModel = defineModel<DictItemFormModel>('model', { required: true })
 
           <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="字典项编码" path="item_key">
-              <NInput v-model:value="formModel.item_key" placeholder="例如 enabled" :disabled="formMode === 'edit'" />
+              <NInput
+                v-model:value="formModel.item_key"
+                placeholder="例如 enabled"
+                :disabled="formMode === 'edit'"
+              />
             </NFormItem>
 
             <NFormItem label="字典项名称" path="label">
@@ -62,7 +77,10 @@ const formModel = defineModel<DictItemFormModel>('model', { required: true })
             </NFormItem>
 
             <NFormItem label="标签样式">
-              <NInput v-model:value="formModel.tag_type" placeholder="例如 success / warning / info" />
+              <NInput
+                v-model:value="formModel.tag_type"
+                placeholder="例如 success / warning / info"
+              />
             </NFormItem>
 
             <NFormItem label="排序">
@@ -77,7 +95,12 @@ const formModel = defineModel<DictItemFormModel>('model', { required: true })
 
         <section class="ez-modal-section">
           <NFormItem label="备注">
-            <NInput v-model:value="formModel.remark" type="textarea" :rows="3" placeholder="可填写这项配置值的展示说明或业务备注" />
+            <NInput
+              v-model:value="formModel.remark"
+              type="textarea"
+              :rows="3"
+              placeholder="可填写这项配置值的展示说明或业务备注"
+            />
           </NFormItem>
         </section>
       </NForm>

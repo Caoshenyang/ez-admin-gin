@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui'
-import { NButton, NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
+import { NDataTable, NPopconfirm, NSpace, NTag } from 'naive-ui'
 import { computed, h } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import EzDataTable from '@/components/ez/EzDataTable.vue'
 import { displayText } from '@/utils/format'
 import { DepartmentStatus, type DepartmentItem } from '@/modules/iam/types/department'
@@ -103,7 +104,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 216,
+    width: 128,
     fixed: 'right',
     render(row) {
       const nextStatus =
@@ -117,28 +118,26 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
         {
           default: () => [
             props.canUse('system:department:create')
-              ? h(
-                  NButton,
-                  {
-                    size: 'tiny',
-                    secondary: true,
-                    type: 'primary',
-                    onClick: () => emit('createChild', row),
-                  },
-                  { default: () => '新增子部门' },
-                )
+              ? h(EzActionButton, {
+                  iconOnly: true,
+                  kind: 'add-child',
+                  label: '新增子部门',
+                  size: 'tiny',
+                  secondary: true,
+                  type: 'primary',
+                  onClick: () => emit('createChild', row),
+                })
               : null,
             props.canUse('system:department:update')
-              ? h(
-                  NButton,
-                  {
-                    size: 'tiny',
-                    secondary: true,
-                    type: 'info',
-                    onClick: () => emit('edit', row),
-                  },
-                  { default: () => '编辑' },
-                )
+              ? h(EzActionButton, {
+                  iconOnly: true,
+                  kind: 'edit',
+                  label: '编辑',
+                  size: 'tiny',
+                  secondary: true,
+                  type: 'info',
+                  onClick: () => emit('edit', row),
+                })
               : null,
             props.canUse('system:department:status')
               ? h(
@@ -146,15 +145,15 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
                   { onPositiveClick: () => emit('toggleStatus', row, nextStatus) },
                   {
                     trigger: () =>
-                      h(
-                        NButton,
-                        {
-                          size: 'tiny',
-                          secondary: true,
-                          type: nextStatus === DepartmentStatus.Disabled ? 'error' : 'success',
-                        },
-                        { default: () => (nextStatus === DepartmentStatus.Disabled ? '禁用' : '启用') },
-                      ),
+                      h(EzActionButton, {
+                        iconOnly: true,
+                        kind: nextStatus === DepartmentStatus.Disabled ? 'disable' : 'enable',
+                        label: nextStatus === DepartmentStatus.Disabled ? '禁用' : '启用',
+                        size: 'tiny',
+                        secondary: true,
+                        tooltip: false,
+                        type: nextStatus === DepartmentStatus.Disabled ? 'error' : 'success',
+                      }),
                     default: () =>
                       `确认${nextStatus === DepartmentStatus.Disabled ? '禁用' : '启用'}该部门？`,
                   },
@@ -176,15 +175,34 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
 
     <template #toolbarActions>
       <NSpace :size="12">
-        <NButton quaternary size="small" @click="emit('expandAll')">展开全部</NButton>
-        <NButton quaternary size="small" @click="emit('collapseAll')">收起全部</NButton>
+        <EzActionButton
+          kind="expand"
+          label="展开全部"
+          quaternary
+          size="small"
+          @click="emit('expandAll')"
+        />
+        <EzActionButton
+          kind="collapse"
+          label="收起全部"
+          quaternary
+          size="small"
+          @click="emit('collapseAll')"
+        />
         <NPopconfirm
           v-if="canUse('system:department:delete')"
           :disabled="selectedCount === 0"
           @positive-click="emit('deleteSelected')"
         >
           <template #trigger>
-            <NButton quaternary size="small" type="error" :disabled="selectedCount === 0">删除选中</NButton>
+            <EzActionButton
+              kind="delete"
+              label="删除选中"
+              quaternary
+              size="small"
+              type="error"
+              :disabled="selectedCount === 0"
+            />
           </template>
           删除前请确认选中的部门没有关联用户、角色数据范围，且子部门也已一并选中。
         </NPopconfirm>

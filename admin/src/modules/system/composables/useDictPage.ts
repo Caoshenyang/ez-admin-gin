@@ -1,7 +1,8 @@
 import type { DataTableColumns, FormRules } from 'naive-ui'
-import { NButton, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
 import { h, onMounted, reactive, ref } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { useModalForm } from '@/composables/useModalForm'
 import { usePermission } from '@/composables/usePermission'
 import { useStatusToggle } from '@/composables/useStatusToggle'
@@ -42,7 +43,13 @@ import {
 import type { DictItemFormModel, DictTypeFormModel } from '../types/dict-page'
 
 function toTagType(value: string) {
-  if (value === 'success' || value === 'warning' || value === 'error' || value === 'info' || value === 'default') {
+  if (
+    value === 'success' ||
+    value === 'warning' ||
+    value === 'error' ||
+    value === 'info' ||
+    value === 'default'
+  ) {
     return value
   }
 
@@ -117,7 +124,9 @@ export function useDictPage() {
     itemLoading.value = true
 
     try {
-      const data = await getDictItemsRequest(normalizeDictItemQuery(itemQuery, selectedTypeID.value))
+      const data = await getDictItemsRequest(
+        normalizeDictItemQuery(itemQuery, selectedTypeID.value),
+      )
 
       dictItems.value = data.items
       dictItemTotal.value = data.total
@@ -152,7 +161,8 @@ export function useDictPage() {
         return
       }
 
-      const current = data.items.find((item) => item.id === selectedTypeID.value) ?? data.items[0] ?? null
+      const current =
+        data.items.find((item) => item.id === selectedTypeID.value) ?? data.items[0] ?? null
       if (current) {
         await selectType(current)
       }
@@ -285,7 +295,11 @@ export function useDictPage() {
       width: 148,
       render(row) {
         return h('div', { class: 'min-w-0 leading-5' }, [
-          h('p', { class: 'truncate font-semibold text-[var(--ez-text-heading)]' }, displayText(row.name)),
+          h(
+            'p',
+            { class: 'truncate font-semibold text-[var(--ez-text-heading)]' },
+            displayText(row.name),
+          ),
           h('p', { class: 'truncate text-xs text-[var(--ez-text-muted)]' }, displayText(row.code)),
         ])
       },
@@ -312,10 +326,11 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 172,
+      width: 128,
       fixed: 'right',
       render(row) {
-        const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
+        const nextStatus =
+          row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
 
         return h(
           NSpace,
@@ -324,11 +339,15 @@ export function useDictPage() {
             default: () =>
               [
                 canUse('system:dict:type:update')
-                  ? h(
-                      NButton,
-                      { size: 'tiny', secondary: true, type: 'info', onClick: () => openTypeEdit(row) },
-                      { default: () => '编辑' },
-                    )
+                  ? h(EzActionButton, {
+                      iconOnly: true,
+                      kind: 'edit',
+                      label: '编辑',
+                      size: 'tiny',
+                      secondary: true,
+                      type: 'info',
+                      onClick: () => openTypeEdit(row),
+                    })
                   : null,
                 canUse('system:dict:type:status')
                   ? h(
@@ -336,16 +355,17 @@ export function useDictPage() {
                       { onPositiveClick: () => handleToggleTypeStatus(row, nextStatus) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            {
-                              size: 'tiny',
-                              secondary: true,
-                              type: nextStatus === DictStatus.Disabled ? 'error' : 'success',
-                            },
-                            { default: () => (nextStatus === DictStatus.Disabled ? '禁用' : '启用') },
-                          ),
-                        default: () => `确认${nextStatus === DictStatus.Disabled ? '禁用' : '启用'}该字典类型？`,
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: nextStatus === DictStatus.Disabled ? 'disable' : 'enable',
+                            label: nextStatus === DictStatus.Disabled ? '禁用' : '启用',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: nextStatus === DictStatus.Disabled ? 'error' : 'success',
+                          }),
+                        default: () =>
+                          `确认${nextStatus === DictStatus.Disabled ? '禁用' : '启用'}该字典类型？`,
                       },
                     )
                   : null,
@@ -355,11 +375,15 @@ export function useDictPage() {
                       { onPositiveClick: () => handleDeleteType(row) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            { size: 'tiny', secondary: true, type: 'error' },
-                            { default: () => '删除' },
-                          ),
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: 'delete',
+                            label: '删除',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: 'error',
+                          }),
                         default: () => '删除前请确认该字典类型下已经没有字典项。',
                       },
                     )
@@ -379,7 +403,11 @@ export function useDictPage() {
       render(row) {
         return h('div', { class: 'leading-6' }, [
           h('p', { class: 'font-semibold text-[var(--ez-text-heading)]' }, displayText(row.label)),
-          h('p', { class: 'text-xs text-[var(--ez-text-muted)]' }, `${displayText(row.item_key)} · ${displayText(row.value)}`),
+          h(
+            'p',
+            { class: 'text-xs text-[var(--ez-text-muted)]' },
+            `${displayText(row.item_key)} · ${displayText(row.value)}`,
+          ),
         ])
       },
     },
@@ -419,10 +447,11 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 172,
+      width: 128,
       fixed: 'right',
       render(row) {
-        const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
+        const nextStatus =
+          row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
 
         return h(
           NSpace,
@@ -431,11 +460,15 @@ export function useDictPage() {
             default: () =>
               [
                 canUse('system:dict:item:update')
-                  ? h(
-                      NButton,
-                      { size: 'tiny', secondary: true, type: 'info', onClick: () => openItemEdit(row) },
-                      { default: () => '编辑' },
-                    )
+                  ? h(EzActionButton, {
+                      iconOnly: true,
+                      kind: 'edit',
+                      label: '编辑',
+                      size: 'tiny',
+                      secondary: true,
+                      type: 'info',
+                      onClick: () => openItemEdit(row),
+                    })
                   : null,
                 canUse('system:dict:item:status')
                   ? h(
@@ -443,16 +476,17 @@ export function useDictPage() {
                       { onPositiveClick: () => handleToggleItemStatus(row, nextStatus) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            {
-                              size: 'tiny',
-                              secondary: true,
-                              type: nextStatus === DictStatus.Disabled ? 'error' : 'success',
-                            },
-                            { default: () => (nextStatus === DictStatus.Disabled ? '禁用' : '启用') },
-                          ),
-                        default: () => `确认${nextStatus === DictStatus.Disabled ? '禁用' : '启用'}该字典项？`,
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: nextStatus === DictStatus.Disabled ? 'disable' : 'enable',
+                            label: nextStatus === DictStatus.Disabled ? '禁用' : '启用',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: nextStatus === DictStatus.Disabled ? 'error' : 'success',
+                          }),
+                        default: () =>
+                          `确认${nextStatus === DictStatus.Disabled ? '禁用' : '启用'}该字典项？`,
                       },
                     )
                   : null,
@@ -462,11 +496,15 @@ export function useDictPage() {
                       { onPositiveClick: () => handleDeleteItem(row) },
                       {
                         trigger: () =>
-                          h(
-                            NButton,
-                            { size: 'tiny', secondary: true, type: 'error' },
-                            { default: () => '删除' },
-                          ),
+                          h(EzActionButton, {
+                            iconOnly: true,
+                            kind: 'delete',
+                            label: '删除',
+                            size: 'tiny',
+                            secondary: true,
+                            tooltip: false,
+                            type: 'error',
+                          }),
                         default: () => '确认删除该字典项？',
                       },
                     )
@@ -480,7 +518,8 @@ export function useDictPage() {
 
   function typeRowProps(row: DictTypeItem) {
     return {
-      class: row.id === selectedTypeID.value ? 'dict-type-row dict-type-row--active' : 'dict-type-row',
+      class:
+        row.id === selectedTypeID.value ? 'dict-type-row dict-type-row--active' : 'dict-type-row',
       onClick: () => {
         void selectType(row)
       },

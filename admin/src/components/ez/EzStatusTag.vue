@@ -9,7 +9,10 @@ const props = defineProps<{
   status: StatusKey
 }>()
 
-const statusMap: Record<StatusKey, { label: string; type: 'success' | 'error' | 'warning' | 'info' }> = {
+const statusMap: Record<
+  StatusKey,
+  { label: string; type: 'success' | 'error' | 'warning' | 'info' }
+> = {
   enabled: { label: '启用', type: 'success' },
   disabled: { label: '禁用', type: 'error' },
   pending: { label: '待处理', type: 'warning' },

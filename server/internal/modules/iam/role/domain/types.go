@@ -44,15 +44,20 @@ type UpdateStatusRequest struct {
 	Status model.RoleStatus `json:"status"`
 }
 
-// PermissionItem 表示一条接口权限（路径+方法）。
+// PermissionItem 表示一条接口权限元数据快照。
 type PermissionItem struct {
-	Path   string `json:"path"`
-	Method string `json:"method"`
+	ID     uint            `json:"id"`
+	Code   string          `json:"code"`
+	Name   string          `json:"name"`
+	Module string          `json:"module"`
+	Method string          `json:"method"`
+	Path   string          `json:"path"`
+	Status model.APIStatus `json:"status"`
 }
 
 // UpdatePermissionsRequest 定义更新角色权限的请求参数。
 type UpdatePermissionsRequest struct {
-	Permissions []PermissionItem `json:"permissions"`
+	APIIDs []uint `json:"api_ids"`
 }
 
 // UpdateMenusRequest 定义更新角色菜单的请求参数。
@@ -71,6 +76,7 @@ type Response struct {
 	Status              model.RoleStatus `json:"status"`
 	Remark              string           `json:"remark"`
 	Permissions         []PermissionItem `json:"permissions"`
+	APIIDs              []uint           `json:"api_ids"`
 	MenuIDs             []uint           `json:"menu_ids"`
 	CreatedAt           time.Time        `json:"created_at"`
 	UpdatedAt           time.Time        `json:"updated_at"`
@@ -97,9 +103,9 @@ const (
 	PermissionList              = "system:role:list"
 	PermissionCreate            = "system:role:create"
 	PermissionUpdate            = "system:role:update"
-	PermissionUpdateStatus      = "system:role:update_status"
-	PermissionUpdatePermissions = "system:role:update_permissions"
-	PermissionUpdateMenus       = "system:role:update_menus"
+	PermissionUpdateStatus      = "system:role:status"
+	PermissionUpdatePermissions = "system:role:permission"
+	PermissionUpdateMenus       = "system:role:menu"
 	PermissionDelete            = "system:role:delete"
 	SuperAdminRoleCode          = "super_admin"
 )
@@ -186,30 +192,6 @@ func NormalizeUpdateRequest(req UpdateRequest) (UpdateRequest, error) {
 	return req, nil
 }
 
-// NormalizePermissions 去重并规范化接口权限列表。
-func NormalizePermissions(permissions []PermissionItem) ([]PermissionItem, error) {
-	unique := make([]PermissionItem, 0, len(permissions))
-	seen := make(map[string]struct{}, len(permissions))
-
-	for _, item := range permissions {
-		path := strings.TrimSpace(item.Path)
-		method := strings.ToUpper(strings.TrimSpace(item.Method))
-		if path == "" || method == "" {
-			return nil, errorsx.BadRequest("接口权限参数不正确")
-		}
-
-		key := path + " " + method
-		if _, ok := seen[key]; ok {
-			continue
-		}
-
-		seen[key] = struct{}{}
-		unique = append(unique, PermissionItem{Path: path, Method: method})
-	}
-
-	return unique, nil
-}
-
 // NormalizeIDs 去重并校验 ID 列表。
 func NormalizeIDs(ids []uint, badRequestMessage string) ([]uint, error) {
 	unique := make([]uint, 0, len(ids))
@@ -246,7 +228,7 @@ func ValidDataScope(scope datascope.Scope) bool {
 }
 
 // BuildResponse 将角色模型及关联数据转换为响应结构。
-func BuildResponse(role model.Role, customDepartmentIDs []uint, permissions []PermissionItem, menuIDs []uint) Response {
+func BuildResponse(role model.Role, customDepartmentIDs []uint, permissions []PermissionItem, apiIDs []uint, menuIDs []uint) Response {
 	return Response{
 		ID:                  role.ID,
 		Code:                role.Code,
@@ -257,6 +239,7 @@ func BuildResponse(role model.Role, customDepartmentIDs []uint, permissions []Pe
 		Status:              role.Status,
 		Remark:              role.Remark,
 		Permissions:         permissions,
+		APIIDs:              apiIDs,
 		MenuIDs:             menuIDs,
 		CreatedAt:           role.CreatedAt,
 		UpdatedAt:           role.UpdatedAt,

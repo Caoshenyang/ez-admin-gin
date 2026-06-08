@@ -268,9 +268,9 @@ definitions:
     type: object
   api.UpdatePermissionsRequest:
     properties:
-      permissions:
+      api_ids:
         items:
-          $ref: '#/definitions/domain.PermissionItem'
+          type: integer
         type: array
     type: object
   api.UpdateRolesRequest:
@@ -467,13 +467,6 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/model.MenuType'
-    type: object
-  domain.PermissionItem:
-    properties:
-      method:
-        type: string
-      path:
-        type: string
     type: object
   domain.TypeResponse:
     properties:
@@ -1597,6 +1590,26 @@ paths:
       summary: 系统初始化
       tags:
       - 系统
+  /system/apis:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/httpx.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpx.Body'
+      security:
+      - BearerAuth: []
+      summary: 查询接口权限元数据
+      tags:
+      - IAM / 接口权限
   /system/attachments:
     get:
       consumes:

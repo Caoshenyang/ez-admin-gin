@@ -18,7 +18,9 @@ import type {
 
 // 获取字典类型列表（分页查询）
 export async function getDictTypes(params: DictTypeListQuery) {
-  const response = await http.get<ApiResponse<DictTypeListResponse>>('/system/dict-types', { params })
+  const response = await http.get<ApiResponse<DictTypeListResponse>>('/system/dict-types', {
+    params,
+  })
   return response.data.data
 }
 
@@ -30,7 +32,10 @@ export async function createDictType(payload: CreateDictTypePayload) {
 
 // 更新字典类型
 export async function updateDictType(id: number, payload: UpdateDictTypePayload) {
-  const response = await http.post<ApiResponse<DictTypeItem>>(`/system/dict-types/${id}/update`, payload)
+  const response = await http.post<ApiResponse<DictTypeItem>>(
+    `/system/dict-types/${id}/update`,
+    payload,
+  )
   return response.data.data
 }
 
@@ -51,7 +56,9 @@ export async function deleteDictType(id: number) {
 
 // 获取字典项列表（分页查询）
 export async function getDictItems(params: DictItemListQuery) {
-  const response = await http.get<ApiResponse<DictItemListResponse>>('/system/dict-items', { params })
+  const response = await http.get<ApiResponse<DictItemListResponse>>('/system/dict-items', {
+    params,
+  })
   return response.data.data
 }
 
@@ -63,7 +70,10 @@ export async function createDictItem(payload: CreateDictItemPayload) {
 
 // 更新字典项
 export async function updateDictItem(id: number, payload: UpdateDictItemPayload) {
-  const response = await http.post<ApiResponse<DictItem>>(`/system/dict-items/${id}/update`, payload)
+  const response = await http.post<ApiResponse<DictItem>>(
+    `/system/dict-items/${id}/update`,
+    payload,
+  )
   return response.data.data
 }
 

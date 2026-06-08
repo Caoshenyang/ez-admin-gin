@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import MenuFilterBar from '../components/MenuFilterBar.vue'
 import MenuFormModal from '../components/MenuFormModal.vue'
@@ -51,9 +50,13 @@ const {
     <section class="admin-page-section">
       <PageHeader title="菜单管理" description="维护侧边栏目录、页面菜单和页面内按钮权限。">
         <template #actions>
-          <NButton v-if="canUse('system:menu:create')" type="primary" @click="openCreateRoot">
-            + 新增根目录
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:menu:create')"
+            kind="add"
+            label="新增根目录"
+            type="primary"
+            @click="openCreateRoot"
+          />
         </template>
       </PageHeader>
 

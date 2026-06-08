@@ -1,8 +1,9 @@
 import type { DataTableColumns, UploadFileInfo } from 'naive-ui'
-import { NButton, NIcon, NTag, NTooltip, useMessage } from 'naive-ui'
-import { CopyOutline, DocumentOutline, ImageOutline } from '@vicons/ionicons5'
+import { NIcon, NTag, useMessage } from 'naive-ui'
+import { DocumentOutline, ImageOutline } from '@vicons/ionicons5'
 import { h, ref } from 'vue'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { usePermission } from '@/composables/usePermission'
 import { useRemotePagination } from '@/composables/useRemotePagination'
 import { displayText, formatSize, formatTime } from '@/utils/format'
@@ -83,12 +84,24 @@ export function useFilePage() {
               ],
             },
             [
-              h(NIcon, { size: 18 }, { default: () => h(isImage ? ImageOutline : DocumentOutline) }),
+              h(
+                NIcon,
+                { size: 18 },
+                { default: () => h(isImage ? ImageOutline : DocumentOutline) },
+              ),
             ],
           ),
           h('div', { class: 'min-w-0 leading-5' }, [
-            h('p', { class: 'truncate font-medium text-[var(--ez-text-heading)]' }, displayText(row.original_name)),
-            h('p', { class: 'truncate text-xs text-[var(--ez-text-muted)]' }, displayText(row.mime_type)),
+            h(
+              'p',
+              { class: 'truncate font-medium text-[var(--ez-text-heading)]' },
+              displayText(row.original_name),
+            ),
+            h(
+              'p',
+              { class: 'truncate text-xs text-[var(--ez-text-muted)]' },
+              displayText(row.mime_type),
+            ),
           ]),
         ])
       },
@@ -120,22 +133,19 @@ export function useFilePage() {
     {
       title: '操作',
       key: 'actions',
-      width: 84,
+      width: 70,
       fixed: 'right',
       render(row) {
-        return h(
-          NTooltip,
-          {},
-          {
-            trigger: () =>
-              h(
-                NButton,
-                { class: 'ez-row-actions', size: 'tiny', secondary: true, type: 'info', onClick: () => copyURL(row) },
-                { icon: () => h(NIcon, null, { default: () => h(CopyOutline) }) },
-              ),
-            default: () => '复制链接',
-          },
-        )
+        return h(EzActionButton, {
+          class: 'ez-row-actions',
+          iconOnly: true,
+          kind: 'copy',
+          label: '复制链接',
+          size: 'tiny',
+          secondary: true,
+          type: 'info',
+          onClick: () => copyURL(row),
+        })
       },
     },
   ]

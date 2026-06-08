@@ -8,12 +8,16 @@ import type {
 } from '@/types/notification'
 
 export async function getNotifications(params: NotificationListQuery) {
-  const response = await http.get<ApiResponse<NotificationListResponse>>('/system/notifications', { params })
+  const response = await http.get<ApiResponse<NotificationListResponse>>('/system/notifications', {
+    params,
+  })
   return response.data.data
 }
 
 export async function getUnreadCount() {
-  const response = await http.get<ApiResponse<UnreadCountResponse>>('/system/notifications/unread-count')
+  const response = await http.get<ApiResponse<UnreadCountResponse>>(
+    '/system/notifications/unread-count',
+  )
   return response.data.data
 }
 

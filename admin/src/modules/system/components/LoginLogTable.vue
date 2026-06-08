@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import {
-  NTag,
-} from 'naive-ui'
+import { NTag } from 'naive-ui'
 import { h } from 'vue'
 
 import EzDataTable from '@/components/ez/EzDataTable.vue'
@@ -42,7 +40,11 @@ const columns: DataTableColumns<LoginLogItem> = [
     key: 'username',
     width: 112,
     render(row) {
-      return h('span', { class: 'font-semibold text-[var(--ez-text-main)]' }, displayText(row.username))
+      return h(
+        'span',
+        { class: 'font-semibold text-[var(--ez-text-main)]' },
+        displayText(row.username),
+      )
     },
   },
   {
@@ -67,7 +69,11 @@ const columns: DataTableColumns<LoginLogItem> = [
     key: 'ip',
     width: 128,
     render(row) {
-      return h('span', { class: 'font-mono text-[var(--ez-text-sm)] text-[var(--ez-text-sub)]' }, displayText(row.ip))
+      return h(
+        'span',
+        { class: 'font-mono text-[var(--ez-text-sm)] text-[var(--ez-text-sub)]' },
+        displayText(row.ip),
+      )
     },
   },
   {

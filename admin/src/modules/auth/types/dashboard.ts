@@ -44,8 +44,7 @@ export const DashboardLoginStatus = {
 } as const
 
 // 登录状态联合类型
-export type DashboardLoginStatus =
-  (typeof DashboardLoginStatus)[keyof typeof DashboardLoginStatus]
+export type DashboardLoginStatus = (typeof DashboardLoginStatus)[keyof typeof DashboardLoginStatus]
 
 // 工作台最近登录记录项
 export interface DashboardLoginItem {

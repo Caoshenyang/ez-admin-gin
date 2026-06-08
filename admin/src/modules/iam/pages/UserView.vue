@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { NButton, NCard, NInput, NTree } from 'naive-ui'
+import { NCard, NInput, NTree } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import UserFilterBar from '../components/UserFilterBar.vue'
 import UserFormModal from '../components/UserFormModal.vue'
@@ -61,9 +62,13 @@ const {
     <section class="admin-page-section">
       <PageHeader title="用户管理" description="维护后台账号、启停状态和角色绑定。">
         <template #actions>
-          <NButton v-if="canUse('system:user:create')" type="primary" @click="openCreate">
-            + 新增用户
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:user:create')"
+            kind="add"
+            label="新增用户"
+            type="primary"
+            @click="openCreate"
+          />
         </template>
       </PageHeader>
 
@@ -71,9 +76,14 @@ const {
         <NCard class="user-dept-card" :bordered="false" content-class="ez-card-content-fill">
           <div class="user-dept-card__head">
             <strong>部门树</strong>
-            <NButton size="tiny" text type="primary" @click="handleClearDepartment"
-              >全部部门</NButton
-            >
+            <EzActionButton
+              kind="reset"
+              label="全部部门"
+              size="tiny"
+              text
+              type="primary"
+              @click="handleClearDepartment"
+            />
           </div>
           <NInput v-model:value="departmentKeyword" size="small" placeholder="搜索部门" clearable />
           <NTree

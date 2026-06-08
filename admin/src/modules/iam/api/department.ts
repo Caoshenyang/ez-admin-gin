@@ -32,7 +32,10 @@ export async function createDepartment(payload: CreateDepartmentPayload) {
 
 // updateDepartment 更新部门信息。
 export async function updateDepartment(id: number, payload: UpdateDepartmentPayload) {
-  const response = await http.post<ApiResponse<DepartmentItem>>(`/system/departments/${id}/update`, payload)
+  const response = await http.post<ApiResponse<DepartmentItem>>(
+    `/system/departments/${id}/update`,
+    payload,
+  )
   return normalizeDepartmentItem(response.data.data)
 }
 

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumns } from 'naive-ui'
-import { NButton, NCard, NDataTable, NInput, NPagination, NSelect } from 'naive-ui'
+import { NCard, NDataTable, NInput, NPagination, NSelect } from 'naive-ui'
 
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { STATUS_FILTER_OPTIONS } from '@/constants/status'
 import type { DictTypeItem, DictTypeListQuery } from '../types/dict'
 
@@ -26,24 +27,49 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
 </script>
 
 <template>
-  <NCard class="ez-card h-full min-h-0 min-w-0 overflow-hidden rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
-    <div class="dict-type-panel-body grid h-full min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto]">
-      <div class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4">
+  <NCard
+    class="ez-card h-full min-h-0 min-w-0 overflow-hidden rounded-[var(--ez-radius-sm)]"
+    :bordered="false"
+    content-class="ez-card-content-fill"
+  >
+    <div
+      class="dict-type-panel-body grid h-full min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto]"
+    >
+      <div
+        class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4"
+      >
         <div>
-          <p class="text-[var(--ez-text-xs)] font-bold tracking-[0.14em] text-[var(--ez-text-light)] uppercase">Types</p>
-          <h2 class="mt-1.5 text-[var(--ez-text-xl)] font-bold text-[var(--ez-text-main)]">字典类型</h2>
+          <p
+            class="text-[var(--ez-text-xs)] font-bold tracking-[0.14em] text-[var(--ez-text-light)] uppercase"
+          >
+            Types
+          </p>
+          <h2 class="mt-1.5 text-[var(--ez-text-xl)] font-bold text-[var(--ez-text-main)]">
+            字典类型
+          </h2>
         </div>
-        <NButton v-if="canUse('system:dict:type:create')" size="small" type="primary" ghost @click="$emit('create')">
-          新增
-        </NButton>
+        <EzActionButton
+          v-if="canUse('system:dict:type:create')"
+          kind="add"
+          label="新增"
+          size="small"
+          type="primary"
+          ghost
+          @click="$emit('create')"
+        />
       </div>
 
       <div class="dict-type-filter-grid px-5 py-4 max-[720px]:px-4">
-        <NInput v-model:value="query.keyword" clearable placeholder="编码 / 名称" @keyup.enter="$emit('search')" />
+        <NInput
+          v-model:value="query.keyword"
+          clearable
+          placeholder="编码 / 名称"
+          @keyup.enter="$emit('search')"
+        />
         <NSelect v-model:value="query.status" :options="STATUS_FILTER_OPTIONS" />
         <div class="dict-type-filter-actions">
-          <NButton type="primary" @click="$emit('search')">查询</NButton>
-          <NButton @click="$emit('reset')">重置</NButton>
+          <EzActionButton kind="search" label="查询" type="primary" @click="$emit('search')" />
+          <EzActionButton kind="reset" label="重置" @click="$emit('reset')" />
         </div>
       </div>
 

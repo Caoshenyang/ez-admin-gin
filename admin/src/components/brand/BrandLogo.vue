@@ -50,7 +50,12 @@ const imageSrc = computed(() => {
       class="flex max-w-full items-center"
       :class="direction === 'inline' ? 'gap-3' : 'flex-col gap-3'"
     >
-      <img :src="imageSrc" :width="props.width" :alt="`${title} 品牌 Logo`" class="block h-auto max-w-full">
+      <img
+        :src="imageSrc"
+        :width="props.width"
+        :alt="`${title} 品牌 Logo`"
+        class="block h-auto max-w-full"
+      />
     </div>
 
     <p

@@ -116,6 +116,24 @@ func (r *Repository) MenusUsable(db *gorm.DB, menuIDs []uint) error {
 	return nil
 }
 
+// APIsUsable 校验给定的接口权限 ID 是否全部存在且启用。
+func (r *Repository) APIsUsable(db *gorm.DB, apiIDs []uint) error {
+	if len(apiIDs) == 0 {
+		return nil
+	}
+
+	var count int64
+	err := db.Model(&model.API{}).Where("id IN ?", apiIDs).Where("status = ?", model.APIStatusEnabled).Count(&count).Error
+	if err != nil {
+		return err
+	}
+	if count != int64(len(apiIDs)) {
+		return errorsx.BadRequest("接口权限不存在或已禁用")
+	}
+
+	return nil
+}
+
 // Create 创建角色记录。
 func (r *Repository) Create(db *gorm.DB, role *model.Role) error {
 	return db.Create(role).Error
@@ -157,20 +175,66 @@ func (r *Repository) CountUsers(db *gorm.DB, roleID uint) (int64, error) {
 	return count, err
 }
 
-// RolePermissions 批量查询指定角色编码的 Casbin 权限策略。
-func (r *Repository) RolePermissions(roleCodes []string) (map[string][]roledomain.PermissionItem, error) {
-	result := make(map[string][]roledomain.PermissionItem, len(roleCodes))
-	if len(roleCodes) == 0 {
+// RoleAPIIDs 批量查询指定角色关联的接口权限 ID。
+func (r *Repository) RoleAPIIDs(roleIDs []uint) (map[uint][]uint, error) {
+	result := make(map[uint][]uint, len(roleIDs))
+	if len(roleIDs) == 0 {
 		return result, nil
 	}
 
-	var rows []model.CasbinRule
-	if err := r.db.Where("ptype = ?", "p").Where("v0 IN ?", roleCodes).Order("v1 ASC, v2 ASC").Find(&rows).Error; err != nil {
+	var rows []model.RoleAPI
+	if err := r.db.Where("role_id IN ?", roleIDs).Order("api_id ASC").Find(&rows).Error; err != nil {
 		return nil, err
 	}
 
 	for _, row := range rows {
-		result[row.V0] = append(result[row.V0], roledomain.PermissionItem{Path: row.V1, Method: row.V2})
+		result[row.RoleID] = append(result[row.RoleID], row.APIID)
+	}
+
+	return result, nil
+}
+
+// RolePermissions 批量查询指定角色关联的接口权限元数据快照。
+func (r *Repository) RolePermissions(roleIDs []uint) (map[uint][]roledomain.PermissionItem, error) {
+	result := make(map[uint][]roledomain.PermissionItem, len(roleIDs))
+	if len(roleIDs) == 0 {
+		return result, nil
+	}
+
+	type row struct {
+		RoleID uint
+		ID     uint
+		Code   string
+		Name   string
+		Module string
+		Method string
+		Path   string
+		Status model.APIStatus
+	}
+
+	var rows []row
+	err := r.db.
+		Table("sys_role_api AS ra").
+		Select("ra.role_id, a.id, a.code, a.name, a.module, a.method, a.path, a.status").
+		Joins("JOIN sys_api AS a ON a.id = ra.api_id").
+		Where("ra.role_id IN ?", roleIDs).
+		Where("a.deleted_at IS NULL").
+		Order("a.module ASC, a.sort ASC, a.id ASC").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range rows {
+		result[row.RoleID] = append(result[row.RoleID], roledomain.PermissionItem{
+			ID:     row.ID,
+			Code:   row.Code,
+			Name:   row.Name,
+			Module: row.Module,
+			Method: row.Method,
+			Path:   row.Path,
+			Status: row.Status,
+		})
 	}
 
 	return result, nil
@@ -214,17 +278,42 @@ func (r *Repository) RoleCustomDepartmentIDs(roleIDs []uint) (map[uint][]uint, e
 	return result, nil
 }
 
-// ReplacePermissions 替换指定角色的全部 Casbin 权限策略。
-func (r *Repository) ReplacePermissions(db *gorm.DB, roleCode string, permissions []roledomain.PermissionItem) error {
-	if err := db.Where("ptype = ? AND v0 = ?", "p", roleCode).Delete(&model.CasbinRule{}).Error; err != nil {
+// ReplaceAPIs 替换指定角色的全部接口权限关联。
+func (r *Repository) ReplaceAPIs(db *gorm.DB, roleID uint, apiIDs []uint) error {
+	if err := db.Where("role_id = ?", roleID).Delete(&model.RoleAPI{}).Error; err != nil {
 		return err
 	}
-	if len(permissions) == 0 {
+	if len(apiIDs) == 0 {
 		return nil
 	}
 
-	rows := make([]model.CasbinRule, 0, len(permissions))
-	for _, item := range permissions {
+	rows := make([]model.RoleAPI, 0, len(apiIDs))
+	for _, apiID := range apiIDs {
+		rows = append(rows, model.RoleAPI{RoleID: roleID, APIID: apiID})
+	}
+
+	return db.Create(&rows).Error
+}
+
+// ReplacePoliciesByAPIs 用角色接口关联重建指定角色的 Casbin 执行策略。
+func (r *Repository) ReplacePoliciesByAPIs(db *gorm.DB, roleCode string, apiIDs []uint) error {
+	if err := db.Where("ptype = ? AND v0 = ?", "p", roleCode).Delete(&model.CasbinRule{}).Error; err != nil {
+		return err
+	}
+	if len(apiIDs) == 0 {
+		return nil
+	}
+
+	var apis []model.API
+	if err := db.Where("id IN ?", apiIDs).Where("status = ?", model.APIStatusEnabled).Order("id ASC").Find(&apis).Error; err != nil {
+		return err
+	}
+	if len(apis) == 0 {
+		return nil
+	}
+
+	rows := make([]model.CasbinRule, 0, len(apis))
+	for _, item := range apis {
 		rows = append(rows, model.CasbinRule{Ptype: "p", V0: roleCode, V1: item.Path, V2: item.Method})
 	}
 

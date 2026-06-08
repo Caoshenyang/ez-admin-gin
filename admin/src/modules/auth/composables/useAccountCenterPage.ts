@@ -36,7 +36,9 @@ export function useAccountCenterPage() {
   const dataScopeText = computed(() => dataScopeSummaryText(profile.value?.data_scope))
 
   function errorMessage(error: unknown, fallback: string) {
-    return axios.isAxiosError<{ message?: string }>(error) ? error.response?.data?.message ?? fallback : fallback
+    return axios.isAxiosError<{ message?: string }>(error)
+      ? (error.response?.data?.message ?? fallback)
+      : fallback
   }
 
   async function loadProfile() {

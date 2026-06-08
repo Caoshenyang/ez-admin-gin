@@ -23,16 +23,32 @@ const formModel = defineModel<PostFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-lg" @update:show="(value) => $emit('update:show', value)">
+  <NModal
+    :show="show"
+    preset="card"
+    :closable="false"
+    class="ez-modal-width-lg"
+    @update:show="(value) => $emit('update:show', value)"
+  >
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增岗位' : '编辑岗位'"
-        :subtitle="formMode === 'create' ? '岗位编码建议稳定设计，便于在用户归属和业务协作中长期复用。' : '修改岗位信息时，优先保持岗位编码稳定，避免影响已有归属关系。'"
+        :subtitle="
+          formMode === 'create'
+            ? '岗位编码建议稳定设计，便于在用户归属和业务协作中长期复用。'
+            : '修改岗位信息时，优先保持岗位编码稳定，避免影响已有归属关系。'
+        "
         @close="$emit('update:show', false)"
       />
     </template>
 
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="ez-modal-form">
+    <NForm
+      ref="formRef"
+      :model="formModel"
+      :rules="rules"
+      label-placement="top"
+      class="ez-modal-form"
+    >
       <div class="ez-form-grid ez-form-grid--2">
         <NFormItem label="岗位编码" path="code">
           <NInput v-model:value="formModel.code" placeholder="请输入岗位编码" />
@@ -52,7 +68,12 @@ const formModel = defineModel<PostFormModel>('model', { required: true })
       </div>
 
       <NFormItem label="备注" path="remark">
-        <NInput v-model:value="formModel.remark" type="textarea" :rows="4" placeholder="补充记录岗位职责、适用部门或协作边界" />
+        <NInput
+          v-model:value="formModel.remark"
+          type="textarea"
+          :rows="4"
+          placeholder="补充记录岗位职责、适用部门或协作边界"
+        />
       </NFormItem>
     </NForm>
 

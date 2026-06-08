@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DepartmentFilterBar from '../components/DepartmentFilterBar.vue'
 import DepartmentFormModal from '../components/DepartmentFormModal.vue'
@@ -45,9 +44,13 @@ const {
     <section class="admin-page-section">
       <PageHeader title="部门管理" description="维护组织树结构，为用户归属与数据权限提供稳定边界。">
         <template #actions>
-          <NButton v-if="canUse('system:department:create')" type="primary" @click="openCreate">
-            + 新增部门
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:department:create')"
+            kind="add"
+            label="新增部门"
+            type="primary"
+            @click="openCreate"
+          />
         </template>
       </PageHeader>
 

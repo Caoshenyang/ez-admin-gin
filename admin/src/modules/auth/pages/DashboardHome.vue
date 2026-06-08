@@ -223,7 +223,10 @@ const securityFactors = computed<ResourceBarItem[]>(() => [
   {
     detail: `启用账号 ${formatMetricValue(enabledAccountTotal.value)} / ${formatMetricValue(accountTotal.value)}`,
     label: '账号启用',
-    percent: accountTotal.value > 0 ? Math.round((enabledAccountTotal.value / accountTotal.value) * 100) : 0,
+    percent:
+      accountTotal.value > 0
+        ? Math.round((enabledAccountTotal.value / accountTotal.value) * 100)
+        : 0,
     tone: 'blue',
     value: accountEnableRate.value,
   },
@@ -232,7 +235,9 @@ const securityFactors = computed<ResourceBarItem[]>(() => [
     label: '操作成功',
     percent:
       todayOperationTotal.value > 0
-        ? Math.round(((todayOperationTotal.value - riskTotal.value) / todayOperationTotal.value) * 100)
+        ? Math.round(
+            ((todayOperationTotal.value - riskTotal.value) / todayOperationTotal.value) * 100,
+          )
         : 100,
     tone: riskTotal.value > 0 ? 'orange' : 'green',
     value: operationSuccessRate.value,
@@ -381,7 +386,10 @@ const activityItems = computed<ActivityItem[]>(() => {
               </div>
               <div class="security-factor-body">
                 <div class="resource-track">
-                  <i :class="`resource-fill--${item.tone}`" :style="{ width: `${item.percent}%` }" />
+                  <i
+                    :class="`resource-fill--${item.tone}`"
+                    :style="{ width: `${item.percent}%` }"
+                  />
                 </div>
                 <small>{{ item.detail }}</small>
               </div>
@@ -398,14 +406,21 @@ const activityItems = computed<ActivityItem[]>(() => {
             <h2>最近登录</h2>
             <span>账号访问与登录结果</span>
           </div>
-          <button type="button" @click="navigateTo(loginLogPath || '/audit/login-logs')">查看全部</button>
+          <button type="button" @click="navigateTo(loginLogPath || '/audit/login-logs')">
+            查看全部
+          </button>
         </header>
         <div v-if="recentLogins.length > 0" class="record-list">
           <div v-for="item in recentLogins.slice(0, 5)" :key="item.id" class="record-row">
             <span class="mini-avatar">{{ item.username.slice(0, 1).toUpperCase() || '用' }}</span>
             <div class="record-copy">
-              <p><strong>{{ item.username || '未知用户' }}</strong>{{ item.message || '登录状态已记录' }}</p>
-              <span>{{ item.ip || '未知 IP' }} · {{ formatDashboardDateTime(item.created_at) }}</span>
+              <p>
+                <strong>{{ item.username || '未知用户' }}</strong
+                >{{ item.message || '登录状态已记录' }}
+              </p>
+              <span
+                >{{ item.ip || '未知 IP' }} · {{ formatDashboardDateTime(item.created_at) }}</span
+              >
             </div>
             <NTag size="small" :bordered="false" :type="getLoginStatusTagType(item.status)">
               {{ getLoginStatusLabel(item.status) }}
@@ -429,7 +444,9 @@ const activityItems = computed<ActivityItem[]>(() => {
               <NIcon :component="NotificationsOutline" />
             </span>
             <div class="record-copy">
-              <p><strong>{{ item.title }}</strong></p>
+              <p>
+                <strong>{{ item.title }}</strong>
+              </p>
               <span>更新于 {{ formatDashboardDateTime(item.updated_at) }}</span>
             </div>
             <NTag size="small" :bordered="false" type="success">已发布</NTag>
@@ -447,14 +464,25 @@ const activityItems = computed<ActivityItem[]>(() => {
           <button type="button" @click="navigateTo(operationLogPath)">查看全部</button>
         </header>
         <div class="activity-list">
-          <div v-for="item in activityItems" :key="`${item.name}-${item.time}-${item.action}`" class="activity-row">
+          <div
+            v-for="item in activityItems"
+            :key="`${item.name}-${item.time}-${item.action}`"
+            class="activity-row"
+          >
             <span class="mini-avatar">{{ item.avatar }}</span>
             <div>
-              <p><strong>{{ item.name }}</strong>{{ item.action }}</p>
+              <p>
+                <strong>{{ item.name }}</strong
+                >{{ item.action }}
+              </p>
               <time>{{ item.time }}</time>
             </div>
           </div>
-          <button class="create-entry" type="button" @click="navigateTo(operationLogPath || '/audit/operation-logs')">
+          <button
+            class="create-entry"
+            type="button"
+            @click="navigateTo(operationLogPath || '/audit/operation-logs')"
+          >
             <NIcon :component="ListOutline" />
             查看操作日志
           </button>

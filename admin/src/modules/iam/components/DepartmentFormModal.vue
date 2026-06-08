@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import type { FormInst, FormRules, SelectOption, TreeSelectOption } from 'naive-ui'
-import { NButton, NForm, NFormItem, NInput, NInputNumber, NModal, NSelect, NTreeSelect } from 'naive-ui'
+import {
+  NButton,
+  NForm,
+  NFormItem,
+  NInput,
+  NInputNumber,
+  NModal,
+  NSelect,
+  NTreeSelect,
+} from 'naive-ui'
 
 import FormModalHeader from '@/components/FormModalHeader.vue'
 import UserSelect from '@/components/UserSelect.vue'
@@ -25,7 +34,13 @@ const formModel = defineModel<DepartmentFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-lg" @update:show="(value) => $emit('update:show', value)">
+  <NModal
+    :show="show"
+    preset="card"
+    :closable="false"
+    class="ez-modal-width-lg"
+    @update:show="(value) => $emit('update:show', value)"
+  >
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增部门' : '编辑部门'"
@@ -34,7 +49,13 @@ const formModel = defineModel<DepartmentFormModel>('model', { required: true })
       />
     </template>
 
-    <NForm ref="formRef" :model="formModel" :rules="rules" label-placement="top" class="ez-modal-form">
+    <NForm
+      ref="formRef"
+      :model="formModel"
+      :rules="rules"
+      label-placement="top"
+      class="ez-modal-form"
+    >
       <div class="ez-form-grid ez-form-grid--2">
         <NFormItem label="上级部门" path="parent_id">
           <NTreeSelect
@@ -70,7 +91,12 @@ const formModel = defineModel<DepartmentFormModel>('model', { required: true })
       </div>
 
       <NFormItem label="备注" path="remark">
-        <NInput v-model:value="formModel.remark" type="textarea" :rows="4" placeholder="补充记录这个部门的职责、边界或特殊说明" />
+        <NInput
+          v-model:value="formModel.remark"
+          type="textarea"
+          :rows="4"
+          placeholder="补充记录这个部门的职责、边界或特殊说明"
+        />
       </NFormItem>
     </NForm>
 

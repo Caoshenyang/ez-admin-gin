@@ -23,17 +23,34 @@ const formModel = defineModel<ConfigFormModel>('model', { required: true })
 </script>
 
 <template>
-  <NModal :show="show" preset="card" :closable="false" class="ez-modal-width-md" @update:show="(value) => $emit('update:show', value)">
+  <NModal
+    :show="show"
+    preset="card"
+    :closable="false"
+    class="ez-modal-width-md"
+    @update:show="(value) => $emit('update:show', value)"
+  >
     <template #header>
       <FormModalHeader
         :title="formMode === 'create' ? '新增配置' : '编辑配置'"
-        :subtitle="formMode === 'create' ? '填写配置分组、键和值，保存后立即生效。' : '修改配置名称和值，配置键在创建后保持只读。'"
+        :subtitle="
+          formMode === 'create'
+            ? '填写配置分组、键和值，保存后立即生效。'
+            : '修改配置名称和值，配置键在创建后保持只读。'
+        "
         @close="$emit('update:show', false)"
       />
     </template>
 
     <div class="ez-modal-shell">
-      <NForm ref="formRef" class="ez-modal-form" :model="formModel" :rules="rules" label-placement="left" label-width="76">
+      <NForm
+        ref="formRef"
+        class="ez-modal-form"
+        :model="formModel"
+        :rules="rules"
+        label-placement="left"
+        label-width="76"
+      >
         <section class="ez-modal-section ez-modal-section--soft">
           <div class="ez-modal-section__head">
             <h3>基础信息</h3>
@@ -46,7 +63,11 @@ const formModel = defineModel<ConfigFormModel>('model', { required: true })
             </NFormItem>
 
             <NFormItem label="键" path="key">
-              <NInput v-model:value="formModel.key" placeholder="例如 site_name" :disabled="formMode === 'edit'" />
+              <NInput
+                v-model:value="formModel.key"
+                placeholder="例如 site_name"
+                :disabled="formMode === 'edit'"
+              />
             </NFormItem>
 
             <NFormItem label="名称" path="name">
@@ -66,7 +87,12 @@ const formModel = defineModel<ConfigFormModel>('model', { required: true })
           </div>
 
           <NFormItem label="值" path="value">
-            <NInput v-model:value="formModel.value" type="textarea" :rows="3" placeholder="请输入配置值" />
+            <NInput
+              v-model:value="formModel.value"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入配置值"
+            />
           </NFormItem>
         </section>
 
@@ -87,7 +113,9 @@ const formModel = defineModel<ConfigFormModel>('model', { required: true })
     <template #footer>
       <div class="ez-modal-footer">
         <NButton quaternary class="min-w-[92px]" @click="$emit('update:show', false)">取消</NButton>
-        <NButton type="primary" class="min-w-[92px]" :loading="saving" @click="$emit('submit')">保存</NButton>
+        <NButton type="primary" class="min-w-[92px]" :loading="saving" @click="$emit('submit')"
+          >保存</NButton
+        >
       </div>
     </template>
   </NModal>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { NButton } from 'naive-ui'
-
+import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import DictItemModal from '../components/DictItemModal.vue'
 import DictItemPanel from '../components/DictItemPanel.vue'
@@ -54,11 +53,18 @@ const {
 <template>
   <main class="admin-page">
     <section class="admin-page-section dict-page-section">
-      <PageHeader title="字典管理" description="先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。">
+      <PageHeader
+        title="字典管理"
+        description="先维护字典类型，再按类型维护具体字典项，供全局表单和状态映射复用。"
+      >
         <template #actions>
-          <NButton v-if="canUse('system:dict:type:create')" type="primary" @click="openTypeCreate">
-            + 新增字典类型
-          </NButton>
+          <EzActionButton
+            v-if="canUse('system:dict:type:create')"
+            kind="add"
+            label="新增字典类型"
+            type="primary"
+            @click="openTypeCreate"
+          />
         </template>
       </PageHeader>
 

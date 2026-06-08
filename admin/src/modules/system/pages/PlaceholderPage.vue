@@ -19,7 +19,11 @@ defineProps<{
         </template>
       </PageHeader>
 
-      <NCard class="ez-card min-h-0 flex-1 rounded-[var(--ez-radius-sm)]" :bordered="false" content-class="ez-card-content-fill">
+      <NCard
+        class="ez-card min-h-0 flex-1 rounded-[var(--ez-radius-sm)]"
+        :bordered="false"
+        content-class="ez-card-content-fill"
+      >
         <div class="flex h-full items-center justify-center p-4">
           <EmptyState
             title="本页待接入"

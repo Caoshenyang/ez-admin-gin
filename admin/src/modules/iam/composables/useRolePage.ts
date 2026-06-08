@@ -3,6 +3,7 @@ import { useMessage } from 'naive-ui'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 import { buttonPermissionCodes } from '@/router/dynamic-menu'
+import { getAdminAPIs } from '../api/api-resource'
 import { getDepartments } from '../api/department'
 import { getAdminMenus } from '../api/menu'
 import {
@@ -17,31 +18,26 @@ import {
 import { getUsers } from '../api/user'
 import { buildDepartmentTreeOptions, flattenDepartments } from './department-page.utils'
 import type { DepartmentItem } from '../types/department'
+import { ApiStatus, type AdminAPI } from '@/modules/iam/types/api-resource'
 import { MenuStatus, type AdminMenu } from '@/modules/iam/types/menu'
-import {
-  RoleStatus,
-  type RoleItem,
-  type RoleListQuery,
-} from '../types/role'
+import { RoleStatus, type RoleItem, type RoleListQuery } from '../types/role'
 import type { UserItem } from '../types/user'
-import type { PermissionRow, PermissionTab, RoleFormModel } from '../types/role-page'
+import type { PermissionTab, RoleFormModel } from '../types/role-page'
 import {
   buildRoleCreatePayload,
   buildRoleUpdatePayload,
   defaultRoleListQuery,
-  defaultPermissionRow,
   defaultRoleFormModel,
+  flattenRoleAPIs,
   flattenRoleMenus,
   getRoleStatusTagType,
-  normalizeRolePermissions,
   roleDataScopeHelps,
   roleDataScopeLabels,
   roleDataScopeOptions,
-  permissionMethodOptions,
   roleFormRules,
   roleStatusOptions,
   superAdminRoleCode,
-  toPermissionRows,
+  toAPIPermissionTreeOptions,
   toFeaturePermissionTreeOptions,
   toRoleFormModel,
 } from './role-page.utils'
@@ -52,14 +48,15 @@ export function useRolePage() {
   const saving = ref(false)
   const relatedUsersLoading = ref(false)
   const roles = ref<RoleItem[]>([])
+  const apis = ref<AdminAPI[]>([])
   const menus = ref<AdminMenu[]>([])
   const departments = ref<DepartmentItem[]>([])
   const relatedUsers = ref<UserItem[]>([])
   const relatedUsersTotal = ref(0)
   const selectedRoleID = ref<number | null>(null)
   const activeTab = ref<PermissionTab>('feature')
+  const checkedAPIIDs = ref<Array<string | number>>([])
   const checkedMenuIDs = ref<Array<string | number>>([])
-  const permissionRows = ref<PermissionRow[]>([])
 
   const query = reactive<RoleListQuery>(defaultRoleListQuery())
 
@@ -70,13 +67,13 @@ export function useRolePage() {
 
   const statusOptions: SelectOption[] = roleStatusOptions
 
-  const methodOptions: SelectOption[] = permissionMethodOptions
-
   const dataScopeOptions: SelectOption[] = roleDataScopeOptions
 
   const rules: FormRules = roleFormRules
 
-  const selectedRole = computed(() => roles.value.find((role) => role.id === selectedRoleID.value) ?? null)
+  const selectedRole = computed(
+    () => roles.value.find((role) => role.id === selectedRoleID.value) ?? null,
+  )
 
   const filteredRoles = computed(() => {
     const keyword = query.keyword?.trim().toLowerCase() ?? ''
@@ -94,10 +91,15 @@ export function useRolePage() {
 
   const menuTreeOptions = computed<TreeOption[]>(() => toFeaturePermissionTreeOptions(menus.value))
 
+  const apiTreeOptions = computed<TreeOption[]>(() => toAPIPermissionTreeOptions(apis.value))
+
   const departmentTreeOptions = computed(() => buildDepartmentTreeOptions(departments.value))
 
-  const departmentNameMap = computed(() =>
-    new Map(flattenDepartments(departments.value).map((department) => [department.id, department.name])),
+  const departmentNameMap = computed(
+    () =>
+      new Map(
+        flattenDepartments(departments.value).map((department) => [department.id, department.name]),
+      ),
   )
 
   const dataScopeLabel = computed(() => {
@@ -118,19 +120,33 @@ export function useRolePage() {
 
   const allMenus = computed(() => flattenRoleMenus(menus.value))
 
-  const checkedFeatureCount = computed(() => checkedMenuIDs.value.length)
+  const allAPIs = computed(() => flattenRoleAPIs(apis.value))
 
-  const canEditSelectedRole = computed(() => selectedRole.value !== null && selectedRole.value.code !== superAdminRoleCode)
+  const checkedFeatureCount = computed(() => selectedPositiveIDs(checkedMenuIDs.value).length)
+
+  const checkedAPICount = computed(() => selectedPositiveIDs(checkedAPIIDs.value).length)
+
+  const canEditSelectedRole = computed(
+    () => selectedRole.value !== null && selectedRole.value.code !== superAdminRoleCode,
+  )
 
   const canEditBaseRole = computed(() => canEditSelectedRole.value && canUse('system:role:update'))
 
-  const canToggleSelectedRoleStatus = computed(() => canEditSelectedRole.value && canUse('system:role:status'))
+  const canToggleSelectedRoleStatus = computed(
+    () => canEditSelectedRole.value && canUse('system:role:status'),
+  )
 
-  const canDeleteSelectedRole = computed(() => canEditSelectedRole.value && canUse('system:role:delete'))
+  const canDeleteSelectedRole = computed(
+    () => canEditSelectedRole.value && canUse('system:role:delete'),
+  )
 
-  const canEditFeaturePermissions = computed(() => canEditSelectedRole.value && canUse('system:role:menu'))
+  const canEditFeaturePermissions = computed(
+    () => canEditSelectedRole.value && canUse('system:role:menu'),
+  )
 
-  const canEditApiPermissions = computed(() => canEditSelectedRole.value && canUse('system:role:permission'))
+  const canEditApiPermissions = computed(
+    () => canEditSelectedRole.value && canUse('system:role:permission'),
+  )
 
   const canEditPermissionTab = computed(() =>
     activeTab.value === 'api' ? canEditApiPermissions.value : canEditFeaturePermissions.value,
@@ -145,15 +161,15 @@ export function useRolePage() {
   // 角色切换后要同步整块权限面板，避免旧角色的勾选和接口行残留。
   watch(selectedRole, (role) => {
     if (!role) {
+      checkedAPIIDs.value = []
       checkedMenuIDs.value = []
-      permissionRows.value = []
       relatedUsers.value = []
       relatedUsersTotal.value = 0
       return
     }
 
+    checkedAPIIDs.value = [...(role.api_ids ?? [])]
     checkedMenuIDs.value = [...(role.menu_ids ?? [])]
-    permissionRows.value = toPermissionRows(role)
     void loadRelatedUsers()
   })
 
@@ -193,6 +209,10 @@ export function useRolePage() {
 
   async function loadMenus() {
     menus.value = await getAdminMenus()
+  }
+
+  async function loadAPIs() {
+    apis.value = await getAdminAPIs()
   }
 
   async function loadDepartments() {
@@ -276,21 +296,25 @@ export function useRolePage() {
   }
 
   function handleCheckAll() {
+    if (activeTab.value === 'api') {
+      checkedAPIIDs.value = allAPIs.value
+        .filter((api) => api.status === ApiStatus.Enabled)
+        .map((api) => api.id)
+      return
+    }
+
     checkedMenuIDs.value = allMenus.value
       .filter((menu) => menu.status === MenuStatus.Enabled)
       .map((menu) => menu.id)
   }
 
   function handleClearAll() {
+    if (activeTab.value === 'api') {
+      checkedAPIIDs.value = []
+      return
+    }
+
     checkedMenuIDs.value = []
-  }
-
-  function addPermissionRow() {
-    permissionRows.value.push(defaultPermissionRow())
-  }
-
-  function removePermissionRow(id: number) {
-    permissionRows.value = permissionRows.value.filter((row) => row.id !== id)
   }
 
   async function handleSavePermissions() {
@@ -301,12 +325,13 @@ export function useRolePage() {
     saving.value = true
     try {
       if (activeTab.value === 'api') {
-        const permissions = normalizeRolePermissions(permissionRows.value)
-        await updateRolePermissions(selectedRole.value.id, { permissions })
+        await updateRolePermissions(selectedRole.value.id, {
+          api_ids: selectedPositiveIDs(checkedAPIIDs.value),
+        })
         message.success('接口权限已更新')
       } else {
         await updateRoleMenus(selectedRole.value.id, {
-          menu_ids: checkedMenuIDs.value.map(Number),
+          menu_ids: selectedPositiveIDs(checkedMenuIDs.value),
         })
         message.success('功能权限已更新')
       }
@@ -318,12 +343,16 @@ export function useRolePage() {
   }
 
   onMounted(async () => {
-    await Promise.all([loadMenus(), loadDepartments(), loadRoles()])
+    await Promise.all([loadAPIs(), loadMenus(), loadDepartments(), loadRoles()])
   })
+
+  function selectedPositiveIDs(values: Array<string | number>) {
+    return [...new Set(values.map(Number).filter((id) => Number.isFinite(id) && id > 0))]
+  }
 
   return {
     activeTab,
-    addPermissionRow,
+    apiTreeOptions,
     canEditBaseRole,
     canDeleteSelectedRole,
     canEditPermissionTab,
@@ -331,6 +360,8 @@ export function useRolePage() {
     canSavePermissionTab,
     canToggleSelectedRoleStatus,
     canUse,
+    checkedAPICount,
+    checkedAPIIDs,
     checkedFeatureCount,
     checkedMenuIDs,
     dataScopeHelp,
@@ -352,16 +383,13 @@ export function useRolePage() {
     handleToggleRoleStatus,
     loadRelatedUsers,
     menuTreeOptions,
-    methodOptions,
     openCreate,
     openEdit,
     permissionSaveLabel,
-    permissionRows,
     query,
     relatedUsers,
     relatedUsersLoading,
     relatedUsersTotal,
-    removePermissionRow,
     rules,
     saving,
     selectRole,
