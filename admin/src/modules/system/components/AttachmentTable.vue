@@ -100,14 +100,14 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
     },
   },
   {
-      title: '操作',
-      key: 'actions',
-      width: 188,
+    title: '操作',
+    key: 'actions',
+    width: 188,
     fixed: 'right',
     render(row) {
       const nextStatus = row.status === AttachmentStatus.Enabled ? AttachmentStatus.Disabled : AttachmentStatus.Enabled
 
-      return h(NSpace, { size: 8 }, {
+      return h(NSpace, { class: 'ez-row-actions', size: 6, align: 'center' }, {
         default: () => [
           h(
             NTooltip,
@@ -116,7 +116,7 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
               trigger: () =>
                 h(
                   NButton,
-                  { size: 'small', ghost: true, type: 'info', onClick: () => emit('copy', row.url) },
+                  { size: 'tiny', secondary: true, type: 'info', onClick: () => emit('copy', row.url) },
                   { icon: () => h(NIcon, null, { default: () => h(CopyOutline) }) },
                 ),
               default: () => '复制链接',
@@ -125,7 +125,7 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
           props.canUse('system:attachment:update')
             ? h(
                 NButton,
-                { size: 'small', ghost: true, type: 'primary', onClick: () => emit('edit', row) },
+                { size: 'tiny', secondary: true, type: 'primary', onClick: () => emit('edit', row) },
                 { default: () => '编辑' },
               )
             : null,
@@ -138,8 +138,8 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
                     h(
                       NButton,
                       {
-                        size: 'small',
-                        ghost: true,
+                        size: 'tiny',
+                        secondary: true,
                         type: nextStatus === AttachmentStatus.Disabled ? 'error' : 'success',
                       },
                       { default: () => (nextStatus === AttachmentStatus.Disabled ? '禁用' : '启用') },
@@ -168,12 +168,13 @@ const columns = computed<DataTableColumns<AttachmentItem>>(() => [
     @page-size-change="(pageSize) => emit('pageSizeChange', pageSize)"
     @refresh="emit('refresh')"
   >
-    <template #body="{ tableColumns, tableSize }">
+    <template #body="{ tableColumns, tableScrollX, tableSize }">
       <NDataTable
         :columns="tableColumns"
         :data="attachments"
         :loading="loading"
         :bordered="false"
+        :scroll-x="tableScrollX"
         :size="tableSize"
         flex-height
         class="ez-table-fill-table"

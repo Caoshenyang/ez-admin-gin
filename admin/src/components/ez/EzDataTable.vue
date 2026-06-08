@@ -24,6 +24,7 @@ import EzTableCard from './EzTableCard.vue'
 import TableStatsBar from '../TableStatsBar.vue'
 
 type TableSize = 'small' | 'medium' | 'large'
+type TableColumn = DataTableColumns<T>[number]
 
 interface ColumnSetting {
   key: string
@@ -72,7 +73,11 @@ const emit = defineEmits<{
 
 defineSlots<{
   actions?: () => unknown
-  body?: (props: { tableColumns: DataTableColumns<T>; tableSize: TableSize }) => unknown
+  body?: (props: {
+    tableColumns: DataTableColumns<T>
+    tableScrollX: number
+    tableSize: TableSize
+  }) => unknown
   footerSummary?: () => unknown
   toolbarActions?: () => unknown
   toolbarSummary?: () => unknown
@@ -127,6 +132,10 @@ const tableColumns = computed<DataTableColumns<T>>(() => {
   })
 })
 
+const tableScrollX = computed(() => {
+  return tableColumns.value.reduce((total, column) => total + resolveColumnWidth(column), 0)
+})
+
 const hasHiddenColumns = computed(() => {
   return visibleColumnKeys.value.length < configurableColumnKeys.value.length
 })
@@ -154,6 +163,31 @@ watch(
 
 function resetColumns() {
   visibleColumnKeys.value = [...configurableColumnKeys.value]
+}
+
+function resolveColumnWidth(column: TableColumn) {
+  if (column.type === 'selection') {
+    return toWidthNumber(column.width) ?? 48
+  }
+
+  if ('children' in column && Array.isArray(column.children)) {
+    return column.children.reduce((total, childColumn) => total + resolveColumnWidth(childColumn), 0)
+  }
+
+  return toWidthNumber(column.width) ?? toWidthNumber(column.minWidth) ?? 120
+}
+
+function toWidthNumber(value: unknown) {
+  if (typeof value === 'number') {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const matched = value.match(/^(\d+(?:\.\d+)?)px$/)
+    return matched ? Number(matched[1]) : undefined
+  }
+
+  return undefined
 }
 </script>
 
@@ -271,7 +305,7 @@ function resetColumns() {
         普通列表只传 columns/data/rowKey 即可；需要勾选、行样式或额外事件时，
         用 body 插槽接管 NDataTable，仍复用统一工具条和分页外壳。
       -->
-      <slot name="body" :table-columns="tableColumns" :table-size="tableSize">
+      <slot name="body" :table-columns="tableColumns" :table-scroll-x="tableScrollX" :table-size="tableSize">
         <NDataTable
           :remote="remote"
           class="ez-table-fill-table"
@@ -279,6 +313,7 @@ function resetColumns() {
           :data="data"
           :loading="loading"
           :pagination="false"
+          :scroll-x="tableScrollX"
           :row-key="rowKey"
           :row-props="rowProps"
           :size="tableSize"

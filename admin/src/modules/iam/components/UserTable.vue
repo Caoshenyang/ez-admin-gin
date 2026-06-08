@@ -122,11 +122,12 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
   {
     title: '操作',
     key: 'actions',
-    minWidth: 190,
+    width: 248,
+    fixed: 'right',
     render(row) {
       const nextStatus = row.status === UserStatus.Enabled ? UserStatus.Disabled : UserStatus.Enabled
 
-      return h(NSpace, { size: 8, align: 'center', wrap: true }, {
+      return h(NSpace, { class: 'ez-row-actions', size: 6, align: 'center', wrap: false }, {
         default: () => [
           props.canUse('system:user:update')
             ? h(
@@ -135,7 +136,6 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
                   size: 'tiny',
                   secondary: true,
                   type: 'info',
-                  class: 'min-w-[48px]',
                   onClick: () => emit('edit', row),
                 },
                 { default: () => '编辑' },
@@ -153,7 +153,6 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
                         size: 'tiny',
                         secondary: true,
                         type: nextStatus === UserStatus.Disabled ? 'error' : 'success',
-                        class: 'min-w-[48px]',
                       },
                       { default: () => (nextStatus === UserStatus.Disabled ? '禁用' : '启用') },
                     ),
@@ -173,7 +172,6 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
                         size: 'tiny',
                         secondary: true,
                         type: 'error',
-                        class: 'min-w-[48px]',
                       },
                       { default: () => '删除' },
                     ),
@@ -217,7 +215,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
       <span>已选 {{ selectedCount }} 项</span>
     </template>
 
-    <template #body="{ tableColumns, tableSize }">
+    <template #body="{ tableColumns, tableScrollX, tableSize }">
       <NDataTable
         remote
         class="ez-table-fill-table"
@@ -225,6 +223,7 @@ const columns = computed<DataTableColumns<UserItem>>(() => [
         :data="users"
         :loading="loading"
         :pagination="false"
+        :scroll-x="tableScrollX"
         :row-key="(row: UserItem) => row.id"
         :checked-row-keys="checkedRowKeys"
         :size="tableSize"

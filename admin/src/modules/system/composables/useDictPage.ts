@@ -312,14 +312,14 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 160,
+      width: 172,
       fixed: 'right',
       render(row) {
         const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
 
         return h(
           NSpace,
-          { size: 6, align: 'center' },
+          { class: 'ez-row-actions', size: 6, align: 'center' },
           {
             default: () =>
               [
@@ -419,21 +419,21 @@ export function useDictPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 160,
+      width: 172,
       fixed: 'right',
       render(row) {
         const nextStatus = row.status === DictStatus.Enabled ? DictStatus.Disabled : DictStatus.Enabled
 
         return h(
           NSpace,
-          { size: 8, align: 'center' },
+          { class: 'ez-row-actions', size: 6, align: 'center' },
           {
             default: () =>
               [
                 canUse('system:dict:item:update')
                   ? h(
                       NButton,
-                      { size: 'small', ghost: true, type: 'info', onClick: () => openItemEdit(row) },
+                      { size: 'tiny', secondary: true, type: 'info', onClick: () => openItemEdit(row) },
                       { default: () => '编辑' },
                     )
                   : null,
@@ -446,8 +446,8 @@ export function useDictPage() {
                           h(
                             NButton,
                             {
-                              size: 'small',
-                              ghost: true,
+                              size: 'tiny',
+                              secondary: true,
                               type: nextStatus === DictStatus.Disabled ? 'error' : 'success',
                             },
                             { default: () => (nextStatus === DictStatus.Disabled ? '禁用' : '启用') },
@@ -464,7 +464,7 @@ export function useDictPage() {
                         trigger: () =>
                           h(
                             NButton,
-                            { size: 'small', ghost: true, type: 'error' },
+                            { size: 'tiny', secondary: true, type: 'error' },
                             { default: () => '删除' },
                           ),
                         default: () => '确认删除该字典项？',

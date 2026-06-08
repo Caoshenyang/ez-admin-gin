@@ -117,7 +117,7 @@ const columns: DataTableColumns<AdminMenu> = [
   {
     title: '操作',
     key: 'actions',
-    width: 196,
+    width: 228,
     fixed: 'right',
     render(row) {
       const canCreateChild = row.type !== MenuType.Button && props.canUse('system:menu:create')
@@ -126,7 +126,7 @@ const columns: DataTableColumns<AdminMenu> = [
 
       return h(
         NSpace,
-        { size: 6, align: 'center' },
+        { class: 'ez-row-actions', size: 6, align: 'center' },
         {
           default: () =>
             [
@@ -227,7 +227,7 @@ function rowKey(row: AdminMenu) {
       </NSpace>
     </template>
 
-    <template #body="{ tableColumns, tableSize }">
+    <template #body="{ tableColumns, tableScrollX, tableSize }">
       <NDataTable
         class="ez-table-fill-table menu-table"
         :columns="tableColumns"
@@ -237,6 +237,7 @@ function rowKey(row: AdminMenu) {
         :checked-row-keys="checkedRowKeys"
         :expanded-row-keys="expandedRowKeys"
         :pagination="false"
+        :scroll-x="tableScrollX"
         :size="tableSize"
         :bordered="false"
         children-key="children"

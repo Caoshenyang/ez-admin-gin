@@ -122,7 +122,7 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 </template>
 ```
 
-树表、勾选表或自定义空态接管表体时，必须继续使用 `body` 插槽提供的 `tableColumns / tableSize`，否则列显隐和密度设置不会生效：
+树表、勾选表或自定义空态接管表体时，必须继续使用 `body` 插槽提供的 `tableColumns / tableScrollX / tableSize`，否则列显隐、横向滚动和密度设置不会生效：
 
 ```vue
 <template>
@@ -131,12 +131,13 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
       <NButton secondary size="small" @click="emit('expandAll')">展开全部</NButton>
     </template>
 
-    <template #body="{ tableColumns, tableSize }">
+    <template #body="{ tableColumns, tableScrollX, tableSize }">
       <NDataTable
         class="ez-table-fill-table"
         :columns="tableColumns"
         :data="items"
         :loading="loading"
+        :scroll-x="tableScrollX"
         :size="tableSize"
         :pagination="false"
         :bordered="false"
@@ -155,8 +156,11 @@ description: "统一后台页面中搜索区、列表区、表单区和页面编
 - 刷新、密度、列设置由 `EzDataTable` 统一提供，并作为右侧图标型视图控制组展示；业务侧扩展按钮放入 `toolbarActions`，作为文字操作组展示，不要覆盖整段 `actions`。
 - `EzTableCard` 只作为底层外壳使用，业务列表不要再手写 `EzTableCard + TableStatsBar + NDataTable + NPagination`。
 - 树表、勾选表和带自定义空态的表格可以通过 `EzDataTable` 的 `body` 插槽接管 `NDataTable`。
+- 表头统一保持 13px / 700 的信息层级，避免比正文弱太多。
 - 长表格必须配置稳定列宽，避免操作列挤压正文列。
-- 操作列固定在右侧时，按钮数量超过两个应使用下拉菜单收纳。
+- `EzDataTable` 会根据可见列宽自动计算 `scroll-x`；业务自定义表体必须透传 `tableScrollX`，确保列展示不全时有横向滚动条。
+- 操作列统一固定在右侧，按按钮数量配置稳定宽度，并使用 `ez-row-actions` 承接统一按钮样式。
+- 操作列按钮优先使用 `size="tiny" secondary`，按钮数量超过四个时再考虑下拉菜单收纳。
 
 ## 表单区
 

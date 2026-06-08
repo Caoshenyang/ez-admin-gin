@@ -99,14 +99,14 @@ const columns: DataTableColumns<OperationLogItem> = [
     },
   },
   {
-    title: '详情',
+    title: '操作',
     key: 'detail',
-    width: 70,
+    width: 88,
     fixed: 'right',
     render(row) {
       return h(
         NButton,
-        { text: true, type: 'primary', onClick: () => emit('detail', row) },
+        { class: 'ez-row-actions', size: 'tiny', secondary: true, type: 'primary', onClick: () => emit('detail', row) },
         { default: () => '查看' },
       )
     },

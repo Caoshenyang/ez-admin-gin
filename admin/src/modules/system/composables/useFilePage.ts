@@ -120,7 +120,7 @@ export function useFilePage() {
     {
       title: '操作',
       key: 'actions',
-      width: 76,
+      width: 84,
       fixed: 'right',
       render(row) {
         return h(
@@ -130,7 +130,7 @@ export function useFilePage() {
             trigger: () =>
               h(
                 NButton,
-                { size: 'small', ghost: true, type: 'info', onClick: () => copyURL(row) },
+                { class: 'ez-row-actions', size: 'tiny', secondary: true, type: 'info', onClick: () => copyURL(row) },
                 { icon: () => h(NIcon, null, { default: () => h(CopyOutline) }) },
               ),
             default: () => '复制链接',

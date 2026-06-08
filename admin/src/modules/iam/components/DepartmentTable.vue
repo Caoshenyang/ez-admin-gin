@@ -103,7 +103,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
   {
     title: '操作',
     key: 'actions',
-    width: 196,
+    width: 216,
     fixed: 'right',
     render(row) {
       const nextStatus =
@@ -113,7 +113,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
 
       return h(
         NSpace,
-        { size: 8 },
+        { class: 'ez-row-actions', size: 6, align: 'center' },
         {
           default: () => [
             props.canUse('system:department:create')
@@ -191,7 +191,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
       </NSpace>
     </template>
 
-    <template #body="{ tableColumns, tableSize }">
+    <template #body="{ tableColumns, tableScrollX, tableSize }">
       <NDataTable
         class="ez-table-fill-table department-table"
         :columns="tableColumns"
@@ -201,6 +201,7 @@ const columns = computed<DataTableColumns<DepartmentItem>>(() => [
         :checked-row-keys="checkedRowKeys"
         :expanded-row-keys="expandedRowKeys"
         :pagination="false"
+        :scroll-x="tableScrollX"
         :size="tableSize"
         :bordered="false"
         children-key="children"

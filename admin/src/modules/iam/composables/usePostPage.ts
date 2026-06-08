@@ -88,19 +88,20 @@ export function usePostPage() {
     {
       title: '操作',
       key: 'actions',
-      width: 160,
+      width: 172,
+      fixed: 'right',
       render(row) {
         const nextStatus = row.status === PostStatus.Enabled ? PostStatus.Disabled : PostStatus.Enabled
 
         return h(
           NSpace,
-          { size: 8 },
+          { class: 'ez-row-actions', size: 6, align: 'center' },
           {
             default: () => [
               canUse('system:post:update')
                 ? h(
                     NButton,
-                    { size: 'small', ghost: true, type: 'info', onClick: () => openEdit(row) },
+                    { size: 'tiny', secondary: true, type: 'info', onClick: () => openEdit(row) },
                     { default: () => '编辑' },
                   )
                 : null,
@@ -113,8 +114,8 @@ export function usePostPage() {
                         h(
                           NButton,
                           {
-                            size: 'small',
-                            ghost: true,
+                            size: 'tiny',
+                            secondary: true,
                             type: nextStatus === PostStatus.Disabled ? 'error' : 'success',
                           },
                           { default: () => (nextStatus === PostStatus.Disabled ? '禁用' : '启用') },
@@ -131,7 +132,7 @@ export function usePostPage() {
                       trigger: () =>
                         h(
                           NButton,
-                          { size: 'small', ghost: true, type: 'error' },
+                          { size: 'tiny', secondary: true, type: 'error' },
                           { default: () => '删除' },
                         ),
                       default: () => '删除前请确认该岗位没有绑定到任何用户。',
