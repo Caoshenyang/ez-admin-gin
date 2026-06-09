@@ -1,0 +1,101 @@
+package system
+
+import (
+	"ez-admin-gin/server/internal/modules/modulekit"
+	attachmentmodule "ez-admin-gin/server/internal/modules/system/attachment"
+	configmodule "ez-admin-gin/server/internal/modules/system/config"
+	dictmodule "ez-admin-gin/server/internal/modules/system/dict"
+	filemodule "ez-admin-gin/server/internal/modules/system/file"
+	loginlogmodule "ez-admin-gin/server/internal/modules/system/loginlog"
+	mailmodule "ez-admin-gin/server/internal/modules/system/mail"
+	messagemodule "ez-admin-gin/server/internal/modules/system/message"
+	noticemodule "ez-admin-gin/server/internal/modules/system/notice"
+	notificationmodule "ez-admin-gin/server/internal/modules/system/notification"
+	operationlogmodule "ez-admin-gin/server/internal/modules/system/operationlog"
+	authnPlatform "ez-admin-gin/server/internal/platform/authn"
+	authzPlatform "ez-admin-gin/server/internal/platform/authz"
+	platformConfig "ez-admin-gin/server/internal/platform/config"
+	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
+
+	"github.com/gin-gonic/gin"
+	goredis "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
+
+type RouteOptions struct {
+	Config        *platformConfig.Config
+	RuntimeConfig *platformConfig.RuntimeStore
+	Log           *zap.Logger
+	DB            *gorm.DB
+	Redis         *goredis.Client
+	Token         *authnPlatform.Manager
+	Permission    *authzPlatform.Enforcer
+	Blacklist     platformMiddleware.TokenBlacklistChecker
+}
+
+func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
+	health := newHealthHandler(opts.Config, opts.DB, opts.Redis, opts.Log)
+
+	r.GET("/healthz", health.Liveness)
+	r.GET("/readyz", health.Readiness)
+	r.GET("/health", health.Check)
+
+	system := modulekit.NewProtectedSystemGroup(r, modulekit.ProtectedSystemGroupOptions{
+		Log:        opts.Log,
+		DB:         opts.DB,
+		Token:      opts.Token,
+		Permission: opts.Permission,
+		Blacklist:  opts.Blacklist,
+	})
+
+	system.GET("/health", health.Check)
+	configmodule.RegisterRoutes(system, configmodule.RouteOptions{
+		DB:    opts.DB,
+		Redis: opts.Redis,
+		Log:   opts.Log,
+	})
+	dictmodule.RegisterRoutes(system, dictmodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	attachmentmodule.RegisterRoutes(system, attachmentmodule.RouteOptions{
+		DB:            opts.DB,
+		Upload:        opts.Config.Upload,
+		RuntimeConfig: opts.RuntimeConfig,
+		Log:           opts.Log,
+	})
+	filemodule.RegisterRoutes(system, filemodule.RouteOptions{
+		DB:            opts.DB,
+		Upload:        opts.Config.Upload,
+		RuntimeConfig: opts.RuntimeConfig,
+		Log:           opts.Log,
+	})
+	operationlogmodule.RegisterRoutes(system, operationlogmodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	loginlogmodule.RegisterRoutes(system, loginlogmodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	noticemodule.RegisterRoutes(system, noticemodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	messagemodule.RegisterRoutes(system, messagemodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	mailmodule.RegisterRoutes(system, mailmodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	notificationmodule.RegisterRoutes(system, r, notificationmodule.RouteOptions{
+		Config: opts.Config,
+		DB:     opts.DB,
+		Redis:  opts.Redis,
+		Log:    opts.Log,
+		Token:  opts.Token,
+	})
+}

@@ -1,150 +1,190 @@
 # EZ Admin Gin
 
-面向个人项目快速上线的通用后台管理系统底座。登录、权限、菜单、配置、日志、文件上传等后台基础能力一次性沉淀，新项目直接复用。
+![EZ Admin Gin Badge](brand-assets/svg/readme-badge.svg)
 
-## 适用场景
+EZ Admin Gin 是一个维护者自用优先的 Go + Gin + Vue 3 后台管理系统基座。
 
-- 个人开发者需要一个"能直接用"的后台管理系统
-- 想从零学习 Go + Vue 3 全栈后台搭建
-- 已有业务 idea，不想重复写登录、权限、用户管理
+本仓库公开源码，主要用于个人项目、中小型后台系统和 SaaS/MVP 原型快速开发。项目不以社区协作为主要目标，也不追求完整自动化测试覆盖率。当前重点是保持基座稳定、结构清晰、部署简单，方便维护者基于它快速创建业务项目。
+
+## 适合 / 不适合
+
+| 适合 | 不适合 |
+|------|--------|
+| 个人项目后台 | 大型企业 IAM / 统一身份认证平台 |
+| SaaS 原型 / MVP | 微服务架构的服务治理平台 |
+| 中小型管理系统（ERP、CRM、CMS 底座） | 低代码 / 无代码平台底座 |
+| 需要权限、数据权限、动态菜单的后台底座 | 无需二次开发的商业成品系统 |
+| 想学习 Go + Vue 全栈工程化的开发者 | 高并发（万级 QPS+）独立场景 |
+
+## 核心特性
+
+- **权限体系** — JWT 认证、Casbin 接口授权、五级数据权限、动态菜单、按钮权限
+- **组织体系** — 部门树、岗位管理、用户-角色-岗位多对多关联
+- **模块化扩展** — 统一四层结构（handler/service/repository/domain），标准接入流程
+- **部署简单** — Docker Compose、Nginx HTTP/HTTPS、服务器二进制部署
+- **系统工具齐全** — 数据字典、系统配置、文件上传、操作日志、登录日志、通知公告
 
 ## 技术栈
 
 | 层 | 技术 |
-| --- | --- |
-| 后端 | Go 1.26、Gin、GORM、PostgreSQL、Redis、Casbin |
-| 前端 | Vue 3.5、TypeScript、Naive UI、TailwindCSS 4、Vite 8 |
-| 文档 | VitePress 2.0 |
-| 部署 | Docker Compose、Nginx |
+|----|------|
+| 后端框架 | Go 1.26 + Gin |
+| ORM | GORM（PostgreSQL / MySQL） |
+| 权限引擎 | Casbin |
+| 缓存 | Redis |
+| 前端框架 | Vue 3 + TypeScript |
+| UI 组件库 | Naive UI |
+| 状态管理 | Pinia |
+| CSS | Tailwind CSS 4 |
+| 构建工具 | Vite |
+| 文档 | VitePress |
+
+## 项目结构
+
+```text
+ez-admin-gin/
+├── server/                 Go 后端
+│   ├── configs/            配置文件
+│   ├── internal/           业务代码
+│   │   ├── bootstrap/      启动引导
+│   │   ├── modules/        业务模块（auth / iam / system / setup）
+│   │   ├── platform/       平台层（authn / authz / datascope / middleware / ...）
+│   │   └── pkg/            公共工具包
+│   ├── migrations/         数据库迁移（MySQL + PostgreSQL）
+│   └── docs/               Swagger / OpenAPI 规范
+├── admin/                  Vue 3 管理台
+│   └── src/
+│       ├── modules/        业务模块（auth / iam / system）
+│       ├── layouts/        布局组件
+│       ├── router/         路由 + 动态菜单注册
+│       └── stores/         Pinia 状态管理
+├── docs/                   VitePress 文档站
+├── deploy/                 Docker Compose、Nginx、部署配置
+├── scripts/                部署与打包脚本
+└── MANUAL_TEST.md          发布前人工测试清单
+```
 
 ## 快速启动
 
 ### 环境要求
 
-- Go >= 1.26
-- Node.js >= 20.19
-- pnpm
-- Docker & Docker Compose（本地数据库和 Redis）
+| 工具 | 最低版本 | 用途 |
+|------|---------|------|
+| Go | 1.26+ | 后端 |
+| Node.js | 20.19+ 或 22.12+ | 前端 & 文档 |
+| pnpm | 9+ | 包管理器 |
+| Docker | 20+ | 本地 PostgreSQL + Redis |
+| make | GNU Make 4+ | 构建自动化（Windows 可选） |
 
-### 1. 启动基础服务
-
-```bash
-# macOS / Linux
-docker compose -f deploy/compose.local.yml up -d
-
-# Windows
-docker compose -f deploy/compose.local.win.yml up -d
-```
-
-PostgreSQL 和 Redis 会自动启动，数据持久化到本机目录。
-
-### 2. 启动后端
+### 使用 Makefile（推荐）
 
 ```bash
-cd server
-cp configs/config.yaml.example configs/config.yaml  # 按需修改
-go run main.go
+# 查看所有可用命令
+make help
+
+# 1. 启动 PostgreSQL 和 Redis
+make docker-up
+
+# 2. 如需更新完整版初始化 SQL（可选）
+make db-full-sql
+
+# 3. 启动后端（另一个终端）
+make server-dev
+
+# 4. 初始化管理员账号
+curl -X POST http://localhost:8080/api/v1/setup/init
+
+# 5. 启动前端（另一个终端）
+make install && make admin-dev
 ```
 
-首次启动会自动创建数据库表和默认管理员账号。
+初始化接口会创建默认管理员 `admin / EzAdmin@123456`。生产环境首次登录后请立即修改密码。
 
-### 3. 启动前端
+## 常用命令速查
+
+| 命令 | 说明 |
+|------|------|
+| `make help` | 显示所有可用命令 |
+| `make install` | 安装前端依赖 |
+| `make server-dev` | 启动后端 (`go run .`) |
+| `make admin-dev` | 启动前端 (`pnpm dev`) |
+| `make server-vet` | 后端代码检查 (`go vet ./...`) |
+| `make admin-check` | 前端类型检查 + lint |
+| `make lint` | 后端 vet + 前端检查 + API 类型同步检查 |
+| `make build` | 构建后端二进制 + 前端产物 |
+| `make verify` | 轻量验证：vet、前端检查、构建、Docker Compose 配置校验 |
+| `make docker-up` | 启动 PostgreSQL + Redis |
+| `make docker-down` | 停止 PostgreSQL + Redis |
+| `make docker-config` | 验证所有 Docker Compose 配置 |
+| `make swagger` | 从后端注释生成 Swagger / OpenAPI 文档 |
+| `make generate-types` | 先生成 Swagger，再生成前端 TypeScript 类型 |
+| `make check-types` | 检查 Swagger 文档和前端 API 类型是否同步 |
+
+## 质量策略
+
+本项目不维护复杂自动化测试体系，不追求测试覆盖率。当前采用轻量质量策略：后端 `go vet`、后端 `go build`、前端 TypeScript 类型检查、前端 lint、API 类型同步检查、前端生产构建、Docker Compose 配置校验，以及发布前人工冒烟测试。
+
+本项目不维护 API 自动化测试、RBAC 自动化测试、E2E 测试和覆盖率报告。`admin/src/api/contract-check.ts` 只做编译期类型契约检查，用来约束手写前端 DTO 不偏离 OpenAPI 生成类型。
+
+本地轻量验证：
 
 ```bash
-cd admin
-pnpm install
-pnpm dev
+make verify
 ```
 
-### 4. 启动文档站
+需要更细地拆开看时，可以分别执行：
 
 ```bash
-cd docs
-pnpm install
-pnpm docs:dev
+cd server && go mod tidy && go vet ./... && go build ./...
+make swagger
+cd admin && pnpm install --frozen-lockfile && pnpm type-check && pnpm lint && pnpm check:api-types && pnpm build
+docker compose -f deploy/compose.local.yml config --quiet
+EZ_AUTH_JWT_SECRET=placeholder docker compose -f deploy/compose.prod.yml config --quiet
+docker compose -f deploy/compose.server.yml config --quiet
 ```
 
-## 默认账号
-
-| 项目 | 值 |
-| --- | --- |
-| 用户名 | `admin` |
-| 密码 | `EzAdmin@123456` |
-
-::: warning
-生产环境请务必修改默认密码和 JWT 密钥。
-:::
-
-## 功能清单
-
-### 后端
-
-- JWT 登录认证
-- RBAC 角色权限（Casbin）
-- 动态菜单（目录 / 菜单 / 按钮三级）
-- 用户管理、角色管理、菜单管理
-- 系统配置（键值对，支持启用 / 禁用）
-- 文件上传（本地存储，白名单后缀）
-- 操作日志、登录日志
-- 公告管理
-- 统一响应格式与错误处理
-- 请求级操作日志中间件
-
-### 前端
-
-- 登录页
-- 侧边栏 + 顶栏后台布局
-- 动态菜单渲染
-- 用户、角色、菜单、配置、文件、日志管理页面
-- Dashboard 数据概览
-
-### 部署
-
-- 后端 Dockerfile（多阶段构建）
-- 前端 Dockerfile（Nginx 托管）
-- 生产环境 Docker Compose 编排
-- Nginx 反向代理配置
-- 环境变量配置（`.env.example`）
-- 自动初始化数据和权限种子
-
-## 项目结构
-
-```
-ez-admin-gin/
-├── server/          # Go 后端
-│   ├── configs/     # 配置文件
-│   └── internal/    # 业务代码
-├── admin/           # Vue 3 前端
-│   └── src/
-├── docs/            # VitePress 文档站
-├── deploy/          # Docker Compose 和 Nginx 配置
-│   └── nginx/
-└── .agents/         # 开发辅助 skill
-```
+发布或复制到新 MVP 项目前，按 [MANUAL_TEST.md](MANUAL_TEST.md) 做人工验证。
 
 ## 文档
 
-- [使用指南](https://caoshenyang.github.io/ez-admin-gin/guide/)
-- [从零搭建教程](https://caoshenyang.github.io/ez-admin-gin/tutorial/)（7 章，从空仓库到可部署）
+在线文档：[https://caoshenyang.github.io/ez-admin-gin/](https://caoshenyang.github.io/ez-admin-gin/)
+
+- [快速开始](https://caoshenyang.github.io/ez-admin-gin/getting-started/)
+- [系统架构](https://caoshenyang.github.io/ez-admin-gin/architecture/overview)
+- [权限体系](https://caoshenyang.github.io/ez-admin-gin/architecture/rbac)
+- [后端开发](https://caoshenyang.github.io/ez-admin-gin/backend/overview)
+- [前端开发](https://caoshenyang.github.io/ez-admin-gin/frontend/overview)
+- [部署概览](https://caoshenyang.github.io/ez-admin-gin/deployment/overview)
+- [生产环境检查清单](https://caoshenyang.github.io/ez-admin-gin/deployment/production-checklist)
 - [参考手册](https://caoshenyang.github.io/ez-admin-gin/reference/)
-- [路线图](https://caoshenyang.github.io/ez-admin-gin/roadmap)
 
-## 部署
+## Roadmap
 
-```bash
-cd deploy
-cp .env.example .env   # 修改生产环境配置
-docker compose -f compose.prod.yml up -d
-```
+已完成：
 
-详见教程 [第 7 章：部署与复用](https://caoshenyang.github.io/ez-admin-gin/tutorial/chapter-7/)。
+- [x] JWT 认证 + Casbin 权限控制
+- [x] 动态菜单与按钮权限
+- [x] 组织体系（部门/岗位）
+- [x] 五级数据权限
+- [x] 系统模块（用户/角色/菜单/配置/字典/文件/日志/公告）
+- [x] 前端管理台（登录/壳子/动态菜单/管理页面）
+- [x] 多场景部署方案（Docker Compose + Nginx + 部署脚本）
+- [x] WebSocket 通知公告实时推送
 
-## 版本
+暂不计划：
 
-当前稳定版本：**v1.1.0**
+- [ ] 微服务拆分
+- [ ] 低代码 / 无代码引擎
+- [ ] 复杂多租户隔离
+- [ ] 大型 IAM 平台能力
+- [ ] 社区治理和长期 PR 协作流程
 
-最后验证日期：2026-04-30
+## Contributing
+
+本项目主要是维护者自用的后台系统基座，公开源码供参考和复用。欢迎通过 Issue 反馈 Bug 或建议，但项目不以社区协作为主要目标，Pull Request 不保证接受或处理。当前优先级是保持基座稳定，并支撑维护者自己的 MVP 项目快速开发。
+
+详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## License
 
-MIT
+[MIT](LICENSE)

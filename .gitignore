@@ -1,13 +1,29 @@
 node_modules/
 dist/
+build/
 .vitepress/dist/
 .vitepress/cache/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 .idea/
+.vscode/
+.cache/
+test-results/
+coverage/
+playwright-report/
+junit.xml
+*.lcov
+*.cover
 
 *.log
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
 .env
+.env.local
 .env.*
 !.env.example
 favicon-preview.png
@@ -16,6 +32,11 @@ favicon-preview.png
 Thumbs.db
 
 server/uploads/
+server/server
+server/server.exe
+*.out
+*.test
+tmp/
 
 # Third-party skills not tracked in release
 .agents/skills/drawio-skill/

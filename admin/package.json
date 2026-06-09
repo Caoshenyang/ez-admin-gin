@@ -1,6 +1,6 @@
 {
   "name": "admin",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,9 @@
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
-    "format": "oxfmt src/"
+    "format": "oxfmt src/",
+    "generate:api": "openapi-typescript ../server/docs/swagger.json --x-nullable-as-nullable -o src/api/generated.ts",
+    "check:api-types": "pnpm generate:api && git diff --exit-code src/api/generated.ts"
   },
   "dependencies": {
     "@vicons/ionicons5": "^0.13.0",
@@ -35,6 +37,7 @@
     "eslint-plugin-vue": "~10.8.0",
     "jiti": "^2.6.1",
     "npm-run-all2": "^8.0.4",
+    "openapi-typescript": "^5.4.2",
     "oxfmt": "^0.45.0",
     "oxlint": "~1.60.0",
     "tailwindcss": "^4.2.4",

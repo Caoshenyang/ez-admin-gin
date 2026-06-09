@@ -1,16 +1,21 @@
 import {
   AlbumsOutline,
+  AnalyticsOutline,
   AppsOutline,
+  BriefcaseOutline,
   BeakerOutline,
   BuildOutline,
   CogOutline,
   DocumentTextOutline,
   FolderOpenOutline,
+  GitBranchOutline,
   GridOutline,
   LayersOutline,
   ListOutline,
+  MailOutline,
   NotificationsOutline,
   PeopleOutline,
+  PersonCircleOutline,
   PulseOutline,
   ServerOutline,
   SettingsOutline,
@@ -21,30 +26,68 @@ import { NIcon, type MenuOption } from 'naive-ui'
 import type { RouteRecordRaw } from 'vue-router'
 import { computed, h, shallowRef, type Component } from 'vue'
 
-import { MenuType, type AuthMenu } from '../types/menu'
+import { MenuType, type AuthMenu } from '@/modules/iam/types/menu'
+import { resolveRouteComponent } from './route-components'
 
-type RouteComponent = NonNullable<RouteRecordRaw['component']>
-type MenuIconComponent = Component
+// MenuIconComponent 菜单图标对应的 Vue 组件类型。
+export type MenuIconComponent = Component
 
-const placeholderPage = () => import('../pages/system/PlaceholderPage.vue')
-
-const routeComponentMap: Record<string, RouteComponent> = {
-  'system/HealthView': () => import('../pages/system/HealthView.vue'),
-  'system/UserView': () => import('../pages/system/UserView.vue'),
-  'system/RoleView': () => import('../pages/system/RoleView.vue'),
-  'system/MenuView': () => import('../pages/system/MenuView.vue'),
-  'system/ConfigView': () => import('../pages/system/ConfigView.vue'),
-  'system/FileView': () => import('../pages/system/FileView.vue'),
-  'system/OperationLogView': () => import('../pages/system/OperationLogView.vue'),
-  'system/LoginLogView': () => import('../pages/system/LoginLogView.vue'),
-  'system/NoticeView': () => import('../pages/system/NoticeView.vue'),
+// AdminMenuOption 侧栏菜单项结构，用于渲染 Naive UI 菜单。
+export interface AdminMenuOption {
+  label: string
+  key: string
+  menuCode: string
+  menuType: MenuType
+  routePath?: string
+  icon?: MenuOption['icon']
+  disabled?: boolean
+  children?: AdminMenuOption[]
 }
 
+export type AdminSearchItemType = 'directory' | 'page' | 'function'
+
+export interface AdminSearchItem {
+  icon: MenuIconComponent
+  key: string
+  keywords: string[]
+  menuCode: string
+  parentTitles: string[]
+  path: string
+  title: string
+  type: AdminSearchItemType
+}
+
+// defaultMenuIcon 菜单图标的默认兜底图标。
 const defaultMenuIcon = AppsOutline
+
+// builtinMenuCodeIconMap 内置菜单编码到图标的映射，优先级最高。
+const builtinMenuCodeIconMap: Record<string, MenuIconComponent> = {
+  dashboard: AppsOutline,
+  audit: AnalyticsOutline,
+  system: SettingsOutline,
+  'system:health': PulseOutline,
+  'system:user': PeopleOutline,
+  'system:role': ShieldCheckmarkOutline,
+  'system:department': GitBranchOutline,
+  'system:post': BriefcaseOutline,
+  'system:menu': LayersOutline,
+  'system:config': CogOutline,
+  'system:file': FolderOpenOutline,
+  'system:attachment': FolderOpenOutline,
+  'system:dict': AlbumsOutline,
+  'system:dict-type': AlbumsOutline,
+  'system:dict-item': ListOutline,
+  'system:operation-log': ListOutline,
+  'system:login-log': TimeOutline,
+  'system:notice': NotificationsOutline,
+  'system:message': NotificationsOutline,
+  'system:mail': MailOutline,
+}
 
 // 后端 icon 字段只允许命中这份前端白名单，避免把任意字符串直接当组件渲染。
 const menuIconMap: Record<string, MenuIconComponent> = {
   albums: AlbumsOutline,
+  analytics: AnalyticsOutline,
   app: AppsOutline,
   apps: AppsOutline,
   beaker: BeakerOutline,
@@ -52,7 +95,7 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   build: BuildOutline,
   cog: CogOutline,
   config: BuildOutline,
-  dashboard: GridOutline,
+  dashboard: AppsOutline,
   directory: AlbumsOutline,
   document: DocumentTextOutline,
   edit: DocumentTextOutline,
@@ -60,21 +103,25 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   file: FolderOpenOutline,
   files: FolderOpenOutline,
   folder: FolderOpenOutline,
+  gitbranch: GitBranchOutline,
   grid: GridOutline,
   health: PulseOutline,
   history: TimeOutline,
-  home: GridOutline,
-  layout: GridOutline,
-  layoutdashboard: GridOutline,
+  home: AppsOutline,
+  layout: AppsOutline,
+  layoutdashboard: AppsOutline,
   layers: LayersOutline,
   list: ListOutline,
   log: ListOutline,
   loginlog: TimeOutline,
   loginlogs: TimeOutline,
   logs: ListOutline,
+  mail: MailOutline,
+  mails: MailOutline,
   menu: LayersOutline,
   menus: LayersOutline,
   monitor: PulseOutline,
+  audit: AnalyticsOutline,
   notice: NotificationsOutline,
   notices: NotificationsOutline,
   notification: NotificationsOutline,
@@ -84,6 +131,7 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   page: DocumentTextOutline,
   people: PeopleOutline,
   person: PeopleOutline,
+  briefcase: BriefcaseOutline,
   role: ShieldCheckmarkOutline,
   roles: ShieldCheckmarkOutline,
   server: ServerOutline,
@@ -96,32 +144,70 @@ const menuIconMap: Record<string, MenuIconComponent> = {
   users: PeopleOutline,
 }
 
-const builtinMenuOptions: MenuOption[] = [
+// builtinMenuOptions 不依赖后端菜单的内置菜单项（如工作台）。
+const builtinMenuOptions: AdminMenuOption[] = [
   {
     label: '工作台',
-    key: '/dashboard',
-    icon: renderMenuIcon(GridOutline),
+    key: 'dashboard',
+    menuCode: 'dashboard',
+    menuType: MenuType.Menu,
+    routePath: '/dashboard',
+    icon: renderMenuIcon(AppsOutline),
   },
 ]
 
+const builtinSearchItems: AdminSearchItem[] = [
+  {
+    icon: AppsOutline,
+    key: 'page:dashboard',
+    keywords: ['工作台', '首页', 'dashboard', '/dashboard'],
+    menuCode: 'dashboard',
+    parentTitles: [],
+    path: '/dashboard',
+    title: '工作台',
+    type: 'page',
+  },
+  {
+    icon: PersonCircleOutline,
+    key: 'page:account-profile',
+    keywords: ['账户中心', '个人中心', 'profile', 'account', '/account/profile'],
+    menuCode: 'account-profile',
+    parentTitles: [],
+    path: '/account/profile',
+    title: '账户中心',
+    type: 'page',
+  },
+]
+
+// authMenus 存储后端返回的当前用户授权菜单树。
 export const authMenus = shallowRef<AuthMenu[]>([])
 
-export const sideMenuOptions = computed<MenuOption[]>(() => {
+// sideMenuOptions 计算属性：合并内置菜单与后端授权菜单，生成侧栏菜单选项列表。
+export const sideMenuOptions = computed<AdminMenuOption[]>(() => {
   return [...builtinMenuOptions, ...buildMenuOptions(authMenus.value)]
 })
 
+// buttonPermissionCodes 计算属性：从授权菜单树中提取所有按钮权限编码，用于权限指令判断。
 export const buttonPermissionCodes = computed(() => {
   return collectButtonCodes(authMenus.value)
 })
 
+// adminSearchItems 计算属性：从内置页面与授权菜单中派生顶部搜索索引。
+export const adminSearchItems = computed<AdminSearchItem[]>(() => {
+  return [...builtinSearchItems, ...buildSearchItems(authMenus.value)]
+})
+
+// setAuthMenus 保存后端返回的授权菜单树到响应式变量。
 export function setAuthMenus(menus: AuthMenu[]) {
   authMenus.value = menus
 }
 
+// clearAuthMenus 清空授权菜单，通常在登出时调用。
 export function clearAuthMenus() {
   authMenus.value = []
 }
 
+// buildDynamicRoutes 将后端菜单树扁平化为 vue-router 路由配置，仅取 type=menu 的节点。
 export function buildDynamicRoutes(menus: AuthMenu[]) {
   return collectPageMenus(menus).map<RouteRecordRaw>((menu) => ({
     path: toChildRoutePath(menu.path),
@@ -138,35 +224,77 @@ export function buildDynamicRoutes(menus: AuthMenu[]) {
   }))
 }
 
+// findMenuTitleByPath 根据路由路径查找对应的菜单标题。
 export function findMenuTitleByPath(path: string) {
   return collectPageMenus(authMenus.value).find((menu) => menu.path === path)?.title
 }
 
-function buildMenuOptions(menus: AuthMenu[]) {
+// findMenuCodeByPath 根据路由路径查找对应的菜单编码，找不到则返回空字符串。
+export function findMenuCodeByPath(path: string) {
+  return collectPageMenus(authMenus.value).find((menu) => menu.path === path)?.code ?? ''
+}
+
+// findMenuOptionByKey 在菜单选项树中递归查找指定 key 的菜单项。
+export function findMenuOptionByKey(
+  key: string,
+  options: AdminMenuOption[] = sideMenuOptions.value,
+): AdminMenuOption | null {
+  for (const option of options) {
+    if (option.key === key) {
+      return option
+    }
+
+    const child = option.children ? findMenuOptionByKey(key, option.children) : null
+    if (child) {
+      return child
+    }
+  }
+
+  return null
+}
+
+// collectExpandedMenuKeysByPath 返回路径对应的菜单链（不含自身），用于自动展开侧栏。
+export function collectExpandedMenuKeysByPath(path: string) {
+  const chain = findMenuCodeChainByPath(authMenus.value, path)
+  return chain.slice(0, -1)
+}
+
+// buildMenuOptions 将后端菜单树转换为前端菜单选项数组，过滤掉按钮类型的菜单。
+function buildMenuOptions(menus: AuthMenu[]): AdminMenuOption[] {
   return menus.map(toMenuOption).filter(isMenuOption)
 }
 
-function toMenuOption(menu: AuthMenu): MenuOption | null {
+function buildSearchItems(menus: AuthMenu[]): AdminSearchItem[] {
+  return collectSearchItems(menus)
+}
+
+// toMenuOption 将单个后端菜单节点转换为前端菜单选项，按钮类型返回 null。
+function toMenuOption(menu: AuthMenu): AdminMenuOption | null {
   if (menu.type === MenuType.Button) {
     return null
   }
 
   const children = buildMenuOptions(menu.children ?? [])
-  const key = menu.path || menu.code
 
   return {
     label: menu.title,
-    key,
-    icon: resolveMenuIcon(menu.icon),
+    key: menu.code,
+    menuCode: menu.code,
+    menuType: menu.type,
+    routePath: menu.type === MenuType.Menu ? menu.path : undefined,
+    icon: renderMenuIcon(resolveMenuIconComponent(menu.code, menu.icon)),
+    // 空子目录在前端禁用点击，避免导航到无内容的目录节点。
     disabled: menu.type === MenuType.Directory && children.length === 0,
     children: children.length > 0 ? children : undefined,
   }
 }
 
-function isMenuOption(option: MenuOption | null): option is MenuOption {
+// isMenuOption 类型守卫：判断 toMenuOption 的返回值是否为有效菜单选项。
+function isMenuOption(option: AdminMenuOption | null): option is AdminMenuOption {
   return option !== null
 }
 
+// collectPageMenus 递归收集菜单树中所有类型为"页面菜单"且有路径的节点。
 function collectPageMenus(menus: AuthMenu[]) {
   const result: AuthMenu[] = []
 
@@ -181,6 +309,74 @@ function collectPageMenus(menus: AuthMenu[]) {
   return result
 }
 
+// collectSearchItems 递归生成可搜索项：目录跳转到首个子页面，按钮跳转到所属页面。
+function collectSearchItems(
+  menus: AuthMenu[],
+  parentTitles: string[] = [],
+  nearestPage?: AuthMenu,
+) {
+  const result: AdminSearchItem[] = []
+
+  for (const menu of menus) {
+    const nextParentTitles = [...parentTitles, menu.title]
+
+    if (menu.type === MenuType.Directory) {
+      const firstPage = findFirstPageMenu(menu)
+      if (firstPage) {
+        result.push(toSearchItem(menu, 'directory', firstPage.path, parentTitles))
+      }
+      result.push(...collectSearchItems(menu.children ?? [], nextParentTitles, nearestPage))
+      continue
+    }
+
+    if (menu.type === MenuType.Menu && menu.path) {
+      result.push(toSearchItem(menu, 'page', menu.path, parentTitles))
+      result.push(...collectSearchItems(menu.children ?? [], nextParentTitles, menu))
+      continue
+    }
+
+    if (menu.type === MenuType.Button && nearestPage?.path) {
+      result.push(toSearchItem(menu, 'function', nearestPage.path, parentTitles))
+    }
+  }
+
+  return result
+}
+
+function toSearchItem(
+  menu: AuthMenu,
+  type: AdminSearchItemType,
+  path: string,
+  parentTitles: string[],
+): AdminSearchItem {
+  return {
+    icon: type === 'function' ? BuildOutline : resolveMenuIconComponent(menu.code, menu.icon),
+    key: `${type}:${menu.code}`,
+    keywords: [menu.title, menu.code, path, menu.component, menu.icon, ...parentTitles],
+    menuCode: menu.code,
+    parentTitles,
+    path,
+    title: menu.title,
+    type,
+  }
+}
+
+function findFirstPageMenu(menu: AuthMenu): AuthMenu | null {
+  if (menu.type === MenuType.Menu && menu.path) {
+    return menu
+  }
+
+  for (const child of menu.children ?? []) {
+    const pageMenu = findFirstPageMenu(child)
+    if (pageMenu) {
+      return pageMenu
+    }
+  }
+
+  return null
+}
+
+// collectButtonCodes 递归收集菜单树中所有按钮类型的权限编码。
 function collectButtonCodes(menus: AuthMenu[]) {
   const result: string[] = []
 
@@ -195,14 +391,18 @@ function collectButtonCodes(menus: AuthMenu[]) {
   return result
 }
 
-function resolveRouteComponent(component: string) {
-  return routeComponentMap[component] ?? placeholderPage
+// resolveMenuIconComponent 根据菜单编码和后端 icon 字段解析图标组件，优先使用内置映射。
+function resolveMenuIconComponent(code: string, icon: string) {
+  const normalizedCode = normalizeMenuCode(code)
+  const builtinIcon = builtinMenuCodeIconMap[normalizedCode]
+  if (builtinIcon) {
+    return builtinIcon
+  }
+
+  return menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon
 }
 
-function resolveMenuIcon(icon: string) {
-  return renderMenuIcon(menuIconMap[normalizeMenuIcon(icon)] ?? defaultMenuIcon)
-}
-
+// renderMenuIcon 将图标组件包装为 Naive UI 菜单所需的渲染函数。
 function renderMenuIcon(icon: MenuIconComponent) {
   return () =>
     h(NIcon, null, {
@@ -210,10 +410,41 @@ function renderMenuIcon(icon: MenuIconComponent) {
     })
 }
 
+// normalizeMenuIcon 将后端 icon 字段标准化：去空格、转小写、移除非字母数字字符。
 function normalizeMenuIcon(icon: string) {
-  return icon.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+  return icon
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
 }
 
+// normalizeMenuCode 将菜单编码标准化：去空格、转小写。
+function normalizeMenuCode(code: string) {
+  return code.trim().toLowerCase()
+}
+
+// toChildRoutePath 移除路由路径的前导斜杠，使其成为嵌套子路由路径。
 function toChildRoutePath(path: string) {
   return path.replace(/^\/+/, '')
+}
+
+// findMenuCodeChainByPath 递归查找目标路径在菜单树中的编码链（含自身），用于侧栏自动展开。
+function findMenuCodeChainByPath(
+  menus: AuthMenu[],
+  path: string,
+  parents: string[] = [],
+): string[] {
+  for (const menu of menus) {
+    const nextParents = [...parents, menu.code]
+    if (menu.type === MenuType.Menu && menu.path === path) {
+      return nextParents
+    }
+
+    const childChain = findMenuCodeChainByPath(menu.children ?? [], path, nextParents)
+    if (childChain.length > 0) {
+      return childChain
+    }
+  }
+
+  return []
 }

@@ -1,50 +1,41 @@
 <script setup lang="ts">
-import {
-  ChevronBackOutline,
-  ChevronDownOutline,
-  ChevronForwardOutline,
-  EllipsisHorizontal,
-  ExpandOutline,
-  LogOutOutline,
-  MoonOutline,
-  NotificationsOutline,
-  SearchOutline,
-} from '@vicons/ionicons5'
-import type { DropdownOption } from 'naive-ui'
-import {
-  NButton,
-  NDropdown,
-  NIcon,
-  NInput,
-  NLayout,
-  NLayoutContent,
-  NLayoutHeader,
-  NLayoutSider,
-  NMenu,
-  useMessage,
-} from 'naive-ui'
-import { computed, h, ref, watch } from 'vue'
+import { LogOutOutline, PersonCircleOutline } from '@vicons/ionicons5'
+import type { DropdownOption, MenuOption } from 'naive-ui'
+import { NIcon, NLayout, NLayoutContent, useMessage } from 'naive-ui'
+import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
-import BrandLogo from '../components/BrandLogo.vue'
+import AppHeader from '@/components/app-shell/AppHeader.vue'
+import AppSidebar from '@/components/app-shell/AppSidebar.vue'
+import WorkTabs from '@/components/app-shell/WorkTabs.vue'
+import {
+  adminSearchItems,
+  collectExpandedMenuKeysByPath,
+  findMenuCodeByPath,
+  findMenuOptionByKey,
+  findMenuTitleByPath,
+  type AdminSearchItem,
+  sideMenuOptions,
+} from '../router/dynamic-menu'
 import { resetDynamicRoutes } from '../router'
-import { findMenuTitleByPath, sideMenuOptions } from '../router/dynamic-menu'
-import { clearAuthSession, getAuthUserInfo } from '../utils/auth'
-
-interface WorkTab {
-  title: string
-  to: string
-  closable: boolean
-}
+import { useAdminShellStore } from '../stores/admin-shell'
+import { useNotificationStore } from '../stores/notification'
+import { AUTH_USER_INFO_UPDATED_EVENT, clearAuthSession, getAuthUserInfo } from '../utils/auth'
+import { logout } from '../modules/auth/api/auth'
 
 const route = useRoute()
 const router = useRouter()
 const message = useMessage()
+const shellStore = useAdminShellStore()
+const notificationStore = useNotificationStore()
+const isNarrowScreen = ref(false)
 
-const openTabs = ref<WorkTab[]>([{ title: '工作台', to: '/dashboard', closable: false }])
-const sidebarCollapsed = ref(false)
+let sidebarMediaQuery: MediaQueryList | null = null
 
 const currentUser = computed(() => getAuthUserInfo())
+
+const sidebarCollapsed = computed(() => isNarrowScreen.value || shellStore.sidebarCollapsed)
+
 const displayName = computed(() => {
   return currentUser.value?.nickname || currentUser.value?.username || '管理员'
 })
@@ -57,22 +48,19 @@ const breadcrumbText = computed(() => {
   return `首页 / ${routeTitle.value}`
 })
 
-const activeMenuKey = computed(() => {
-  return route.path
-})
-
-const siderWidth = computed(() => {
-  return sidebarCollapsed.value ? 76 : 240
-})
-
-const siderContentStyle = computed(() => {
-  return {
-    padding: sidebarCollapsed.value ? '18px 10px 14px' : '18px 16px 14px',
-    background: '#111827',
-  }
+const naiveMenuOptions = computed(() => {
+  return sideMenuOptions.value as unknown as MenuOption[]
 })
 
 const dropdownOptions: DropdownOption[] = [
+  {
+    label: '账户中心',
+    key: 'account-profile',
+    icon: () =>
+      h(NIcon, null, {
+        default: () => h(PersonCircleOutline),
+      }),
+  },
   {
     label: '退出登录',
     key: 'logout',
@@ -83,72 +71,127 @@ const dropdownOptions: DropdownOption[] = [
   },
 ]
 
-function ensureCurrentTab() {
-  const title = routeTitle.value
-  if (!title || route.path === '/login') {
+function syncShellByRoute() {
+  if (route.path === '/login') {
     return
   }
 
-  const exists = openTabs.value.some((tab) => tab.to === route.path)
-  if (exists) {
-    return
-  }
-
-  openTabs.value.push({
-    title,
-    to: route.path,
+  shellStore.ensureTab({
+    affix: route.path === '/dashboard',
+    fullPath: route.fullPath,
+    key: String(route.name ?? route.fullPath),
+    name: route.name ? String(route.name) : undefined,
+    path: route.path,
+    query: route.query as Record<string, unknown>,
+    params: route.params as Record<string, unknown>,
+    title: routeTitle.value,
     closable: route.path !== '/dashboard',
   })
+
+  const activeKey = route.path === '/dashboard' ? 'dashboard' : findMenuCodeByPath(route.path)
+  shellStore.setActiveMenuKey(activeKey)
+  shellStore.ensureExpandedMenuKeys(collectExpandedMenuKeysByPath(route.path))
 }
 
-function navigateTo(path: string) {
-  void router.push(path)
+function navigateTo(to: string) {
+  if (!to) {
+    return
+  }
+
+  if (route.fullPath === to || route.path === to) {
+    shellStore.refreshRoute(route.fullPath)
+    return
+  }
+
+  void router.push(to)
+}
+
+function handleMenuExpand(keys: Array<string | number>) {
+  shellStore.setExpandedMenuKeys(keys.map(String))
 }
 
 function handleMenuUpdate(key: string | number) {
-  navigateTo(String(key))
+  const option = findMenuOptionByKey(String(key))
+  if (!option || option.menuType !== 2 || !option.routePath) {
+    return
+  }
+
+  navigateTo(option.routePath)
 }
 
-function handleCloseTab(path: string) {
-  const nextTabs = openTabs.value.filter((tab) => tab.to !== path)
-  openTabs.value =
-    nextTabs.length > 0 ? nextTabs : [{ title: '工作台', to: '/dashboard', closable: false }]
+function handleSearchSelect(item: AdminSearchItem) {
+  navigateTo(item.path)
+}
 
-  if (route.path === path) {
-    const fallback = openTabs.value[openTabs.value.length - 1]
-    if (!fallback) {
-      void router.push('/dashboard')
-      return
-    }
+function handleCloseTab(fullPath: string) {
+  const fallback = shellStore.closeTab(fullPath, route.fullPath)
 
-    void router.push(fallback.to)
+  if (route.fullPath === fullPath) {
+    navigateTo(fallback ?? '/dashboard')
   }
 }
 
-function handleCloseOtherTabs() {
-  const current = openTabs.value.find((tab) => tab.to === route.path)
-
-  openTabs.value = [{ title: '工作台', to: '/dashboard', closable: false }]
-
-  if (current && current.to !== '/dashboard') {
-    openTabs.value.push(current)
+function handleCloseCurrentTab() {
+  const current = shellStore.openTabs.find((tab) => tab.fullPath === route.fullPath)
+  if (!current?.closable) {
+    navigateTo('/dashboard')
+    return
   }
+
+  handleCloseTab(current.fullPath)
+}
+
+function handleCloseOtherTabs(fullPath = route.fullPath) {
+  shellStore.closeOtherTabs(fullPath)
+  if (!shellStore.openTabs.some((tab) => tab.fullPath === route.fullPath)) {
+    navigateTo(fullPath)
+  }
+}
+
+function handleCloseLeftTabs(fullPath = route.fullPath) {
+  shellStore.closeLeftTabs(fullPath)
+  if (!shellStore.openTabs.some((tab) => tab.fullPath === route.fullPath)) {
+    navigateTo(fullPath)
+  }
+}
+
+function handleCloseRightTabs(fullPath = route.fullPath) {
+  shellStore.closeRightTabs(fullPath)
+  if (!shellStore.openTabs.some((tab) => tab.fullPath === route.fullPath)) {
+    navigateTo(fullPath)
+  }
+}
+
+function handleCloseAllTabs() {
+  shellStore.closeAllTabs()
+  navigateTo('/dashboard')
+}
+
+function handlePinCurrentTab(fullPath = route.fullPath) {
+  shellStore.pinCurrentTab(fullPath)
 }
 
 function handleRefresh() {
-  window.location.reload()
+  shellStore.refreshRoute(route.fullPath)
 }
 
-function toggleSidebar() {
-  sidebarCollapsed.value = !sidebarCollapsed.value
-}
+async function handleUserAction(key: string | number) {
+  if (key === 'account-profile') {
+    navigateTo('/account/profile')
+    return
+  }
 
-function handleUserAction(key: string | number) {
   if (key !== 'logout') {
     return
   }
 
+  try {
+    await logout()
+  } catch {
+    // 退出登录 API 失败时忽略（token 可能已过期）
+  }
   clearAuthSession()
+  shellStore.reset()
   resetDynamicRoutes()
   message.success('已退出登录')
   void router.replace('/login')
@@ -157,148 +200,90 @@ function handleUserAction(key: string | number) {
 watch(
   () => route.fullPath,
   () => {
-    ensureCurrentTab()
+    syncShellByRoute()
   },
   { immediate: true },
 )
+
+function handleAuthUserUpdate() {
+  // 本地用户信息变更时，computed 会自动更新；这里仅触发一次路由同步，确保标签标题可刷新。
+  syncShellByRoute()
+}
+
+function updateNarrowScreenState(event?: MediaQueryListEvent) {
+  isNarrowScreen.value = event?.matches ?? sidebarMediaQuery?.matches ?? false
+}
+
+onMounted(() => {
+  sidebarMediaQuery = window.matchMedia('(max-width: 760px)')
+  updateNarrowScreenState()
+  sidebarMediaQuery.addEventListener('change', updateNarrowScreenState)
+  shellStore.hydrateTabs()
+  syncShellByRoute()
+  window.addEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
+  notificationStore.connectWS()
+})
+
+onBeforeUnmount(() => {
+  sidebarMediaQuery?.removeEventListener('change', updateNarrowScreenState)
+  window.removeEventListener(AUTH_USER_INFO_UPDATED_EVENT, handleAuthUserUpdate)
+  notificationStore.disconnectWS()
+})
 </script>
+
 <template>
-  <NLayout class="h-screen overflow-hidden bg-[#F5F7FA]" has-sider :native-scrollbar="false">
-    <NLayoutSider
-      inverted
-      collapse-mode="width"
+  <NLayout class="h-screen overflow-hidden bg-[var(--ez-page-bg)]" has-sider>
+    <AppSidebar
+      :active-menu-key="shellStore.activeMenuKey"
       :collapsed="sidebarCollapsed"
-      :collapsed-width="76"
-      :width="siderWidth"
-      :native-scrollbar="false"
-      content-class="flex h-full flex-col"
-      :content-style="siderContentStyle"
+      :expanded-menu-keys="shellStore.expandedMenuKeys"
+      :menu-options="naiveMenuOptions"
+      @navigate="navigateTo"
+      @select="handleMenuUpdate"
+      @expand="handleMenuExpand"
+      @toggle="shellStore.toggleSidebar()"
+    />
+
+    <NLayout
+      class="min-w-0 flex-1 overflow-hidden bg-[var(--ez-page-bg)]"
+      content-class="flex h-full min-h-0 flex-col overflow-hidden"
     >
-      <div class="flex" :class="sidebarCollapsed ? 'justify-center' : 'justify-start'">
-        <button
-          type="button"
-          class="flex min-h-10 items-center border-none bg-transparent px-0 py-0 text-left text-white transition-opacity hover:opacity-90"
-          @click="navigateTo('/dashboard')"
-        >
-          <BrandLogo
-            :width="sidebarCollapsed ? 34 : 44"
-            direction="inline"
-            :show-title="!sidebarCollapsed"
-            variant="dark"
-          />
-        </button>
-      </div>
-
-      <p v-if="!sidebarCollapsed" class="mt-6 text-xs font-semibold tracking-wide text-[#6B7280]">
-        主菜单
-      </p>
-
-      <NMenu
-        class="mt-3"
-        :value="activeMenuKey"
-        :options="sideMenuOptions"
-        :indent="18"
-        :collapsed="sidebarCollapsed"
-        :collapsed-width="76"
-        :collapsed-icon-size="20"
-        inverted
-        @update:value="handleMenuUpdate"
+      <AppHeader
+        class="shrink-0"
+        :breadcrumb-text="breadcrumbText"
+        :display-name="displayName"
+        :dropdown-options="dropdownOptions"
+        :search-items="adminSearchItems"
+        @toggle-sidebar="shellStore.toggleSidebar()"
+        @search-select="handleSearchSelect"
+        @user-action="handleUserAction"
       />
 
-      <button
-        type="button"
-        class="mt-auto flex h-10 items-center rounded-xl border-none bg-white/6 px-3 text-sm text-[#D1D5DB] transition-colors hover:bg-white/10 hover:text-white"
-        :class="sidebarCollapsed ? 'justify-center' : 'justify-start gap-2.5'"
-        @click="toggleSidebar"
-      >
-        <NIcon :component="sidebarCollapsed ? ChevronForwardOutline : ChevronBackOutline" />
-        <span v-if="!sidebarCollapsed">收起菜单</span>
-      </button>
-    </NLayoutSider>
-
-    <NLayout class="h-screen min-w-0 overflow-hidden bg-[#F5F7FA]" :native-scrollbar="false">
-      <NLayoutHeader
-        class="flex h-14 items-center justify-between border-b border-[#E5E7EB] bg-white px-6"
-      >
-        <p class="text-sm text-[#374151]">{{ breadcrumbText }}</p>
-
-        <div class="flex items-center gap-2.5">
-          <NInput placeholder="搜索菜单 / 页面" clearable class="w-46">
-            <template #prefix>
-              <NIcon :component="SearchOutline" />
-            </template>
-          </NInput>
-
-          <NButton quaternary circle>
-            <template #icon>
-              <NIcon :component="NotificationsOutline" />
-            </template>
-          </NButton>
-
-          <NButton quaternary circle>
-            <template #icon>
-              <NIcon :component="ExpandOutline" />
-            </template>
-          </NButton>
-
-          <NButton quaternary circle>
-            <template #icon>
-              <NIcon :component="MoonOutline" />
-            </template>
-          </NButton>
-
-          <NDropdown trigger="click" :options="dropdownOptions" @select="handleUserAction">
-            <NButton secondary>
-              <template #icon>
-                <NIcon :component="ChevronDownOutline" />
-              </template>
-              {{ displayName }}
-            </NButton>
-          </NDropdown>
-        </div>
-      </NLayoutHeader>
-
-      <div class="flex h-10.5 items-center gap-2 border-b border-[#E5E7EB] bg-white px-4">
-        <div class="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          <button
-            v-for="tab in openTabs"
-            :key="tab.to"
-            type="button"
-            class="flex h-7 items-center justify-center rounded border px-4 text-[13px]"
-            :class="
-              route.path === tab.to
-                ? 'border-[#18A058] bg-[#18A058] font-semibold text-white'
-                : 'border-[#D9DEE8] bg-[#F9FAFB] text-[#374151]'
-            "
-            @click="navigateTo(tab.to)"
-          >
-            <span>{{ tab.title }}</span>
-            <span
-              v-if="tab.closable"
-              class="ml-1 cursor-pointer"
-              @click.stop="handleCloseTab(tab.to)"
-            >
-              ×
-            </span>
-          </button>
-        </div>
-
-        <div class="flex shrink-0 items-center gap-1">
-          <NButton quaternary size="small" @click="handleRefresh">刷新</NButton>
-          <NButton quaternary size="small" @click="handleCloseOtherTabs">关闭其他</NButton>
-          <NButton quaternary circle size="small">
-            <template #icon>
-              <NIcon :component="EllipsisHorizontal" />
-            </template>
-          </NButton>
-        </div>
-      </div>
+      <WorkTabs
+        class="shrink-0"
+        :active-full-path="route.fullPath"
+        :tabs="shellStore.openTabs"
+        @navigate="navigateTo"
+        @close-tab="handleCloseTab"
+        @refresh="handleRefresh"
+        @close-current="handleCloseCurrentTab"
+        @close-others="handleCloseOtherTabs"
+        @close-left="handleCloseLeftTabs"
+        @close-right="handleCloseRightTabs"
+        @close-all="handleCloseAllTabs"
+        @pin-current="handlePinCurrentTab"
+      />
 
       <NLayoutContent
-        :native-scrollbar="false"
-        content-style="height: calc(100vh - 98px); padding: 32px; overflow: hidden; background: #F5F7FA;"
+        class="min-h-0 flex-1 overflow-hidden"
+        content-class="h-full overflow-y-auto"
+        :native-scrollbar="true"
       >
-        <RouterView />
+        <div class="ez-content-surface">
+          <RouterView v-slot="{ Component, route: currentRoute }">
+            <component :is="Component" :key="shellStore.getRouteViewKey(currentRoute.fullPath)" />
+          </RouterView>
+        </div>
       </NLayoutContent>
     </NLayout>
   </NLayout>

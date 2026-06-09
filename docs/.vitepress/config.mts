@@ -3,21 +3,27 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   base: '/ez-admin-gin/',
   lang: 'zh-CN',
-  title: 'EZ Admin',
-  description: '面向个人项目快速上线的通用后台管理系统底座。',
+  title: 'EZ Admin Gin',
+  description: '维护者自用优先的后台系统基座，适合个人项目和 SaaS/MVP 快速开发。',
   cleanUrls: true,
   lastUpdated: true,
-  ignoreDeadLinks: true,
   head: [
     ['link', { rel: 'icon', href: '/ez-admin-gin/favicon.svg', type: 'image/svg+xml' }],
     ['link', { rel: 'alternate icon', href: '/ez-admin-gin/favicon.ico', sizes: 'any' }],
-    ['meta', { name: 'theme-color', content: '#079aa2' }]
+    ['link', { rel: 'apple-touch-icon', href: '/ez-admin-gin/apple-touch-icon.png' }],
+    ['link', { rel: 'manifest', href: '/ez-admin-gin/site.webmanifest' }],
+    ['meta', { name: 'msapplication-config', content: '/ez-admin-gin/browserconfig.xml' }],
+    ['meta', { name: 'theme-color', content: '#2563FF' }],
+    ['meta', { property: 'og:title', content: 'EZ Admin Gin' }],
+    ['meta', { property: 'og:description', content: '维护者自用优先的后台系统基座，适合个人项目和 SaaS/MVP 快速开发。' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:image', content: 'https://caoshenyang.github.io/ez-admin-gin/open-graph-light.png' }],
+    ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { property: 'twitter:image', content: 'https://caoshenyang.github.io/ez-admin-gin/open-graph-light.png' }]
   ],
 
-  // #region markdown-config
   markdown: {
     lineNumbers: true,
-    math: true,
     image: {
       lazyLoading: true
     },
@@ -45,7 +51,6 @@ export default defineConfig({
       'nginx'
     ]
   },
-  // #endregion markdown-config
 
   vite: {
     server: {
@@ -58,8 +63,8 @@ export default defineConfig({
   },
 
   themeConfig: {
-    logo: '/images/logo.svg',
-    siteTitle: 'EZ Admin',
+    logo: '/images/logo-mark.svg',
+    siteTitle: 'EZ Admin Gin',
     outline: {
       level: [2, 3],
       label: '页面导航'
@@ -76,137 +81,86 @@ export default defineConfig({
       next: '下一页'
     },
     footer: {
-      message: '面向个人项目快速上线的通用后台管理系统底座',
-      copyright: '2026 EZ Admin'
+      message: '维护者自用优先的后台系统基座',
+      copyright: '2026 EZ Admin Gin'
     },
     search: {
       provider: 'local'
     },
     nav: [
-      { text: '从这里开始', link: '/guide/', activeMatch: '^/guide/' },
-      { text: '从零搭建', link: '/tutorial/', activeMatch: '^/tutorial/' },
-      { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' },
-      { text: '更新日志', link: '/guide/changelog', activeMatch: '^/guide/changelog$' }
+      { text: '快速开始', link: '/getting-started/', activeMatch: '^/getting-started/' },
+      { text: '架构设计', link: '/architecture/overview', activeMatch: '^/architecture/' },
+      { text: '后端', link: '/backend/overview', activeMatch: '^/backend/' },
+      { text: '前端', link: '/frontend/overview', activeMatch: '^/frontend/' },
+      { text: '部署', link: '/deployment/overview', activeMatch: '^/deployment/' },
+      { text: '参考手册', link: '/reference/', activeMatch: '^/reference/' }
     ],
     sidebar: {
-      '/': [
+      '/getting-started/': [
         {
-          text: '从这里开始',
+          text: '快速开始',
           items: [
-            { text: '简介与快速启动', link: '/guide/' }
+            { text: '快速开始', link: '/getting-started/' },
+            { text: '项目结构', link: '/getting-started/project-structure' },
+            { text: '路线图', link: '/getting-started/roadmap' }
           ]
         }
       ],
-      '/guide/': [
+      '/architecture/': [
         {
-          text: '从这里开始',
+          text: '架构设计',
           items: [
-            { text: '快速启动', link: '/guide/' },
-            { text: '项目结构', link: '/guide/project-structure' }
-          ]
-        },
-        {
-          text: '项目信息',
-          items: [
-            { text: '更新日志', link: '/guide/changelog' },
-            { text: '路线图', link: '/guide/roadmap' }
+            { text: '系统架构概览', link: '/architecture/overview' },
+            { text: '权限体系', link: '/architecture/rbac' },
+            { text: '动态菜单机制', link: '/architecture/dynamic-menu' },
+            { text: '数据权限', link: '/architecture/data-permission' },
+            { text: '组织体系', link: '/architecture/organization' },
+            { text: '模块扩展机制', link: '/architecture/module-extension' }
           ]
         }
       ],
-      '/tutorial/': [
+      '/backend/': [
         {
-          text: '从零搭建教程',
+          text: '后端',
           items: [
-            { text: '教程首页', link: '/tutorial/' },
-            { text: '教程大纲', link: '/tutorial/curriculum' }
+            { text: '后端概览', link: '/backend/overview' },
+            { text: '模块开发', link: '/backend/module-development' },
+            { text: '中间件', link: '/backend/middleware' },
+            { text: '迁移与种子数据', link: '/backend/migration' }
+          ]
+        }
+      ],
+      '/frontend/': [
+        {
+          text: '前端',
+          items: [
+            { text: '前端概览', link: '/frontend/overview' },
+            { text: '前端 UI 规范', link: '/frontend/ui-conventions' },
+            { text: '登录与认证流程', link: '/frontend/auth-flow' },
+            { text: '动态菜单与路由', link: '/frontend/route-and-menu' }
+          ]
+        }
+      ],
+      '/deployment/': [
+        {
+          text: '部署',
+          items: [
+            { text: '部署概览', link: '/deployment/overview' },
+            { text: '服务器二进制部署', link: '/deployment/server-binary-deploy' },
+            { text: 'Docker 部署', link: '/deployment/docker-deploy' },
+            { text: '域名与 HTTPS', link: '/deployment/domain-and-https' },
+            { text: '更新与回滚', link: '/deployment/update-and-rollback' },
+            { text: '生产环境检查清单', link: '/deployment/production-checklist' }
           ]
         },
         {
-          text: '第 1 章：项目初始化',
-          collapsible: true,
+          text: '部署参考',
           items: [
-            { text: '章节导读', link: '/tutorial/chapter-1/' },
-            { text: '项目仓库初始化', link: '/tutorial/chapter-1/project-repository-init' },
-            { text: 'Go 后端项目初始化', link: '/tutorial/chapter-1/backend-init' },
-            { text: 'Vue 管理台项目初始化', link: '/tutorial/chapter-1/admin-init' },
-            { text: 'VitePress 文档项目初始化', link: '/tutorial/chapter-1/docs-init' },
-            { text: 'Docker Compose 基础环境', link: '/tutorial/chapter-1/docker-compose-env' }
-          ]
-        },
-        {
-          text: '第 2 章：后端基础设施',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-2/' },
-            { text: '配置管理', link: '/tutorial/chapter-2/config-management' },
-            { text: '日志系统', link: '/tutorial/chapter-2/logging-system' },
-            { text: '数据库连接', link: '/tutorial/chapter-2/database-connection' },
-            { text: 'Redis 连接', link: '/tutorial/chapter-2/redis-connection' },
-            { text: '统一响应与错误处理', link: '/tutorial/chapter-2/response-and-errors' },
-            { text: '路由分组与健康检查', link: '/tutorial/chapter-2/routing-and-health' }
-          ]
-        },
-        {
-          text: '第 3 章：认证与权限',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-3/' },
-            { text: '用户模型与登录', link: '/tutorial/chapter-3/user-model-and-login' },
-            { text: 'Token 签发与解析', link: '/tutorial/chapter-3/jwt-auth' },
-            { text: '登录校验中间件', link: '/tutorial/chapter-3/auth-middleware' },
-            { text: 'RBAC 角色权限模型', link: '/tutorial/chapter-3/rbac-model' },
-            { text: '接口级权限控制', link: '/tutorial/chapter-3/casbin-permission' },
-            { text: '角色菜单权限', link: '/tutorial/chapter-3/menu-permission' }
-          ]
-        },
-        {
-          text: '第 4 章：通用系统模块',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-4/' },
-            { text: '用户管理', link: '/tutorial/chapter-4/user-management' },
-            { text: '角色管理', link: '/tutorial/chapter-4/role-management' },
-            { text: '菜单管理', link: '/tutorial/chapter-4/menu-management' },
-            { text: '系统配置', link: '/tutorial/chapter-4/system-config' },
-            { text: '文件上传', link: '/tutorial/chapter-4/file-upload' },
-            { text: '操作日志', link: '/tutorial/chapter-4/operation-logs' },
-            { text: '登录日志', link: '/tutorial/chapter-4/login-logs' }
-          ]
-        },
-        {
-          text: '第 5 章：前端管理台',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-5/' },
-            { text: 'Vue 3 管理台初始化', link: '/tutorial/chapter-5/vue-project-init' },
-            { text: '登录页', link: '/tutorial/chapter-5/login-page' },
-            { text: '后台布局', link: '/tutorial/chapter-5/admin-layout' },
-            { text: '动态菜单', link: '/tutorial/chapter-5/dynamic-menu' },
-            { text: '用户管理页面', link: '/tutorial/chapter-5/user-pages' },
-            { text: '角色与菜单页面', link: '/tutorial/chapter-5/role-menu-pages' },
-            { text: '配置与文件页面', link: '/tutorial/chapter-5/config-file-pages' },
-            { text: '日志页面', link: '/tutorial/chapter-5/log-pages' }
-          ]
-        },
-        {
-          text: '第 6 章：业务模块接入规范',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-6/' },
-            { text: '模块固定结构', link: '/tutorial/chapter-6/module-structure' },
-            { text: '后端模块接入流程', link: '/tutorial/chapter-6/backend-module-flow' },
-            { text: '权限、菜单与迁移接入', link: '/tutorial/chapter-6/permission-menu-migration' },
-            { text: '前端页面接入流程', link: '/tutorial/chapter-6/frontend-page-flow' },
-            { text: '示例业务模块', link: '/tutorial/chapter-6/sample-module' }
-          ]
-        },
-        {
-          text: '第 7 章：部署与复用',
-          collapsible: true,
-          items: [
-            { text: '章节导读', link: '/tutorial/chapter-7/' },
-            { text: '部署验证与复用说明', link: '/tutorial/chapter-7/deployment-and-reuse' },
-            { text: '环境变量与初始化数据', link: '/tutorial/chapter-7/env-and-init-data' }
+            { text: '环境变量参考', link: '/reference/environment-variables-reference' },
+            { text: '初始化数据参考', link: '/reference/init-data-reference' },
+            { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' },
+            { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
+            { text: 'SSH 隧道连接服务器数据库', link: '/reference/ssh-tunnel-database' }
           ]
         }
       ],
@@ -215,9 +169,20 @@ export default defineConfig({
           text: '参考手册',
           items: [
             { text: '参考首页', link: '/reference/' },
-            { text: 'GORM 快速入门', link: '/reference/gorm-quick-start' },
-            { text: 'Casbin 快速入门', link: '/reference/casbin-quick-start' },
             { text: '接口风格决策', link: '/reference/api-style-decision' },
+            { text: '数据权限模型', link: '/reference/data-scope-model' },
+            { text: '环境变量参考', link: '/reference/environment-variables-reference' },
+            { text: '权限码约定', link: '/reference/permission-code-conventions' },
+            { text: '错误码参考', link: '/reference/error-code-reference' },
+            { text: '目录约定', link: '/reference/directory-conventions' },
+            { text: '模块规范', link: '/reference/module-conventions' },
+            { text: '初始化数据参考', link: '/reference/init-data-reference' },
+            { text: '动态菜单组件白名单', link: '/reference/dynamic-menu-component-reference' },
+            { text: '按钮权限消费示例', link: '/reference/button-permission-consumption-example' },
+            { text: '轻量验证与人工测试', link: '/reference/lightweight-verification' },
+            { text: '上传与公开路径参考', link: '/reference/upload-public-path-reference' },
+            { text: '模块初始化模板', link: '/reference/module-init-template' },
+            { text: '查询与分页约定', link: '/reference/query-and-pagination-conventions' },
             { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
             { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },
@@ -225,6 +190,14 @@ export default defineConfig({
             { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' },
             { text: 'SSH 隧道连接服务器数据库', link: '/reference/ssh-tunnel-database' },
             { text: 'VitePress 部署到 GitHub Pages', link: '/reference/vitepress-github-pages' }
+          ]
+        }
+      ],
+      '/': [
+        {
+          text: '快速开始',
+          items: [
+            { text: '快速开始', link: '/getting-started/' }
           ]
         }
       ]

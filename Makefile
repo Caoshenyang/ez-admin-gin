@@ -1,0 +1,144 @@
+# EZ Admin Gin — 统一开发入口
+# 使用方法: make <target>
+# Windows 用户: 安装 make (choco install make 或 scoop install make)，或直接运行对应命令。
+
+.DEFAULT_GOAL := help
+
+# ---------- 配置 ----------
+
+SERVER_DIR  := server
+ADMIN_DIR   := admin
+DOCS_DIR    := docs
+DEPLOY_DIR  := deploy
+
+GO          := go
+PNPM        := pnpm
+DOCKER      := docker
+SWAG        := swag
+
+export GOCACHE := $(CURDIR)/.cache/go-build
+
+# ---------- 帮助 ----------
+
+.PHONY: help
+help: ## 显示所有可用命令
+	@echo "EZ Admin Gin — 可用命令："
+	@echo ""
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "提示: Windows 用户可安装 make (choco install make)，或直接查看 Makefile 中的对应命令。"
+
+# ---------- 开发 ----------
+
+.PHONY: dev
+dev: ## 启动后端 + 前端 (需要先 make docker-up 启动数据库)
+	@echo ">>> 启动后端..."
+	$(MAKE) server-dev &
+	@echo ">>> 启动前端..."
+	$(MAKE) admin-dev
+
+.PHONY: server-dev
+server-dev: ## 启动后端 (go run)
+	cd $(SERVER_DIR) && $(GO) run .
+
+.PHONY: admin-dev
+admin-dev: ## 启动前端 (pnpm dev)
+	cd $(ADMIN_DIR) && $(PNPM) dev
+
+.PHONY: docs-dev
+docs-dev: ## 启动文档站
+	cd $(DOCS_DIR) && $(PNPM) docs:dev
+
+.PHONY: docs-build
+docs-build: ## 构建文档站
+	cd $(DOCS_DIR) && $(PNPM) docs:build
+
+.PHONY: db-full-sql
+db-full-sql: ## 生成 MySQL / PostgreSQL 完整版初始化 SQL
+	./scripts/build-full-migrations.sh
+
+# ---------- 代码检查 ----------
+
+.PHONY: lint
+lint: server-vet admin-check check-types ## 后端 vet + 前端检查 + API 类型同步检查
+	@echo ">>> 轻量 lint 完成"
+
+.PHONY: server-vet
+server-vet: ## 后端 go vet
+	cd $(SERVER_DIR) && $(GO) vet ./...
+
+.PHONY: server-mod
+server-mod: ## 后端 go mod tidy
+	cd $(SERVER_DIR) && $(GO) mod tidy
+
+.PHONY: admin-check
+admin-check: ## 前端类型检查 + lint
+	cd $(ADMIN_DIR) && $(PNPM) type-check && $(PNPM) lint
+
+.PHONY: generate-types
+generate-types: swagger ## 从 Swagger spec 生成前端 TypeScript 类型
+	cd $(ADMIN_DIR) && $(PNPM) generate:api
+
+.PHONY: swagger
+swagger: ## 从后端注释生成 Swagger / OpenAPI 文档
+	cd $(SERVER_DIR) && $(SWAG) init -g main.go -o docs --parseInternal
+
+.PHONY: check-types
+check-types: swagger ## 检查 Swagger 文档和前端 API 类型是否同步
+	cd $(ADMIN_DIR) && $(PNPM) check:api-types
+
+# ---------- 构建 ----------
+
+.PHONY: build
+build: server-build admin-build ## 构建后端 + 前端
+	@echo ">>> 构建完成"
+
+.PHONY: server-build
+server-build: ## 编译后端二进制
+	cd $(SERVER_DIR) && $(GO) build -ldflags="-s -w" -o server .
+
+.PHONY: admin-build
+admin-build: ## 构建前端产物
+	cd $(ADMIN_DIR) && $(PNPM) build
+
+.PHONY: verify
+verify: server-vet admin-check build docker-config ## 轻量验证 (不运行自动化测试)
+	@echo "Lightweight verification passed."
+
+# ---------- Docker ----------
+
+.PHONY: docker-config
+docker-config: ## 验证所有 Docker Compose 配置
+	$(DOCKER) compose -f $(DEPLOY_DIR)/compose.local.yml config -q
+	@echo ">>> compose.local.yml OK"
+	EZ_AUTH_JWT_SECRET=placeholder $(DOCKER) compose -f $(DEPLOY_DIR)/compose.prod.yml config -q
+	@echo ">>> compose.prod.yml OK"
+	$(DOCKER) compose -f $(DEPLOY_DIR)/compose.server.yml config -q
+	@echo ">>> compose.server.yml OK"
+
+.PHONY: docker-build
+docker-build: ## 构建后端 + 前端 Docker 镜像
+	$(DOCKER) build -t ez-admin-server $(SERVER_DIR)
+	$(DOCKER) build -t ez-admin-admin $(ADMIN_DIR)
+
+.PHONY: docker-up
+docker-up: ## 启动本地 PostgreSQL + Redis
+	$(DOCKER) compose -f $(DEPLOY_DIR)/compose.local.yml up -d
+
+.PHONY: docker-down
+docker-down: ## 停止本地 PostgreSQL + Redis
+	$(DOCKER) compose -f $(DEPLOY_DIR)/compose.local.yml down
+
+# ---------- 安装 ----------
+
+.PHONY: install
+install: ## 安装前端依赖
+	cd $(ADMIN_DIR) && $(PNPM) install
+
+# ---------- 清理 ----------
+
+.PHONY: clean
+clean: ## 清理构建产物
+	rm -f $(SERVER_DIR)/server $(SERVER_DIR)/server.exe
+	rm -rf $(ADMIN_DIR)/dist

@@ -1,8 +1,9 @@
-import type { LoginResponse } from '../types/auth'
+import type { LoginResponse } from '@/modules/auth/types/auth'
 
 const ACCESS_TOKEN_KEY = 'ez-admin-access-token'
 const TOKEN_TYPE_KEY = 'ez-admin-token-type'
 const USER_INFO_KEY = 'ez-admin-user-info'
+export const AUTH_USER_INFO_UPDATED_EVENT = 'ez-admin-auth-user-info-updated'
 
 type StorageMode = 'local' | 'session'
 
@@ -17,8 +18,24 @@ function getStorage(mode: StorageMode) {
   return mode === 'local' ? localStorage : sessionStorage
 }
 
+// readStorageValue 同时查找 localStorage 和 sessionStorage，支持"记住登录"和"不记住"两种存储。
 function readStorageValue(key: string) {
   return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? ''
+}
+
+function currentUserInfoStorage() {
+  if (localStorage.getItem(USER_INFO_KEY) !== null) {
+    return localStorage
+  }
+  if (sessionStorage.getItem(USER_INFO_KEY) !== null) {
+    return sessionStorage
+  }
+
+  return null
+}
+
+function notifyAuthUserInfoUpdated() {
+  window.dispatchEvent(new Event(AUTH_USER_INFO_UPDATED_EVENT))
 }
 
 // setAuthSession 在登录成功后保存本地登录态。
@@ -38,6 +55,8 @@ export function setAuthSession(payload: LoginResponse, rememberLogin: boolean) {
       expiresAt: payload.expires_at,
     } satisfies AuthUserInfo),
   )
+
+  notifyAuthUserInfoUpdated()
 }
 
 export function clearAuthSession() {
@@ -48,6 +67,8 @@ export function clearAuthSession() {
   sessionStorage.removeItem(ACCESS_TOKEN_KEY)
   sessionStorage.removeItem(TOKEN_TYPE_KEY)
   sessionStorage.removeItem(USER_INFO_KEY)
+
+  notifyAuthUserInfoUpdated()
 }
 
 export function getAccessToken() {
@@ -59,7 +80,16 @@ export function getTokenType() {
 }
 
 export function hasAccessToken() {
-  return getAccessToken() !== ''
+  if (getAccessToken() === '') {
+    return false
+  }
+
+  const userInfo = getAuthUserInfo()
+  if (!userInfo?.expiresAt) {
+    return false
+  }
+
+  return Date.parse(userInfo.expiresAt) > Date.now()
 }
 
 export function getAuthUserInfo() {
@@ -76,6 +106,25 @@ export function getAuthUserInfo() {
   }
 }
 
+// updateAuthUserInfo 局部更新本地登录人摘要，用于昵称等自助资料修改后的同步。
+export function updateAuthUserInfo(patch: Partial<AuthUserInfo>) {
+  const storage = currentUserInfoStorage()
+  const current = getAuthUserInfo()
+  if (!storage || !current) {
+    return
+  }
+
+  storage.setItem(
+    USER_INFO_KEY,
+    JSON.stringify({
+      ...current,
+      ...patch,
+    } satisfies AuthUserInfo),
+  )
+
+  notifyAuthUserInfoUpdated()
+}
+
 // getAuthorizationHeader 统一拼接 Authorization 请求头。
 export function getAuthorizationHeader() {
   const accessToken = getAccessToken()
@@ -84,4 +133,48 @@ export function getAuthorizationHeader() {
   }
 
   return `${getTokenType()} ${accessToken}`
+}
+
+// refreshAccessToken uses the HttpOnly refresh cookie to obtain a new access token.
+// Returns the new access token on success, or empty string on failure.
+export async function refreshAccessToken(): Promise<string> {
+  try {
+    const resp = await fetch('/api/v1/auth/refresh', { method: 'POST' })
+    if (!resp.ok) {
+      return ''
+    }
+    const envelope = await resp.json()
+    const data = envelope?.data
+    if (!data?.access_token) {
+      return ''
+    }
+
+    // Update stored access token and user info.
+    const storage = currentUserInfoStorage() ?? localStorage
+    storage.setItem(ACCESS_TOKEN_KEY, data.access_token)
+    storage.setItem(TOKEN_TYPE_KEY, data.token_type || 'Bearer')
+    storage.setItem(
+      USER_INFO_KEY,
+      JSON.stringify({
+        userId: data.user_id,
+        username: data.username,
+        nickname: data.nickname,
+        expiresAt: data.expires_at,
+      } satisfies AuthUserInfo),
+    )
+    notifyAuthUserInfoUpdated()
+    return data.access_token
+  } catch {
+    return ''
+  }
+}
+
+// logout calls the server logout endpoint to revoke the refresh cookie, then clears local state.
+export async function logout(): Promise<void> {
+  try {
+    await fetch('/api/v1/auth/logout', { method: 'POST' })
+  } catch {
+    // Swallow errors — local state is cleared regardless.
+  }
+  clearAuthSession()
 }
