@@ -245,7 +245,7 @@ const securityFactors = computed<ResourceBarItem[]>(() => [
 ])
 
 const activityItems = computed<ActivityItem[]>(() => {
-  const rows = recentOperations.value.slice(0, 4).map((item, index) => ({
+  const rows = recentOperations.value.slice(0, 4).map((item) => ({
     action: `${item.success ? '访问了' : '触发异常'} ${formatDashboardRoutePath(item.path)}`,
     avatar: item.username.slice(0, 1).toUpperCase() || 'A',
     name: item.username || '系统用户',
