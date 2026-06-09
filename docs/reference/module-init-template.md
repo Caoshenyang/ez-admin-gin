@@ -7,7 +7,7 @@ description: "把一个新模块从目录骨架、路由装配、权限常量、
 
 这页专门服务一个很实际的需求：
 
-> 如果现在要新开一个模块，我最少应该先补哪些文件、常量和接入点，才能不偏离当前最终结构？
+> 如果现在要新开一个模块，我最少应该先补哪些文件、常量和接入点，才能不偏离当前代码结构？
 
 ::: tip 这页怎么用
 这不是某个具体业务模块的教程，而是一份“新模块开工模板”。
@@ -28,15 +28,13 @@ description: "把一个新模块从目录骨架、路由装配、权限常量、
 ```text
 建模块目录
   ↓
-补 dto / repository / service / handler / routes
-  ↓
-补 policy.go
+补 domain / api / application / infra / routes / services
   ↓
 注册到对应聚合路由
   ↓
 补菜单 / 按钮 / Casbin 种子
   ↓
-前端补 api / 页面 / dynamic-menu 映射
+前端补 api / types / pages，并让菜单 component 命中页面组件
 ```
 
 ## 后端目录最小模板
@@ -44,33 +42,39 @@ description: "把一个新模块从目录骨架、路由装配、权限常量、
 当前一个成熟模块最常见的目录骨架是：
 
 ```text
-server/internal/module/<group>/<name>/
-├─ dto.go
-├─ entity.go
-├─ repository.go
-├─ service.go
-├─ handler.go
+server/internal/modules/<group>/<name>/
+├─ api/
+│  ├─ dto.go
+│  ├─ handler.go
+│  └─ routes.go
+├─ application/
+│  ├─ ports.go
+│  └─ service.go
+├─ domain/
+│  └─ types.go
+├─ infra/
+│  ├─ repository.go
+│  └─ datascope.go
 ├─ routes.go
-├─ policy.go
-└─ datascope.go
+└─ services.go
 ```
 
 但不是每个模块都必须一次补满全部文件。
 
 ### 默认必备
 
-- `dto.go`
-- `repository.go`
-- `service.go`
-- `handler.go`
-- `routes.go`
-- `policy.go`
+- `api/dto.go`
+- `domain/types.go`
+- `infra/repository.go`
+- `application/service.go`
+- `api/handler.go`
+- `api/routes.go`
+- 根部 `routes.go`
+- `services.go`
 
 ### 视情况补充
 
-- `entity.go`
-  适合：想把模块主实体局部别名化或后续可能替换包装
-- `datascope.go`
+- `infra/datascope.go`
   适合：这个模块需要进入第 5 章的数据权限主线
 
 ## `routes.go` 最小模板
@@ -94,11 +98,11 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 2. 资源路径
 3. 暴露哪些接口
 
-## `policy.go` 最小模板
+## 权限码最小模板
 
 新模块一开始就应该把权限点固定下来，不要等页面写完再回头补。
 
-当前最稳的模板是：
+当前最稳的命名模板是：
 
 ```go
 const (
@@ -147,18 +151,18 @@ const (
 
 如果模块属于第 5 章主线，还要进一步判断：
 
-- 是不是需要 `datascope.go`
+- 是不是需要 `infra/datascope.go`
 - 单条查询是不是也应该走 `FindByIDInScope(...)`
 
-## `datascope.go` 什么时候补
+## `infra/datascope.go` 什么时候补
 
-不是每个模块都需要一上来补 `datascope.go`。
+不是每个模块都需要一上来补 `infra/datascope.go`。
 
 当前最稳的判断顺序是：
 
 1. 先看这个模块是不是要进入组织体系与数据权限主线
 2. 再看它更接近 `user`、`department` 还是显式放开
-3. 如果要接数据权限，再补 `datascope.go`
+3. 如果要接数据权限，再补 `infra/datascope.go`
 
 相关页：
 
@@ -170,8 +174,9 @@ const (
 
 当前主要聚合点通常是：
 
-- `server/internal/module/auth/routes.go`
-- `server/internal/module/system/routes.go`
+- `server/internal/modules/auth/routes.go`
+- `server/internal/modules/iam/routes.go`
+- `server/internal/modules/system/routes.go`
 - 未来新增业务分组自己的 `routes.go`
 
 否则模块虽然存在，但不会真正对外可用。
@@ -189,7 +194,7 @@ const (
 最小思路是：
 
 ```text
-policy.go
+权限码常量
   ↓
 sys_api
   ↓
@@ -212,10 +217,10 @@ sys_role_menu
 
 当前前端最小需要这几步：
 
-1. `admin/src/api/<resource>.ts`
-2. `admin/src/types/<resource>.ts`
-3. `admin/src/pages/.../<View>.vue`
-4. `admin/src/router/dynamic-menu.ts` 里补 `routeComponentMap`
+1. `admin/src/modules/<group>/api/<resource>.ts`
+2. `admin/src/modules/<group>/types/<resource>.ts`
+3. `admin/src/modules/<group>/pages/<Resource>View.vue`
+4. 后端菜单的 `component` 填写 `<group>/<Resource>View`
 
 如果页面有按钮动作，还要继续对齐：
 
@@ -228,14 +233,14 @@ sys_role_menu
 
 | 项 | 最低标准 |
 | --- | --- |
-| 后端目录 | `dto / repository / service / handler / routes / policy` 已有 |
+| 后端目录 | `api / application / domain / infra / routes / services` 已按需落地 |
 | 路由 | 已注册到对应聚合路由 |
-| 权限常量 | `policy.go` 已固定命名 |
+| 权限常量 | 权限码已固定命名，并同步到接口资源和菜单按钮 |
 | 初始化数据 | 接口元数据、角色接口关联、Casbin、菜单、按钮节点已补 |
 | 前端页面 | 页面文件和 API 已接通 |
 | 动态路由 | `component` 已命中前端白名单 |
 | 按钮权限 | 页面 `canUse(...)` 与按钮节点 `code` 对齐 |
-| 数据权限 | 若属于第 5 章主线，`datascope.go` 已判断清楚 |
+| 数据权限 | 若属于数据权限主线，`infra/datascope.go` 或仓储过滤已判断清楚 |
 
 ## 当前最适合直接参考哪个真实模块
 

@@ -36,7 +36,7 @@ description: "集中说明 upload.dir、upload.public_path、sys_file.path、sys
 
 当前真实上传逻辑在：
 
-- `server/internal/module/system/file/service.go`
+- `server/internal/modules/system/file/application/service.go`
 
 服务里会做下面几件事：
 

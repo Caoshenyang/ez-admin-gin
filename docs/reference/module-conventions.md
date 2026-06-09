@@ -22,23 +22,29 @@ description: "集中说明 EZ Admin Gin 当前后端模块的固定骨架、依�
 当前已经比较完整的模块，通常会长成这样：
 
 ```text
-module/<group>/<name>/
-  dto.go
-  entity.go
-  repository.go
-  service.go
-  handler.go
+server/internal/modules/<group>/<name>/
+  api/
+    dto.go
+    handler.go
+    routes.go
+  application/
+    ports.go
+    service.go
+  domain/
+    types.go
+  infra/
+    repository.go
+    datascope.go
   routes.go
-  policy.go
-  datascope.go
+  services.go
 ```
 
 当前真实例子可以直接看：
 
-- `server/internal/module/iam/user`
-- `server/internal/module/iam/department`
-- `server/internal/module/system/config`
-- `server/internal/module/system/notice`
+- `server/internal/modules/iam/user`
+- `server/internal/modules/iam/department`
+- `server/internal/modules/system/config`
+- `server/internal/modules/system/notice`
 
 ## 各文件职责
 
@@ -69,7 +75,7 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 
 而是由模块自己完成最后一层装配。
 
-### `handler.go`
+### `api/handler.go`
 
 `handler.go` 只负责 HTTP 边界：
 
@@ -77,7 +83,7 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 - 绑定请求体和查询参数
 - 从中间件拿当前用户 / Actor
 - 调用 Service
-- 统一回写 `response.Success` / `response.Error`
+- 统一回写 `httpx.Success` / `httpx.Error`
 
 更稳的原则是：
 
@@ -85,7 +91,7 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 - Handler 不承担事务编排
 - Handler 不保存业务规则
 
-### `service.go`
+### `application/service.go`
 
 `service.go` 是模块里的业务主心骨，当前通常负责：
 
@@ -95,13 +101,13 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 - 缓存同步
 - 业务级别的错误抛出
 
-例如 `system/config/service.go` 里就收了：
+例如 `server/internal/modules/system/config/application/service.go` 里就收了：
 
 - 唯一键检查
 - 创建 / 更新事务
 - Redis 缓存同步
 
-### `repository.go`
+### `infra/repository.go`
 
 `repository.go` 负责：
 
@@ -112,7 +118,7 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 
 当前推荐把“数据怎么查”放在 Repository，把“为什么这么查”留在 Service。
 
-### `dto.go`
+### `api/dto.go`
 
 `dto.go` 负责：
 
@@ -129,24 +135,15 @@ func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 
 也就是先把不干净的 HTTP 输入压成稳定的业务输入，再进入 Service。
 
-### `entity.go`
+### `domain/types.go`
 
-`entity.go` 主要作用是把模块依赖的持久化实体局部收起来。
+`domain/types.go` 主要作用是把模块内的领域类型、枚举、常量和局部语义收起来。
 
-当前很多模块会写成：
+如果模块只是在管理一张系统表，也可以在这里定义状态、菜单类型、排序规则等稳定领域概念，而不是把这些常量散落在 Handler 或 Repository 中。
 
-```go
-type Entity = model.User
-```
+### 权限常量
 
-这种做法的价值不是“少打几个字”，而是：
-
-- 模块内统一知道当前主实体是谁
-- 后续如果模块需要局部替换或包装实体，变更面更小
-
-### `policy.go`
-
-`policy.go` 用来固定接口权限码常量，例如：
+权限常量用来固定接口权限码，例如：
 
 ```go
 const (
@@ -161,7 +158,7 @@ const (
 - 给角色授权和排障提供统一命名
 - 避免权限码散落在 Handler、前端页面、初始化数据里
 
-### `datascope.go`
+### `infra/datascope.go`
 
 只有需要数据权限的模块，才应该补这个文件。
 
@@ -199,15 +196,16 @@ func applyDataScope(db *gorm.DB, actor datascope.Actor) *gorm.DB {
 当前总路由装配在：
 
 - `server/internal/bootstrap/router.go`
-- `server/internal/module/system/routes.go`
-- `server/internal/module/auth/routes.go`
+- `server/internal/modules/iam/routes.go`
+- `server/internal/modules/system/routes.go`
+- `server/internal/modules/auth/routes.go`
 
 真实顺序是：
 
 ```text
 bootstrap/router.go
   ↓
-module/system/routes.go 或 module/auth/routes.go
+modules/<group>/routes.go
   ↓
 具体子模块 RegisterRoutes(...)
 ```
@@ -261,10 +259,10 @@ module/system/routes.go 或 module/auth/routes.go
 
 | 情况 | 处理方式 |
 | --- | --- |
-| 纯查询只读模块 | 可能没有复杂事务，但仍建议保留 `service.go` |
-| 没有数据权限需求 | 可以没有 `datascope.go` |
-| 没有独立权限点 | 极少数情况下可以暂不补 `policy.go` |
-| 初始化或兼容模块 | 可能还会临时复用历史 Handler |
+| 纯查询只读模块 | 可以保持较轻的 `application`，但仍建议保留业务层入口 |
+| 没有数据权限需求 | 可以没有 `infra/datascope.go` |
+| 没有独立权限点 | 可以不单独维护权限常量文件 |
+| 初始化或聚合模块 | 可以按实际职责裁剪 `api/application/infra` |
 
 但裁剪的底线是：
 
@@ -275,14 +273,15 @@ module/system/routes.go 或 module/auth/routes.go
 如果你要新增一个正式模块，当前更稳的顺序是：
 
 1. 先确定模型和表结构
-2. 再补 `dto.go` 和 `entity.go`
-3. 再补 `repository.go`
-4. 再补 `service.go`
-5. 再补 `handler.go`
-6. 再补 `routes.go`
-7. 需要权限时补 `policy.go`
-8. 需要数据权限时补 `datascope.go`
-9. 最后注册到聚合路由、菜单、Casbin 和前端页面
+2. 再补 `domain/types.go`
+3. 再补 `api/dto.go`
+4. 再补 `infra/repository.go`
+5. 再补 `application/service.go`
+6. 再补 `api/handler.go` 和 `api/routes.go`
+7. 再补模块根部 `routes.go` 与 `services.go`
+8. 需要权限时同步权限码、菜单按钮、接口资源和 Casbin 策略
+9. 需要数据权限时补 `infra/datascope.go`
+10. 最后注册到聚合路由、菜单、Casbin 和前端页面
 
 ## 一个模块什么时候算“真的接好了”
 
@@ -291,8 +290,8 @@ module/system/routes.go 或 module/auth/routes.go
 1. 路由已经注册
 2. Handler / Service / Repository 已经形成清晰边界
 3. 统一响应和错误码已经对齐
-4. 权限码已经稳定落到 `policy.go`
-5. 需要数据权限的资源已经通过 `datascope.go` 固定查询作用域
+4. 权限码、菜单按钮、接口资源和 Casbin 策略已经同步
+5. 需要数据权限的资源已经通过仓储层或 `infra/datascope.go` 固定查询作用域
 6. 前端页面、菜单、按钮权限已经接通
 
 ## 相关教程与参考页

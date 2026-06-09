@@ -1,124 +1,138 @@
 ---
 title: 系统架构概览
-description: EZ Admin 整体架构设计、模块划分与技术选型
+description: "按当前代码说明 EZ Admin Gin 的单仓库结构、请求链路、模块边界和扩展原则。"
 ---
 
 # 系统架构概览
 
-## 整体架构
+EZ Admin Gin 是一个前后端分离的单仓库后台底座：后端负责接口、权限、数据和部署约束，前端负责管理台交互，文档站负责把可复用路径讲清楚。
 
-EZ Admin 采用前后端分离的单仓库结构：
+::: tip 🎯 先抓住主线
+新增能力时，先判断它属于 Auth、IAM、System 还是独立业务分组；再分别接后端模块、前端页面、菜单权限、初始化数据和文档说明。
+:::
 
+## 一张图看整体
+
+```text
+Browser
+  ↓
+admin/ Vue 管理台
+  ↓ /api/v1
+server/ Gin API
+  ↓
+middleware: CORS / Security / RequestID / Metrics / Logger / Recovery
+  ↓
+authn + actor + permission + operation log
+  ↓
+modules: auth / iam / system / setup
+  ↓
+platform: config / database / redis / authz / datascope / migrate
+  ↓
+PostgreSQL or MySQL + Redis + uploads
 ```
-ez-admin-gin/
-├── server/           Go + Gin 后端
-│   ├── configs/      配置文件
-│   ├── internal/     业务代码（模块化分层）
-│   └── migrations/   数据库迁移（MySQL + PostgreSQL）
-├── admin/            Vue 3 前端
-│   └── src/
-│       ├── modules/  业务模块（auth / iam / system）
-│       ├── layouts/  布局
-│       └── router/   路由（含动态菜单注册）
-├── docs/             VitePress 文档站
-├── deploy/           Docker Compose、Nginx、部署配置
-└── scripts/          部署与打包脚本
-```
+
+## 仓库边界
+
+| 区域 | 目录 | 职责 |
+| --- | --- | --- |
+| 后端服务 | `server/` | HTTP API、认证授权、业务模块、迁移、Swagger |
+| 前端管理台 | `admin/` | 登录、后台布局、动态菜单、业务页面、API 类型消费 |
+| 文档站 | `docs/` | 入门、架构、后端、前端、部署和参考手册 |
+| 部署资产 | `deploy/` | Compose、Nginx、systemd、环境变量模板 |
+| 自动化脚本 | `scripts/` | 打包、部署、更新、SQL 生成、Swagger 生成 |
 
 ## 后端分层
 
-后端采用四层架构，每层职责明确：
+后端的入口装配集中在 `server/internal/bootstrap/`，业务能力集中在 `server/internal/modules/`，跨模块基础设施集中在 `server/internal/platform/`。
 
-| 层 | 目录 | 职责 |
-|----|------|------|
-| Handler | `api/` | HTTP 请求处理、参数绑定、响应序列化 |
-| Service | `application/` | 业务逻辑编排、权限校验、跨模块协调 |
-| Repository | `infra/` | 数据访问、GORM 查询、数据权限注入 |
-| Domain | `domain/` | 领域模型、常量、业务规则 |
+| 层 | 常见目录 | 职责 |
+| --- | --- | --- |
+| API | `api/` | 参数绑定、响应序列化、HTTP 语义 |
+| Application | `application/` | 用例编排、业务规则、跨仓储协调 |
+| Domain | `domain/` | 类型、枚举、领域常量 |
+| Infra | `infra/` | GORM 查询、数据权限过滤、外部依赖访问 |
+| Platform | `platform/` | 配置、数据库、Redis、认证、授权、中间件、迁移 |
 
-平台层（`platform/`）提供跨模块基础设施：认证、授权、配置、数据库、日志、中间件、数据权限、迁移。
+这套分层不是为了追求目录数量，而是为了让变化有稳定落点：HTTP 变化不向下污染业务逻辑，数据库查询不向上泄露到页面接口。
 
-## 前端分层
+## 当前模块边界
 
-前端采用三层模块化结构：
+| 模块 | 后端目录 | 前端目录 | 当前能力 |
+| --- | --- | --- | --- |
+| Auth | `server/internal/modules/auth` | `admin/src/modules/auth` | 登录、刷新、退出、当前用户、账户中心、菜单、Dashboard |
+| IAM | `server/internal/modules/iam` | `admin/src/modules/iam` | 用户、角色、菜单、部门、岗位、接口资源 |
+| System | `server/internal/modules/system` | `admin/src/modules/system` | 配置、字典、文件、附件、日志、公告、消息、邮件、通知、健康检查 |
+| Setup | `server/internal/modules/setup` | 无独立页面 | 首次初始化管理员 |
 
-| 层 | 目录 | 职责 |
-|----|------|------|
-| Pages | `pages/` | 编排层，拼装 composable + component |
-| Composables | `composables/` | 状态管理 + 副作用逻辑 |
-| Components | `components/` | 展示组件，通过 props/events 通信 |
-
-全局共享层：`api/`（HTTP 客户端）、`router/`（路由+动态菜单）、`stores/`（Pinia）、`composables/`（组合函数）、`utils/`（工具）。
+::: warning 避免文档漂移
+模块是否存在，以 `server/internal/modules/*`、`admin/src/modules/*` 和路由注册文件为准。不要只根据旧教程里的列表判断当前能力。
+:::
 
 ## 请求链路
 
-```
+```text
 HTTP Request
   → gin.Engine
-  → CORS / RequestID / Logger / Recovery（全局中间件）
-  → /api/v1 路由组
-  → Auth 中间件（JWT 验证）
-  → LoadActor 中间件（加载用户上下文 + 角色 + 权限）
-  → Permission 中间件（Casbin 策略匹配）
-  → OperationLog 中间件（操作日志记录）
-  → Handler（参数绑定）
-  → Service（业务逻辑）
-  → Repository（数据访问 + 数据权限过滤）
-  → 统一响应格式返回
+  → CORS / SecurityHeaders / RequestID / Metrics / Logger / Recovery
+  → 静态上传目录、Swagger、健康检查或 /api/v1 路由
+  → Auth 中间件校验 JWT
+  → LoadActor 装配当前用户、角色、权限上下文
+  → OperationLog 记录后台操作
+  → Permission 使用 Casbin 做接口授权
+  → Handler 绑定参数
+  → Application Service 编排业务
+  → Infra Repository 查询数据库并注入数据权限
+  → httpx 统一响应
 ```
 
-## 统一响应格式
+健康检查和监控有独立入口：
 
-所有 API 返回统一的 JSON 结构：
+| 路径 | 说明 |
+| --- | --- |
+| `/healthz` | 存活检查 |
+| `/readyz` | 就绪检查 |
+| `/health` | 综合健康检查 |
+| `/metrics` | Prometheus 指标 |
+
+## 统一响应
+
+API 统一返回：
 
 ```json
 {
   "code": 0,
   "message": "ok",
-  "data": { ... }
+  "data": {}
 }
 ```
 
-错误码体系：`0` 成功、`40000` 请求错误、`40100` 未认证、`40300` 无权限、`40400` 未找到、`50000` 内部错误。
+错误码和 HTTP 状态的对应关系集中在 [错误码参考](/reference/error-code-reference)，不要在每个模块文档里重复维护一套。
 
-## 模块划分
+## 前端运行模型
 
-### 后端模块
+前端的固定路由负责登录、布局、Dashboard 和账户中心；后台菜单页面由后端授权菜单生成。
 
-| 模块 | 路径 | 职责 |
-|------|------|------|
-| auth | `modules/auth/` | 登录认证、当前用户、菜单、Dashboard、账户中心 |
-| iam | `modules/iam/` | 用户、角色、菜单、部门管理 |
-| system | `modules/system/` | 配置、字典、文件、附件、日志、公告 |
-| setup | `modules/setup/` | 系统初始化 |
+```text
+登录成功
+  → 保存 token
+  → 拉取 /api/v1/auth/me 与 /api/v1/auth/menus
+  → route-components.ts 解析 component 字段
+  → dynamic-menu.ts 生成侧边栏、搜索索引、按钮权限集合
+  → 页面 composable 调用模块 API
+```
 
-### 前端模块
+菜单组件键来自 `admin/src/modules/**/pages/*View.vue`。如果后端菜单配置了不存在的组件，前端会回退到 `PlaceholderPage.vue`，避免整站白屏。
 
-| 模块 | 路径 | 职责 |
-|------|------|------|
-| auth | `modules/auth/` | 登录页、Dashboard、账户中心 |
-| iam | `modules/iam/` | 用户、角色、菜单、部门、岗位管理页 |
-| system | `modules/system/` | 配置、字典、文件、日志、公告管理页 |
+## 扩展原则
 
-## 技术选型
+- 后端新增资源：优先放入 `server/internal/modules/<group>/<name>`。
+- 前端新增页面：优先放入 `admin/src/modules/<group>/pages/*View.vue`。
+- 权限新增：同时补菜单、按钮权限码、Casbin 策略和初始化数据。
+- 数据权限新增：把过滤逻辑放在仓储层或对应的 datascope 辅助中。
+- 文档新增：先更新架构或参考入口，再写具体教程，避免同一事实散落多处。
 
-| 层 | 技术 | 选型理由 |
-|----|------|---------|
-| 后端框架 | Gin | 成熟高性能，中间件生态完善 |
-| ORM | GORM | Go 生态主流，支持多数据库 |
-| 权限引擎 | Casbin | 灵活的 RBAC/ABAC 策略引擎 |
-| 缓存 | Redis | 会话、限流、缓存 |
-| 前端框架 | Vue 3 | Composition API + TypeScript |
-| UI 组件库 | Naive UI | 后台场景组件齐全，主题可定制 |
-| 状态管理 | Pinia | Vue 3 官方推荐 |
-| CSS | Tailwind CSS 4 | 实用优先，与 Naive UI 互补 |
-| 构建工具 | Vite | 快速开发体验 |
-| 文档 | VitePress | Vue 生态文档站 |
+## 下一步
 
-## 设计原则
-
-- **模块自治**：每个模块有独立的 api/service/repository/domain 四层
-- **平台层共享**：认证、授权、数据权限等横切关注点集中在 platform 层
-- **配置外置**：YAML 配置 + 环境变量覆盖，不硬编码
-- **数据权限在 Repository 层注入**：Service 不关心数据过滤逻辑
-- **前端不直接调用 API**：组件通过 composable 获取数据，页面只做编排
+- [后端概览](/backend/overview) — 看后端目录、路由和配置
+- [前端概览](/frontend/overview) — 看前端页面组织和动态菜单
+- [当前系统地图](/reference/current-system-map) — 查当前模块、页面、路由和事实来源

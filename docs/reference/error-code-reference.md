@@ -28,7 +28,7 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 
 对应实现位于：
 
-- `server/internal/response/response.go`
+- `server/internal/pkg/httpx/response.go`
 
 字段职责可以直接这样理解：
 
@@ -42,7 +42,7 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 
 当前业务错误码集中定义在：
 
-- `server/internal/apperror/apperror.go`
+- `server/internal/pkg/errorsx/errors.go`
 
 固定值如下：
 
@@ -53,6 +53,7 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 | `40100` | `401` | 未登录或登录已过期 |
 | `40300` | `403` | 没有权限访问资源 |
 | `40400` | `404` | 资源不存在 |
+| `42900` | `429` | 请求过于频繁 |
 | `50300` | `503` | 数据库、Redis 等依赖不可用 |
 | `50000` | `500` | 服务器内部错误 |
 
@@ -70,17 +71,18 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 
 | 函数 | 用途 |
 | --- | --- |
-| `apperror.BadRequest(message)` | 参数校验失败 |
-| `apperror.Unauthorized(message)` | 未登录、登录失效、用户名密码错误 |
-| `apperror.Forbidden(message)` | 权限不足 |
-| `apperror.NotFound(message)` | 资源不存在 |
-| `apperror.ServiceUnavailable(message, err)` | 依赖服务异常 |
-| `apperror.Internal(message, err)` | 未归类服务内部错误 |
+| `errorsx.BadRequest(message)` | 参数校验失败 |
+| `errorsx.Unauthorized(message)` | 未登录、登录失效、用户名密码错误 |
+| `errorsx.TooManyRequests(message)` | 请求过于频繁 |
+| `errorsx.Forbidden(message)` | 权限不足 |
+| `errorsx.NotFound(message)` | 资源不存在 |
+| `errorsx.ServiceUnavailable(message, err)` | 依赖服务异常 |
+| `errorsx.Internal(message, err)` | 未归类服务内部错误 |
 
 对应的统一输出入口是：
 
-- `response.Success(c, data)`
-- `response.Error(c, err, log)`
+- `httpx.Success(c, data)`
+- `httpx.Error(c, err, log)`
 
 ## 最常见返回场景
 
@@ -102,15 +104,15 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 
 这类错误多数在下面几层产生：
 
-- `module/*/dto.go`
-- `module/*/service.go`
-- 少量路径参数解析处的 `handler.go`
+- `server/internal/modules/*/*/api/dto.go`
+- `server/internal/modules/*/*/application/service.go`
+- 少量路径参数解析处的 `api/handler.go`
 
 ### `40100` 未登录或登录失效
 
 通常来自：
 
-- `middleware.Auth`
+- `platform/middleware.Auth`
 - `/auth/login` 用户名密码校验失败
 - `/auth/me`、`/auth/menus`、`/auth/dashboard` 访问时没有有效登录态
 
@@ -125,7 +127,7 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 
 通常来自：
 
-- `middleware.Permission`
+- `platform/middleware.Permission`
 
 它表达的是：
 
@@ -147,6 +149,15 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 - 配置不存在
 - 公告不存在
 
+### `42900` 请求过于频繁
+
+通常来自登录接口限流或账号锁定逻辑。
+
+它表达的是：
+
+- 当前请求格式可能没错
+- 但触发了短时间内重复请求或连续失败保护
+
 ### `50300` 依赖不可用
 
 这一类当前出现得比 `50000` 少，但语义很明确：
@@ -166,7 +177,7 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 - 当前请求失败
 - 但不应该把底层内部细节直接回给前端
 
-如果错误不是 `*apperror.Error`，`response.Error(...)` 会：
+如果错误不是 `*errorsx.Error`，`httpx.Error(...)` 会：
 
 1. 把原始错误打到日志里
 2. 对前端统一返回 `50000 + 服务器内部错误`
@@ -188,7 +199,7 @@ description: "集中记录 EZ Admin Gin 当前统一响应体里的业务错误�
 所以未归类错误应该走：
 
 ```go
-response.Error(c, apperror.Internal("查询用户失败", err), log)
+httpx.Error(c, errorsx.Internal("查询用户失败", err), log)
 ```
 :::
 
@@ -200,15 +211,16 @@ response.Error(c, apperror.Internal("查询用户失败", err), log)
 2. 未登录和登录失效统一返回 `40100`
 3. 权限不足统一返回 `40300`
 4. 资源不存在统一返回 `40400`
-5. 未分类异常统一兜底到 `50000`
+5. 请求过于频繁统一返回 `42900`
+6. 未分类异常统一兜底到 `50000`
 
 这样前端、日志和接口排障才能保持一致。
 
 ## 相关代码与文档
 
-- `server/internal/apperror/apperror.go`
-- `server/internal/response/response.go`
-- `server/internal/middleware/auth.go`
-- `server/internal/middleware/permission.go`
+- `server/internal/pkg/errorsx/errors.go`
+- `server/internal/pkg/httpx/response.go`
+- `server/internal/platform/middleware/auth.go`
+- `server/internal/platform/middleware/permission.go`
 - [接口风格决策](./api-style-decision)
 - [权限码约定](./permission-code-conventions)

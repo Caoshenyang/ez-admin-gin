@@ -36,9 +36,9 @@ v-if / 下拉动作 / 批量操作显隐
 相关文件：
 
 - `admin/src/router/dynamic-menu.ts`
-- `admin/src/pages/system/UserView.vue`
-- `admin/src/pages/system/FileView.vue`
-- `admin/src/pages/system/NoticeView.vue`
+- `admin/src/modules/iam/pages/UserView.vue`
+- `admin/src/modules/system/pages/FileView.vue`
+- `admin/src/modules/system/pages/NoticeView.vue`
 
 ## 第一步：按钮权限码先从菜单树里收集出来
 

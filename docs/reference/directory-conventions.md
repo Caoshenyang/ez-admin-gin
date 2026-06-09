@@ -1,242 +1,146 @@
 ---
 title: 目录约定
-description: "集中说明 EZ Admin Gin 当前仓库各主目录职责、server/internal 分层边界，以及哪些目录属于历史兼容区。"
+description: "集中说明 EZ Admin Gin 当前仓库各主目录、server/internal 分层、前端模块和文档站目录的职责边界。"
 ---
 
 # 目录约定
 
-这页的目标很简单：
+这页用于回答一个问题：看到一个文件需求时，它应该放到哪里？
 
-> 让你看到一个目录时，马上知道它在当前最终结构里应该承担什么职责。
-
-## 仓库顶层目录
-
-当前仓库顶层最重要的目录如下：
-
-| 目录 | 职责 |
-| --- | --- |
-| `admin/` | Vue 3 + Vite 管理台前端 |
-| `server/` | Go 后端服务与迁移、配置、上传目录 |
-| `docs/` | VitePress 教程、指南和参考手册 |
-| `deploy/` | Compose、Nginx、systemd 等部署工件 |
-| `scripts/` | 打包、初始化服务器、更新服务器等脚本 |
-| `.github/` | CI、自动化工作流 |
-
-## `admin/` 的职责边界
-
-当前前端工程主要看这些子目录：
-
-| 目录 | 职责 |
-| --- | --- |
-| `admin/src/api` | 接口封装 |
-| `admin/src/components` | 复用组件 |
-| `admin/src/layouts` | 后台壳子布局 |
-| `admin/src/pages` | 页面级视图 |
-| `admin/src/router` | 路由与动态菜单注册 |
-| `admin/src/styles` | 全局样式 |
-| `admin/src/types` | TS 类型定义 |
-| `admin/src/utils` | 鉴权、请求、菜单等工具函数 |
-
-当前页面大致分为：
-
-- `pages/auth`
-- `pages/dashboard`
-- `pages/system`
-
-这说明现在的管理台不是“组件先行”的结构，而是：
-
-- 页面目录承接业务
-- 路由和菜单负责拼装运行时
-
-## `server/` 的职责边界
-
-`server/` 下面除了代码，还有运行时资产：
-
-| 目录 | 职责 |
-| --- | --- |
-| `server/cmd` | 程序入口 |
-| `server/configs` | 本地配置样例 |
-| `server/internal` | 核心后端实现 |
-| `server/migrations` | 数据库迁移文件 |
-| `server/uploads` | 上传文件落盘目录 |
-| `server/logs` | 本地日志输出目录 |
-
-::: tip 先区分“源码”和“运行时产物”
-`internal`、`cmd`、`migrations` 是源码结构。
-
-`logs`、`uploads` 更接近运行时目录，不应该拿来放业务代码。
+::: tip 先看当前代码
+当前后端主线是 `server/internal/bootstrap`、`server/internal/platform`、`server/internal/modules` 和 `server/internal/pkg`。旧路径或历史草图不再作为新增代码依据。
 :::
 
-## `server/internal` 的主骨架
-
-当前后端最终结构围绕下面几层展开：
+## 顶层目录
 
 | 目录 | 职责 |
 | --- | --- |
-| `bootstrap` | 启动装配与路由总装 |
-| `platform` | 平台级基础能力，如认证、权限、数据权限、配置、数据库、日志、迁移、Redis |
-| `module` | 业务模块与系统模块 |
-| `middleware` | Gin 中间件 |
-| `model` | GORM 模型 |
-| `response` | 统一响应输出 |
-| `apperror` | 统一业务错误 |
+| `server/` | 后端服务、配置、迁移、Swagger、上传目录 |
+| `admin/` | Vue 管理台前端 |
+| `docs/` | VitePress 文档站 |
+| `deploy/` | Docker Compose、Nginx、systemd、环境变量模板 |
+| `scripts/` | 打包、部署、更新、Swagger 和 SQL 生成脚本 |
+| `brand-assets/` | 品牌资源源文件和导出产物 |
+| `.agents/` | 本仓库辅助技能配置，正常业务开发不需要改 |
 
-最值得记住的入口是：
+## `server/internal`
+
+| 目录 | 职责 |
+| --- | --- |
+| `bootstrap/` | 启动装配、路由总装、Swagger 注册 |
+| `modules/` | 认证、IAM、系统、初始化等业务能力 |
+| `platform/` | 跨模块基础设施 |
+| `pkg/` | 轻量公共工具包 |
+
+最重要的启动入口：
 
 - `server/internal/bootstrap/run.go`
 - `server/internal/bootstrap/router.go`
 
-也就是当前真实主线已经是：
+## `platform/`
 
-```text
-main.go (embed)
-  ↓
-bootstrap/run.go
-  ↓
-bootstrap/router.go
-  ↓
-module/*
-```
-
-## `platform/` 放什么，不放什么
-
-当前 `platform/` 负责“跨模块都会复用的底座能力”，例如：
+`platform/` 放跨多个模块复用的底座能力：
 
 | 目录 | 作用 |
 | --- | --- |
-| `platform/authn` | Token/JWT 管理 |
-| `platform/authz` | Casbin 权限执行器 |
-| `platform/config` | 配置读取 |
-| `platform/database` | 数据库连接 |
-| `platform/datascope` | Actor、Grant、数据权限合并与查询作用域 |
-| `platform/logger` | 日志初始化 |
-| `platform/migrate` | 迁移执行 |
-| `platform/redis` | Redis 连接 |
+| `authn/` | JWT、刷新令牌、登出黑名单 |
+| `authz/` | Casbin 权限执行器 |
+| `config/` | 配置读取、环境变量覆盖、运行时配置 |
+| `database/` | 数据库连接和事务辅助 |
+| `datascope/` | Actor、数据范围、查询过滤 |
+| `logger/` | 日志初始化和 Gin 日志中间件 |
+| `middleware/` | 认证、当前用户、权限、操作日志、CORS、安全头等中间件 |
+| `migrate/` | 数据库迁移执行 |
+| `model/` | GORM 模型 |
+| `redis/` | Redis 连接 |
 
-更稳的判断标准是：
+判断标准很简单：多个模块都要用，才考虑放进 `platform/`；只属于某个业务模块，就放进对应模块。
 
-- 如果一个能力会被多个模块共享，优先考虑 `platform`
-- 如果它只属于某个业务模块，不要塞进 `platform`
+## `modules/`
 
-## `module/` 放什么
-
-`module/` 承接的是“对外能形成一组接口或一段业务能力”的模块。
-
-当前主要分成三组：
+`modules/` 承接对外形成接口或后台能力的模块。
 
 | 分组 | 说明 |
 | --- | --- |
-| `module/auth` | 登录、当前用户、菜单、工作台 |
-| `module/iam/*` | 用户、角色、部门、岗位、菜单这类身份与授权模型 |
-| `module/system/*` | 配置、文件、公告、日志等系统能力 |
+| `modules/auth` | 登录、刷新、退出、当前用户、账户中心、菜单、Dashboard |
+| `modules/iam/*` | 用户、角色、菜单、部门、岗位、接口资源 |
+| `modules/system/*` | 配置、字典、文件、附件、日志、公告、消息、邮件、通知、健康检查 |
+| `modules/setup` | 首次初始化管理员 |
+| `modules/modulekit` | 受保护路由组和公共中间件装配 |
 
-还有一个初始化入口：
+成熟资源模块通常包含：
 
-- `module/setup`
+```text
+api/            # handler、dto、子路由
+application/    # service、ports
+domain/         # 类型、常量、枚举
+infra/          # repository、数据权限、外部依赖
+routes.go       # 模块挂载
+services.go     # 依赖装配
+```
 
-## 一个模块目录里通常长什么样
+模块可以按复杂度裁剪，不必为了统一而强行补齐所有目录。
 
-当前成熟模块通常会包含这些文件：
+## `pkg/`
 
-| 文件 | 职责 |
+`pkg/` 放不携带业务含义的小工具：
+
+| 目录 | 说明 |
 | --- | --- |
-| `routes.go` | 路由注册与依赖装配 |
-| `handler.go` | HTTP 入参与响应 |
-| `service.go` | 业务规则、事务边界 |
-| `repository.go` | 查询与持久化 |
-| `dto.go` | 请求、响应、字段归一化 |
-| `entity.go` | 当前模块对 `model` 的类型别名或收口 |
-| `policy.go` | 接口权限码常量 |
-| `datascope.go` | 模块级数据权限接法 |
+| `actorx/` | 当前操作者上下文辅助 |
+| `errorsx/` | 业务错误类型和错误码 |
+| `httpx/` | 统一响应辅助 |
+| `paging/` | 分页参数和分页响应 |
 
-但这不是机械强制的“八件套”。
+如果工具开始依赖某个业务模块，它就不应该继续放在 `pkg/`。
 
-更准确地说：
+## `admin/src`
 
-- 需要数据权限的模块，再补 `datascope.go`
-- 需要按钮 / 接口权限稳定命名的模块，再补 `policy.go`
-- 极轻模块也可能暂时没有独立 `repository.go`
-
-## `middleware/` 的位置为什么独立
-
-当前中间件不是塞在某个模块里，而是独立为一层，因为它们服务的是整条请求链：
-
-| 文件 | 作用 |
+| 目录 | 职责 |
 | --- | --- |
-| `middleware/auth.go` | 登录态校验 |
-| `middleware/actor.go` | 装载当前登录人的组织与数据权限上下文 |
-| `middleware/permission.go` | Casbin 接口权限校验 |
-| `middleware/operation_log.go` | 记录操作日志 |
+| `api/` | HTTP 客户端、生成类型、契约检查 |
+| `components/` | 全局组件、Shell 组件、后台基础组件 |
+| `composables/` | 全局组合式函数 |
+| `layouts/` | 管理台布局 |
+| `modules/` | `auth`、`iam`、`system` 页面和模块代码 |
+| `router/` | 静态路由、守卫、动态菜单、组件解析 |
+| `stores/` | Pinia 状态 |
+| `styles/` | 主题变量和全局样式 |
+| `types/` | 全局类型 |
+| `utils/` | 工具函数 |
 
-这些中间件主要在：
+模块内页面优先按 `api / components / composables / pages / types` 组织。
 
-- `module/auth/routes.go`
-- `module/system/routes.go`
+## `docs/`
 
-里被串起来。
-
-## `model/` 和 `entity.go` 的关系
-
-当前数据库模型集中放在：
-
-- `server/internal/model`
-
-例如：
-
-- `user.go`
-- `role.go`
-- `department.go`
-- `menu.go`
-
-模块内的 `entity.go` 更像是：
-
-- 对当前模块所依赖模型的一次本地收口
-- 避免在 Handler / Service / Repository 里到处直接引用一大串 `model.Xxx`
-
-所以二者分工是：
-
-| 位置 | 作用 |
+| 目录 | 职责 |
 | --- | --- |
-| `model/` | 全局数据库模型定义 |
-| `module/*/entity.go` | 当前模块使用的实体别名与局部语义收口 |
+| `.vitepress/` | VitePress 配置、导航、主题 |
+| `getting-started/` | 入门路径 |
+| `architecture/` | 架构说明 |
+| `backend/` | 后端说明 |
+| `frontend/` | 前端说明 |
+| `deployment/` | 部署说明 |
+| `reference/` | 可反复查阅的稳定参考 |
 
-## 当前哪些目录属于历史兼容区
+文档修改后至少执行：
 
-仓库里仍有一些旧目录与当前主线结构并存：
+```bash
+make docs-build
+```
 
-| 目录 | 当前状态 |
-| --- | --- |
-| `server/internal/config` / `database` / `logger` / `redis` / `token` / `permission` | 与 `platform/*` 对应的旧落点仍在仓库中 |
+## 放置判断
 
-这类目录的理解方式应该是：
+1. 启动和总装问题：放 `server/internal/bootstrap`。
+2. 跨模块基础设施：放 `server/internal/platform`。
+3. 业务模块能力：放 `server/internal/modules/<group>/<name>`。
+4. 小型无业务工具：放 `server/internal/pkg`。
+5. 前端页面：放 `admin/src/modules/<group>/pages`。
+6. 文档入口或稳定约定：放 `docs/reference`，教程放到对应专题目录。
 
-- 当前仓库里仍存在
-- 但主线结构已经以 `bootstrap / platform / module` 为准
+## 相关页面
 
-::: warning 不要再把新能力继续扩到历史目录
-如果你要补新模块、新平台能力或新中间件，优先沿当前主线落到：
-
-- `bootstrap`
-- `platform`
-- `module`
-- `app`
-- `middleware`
-
-而不是继续扩大旧式扁平目录。
-:::
-
-## 新增代码时最实用的放置判断
-
-如果你正在犹豫一个文件该放哪，可以按这个顺序判断：
-
-1. 这是启动装配问题吗？是就放 `bootstrap`
-2. 这是跨模块复用的平台能力吗？是就放 `platform`
-3. 这是某个模块自己的业务能力吗？是就放 `module/<group>/<name>`
-4. 这是请求链统一拦截吗？是就放 `middleware`
-5. 这是统一错误或响应协议吗？是就放 `apperror` / `response`
-
-## 相关教程与参考页
-
-- [模块开发](/backend/module-development)
-- [前端概览](/frontend/overview)
+- [项目结构](/getting-started/project-structure)
+- [系统架构概览](/architecture/overview)
 - [模块规范](./module-conventions)
+- [当前系统地图](./current-system-map)

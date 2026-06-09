@@ -148,7 +148,7 @@ middleware.LoadActor
   ↓
 datascope.Actor + datascope.Merge(...)
   ↓
-module/*/datascope.go
+infra/datascope.go 或仓储层 Scope
   ↓
 gorm.Scopes(...)
   ↓
@@ -249,10 +249,10 @@ func applyDataScope(db *gorm.DB) *gorm.DB {
 如果你要从代码里快速定位当前数据权限实现，优先看下面这些文件：
 
 - `server/internal/platform/datascope/datascope.go`
-- `server/internal/middleware/actor.go`
-- `server/internal/module/iam/user/datascope.go`
-- `server/internal/module/iam/department/datascope.go`
-- `server/internal/module/iam/post/datascope.go`
+- `server/internal/platform/middleware/actor.go`
+- `server/internal/modules/iam/user/infra/datascope.go`
+- `server/internal/modules/iam/department/infra/datascope.go`
+- `server/internal/modules/iam/post/infra/datascope.go`
 
 ## 相关教程页
 

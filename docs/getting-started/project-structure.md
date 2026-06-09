@@ -1,116 +1,145 @@
 ---
 title: 项目结构
-description: "EZ Admin Gin 的技术栈组成、当前目录结构，以及面向个人 MVP 项目的后端骨架说明。"
+description: "按当前代码说明 EZ Admin Gin 的仓库目录、模块边界、文档站入口和扩展时应该优先查看的位置。"
 ---
 
 # 项目结构
 
+这一页帮你把仓库先看成一张地图：哪里是后端，哪里是前端，哪里是文档，新增模块时应该沿哪条主线走。
+
 ::: tip 🎯 这页解决什么
-帮你快速了解项目用了哪些技术、各目录负责什么，方便后续定位文件。
+读完后，你应该能根据一个需求快速定位到 `server/`、`admin/`、`docs/`、`deploy/` 或 `scripts/` 中对应的文件。
 :::
 
-## 技术栈
+## 顶层目录
 
-| 层 | 技术 |
-| --- | --- |
-| 后端 | Go 1.26、Gin、GORM、PostgreSQL、Redis、Casbin |
-| 前端 | Vue 3.5、TypeScript、Naive UI、TailwindCSS 4、Vite 8 |
-| 文档 | VitePress 2.0 |
-| 部署 | Docker Compose、Nginx |
-
-## 目录结构
-
-```
+```text
 ez-admin-gin/
-├── server/          # Go 后端
-│   ├── configs/     # 配置文件（config.yaml）
-│   ├── internal/    # 启动装配、平台能力和业务模块
-│   └── migrations/  # 数据库迁移
-├── admin/           # Vue 3 前端
-│   └── src/         # 页面、组件、路由、状态管理
+├── server/          # 后端服务：Gin、GORM、Casbin、迁移、Swagger
+├── admin/           # 前端管理台：Vue 3、Naive UI、动态菜单
 ├── docs/            # VitePress 文档站
-├── deploy/          # Docker Compose 和 Nginx 配置
-│   └── nginx/
-└── .agents/         # 开发辅助 skill
+├── deploy/          # Docker Compose、Nginx、systemd 和环境变量模板
+├── scripts/         # 打包、部署、更新、Swagger 与 SQL 生成脚本
+├── brand-assets/    # 品牌资源源文件与导出产物
+├── Makefile         # 统一开发入口
+└── MANUAL_TEST.md   # 发布前人工冒烟检查清单
 ```
 
-各目录职责：
+## 当前技术栈
 
-- **server/** — Go 后端，入口 `main.go` 使用 embed 嵌入迁移文件
-- **admin/** — Vue 3 前端管理台，页面、组件、路由和状态管理都在 `src/` 下
-- **docs/** — VitePress 文档站，就是你现在在读的站点
-- **deploy/** — Docker Compose 文件和 Nginx 反向代理配置，分为本地开发环境和生产环境
-- **.agents/** — 开发辅助工具配置，正常使用不需要关注
+| 区域 | 当前代码依据 | 说明 |
+| --- | --- | --- |
+| 后端 | `server/go.mod` | Go 1.26.1、Gin、GORM、Casbin、Redis、Prometheus、Swagger |
+| 前端 | `admin/package.json` | Vue 3.5、Vue Router 5、Pinia 3、Naive UI、Vite 8、TypeScript 6、Tailwind CSS 4 |
+| 文档 | `docs/package.json` | VitePress 2.0 alpha、Vue 3.5 |
+| 部署 | `deploy/`、`scripts/` | Docker Compose、Nginx、systemd、二进制部署与全容器部署 |
 
-## 当前最终后端骨架
-
-当前后端主线已经收敛到下面这套骨架，不再是“准备迁过去”的草图，而是后续继续扩模块时应该直接遵守的结构：
+## 后端目录
 
 ```text
 server/
-├── cmd/
-│   └── server/
+├── main.go
+├── configs/
+│   ├── config.yaml
+│   └── rbac_model.conf
+├── docs/                  # swag 生成的 OpenAPI / Swagger 文件
 ├── internal/
-│   ├── bootstrap/
-│   ├── platform/
-│   │   ├── config/
-│   │   ├── database/
-│   │   ├── logger/
-│   │   ├── redis/
-│   │   ├── authn/
-│   │   ├── authz/
-│   │   └── datascope/
-│   └── module/
-│       ├── auth/
-│       ├── setup/
-│       ├── iam/
-│       ├── system/
+│   ├── bootstrap/         # 启动装配、路由聚合、Swagger 注册
+│   ├── modules/           # 业务模块
+│   ├── platform/          # 跨模块基础设施
+│   └── pkg/               # 小型公共工具包
+└── migrations/
+    ├── mysql/
+    └── postgres/
 ```
 
-这样调整的核心原因只有一个：让认证、初始化、IAM、系统能力、组织体系、数据权限和后续业务模块扩展都有明确落点。
+后端当前模块边界如下：
 
-## 当前已经落地了什么
+| 分组 | 目录 | 当前职责 |
+| --- | --- | --- |
+| Auth | `server/internal/modules/auth` | 登录、刷新令牌、退出、当前用户、账户中心、授权菜单、Dashboard |
+| IAM | `server/internal/modules/iam` | 用户、角色、菜单、部门、岗位、接口资源 |
+| System | `server/internal/modules/system` | 配置、字典、文件、附件、操作日志、登录日志、公告、消息、邮件、通知、健康检查 |
+| Setup | `server/internal/modules/setup` | 首次初始化管理员 |
+| Module Kit | `server/internal/modules/modulekit` | 受保护路由组和公共中间件装配 |
 
-当前这轮升级已经不是“第一阶段刚开始”，而是已经落地了下面这些稳定结构：
+::: warning 注意目录名
+当前代码使用的是 `server/internal/modules/`，不是旧文档里曾出现过的 `server/internal/module/`。新增后端模块时，优先沿 `modules/<group>/<name>` 接入。
+:::
 
-- 新增 `bootstrap`，把启动装配从 `main.go` 中抽出来
-- 新增 `platform` 命名空间，承接配置、数据库、日志、Redis、认证、鉴权和数据权限基础设施
-- 新增 `module/auth`、`module/setup`、`module/iam/*`、`module/system/*` 等稳定模块边界
-- 新增部门、岗位、用户岗位、角色数据范围的模型与迁移
-- 核心系统模块已经按 `dto / repository / service / handler / routes / policy / datascope` 主线收敛
+## 后端模块内部结构
 
-这也意味着：后续新增常用模块时，不应该再发明新的目录层级，而是优先沿这套骨架继续扩。
+多数资源型模块使用这套结构：
 
-## 这套骨架已经证明过什么
+```text
+server/internal/modules/iam/user/
+├── api/            # handler、dto、路由细节
+├── application/    # 业务逻辑和用例编排
+├── domain/         # 领域类型、枚举、常量
+├── infra/          # GORM 仓储、数据权限过滤
+├── routes.go       # 将模块挂到上级路由组
+└── services.go     # 装配 service / repository / handler
+```
 
-当前这套 `module/*` 结构已经不只是“能放系统模块”的理论骨架，而是已经被几类真实能力验证过：
+并不是每个模块都必须机械复制全部目录。比如只读资源、聚合模块或基础设施模块可以更轻，但职责边界仍保持一致：API 层不写复杂业务，业务层不直接暴露 HTTP 细节，仓储层负责数据访问。
 
-- `module/system/dict` 证明字典类型与字典项这种双表资源可以稳定落在标准模块结构里
-- `module/auth` 下的账户中心证明“当前登录人自助能力”不需要再复制一套后台管理员模块
-- `module/system/attachment` 证明业务化资源层可以复用既有底层上传能力，而不是重新发明一套文件链路
-- 历史上的业务示例模块曾证明非 `system` 分组资源也能沿同一条主线接入菜单、按钮、前端页面和数据权限；当前主线保留的是这套接入规范，而不是继续内置 CRM 目录
+## 前端目录
 
-也就是说，这套目录骨架现在已经覆盖了：
+```text
+admin/src/
+├── api/             # Axios 实例、生成类型、契约检查
+├── components/      # 全局组件和管理台 Shell 组件
+├── composables/     # 全局组合式函数
+├── layouts/         # AdminLayout
+├── modules/         # auth / iam / system 三个业务分组
+├── router/          # 静态路由、守卫、动态菜单和组件解析
+├── stores/          # Pinia 状态
+├── styles/          # 主题变量和全局样式
+├── types/
+└── utils/
+```
 
-- 平台入口
-- IAM 与系统基础模块
-- 当前登录人维度的自助能力
-- 非 `system` 分组的业务模块接入模式
+模块页通常按下面方式组织：
 
-后续继续扩模块时，应该直接沿这些已成立的路径延伸，而不是再开并行结构。
+```text
+admin/src/modules/system/
+├── api/             # 与后端接口对应的请求函数
+├── components/      # 当前模块页面使用的展示组件
+├── composables/     # useXxxPage 页面状态与副作用
+├── pages/           # 路由页面入口
+└── types/           # 当前模块类型定义
+```
 
-## 下一批模块应该怎么接
+动态菜单组件来自 `admin/src/router/route-components.ts` 的 `import.meta.glob('../modules/**/pages/*View.vue')`。菜单里的 `component` 字段通常写成 `system/FileView`、`iam/UserView` 这类格式。
 
-下一批可复用模块如果继续补，也应该保持同一套判断顺序：
+## 文档站目录
 
-1. 先判断它属于 `auth`、`iam`、`system` 还是独立业务分组
-2. 再按 `dto / repository / service / handler / routes / policy / datascope` 落后端
-3. 菜单、按钮、Casbin 与初始化种子一起补，不把权限接入推迟到最后
-4. 前端同步补 `types / api / pages / dynamic-menu`
+```text
+docs/
+├── .vitepress/
+│   ├── config.mts       # 站点配置、导航、侧边栏
+│   └── theme/
+├── architecture/        # 架构说明
+├── backend/             # 后端说明
+├── frontend/            # 前端说明
+├── deployment/          # 部署说明
+├── getting-started/     # 入门入口
+├── reference/           # 稳定参考
+└── package.json
+```
 
-做到这里，一个新模块才算真正进入当前后台底座，而不是只多了几张表和一个接口。
+文档站常用命令：
+
+```bash
+make docs-dev
+make docs-build
+```
+
+执行 `make docs-dev` 后，VitePress 默认使用 `docs/.vitepress/config.mts` 中配置的端口 `15174`。
 
 ## 怎么继续读
 
-- 想理解为什么一定要做这次结构升级：看 [架构概览](/architecture/overview)
-- 想从 Java 视角理解这套结构：看 [项目结构](/getting-started/project-structure)
+- 想跑起来项目：看 [快速开始](/getting-started/)
+- 想理解请求链路：看 [系统架构概览](/architecture/overview)
+- 想查当前模块和事实来源：看 [当前系统地图](/reference/current-system-map)
+- 想新增业务模块：看 [模块扩展机制](/architecture/module-extension)

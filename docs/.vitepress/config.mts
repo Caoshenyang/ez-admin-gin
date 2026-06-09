@@ -102,6 +102,7 @@ export default defineConfig({
           items: [
             { text: '快速开始', link: '/getting-started/' },
             { text: '项目结构', link: '/getting-started/project-structure' },
+            { text: '当前系统地图', link: '/reference/current-system-map' },
             { text: '路线图', link: '/getting-started/roadmap' }
           ]
         }
@@ -166,29 +167,45 @@ export default defineConfig({
       ],
       '/reference/': [
         {
-          text: '参考手册',
+          text: '入口',
           items: [
             { text: '参考首页', link: '/reference/' },
-            { text: '接口风格决策', link: '/reference/api-style-decision' },
-            { text: '数据权限模型', link: '/reference/data-scope-model' },
-            { text: '环境变量参考', link: '/reference/environment-variables-reference' },
-            { text: '权限码约定', link: '/reference/permission-code-conventions' },
-            { text: '错误码参考', link: '/reference/error-code-reference' },
+            { text: '当前系统地图', link: '/reference/current-system-map' },
             { text: '目录约定', link: '/reference/directory-conventions' },
             { text: '模块规范', link: '/reference/module-conventions' },
+            { text: '模块初始化模板', link: '/reference/module-init-template' }
+          ]
+        },
+        {
+          text: '接口与权限',
+          items: [
+            { text: '接口风格决策', link: '/reference/api-style-decision' },
+            { text: '错误码参考', link: '/reference/error-code-reference' },
+            { text: '权限码约定', link: '/reference/permission-code-conventions' },
+            { text: '数据权限模型', link: '/reference/data-scope-model' },
+            { text: '按钮权限消费示例', link: '/reference/button-permission-consumption-example' }
+          ]
+        },
+        {
+          text: '数据与前端',
+          items: [
+            { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '初始化数据参考', link: '/reference/init-data-reference' },
-            { text: '动态菜单组件白名单', link: '/reference/dynamic-menu-component-reference' },
-            { text: '按钮权限消费示例', link: '/reference/button-permission-consumption-example' },
-            { text: '轻量验证与人工测试', link: '/reference/lightweight-verification' },
-            { text: '上传与公开路径参考', link: '/reference/upload-public-path-reference' },
-            { text: '模块初始化模板', link: '/reference/module-init-template' },
             { text: '查询与分页约定', link: '/reference/query-and-pagination-conventions' },
             { text: '数据库迁移工具选型', link: '/reference/migration-tool-selection' },
-            { text: '数据库建表语句', link: '/reference/database-ddl' },
             { text: '逻辑删除与唯一索引冲突', link: '/reference/logical-delete-and-unique-index' },
+            { text: '动态菜单组件白名单', link: '/reference/dynamic-menu-component-reference' },
+            { text: '上传与公开路径参考', link: '/reference/upload-public-path-reference' }
+          ]
+        },
+        {
+          text: '部署与验证',
+          items: [
+            { text: '环境变量参考', link: '/reference/environment-variables-reference' },
             { text: 'Nginx 配置参考', link: '/reference/nginx-config-reference' },
             { text: 'Docker 部署文件参考', link: '/reference/deploy-artifacts-reference' },
             { text: 'SSH 隧道连接服务器数据库', link: '/reference/ssh-tunnel-database' },
+            { text: '轻量验证与人工测试', link: '/reference/lightweight-verification' },
             { text: 'VitePress 部署到 GitHub Pages', link: '/reference/vitepress-github-pages' }
           ]
         }
