@@ -7,14 +7,21 @@ import {
   ShieldCheckmarkOutline,
 } from '@vicons/ionicons5'
 import { NButton, NCard, NCheckbox, NForm, NFormItem, NIcon, NInput } from 'naive-ui'
+import { computed } from 'vue'
 
+import { useThemeStore } from '@/stores/theme'
 import { useLoginPage } from '../composables/useLoginPage'
+import brandLogoHorizontalDarkUrl from '@/assets/brand-logo-horizontal-dark.svg'
 import brandLogoHorizontalUrl from '@/assets/brand-logo-horizontal.svg'
 import brandLogoMarkUrl from '@/assets/brand-logo.svg'
 import loginHeroBgUrl from '@/assets/login/login-hero-bg.png'
 
 const { footerText, formModel, formRef, handleSubmit, productFeatures, rules, submitting } =
   useLoginPage()
+const themeStore = useThemeStore()
+const currentBrandLogoHorizontalUrl = computed(() =>
+  themeStore.isDark ? brandLogoHorizontalDarkUrl : brandLogoHorizontalUrl,
+)
 
 const workspaceCards = [
   { title: '身份认证', desc: '账号登录与会话保持' },
@@ -33,47 +40,45 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
     <section class="login-shell">
       <section class="login-product" :style="{ backgroundImage: `url(${loginHeroBgUrl})` }">
         <header class="login-product__header">
-          <img :src="brandLogoHorizontalUrl" alt="EZ Admin Gin" class="login-logo" />
-          <span class="login-runtime-badge">
-            <span class="login-runtime-badge__dot" />
-            Admin Console
-          </span>
+          <img :src="currentBrandLogoHorizontalUrl" alt="EZ Admin Gin" class="login-logo" />
         </header>
 
-        <div class="login-product__copy">
-          <p class="login-kicker">WORKSPACE ACCESS</p>
-          <h1>登录后台，接管今日业务现场</h1>
-          <p>一套清晰、紧凑、可扩展的管理台底座，把认证、权限、菜单和系统运维放在同一个入口。</p>
-        </div>
+        <div class="login-product__stage">
+          <div class="login-product__copy">
+            <p class="login-kicker">WORKSPACE ACCESS</p>
+            <h1>登录后台，接管今日业务现场</h1>
+            <p>一套清晰、紧凑、可扩展的管理台底座，把认证、权限、菜单和系统运维放在同一个入口。</p>
+          </div>
 
-        <div class="login-showcase" aria-label="后台工作台预览">
-          <aside class="login-showcase__sidebar">
-            <div class="login-showcase__brand">
-              <img :src="brandLogoMarkUrl" alt="" aria-hidden="true" />
-              <strong>EZ ADMIN</strong>
-            </div>
-            <span v-for="item in workspaceNavItems" :key="item">{{ item }}</span>
-          </aside>
-
-          <div class="login-showcase__main">
-            <div class="login-showcase__header">
-              <div>
-                <strong>统一后台工作台</strong>
-                <p>登录后按权限进入业务模块</p>
+          <div class="login-showcase" aria-label="后台工作台预览">
+            <aside class="login-showcase__sidebar">
+              <div class="login-showcase__brand">
+                <img :src="brandLogoMarkUrl" alt="" aria-hidden="true" />
+                <strong>EZ ADMIN</strong>
               </div>
-              <span>RBAC</span>
-            </div>
+              <span v-for="item in workspaceNavItems" :key="item">{{ item }}</span>
+            </aside>
 
-            <div class="login-showcase__cards">
-              <div v-for="card in workspaceCards" :key="card.title" class="login-workspace-card">
-                <span />
-                <strong>{{ card.title }}</strong>
-                <p>{{ card.desc }}</p>
+            <div class="login-showcase__main">
+              <div class="login-showcase__header">
+                <div>
+                  <strong>统一后台工作台</strong>
+                  <p>登录后按权限进入业务模块</p>
+                </div>
+                <span>RBAC</span>
               </div>
-            </div>
 
-            <div class="login-showcase__quick">
-              <span v-for="entry in workspaceQuickEntries" :key="entry">{{ entry }}</span>
+              <div class="login-showcase__cards">
+                <div v-for="card in workspaceCards" :key="card.title" class="login-workspace-card">
+                  <span />
+                  <strong>{{ card.title }}</strong>
+                  <p>{{ card.desc }}</p>
+                </div>
+              </div>
+
+              <div class="login-showcase__quick">
+                <span v-for="entry in workspaceQuickEntries" :key="entry">{{ entry }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -180,6 +185,27 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 
 <style scoped>
 .login-page {
+  --login-product-bg: #eef4ff;
+  --login-product-overlay:
+    linear-gradient(90deg, rgba(246, 248, 251, 0.98), rgba(246, 248, 251, 0.82)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(37, 99, 255, 0.1));
+  --login-showcase-bg: rgba(255, 255, 255, 0.82);
+  --login-showcase-border: rgba(148, 163, 184, 0.22);
+  --login-showcase-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+  --login-showcase-sidebar-border: rgba(226, 232, 240, 0.85);
+  --login-showcase-sidebar-bg: linear-gradient(180deg, #0d1b2a, #10243a);
+  --login-showcase-brand-bg: rgba(255, 255, 255, 0.08);
+  --login-on-sidebar: #ffffff;
+  --login-on-sidebar-muted: rgba(255, 255, 255, 0.68);
+  --login-brand-border: rgba(37, 99, 255, 0.14);
+  --login-chip-border: rgba(37, 99, 255, 0.12);
+  --login-chip-bg: rgba(239, 246, 255, 0.82);
+  --login-feature-bg: rgba(255, 255, 255, 0.68);
+  --login-sidebar-active-bg: rgba(37, 99, 255, 0.92);
+  --login-form-panel-border: rgba(148, 163, 184, 0.16);
+  --login-form-panel-bg: rgba(255, 255, 255, 0.62);
+  --login-card-shadow: 0 18px 46px rgba(15, 23, 42, 0.1);
+
   height: 100dvh;
   overflow: hidden;
   background:
@@ -199,41 +225,51 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 
 .login-product {
   position: relative;
-  display: flex;
+  display: grid;
   min-width: 0;
-  flex-direction: column;
-  justify-content: space-between;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 26px;
   overflow: hidden;
-  padding: 38px 52px 44px;
-  background-color: #eef4ff;
+  padding: 38px 52px 38px;
+  background-color: var(--login-product-bg);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+}
+
+html.dark .login-page {
+  --login-product-bg: #0b1120;
+  --login-product-overlay:
+    linear-gradient(90deg, rgba(11, 17, 32, 0.96), rgba(15, 23, 42, 0.78)),
+    linear-gradient(180deg, rgba(59, 130, 246, 0.16), rgba(18, 185, 129, 0.12));
+  --login-showcase-bg: rgba(17, 24, 39, 0.82);
+  --login-showcase-border: rgba(148, 163, 184, 0.2);
+  --login-showcase-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+  --login-showcase-sidebar-border: rgba(148, 163, 184, 0.16);
+  --login-showcase-sidebar-bg: linear-gradient(180deg, #020617, #0f172a);
+  --login-showcase-brand-bg: rgba(255, 255, 255, 0.07);
+  --login-on-sidebar: #ffffff;
+  --login-on-sidebar-muted: rgba(255, 255, 255, 0.66);
+  --login-brand-border: rgba(96, 165, 250, 0.24);
+  --login-chip-border: rgba(96, 165, 250, 0.2);
+  --login-chip-bg: rgba(59, 130, 246, 0.14);
+  --login-feature-bg: rgba(17, 24, 39, 0.68);
+  --login-sidebar-active-bg: rgba(59, 130, 246, 0.9);
+  --login-form-panel-border: rgba(148, 163, 184, 0.16);
+  --login-form-panel-bg: rgba(15, 23, 42, 0.62);
+  --login-card-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
 }
 
 .login-product::before {
   position: absolute;
   inset: 0;
   content: '';
-  background:
-    linear-gradient(90deg, rgba(246, 248, 251, 0.98), rgba(246, 248, 251, 0.82)),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(37, 99, 255, 0.1));
-  pointer-events: none;
-}
-
-.login-product::after {
-  position: absolute;
-  top: 92px;
-  right: -90px;
-  width: 360px;
-  height: 360px;
-  border: 1px solid rgba(37, 99, 255, 0.12);
-  border-radius: 50%;
-  content: '';
+  background: var(--login-product-overlay);
   pointer-events: none;
 }
 
 .login-product__header,
+.login-product__stage,
 .login-product__copy,
 .login-showcase,
 .login-feature-list {
@@ -243,46 +279,47 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 
 .login-product__header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
+  width: min(680px, 100%);
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0 auto;
 }
 
 .login-logo {
-  width: 312px;
-  height: 70px;
+  width: 292px;
+  height: 62px;
   object-fit: contain;
   object-position: left center;
 }
 
-.login-runtime-badge {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid rgba(37, 99, 255, 0.18);
-  border-radius: var(--ez-radius-sm);
-  background: rgba(255, 255, 255, 0.72);
-  padding: 7px 10px;
-  color: var(--ez-text-secondary);
-  font-size: var(--ez-text-xs);
-  font-weight: 800;
-  line-height: 1;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
-}
-
-.login-runtime-badge__dot {
-  width: 7px;
-  height: 7px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--ez-success);
-  box-shadow: 0 0 0 4px rgba(18, 185, 129, 0.12);
+.login-product__stage {
+  display: flex;
+  width: min(680px, 100%);
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  margin: 0 auto;
+  padding: 0 0 6px;
+  transform: translateY(-8px);
 }
 
 .login-product__copy {
-  max-width: 560px;
-  margin: 50px 0 24px;
+  position: relative;
+  max-width: 640px;
+  margin: 0 0 28px;
+  padding-left: 22px;
+}
+
+.login-product__copy::before {
+  position: absolute;
+  top: 5px;
+  bottom: 7px;
+  left: 0;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--ez-primary), var(--ez-accent-blue));
+  content: '';
 }
 
 .login-kicker {
@@ -296,13 +333,13 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 .login-product__copy h1 {
   margin: 0;
   color: var(--ez-text-main);
-  font-size: clamp(30px, 4.3vw, 48px);
+  font-size: 44px;
   font-weight: 700;
   line-height: 1.12;
 }
 
 .login-product__copy p {
-  max-width: 480px;
+  max-width: 540px;
   margin: 18px 0 0;
   color: var(--ez-text-regular);
   font-size: var(--ez-text-md);
@@ -311,14 +348,14 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 
 .login-showcase {
   display: grid;
-  width: min(620px, 100%);
-  min-height: 248px;
-  grid-template-columns: 132px minmax(0, 1fr);
+  width: 100%;
+  min-height: 270px;
+  grid-template-columns: 144px minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  border: 1px solid var(--login-showcase-border);
   border-radius: var(--ez-radius-lg);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+  background: var(--login-showcase-bg);
+  box-shadow: var(--login-showcase-shadow);
   backdrop-filter: blur(18px);
 }
 
@@ -326,8 +363,8 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   display: flex;
   flex-direction: column;
   gap: 10px;
-  border-right: 1px solid rgba(226, 232, 240, 0.85);
-  background: linear-gradient(180deg, #0d1b2a, #10243a);
+  border-right: 1px solid var(--login-showcase-sidebar-border);
+  background: var(--login-showcase-sidebar-bg);
   padding: 16px 12px;
 }
 
@@ -337,7 +374,7 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   gap: 7px;
   margin-bottom: 5px;
   border-radius: var(--ez-radius-sm);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--login-showcase-brand-bg);
   padding: 7px 8px;
 }
 
@@ -350,7 +387,7 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 }
 
 .login-showcase__brand strong {
-  color: #ffffff;
+  color: var(--login-on-sidebar);
   font-size: var(--ez-text-xs);
   font-weight: 800;
   line-height: 1;
@@ -360,20 +397,20 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 .login-showcase__sidebar span {
   border-radius: var(--ez-radius-xs);
   padding: 8px 9px;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--login-on-sidebar-muted);
   font-size: var(--ez-text-xs);
   font-weight: 700;
   line-height: 1;
 }
 
 .login-showcase__sidebar span:first-of-type {
-  background: rgba(37, 99, 255, 0.92);
-  color: #ffffff;
+  background: var(--login-sidebar-active-bg);
+  color: var(--login-on-sidebar);
 }
 
 .login-showcase__main {
   min-width: 0;
-  padding: 17px 18px 18px;
+  padding: 20px 22px 21px;
 }
 
 .login-showcase__header {
@@ -401,7 +438,7 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 }
 
 .login-showcase__header > span {
-  border: 1px solid rgba(37, 99, 255, 0.14);
+  border: 1px solid var(--login-brand-border);
   border-radius: var(--ez-radius-xs);
   background: var(--ez-brand-soft);
   padding: 6px 9px;
@@ -414,15 +451,15 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 .login-showcase__cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 14px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
 .login-workspace-card {
   border: 1px solid var(--ez-border-light);
   border-radius: var(--ez-radius-sm);
   background: var(--ez-surface-subtle);
-  padding: 12px 12px 11px;
+  padding: 14px 14px 13px;
 }
 
 .login-workspace-card > span {
@@ -457,9 +494,9 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 }
 
 .login-showcase__quick span {
-  border: 1px solid rgba(37, 99, 255, 0.12);
+  border: 1px solid var(--login-chip-border);
   border-radius: var(--ez-radius-xs);
-  background: rgba(239, 246, 255, 0.82);
+  background: var(--login-chip-bg);
   padding: 6px 8px;
   color: var(--ez-text-secondary);
   font-size: var(--ez-text-xs);
@@ -470,9 +507,9 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 .login-feature-list {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
-  width: min(700px, 100%);
-  margin: 22px 0 0;
+  gap: 10px;
+  width: min(680px, 100%);
+  margin: 0 auto;
   padding: 0;
   list-style: none;
 }
@@ -481,9 +518,9 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid rgba(37, 99, 255, 0.14);
+  border: 1px solid var(--login-brand-border);
   border-radius: var(--ez-radius-sm);
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--login-feature-bg);
   padding: 7px 8px;
   color: var(--ez-text-regular);
   font-size: var(--ez-text-xs);
@@ -505,8 +542,8 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   justify-content: center;
   align-items: center;
   gap: 12px;
-  border-left: 1px solid rgba(148, 163, 184, 0.16);
-  background: rgba(255, 255, 255, 0.62);
+  border-left: 1px solid var(--login-form-panel-border);
+  background: var(--login-form-panel-bg);
   padding: 36px 52px;
   backdrop-filter: blur(18px);
 }
@@ -517,7 +554,7 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   border: 1px solid var(--ez-component-border);
   border-radius: var(--ez-radius-control);
   background: var(--ez-card-bg);
-  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.1);
+  box-shadow: var(--login-card-shadow);
 }
 
 .login-card-heading {
@@ -586,7 +623,6 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 }
 
 .login-form :deep(.n-form-item-label) {
-  color: var(--ez-text-regular);
   font-size: var(--ez-text-xs);
   font-weight: 700;
 }
@@ -611,14 +647,6 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   --n-padding-right: 11px;
 }
 
-.compact-input :deep(.n-input__border) {
-  border-color: var(--ez-border-light);
-}
-
-.compact-input :deep(.n-input-wrapper) {
-  background: var(--ez-card-bg);
-}
-
 .login-input-icon {
   color: var(--ez-text-light);
 }
@@ -631,7 +659,6 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
 }
 
 .login-form-options :deep(.n-checkbox__label) {
-  color: var(--ez-text-secondary);
   font-size: var(--ez-text-xs);
 }
 
@@ -691,9 +718,15 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
     padding: 28px 28px 24px;
   }
 
+  .login-product__stage {
+    justify-content: flex-start;
+    padding: 34px 0 0;
+    transform: none;
+  }
+
   .login-product__copy {
     max-width: 660px;
-    margin: 42px 0 18px;
+    margin: 0;
   }
 
   .login-product__copy h1 {
@@ -720,17 +753,20 @@ const workspaceQuickEntries = ['动态菜单', '数据权限', '公告通知']
   }
 
   .login-product__header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
+    align-items: center;
   }
 
   .login-logo {
     width: 236px;
+    height: 50px;
+  }
+
+  .login-product__stage {
+    padding-top: 18px;
   }
 
   .login-product__copy {
-    margin-top: 26px;
+    margin: 0;
   }
 
   .login-product__copy h1 {

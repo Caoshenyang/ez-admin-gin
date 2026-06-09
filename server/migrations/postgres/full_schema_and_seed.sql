@@ -377,6 +377,211 @@ COMMENT ON COLUMN sys_notice.created_at IS '创建时间';
 COMMENT ON COLUMN sys_notice.updated_at IS '更新时间';
 COMMENT ON COLUMN sys_notice.deleted_at IS '逻辑删除时间，NULL 表示未删除';
 
+-- 消息模板表
+CREATE TABLE sys_message_template (
+  id BIGSERIAL PRIMARY KEY,
+  code VARCHAR(128) NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  title VARCHAR(128) NOT NULL,
+  content TEXT NOT NULL,
+  type SMALLINT NOT NULL DEFAULT 1,
+  variables TEXT NOT NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  is_system BOOLEAN NOT NULL DEFAULT TRUE,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_message_template_code ON sys_message_template (code);
+CREATE INDEX idx_sys_message_template_type ON sys_message_template (type);
+CREATE INDEX idx_sys_message_template_status ON sys_message_template (status);
+CREATE INDEX idx_sys_message_template_deleted_at ON sys_message_template (deleted_at);
+
+COMMENT ON TABLE sys_message_template IS '消息模板表';
+COMMENT ON COLUMN sys_message_template.id IS '消息模板主键，数据库自增生成';
+COMMENT ON COLUMN sys_message_template.code IS '模板编码，系统内唯一';
+COMMENT ON COLUMN sys_message_template.name IS '模板名称';
+COMMENT ON COLUMN sys_message_template.title IS '消息标题模板';
+COMMENT ON COLUMN sys_message_template.content IS '消息内容模板';
+COMMENT ON COLUMN sys_message_template.type IS '模板类型：1 站内通知，2 待办提醒，3 告警提醒';
+COMMENT ON COLUMN sys_message_template.variables IS '模板变量说明';
+COMMENT ON COLUMN sys_message_template.sort IS '排序值，数字越小越靠前';
+COMMENT ON COLUMN sys_message_template.status IS '配置状态：1 启用，2 禁用';
+COMMENT ON COLUMN sys_message_template.is_system IS '是否系统级配置';
+COMMENT ON COLUMN sys_message_template.remark IS '备注';
+COMMENT ON COLUMN sys_message_template.created_at IS '创建时间';
+COMMENT ON COLUMN sys_message_template.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_message_template.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+
+-- 消息提醒规则表
+CREATE TABLE sys_message_reminder (
+  id BIGSERIAL PRIMARY KEY,
+  code VARCHAR(128) NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  trigger_event VARCHAR(128) NOT NULL,
+  template_id BIGINT NOT NULL,
+  channels VARCHAR(128) NOT NULL DEFAULT 'notification',
+  receiver_type SMALLINT NOT NULL DEFAULT 1,
+  receiver_values TEXT NOT NULL,
+  advance_minutes INTEGER NOT NULL DEFAULT 0,
+  link_url VARCHAR(255) NOT NULL DEFAULT '',
+  sort INTEGER NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  is_system BOOLEAN NOT NULL DEFAULT TRUE,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_message_reminder_code ON sys_message_reminder (code);
+CREATE INDEX idx_sys_message_reminder_trigger_event ON sys_message_reminder (trigger_event);
+CREATE INDEX idx_sys_message_reminder_template_id ON sys_message_reminder (template_id);
+CREATE INDEX idx_sys_message_reminder_receiver_type ON sys_message_reminder (receiver_type);
+CREATE INDEX idx_sys_message_reminder_status ON sys_message_reminder (status);
+CREATE INDEX idx_sys_message_reminder_deleted_at ON sys_message_reminder (deleted_at);
+
+COMMENT ON TABLE sys_message_reminder IS '消息提醒规则表';
+COMMENT ON COLUMN sys_message_reminder.id IS '提醒规则主键，数据库自增生成';
+COMMENT ON COLUMN sys_message_reminder.code IS '提醒编码，系统内唯一';
+COMMENT ON COLUMN sys_message_reminder.name IS '提醒名称';
+COMMENT ON COLUMN sys_message_reminder.trigger_event IS '触发事件编码，例如 auth:login:success';
+COMMENT ON COLUMN sys_message_reminder.template_id IS '消息模板 ID，对应 sys_message_template.id';
+COMMENT ON COLUMN sys_message_reminder.channels IS '提醒渠道，多个渠道用英文逗号分隔';
+COMMENT ON COLUMN sys_message_reminder.receiver_type IS '接收人类型：1 角色，2 用户，3 部门，4 发起人，5 负责人';
+COMMENT ON COLUMN sys_message_reminder.receiver_values IS '接收人配置值，按接收人类型保存角色编码、用户 ID 或部门 ID';
+COMMENT ON COLUMN sys_message_reminder.advance_minutes IS '提前提醒分钟数，0 表示即时提醒';
+COMMENT ON COLUMN sys_message_reminder.link_url IS '消息跳转链接';
+COMMENT ON COLUMN sys_message_reminder.sort IS '排序值，数字越小越靠前';
+COMMENT ON COLUMN sys_message_reminder.status IS '配置状态：1 启用，2 禁用';
+COMMENT ON COLUMN sys_message_reminder.is_system IS '是否系统级配置';
+COMMENT ON COLUMN sys_message_reminder.remark IS '备注';
+COMMENT ON COLUMN sys_message_reminder.created_at IS '创建时间';
+COMMENT ON COLUMN sys_message_reminder.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_message_reminder.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+
+-- 系统邮箱账号表
+CREATE TABLE sys_mail_account (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(64) NOT NULL,
+  host VARCHAR(128) NOT NULL,
+  port INTEGER NOT NULL DEFAULT 25,
+  username VARCHAR(128) NOT NULL DEFAULT '',
+  password VARCHAR(255) NOT NULL DEFAULT '',
+  from_email VARCHAR(128) NOT NULL,
+  from_name VARCHAR(64) NOT NULL DEFAULT '',
+  encryption VARCHAR(16) NOT NULL DEFAULT 'none',
+  is_default BOOLEAN NOT NULL DEFAULT FALSE,
+  status SMALLINT NOT NULL DEFAULT 1,
+  last_test_at TIMESTAMPTZ NULL,
+  last_test_msg VARCHAR(255) NOT NULL DEFAULT '',
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_mail_account_name ON sys_mail_account (name);
+CREATE INDEX idx_sys_mail_account_default ON sys_mail_account (is_default);
+CREATE INDEX idx_sys_mail_account_status ON sys_mail_account (status);
+CREATE INDEX idx_sys_mail_account_deleted_at ON sys_mail_account (deleted_at);
+
+COMMENT ON TABLE sys_mail_account IS '系统邮箱账号表';
+COMMENT ON COLUMN sys_mail_account.id IS '邮箱账号主键，数据库自增生成';
+COMMENT ON COLUMN sys_mail_account.name IS '邮箱账号名称';
+COMMENT ON COLUMN sys_mail_account.host IS 'SMTP 主机';
+COMMENT ON COLUMN sys_mail_account.port IS 'SMTP 端口';
+COMMENT ON COLUMN sys_mail_account.username IS 'SMTP 登录用户名';
+COMMENT ON COLUMN sys_mail_account.password IS 'SMTP 登录密码或授权码';
+COMMENT ON COLUMN sys_mail_account.from_email IS '发件邮箱';
+COMMENT ON COLUMN sys_mail_account.from_name IS '发件人名称';
+COMMENT ON COLUMN sys_mail_account.encryption IS '加密方式：none、ssl、starttls';
+COMMENT ON COLUMN sys_mail_account.is_default IS '是否默认发信账号';
+COMMENT ON COLUMN sys_mail_account.status IS '邮箱状态：1 启用，2 禁用';
+COMMENT ON COLUMN sys_mail_account.last_test_at IS '最近一次测试时间';
+COMMENT ON COLUMN sys_mail_account.last_test_msg IS '最近一次测试结果';
+COMMENT ON COLUMN sys_mail_account.remark IS '备注';
+COMMENT ON COLUMN sys_mail_account.created_at IS '创建时间';
+COMMENT ON COLUMN sys_mail_account.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_mail_account.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+
+-- 邮件模板表
+CREATE TABLE sys_mail_template (
+  id BIGSERIAL PRIMARY KEY,
+  code VARCHAR(64) NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  subject VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  is_html BOOLEAN NOT NULL DEFAULT TRUE,
+  variables TEXT NOT NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  status SMALLINT NOT NULL DEFAULT 1,
+  remark VARCHAR(255) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  deleted_at TIMESTAMPTZ NULL
+);
+
+CREATE UNIQUE INDEX uk_sys_mail_template_code ON sys_mail_template (code);
+CREATE INDEX idx_sys_mail_template_status ON sys_mail_template (status);
+CREATE INDEX idx_sys_mail_template_deleted_at ON sys_mail_template (deleted_at);
+
+COMMENT ON TABLE sys_mail_template IS '邮件模板表';
+COMMENT ON COLUMN sys_mail_template.id IS '邮件模板主键，数据库自增生成';
+COMMENT ON COLUMN sys_mail_template.code IS '模板编码，系统内唯一';
+COMMENT ON COLUMN sys_mail_template.name IS '模板名称';
+COMMENT ON COLUMN sys_mail_template.subject IS '邮件主题模板';
+COMMENT ON COLUMN sys_mail_template.content IS '邮件正文模板';
+COMMENT ON COLUMN sys_mail_template.is_html IS '是否 HTML 邮件';
+COMMENT ON COLUMN sys_mail_template.variables IS '模板变量 JSON 数组';
+COMMENT ON COLUMN sys_mail_template.sort IS '排序值，数字越小越靠前';
+COMMENT ON COLUMN sys_mail_template.status IS '模板状态：1 启用，2 禁用';
+COMMENT ON COLUMN sys_mail_template.remark IS '备注';
+COMMENT ON COLUMN sys_mail_template.created_at IS '创建时间';
+COMMENT ON COLUMN sys_mail_template.updated_at IS '更新时间';
+COMMENT ON COLUMN sys_mail_template.deleted_at IS '逻辑删除时间，NULL 表示未删除';
+
+-- 邮件发送日志表
+CREATE TABLE sys_mail_log (
+  id BIGSERIAL PRIMARY KEY,
+  account_id BIGINT NOT NULL DEFAULT 0,
+  account_name VARCHAR(64) NOT NULL DEFAULT '',
+  template_id BIGINT NOT NULL DEFAULT 0,
+  template_code VARCHAR(64) NOT NULL DEFAULT '',
+  subject VARCHAR(200) NOT NULL DEFAULT '',
+  from_email VARCHAR(128) NOT NULL DEFAULT '',
+  to_emails TEXT NOT NULL,
+  cc_emails TEXT NOT NULL,
+  bcc_emails TEXT NOT NULL,
+  status SMALLINT NOT NULL,
+  error_message VARCHAR(500) NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX idx_sys_mail_log_account_id ON sys_mail_log (account_id);
+CREATE INDEX idx_sys_mail_log_template_id ON sys_mail_log (template_id);
+CREATE INDEX idx_sys_mail_log_template_code ON sys_mail_log (template_code);
+CREATE INDEX idx_sys_mail_log_status ON sys_mail_log (status);
+CREATE INDEX idx_sys_mail_log_created_at ON sys_mail_log (created_at);
+
+COMMENT ON TABLE sys_mail_log IS '邮件发送日志表';
+COMMENT ON COLUMN sys_mail_log.id IS '邮件发送日志主键，数据库自增生成';
+COMMENT ON COLUMN sys_mail_log.account_id IS '邮箱账号 ID，对应 sys_mail_account.id';
+COMMENT ON COLUMN sys_mail_log.account_name IS '邮箱账号快照名称';
+COMMENT ON COLUMN sys_mail_log.template_id IS '邮件模板 ID，对应 sys_mail_template.id';
+COMMENT ON COLUMN sys_mail_log.template_code IS '邮件模板编码快照';
+COMMENT ON COLUMN sys_mail_log.subject IS '邮件主题快照';
+COMMENT ON COLUMN sys_mail_log.from_email IS '发件邮箱快照';
+COMMENT ON COLUMN sys_mail_log.to_emails IS '收件人邮箱，逗号分隔';
+COMMENT ON COLUMN sys_mail_log.cc_emails IS '抄送邮箱，逗号分隔';
+COMMENT ON COLUMN sys_mail_log.bcc_emails IS '密送邮箱，逗号分隔';
+COMMENT ON COLUMN sys_mail_log.status IS '发送状态：1 成功，2 失败';
+COMMENT ON COLUMN sys_mail_log.error_message IS '失败错误摘要';
+COMMENT ON COLUMN sys_mail_log.created_at IS '创建时间';
+
 -- Casbin 权限策略表
 CREATE TABLE casbin_rule (
   id BIGSERIAL PRIMARY KEY,
@@ -630,6 +835,15 @@ INSERT INTO sys_role (id, code, name, sort, data_scope, status, remark, created_
 VALUES
   (1, 'super_admin', '超级管理员', 0, 'all', 1, '系统内置角色', NOW(), NOW());
 
+INSERT INTO sys_config (id, group_code, config_key, name, value, sort, status, remark, created_at, updated_at)
+VALUES
+  (1, 'rate_limit', 'rate_limit:login_max_requests', '登录 IP 限流次数', '200', 10, 1, '登录接口每 IP 在窗口期内最大请求数，启用后实时生效', NOW(), NOW()),
+  (2, 'rate_limit', 'rate_limit:login_window_sec', '登录 IP 限流窗口秒数', '60', 20, 1, '登录接口 IP 限流滑动窗口，启用后实时生效', NOW(), NOW()),
+  (3, 'rate_limit', 'rate_limit:login_lockout_threshold', '账号锁定失败次数', '5', 30, 1, '账号连续登录失败达到该次数后进入锁定，启用后实时生效', NOW(), NOW()),
+  (4, 'rate_limit', 'rate_limit:login_lockout_sec', '账号锁定秒数', '300', 40, 1, '账号登录失败锁定持续时间，启用后实时生效', NOW(), NOW()),
+  (5, 'upload', 'upload:max_size_mb', '单文件大小上限 MB', '10', 10, 1, '文件与附件上传大小限制，启用后实时生效', NOW(), NOW()),
+  (6, 'upload', 'upload:allowed_exts', '允许上传扩展名', '.jpg,.jpeg,.png,.gif,.webp,.pdf,.txt,.docx,.xlsx', 20, 1, '文件与附件上传扩展名白名单，启用后实时生效', NOW(), NOW());
+
 INSERT INTO sys_menu (id, parent_id, type, code, title, path, component, icon, sort, status, remark, created_at, updated_at)
 VALUES
   (100, 0, 1, 'iam', '权限管理', '/iam', '', 'shield', 20, 1, '系统内置目录', NOW(), NOW()),
@@ -700,6 +914,30 @@ VALUES
   (1082, 208, 3, 'system:notice:update', '编辑公告', '', '', '', 30, 1, '系统内置按钮', NOW(), NOW()),
   (1083, 208, 3, 'system:notice:status', '修改公告状态', '', '', '', 40, 1, '系统内置按钮', NOW(), NOW()),
   (1084, 208, 3, 'system:notice:delete', '删除公告', '', '', '', 50, 1, '系统内置按钮', NOW(), NOW()),
+  (213, 101, 2, 'system:message', '消息提醒', '/system/messages', 'system/MessageView', 'notifications', 60, 1, '系统内置菜单', NOW(), NOW()),
+  (1130, 213, 3, 'system:message:template:list', '查看消息模板', '', '', '', 10, 1, '系统内置按钮', NOW(), NOW()),
+  (1131, 213, 3, 'system:message:template:create', '创建消息模板', '', '', '', 20, 1, '系统内置按钮', NOW(), NOW()),
+  (1132, 213, 3, 'system:message:template:update', '编辑消息模板', '', '', '', 30, 1, '系统内置按钮', NOW(), NOW()),
+  (1133, 213, 3, 'system:message:template:status', '修改消息模板状态', '', '', '', 40, 1, '系统内置按钮', NOW(), NOW()),
+  (1134, 213, 3, 'system:message:reminder:list', '查看提醒规则', '', '', '', 50, 1, '系统内置按钮', NOW(), NOW()),
+  (1135, 213, 3, 'system:message:reminder:create', '创建提醒规则', '', '', '', 60, 1, '系统内置按钮', NOW(), NOW()),
+  (1136, 213, 3, 'system:message:reminder:update', '编辑提醒规则', '', '', '', 70, 1, '系统内置按钮', NOW(), NOW()),
+  (1137, 213, 3, 'system:message:reminder:status', '修改提醒规则状态', '', '', '', 80, 1, '系统内置按钮', NOW(), NOW()),
+  (214, 101, 2, 'system:mail', '邮件管理', '/system/mails', 'system/MailView', 'mail', 70, 1, '系统内置菜单', NOW(), NOW()),
+  (1140, 214, 3, 'system:mail:account:list', '查看邮箱账号', '', '', '', 10, 1, '系统内置按钮', NOW(), NOW()),
+  (1141, 214, 3, 'system:mail:account:create', '创建邮箱账号', '', '', '', 20, 1, '系统内置按钮', NOW(), NOW()),
+  (1142, 214, 3, 'system:mail:account:update', '编辑邮箱账号', '', '', '', 30, 1, '系统内置按钮', NOW(), NOW()),
+  (1143, 214, 3, 'system:mail:account:status', '修改邮箱账号状态', '', '', '', 40, 1, '系统内置按钮', NOW(), NOW()),
+  (1144, 214, 3, 'system:mail:account:delete', '删除邮箱账号', '', '', '', 50, 1, '系统内置按钮', NOW(), NOW()),
+  (1145, 214, 3, 'system:mail:account:test', '测试邮箱账号', '', '', '', 60, 1, '系统内置按钮', NOW(), NOW()),
+  (1146, 214, 3, 'system:mail:template:list', '查看邮件模板', '', '', '', 70, 1, '系统内置按钮', NOW(), NOW()),
+  (1147, 214, 3, 'system:mail:template:create', '创建邮件模板', '', '', '', 80, 1, '系统内置按钮', NOW(), NOW()),
+  (1148, 214, 3, 'system:mail:template:update', '编辑邮件模板', '', '', '', 90, 1, '系统内置按钮', NOW(), NOW()),
+  (1149, 214, 3, 'system:mail:template:status', '修改邮件模板状态', '', '', '', 100, 1, '系统内置按钮', NOW(), NOW()),
+  (1150, 214, 3, 'system:mail:template:delete', '删除邮件模板', '', '', '', 110, 1, '系统内置按钮', NOW(), NOW()),
+  (1151, 214, 3, 'system:mail:template:render', '预览邮件模板', '', '', '', 120, 1, '系统内置按钮', NOW(), NOW()),
+  (1152, 214, 3, 'system:mail:send', '发送邮件', '', '', '', 130, 1, '系统内置按钮', NOW(), NOW()),
+  (1153, 214, 3, 'system:mail:log', '查看邮件日志', '', '', '', 140, 1, '系统内置按钮', NOW(), NOW()),
   (200, 102, 2, 'system:health', '系统状态', '/audit/health', 'system/HealthView', 'pulse', 10, 1, '系统内置菜单', NOW(), NOW()),
   (1001, 200, 3, 'system:health:view', '查看系统状态', '', '', '', 10, 1, '系统内置按钮', NOW(), NOW()),
   (206, 102, 2, 'system:operation-log', '操作日志', '/audit/operation-logs', 'system/OperationLogView', 'list', 20, 1, '系统内置菜单', NOW(), NOW()),
@@ -718,6 +956,16 @@ VALUES
   (2, 1, 'no', '否', '0', 'default', 20, 1, '系统内置基础字典项', NOW(), NOW()),
   (3, 2, 'info', '普通公告', 'info', 'info', 10, 1, '系统内置公告字典项', NOW(), NOW()),
   (4, 2, 'warning', '重要公告', 'warning', 'warning', 20, 1, '系统内置公告字典项', NOW(), NOW());
+
+INSERT INTO sys_message_template (id, code, name, title, content, type, variables, sort, status, is_system, remark, created_at, updated_at)
+VALUES
+  (1, 'auth:login-success', '登录成功提醒', '账号 {{username}} 登录成功', '账号 {{username}} 于 {{login_time}} 从 {{ip}} 登录系统。', 1, 'username=用户名; login_time=登录时间; ip=客户端 IP', 10, 1, TRUE, '系统内置登录提醒模板', NOW(), NOW()),
+  (2, 'account:password-expire', '密码到期提醒', '密码即将到期', '你的账号密码将在 {{expire_days}} 天后到期，请及时修改密码。', 2, 'expire_days=剩余天数', 20, 1, TRUE, '系统内置账号安全提醒模板', NOW(), NOW());
+
+INSERT INTO sys_message_reminder (id, code, name, trigger_event, template_id, channels, receiver_type, receiver_values, advance_minutes, link_url, sort, status, is_system, remark, created_at, updated_at)
+VALUES
+  (1, 'auth:login-success:super-admin', '登录成功通知超级管理员', 'auth:login:success', 1, 'notification', 1, 'super_admin', 0, '/audit/login-logs', 10, 1, TRUE, '系统内置登录安全提醒规则', NOW(), NOW()),
+  (2, 'account:password-expire:self', '密码到期提醒本人', 'account:password:expire', 2, 'notification', 4, '', 4320, '/account/profile', 20, 1, TRUE, '系统内置账号安全提醒规则', NOW(), NOW());
 
 INSERT INTO sys_api (id, code, name, module, method, path, sort, status, remark, created_at, updated_at)
 VALUES
@@ -783,7 +1031,29 @@ VALUES
   (60, 'system:notification:list', '查看通知', 'system', 'GET', '/api/v1/system/notifications', 60, 1, '系统内置接口权限', NOW(), NOW()),
   (61, 'system:notification:unread-count', '查看未读通知数', 'system', 'GET', '/api/v1/system/notifications/unread-count', 61, 1, '系统内置接口权限', NOW(), NOW()),
   (62, 'system:notification:mark-read', '标记通知已读', 'system', 'POST', '/api/v1/system/notifications/mark-read', 62, 1, '系统内置接口权限', NOW(), NOW()),
-  (63, 'system:notification:mark-all-read', '全部通知已读', 'system', 'POST', '/api/v1/system/notifications/mark-all-read', 63, 1, '系统内置接口权限', NOW(), NOW());
+  (63, 'system:notification:mark-all-read', '全部通知已读', 'system', 'POST', '/api/v1/system/notifications/mark-all-read', 63, 1, '系统内置接口权限', NOW(), NOW()),
+  (64, 'system:message:template:list', '查看消息模板', 'system', 'GET', '/api/v1/system/message-templates', 70, 1, '系统内置接口权限', NOW(), NOW()),
+  (65, 'system:message:template:create', '创建消息模板', 'system', 'POST', '/api/v1/system/message-templates', 71, 1, '系统内置接口权限', NOW(), NOW()),
+  (66, 'system:message:template:update', '编辑消息模板', 'system', 'POST', '/api/v1/system/message-templates/:id/update', 72, 1, '系统内置接口权限', NOW(), NOW()),
+  (67, 'system:message:template:status', '修改消息模板状态', 'system', 'POST', '/api/v1/system/message-templates/:id/status', 73, 1, '系统内置接口权限', NOW(), NOW()),
+  (68, 'system:message:reminder:list', '查看提醒规则', 'system', 'GET', '/api/v1/system/message-reminders', 74, 1, '系统内置接口权限', NOW(), NOW()),
+  (69, 'system:message:reminder:create', '创建提醒规则', 'system', 'POST', '/api/v1/system/message-reminders', 75, 1, '系统内置接口权限', NOW(), NOW()),
+  (70, 'system:message:reminder:update', '编辑提醒规则', 'system', 'POST', '/api/v1/system/message-reminders/:id/update', 76, 1, '系统内置接口权限', NOW(), NOW()),
+  (71, 'system:message:reminder:status', '修改提醒规则状态', 'system', 'POST', '/api/v1/system/message-reminders/:id/status', 77, 1, '系统内置接口权限', NOW(), NOW()),
+  (72, 'system:mail:account:list', '查看邮箱账号', 'system', 'GET', '/api/v1/system/mail/accounts', 80, 1, '系统内置接口权限', NOW(), NOW()),
+  (73, 'system:mail:account:create', '创建邮箱账号', 'system', 'POST', '/api/v1/system/mail/accounts', 81, 1, '系统内置接口权限', NOW(), NOW()),
+  (74, 'system:mail:account:update', '编辑邮箱账号', 'system', 'POST', '/api/v1/system/mail/accounts/:id/update', 82, 1, '系统内置接口权限', NOW(), NOW()),
+  (75, 'system:mail:account:status', '修改邮箱账号状态', 'system', 'POST', '/api/v1/system/mail/accounts/:id/status', 83, 1, '系统内置接口权限', NOW(), NOW()),
+  (76, 'system:mail:account:delete', '删除邮箱账号', 'system', 'POST', '/api/v1/system/mail/accounts/:id/delete', 84, 1, '系统内置接口权限', NOW(), NOW()),
+  (77, 'system:mail:account:test', '测试邮箱账号', 'system', 'POST', '/api/v1/system/mail/accounts/:id/test', 85, 1, '系统内置接口权限', NOW(), NOW()),
+  (78, 'system:mail:template:list', '查看邮件模板', 'system', 'GET', '/api/v1/system/mail/templates', 86, 1, '系统内置接口权限', NOW(), NOW()),
+  (79, 'system:mail:template:create', '创建邮件模板', 'system', 'POST', '/api/v1/system/mail/templates', 87, 1, '系统内置接口权限', NOW(), NOW()),
+  (80, 'system:mail:template:update', '编辑邮件模板', 'system', 'POST', '/api/v1/system/mail/templates/:id/update', 88, 1, '系统内置接口权限', NOW(), NOW()),
+  (81, 'system:mail:template:status', '修改邮件模板状态', 'system', 'POST', '/api/v1/system/mail/templates/:id/status', 89, 1, '系统内置接口权限', NOW(), NOW()),
+  (82, 'system:mail:template:delete', '删除邮件模板', 'system', 'POST', '/api/v1/system/mail/templates/:id/delete', 90, 1, '系统内置接口权限', NOW(), NOW()),
+  (83, 'system:mail:template:render', '预览邮件模板', 'system', 'POST', '/api/v1/system/mail/templates/:id/render', 91, 1, '系统内置接口权限', NOW(), NOW()),
+  (84, 'system:mail:send', '发送邮件', 'system', 'POST', '/api/v1/system/mail/send', 92, 1, '系统内置接口权限', NOW(), NOW()),
+  (85, 'system:mail:log', '查看邮件日志', 'system', 'GET', '/api/v1/system/mail/logs', 93, 1, '系统内置接口权限', NOW(), NOW());
 
 INSERT INTO sys_role_api (role_id, api_id, created_at, updated_at)
 SELECT 1, id, NOW(), NOW()
@@ -867,6 +1137,30 @@ VALUES
   (1, 1082, NOW(), NOW()),
   (1, 1083, NOW(), NOW()),
   (1, 1084, NOW(), NOW()),
+  (1, 213, NOW(), NOW()),
+  (1, 1130, NOW(), NOW()),
+  (1, 1131, NOW(), NOW()),
+  (1, 1132, NOW(), NOW()),
+  (1, 1133, NOW(), NOW()),
+  (1, 1134, NOW(), NOW()),
+  (1, 1135, NOW(), NOW()),
+  (1, 1136, NOW(), NOW()),
+  (1, 1137, NOW(), NOW()),
+  (1, 214, NOW(), NOW()),
+  (1, 1140, NOW(), NOW()),
+  (1, 1141, NOW(), NOW()),
+  (1, 1142, NOW(), NOW()),
+  (1, 1143, NOW(), NOW()),
+  (1, 1144, NOW(), NOW()),
+  (1, 1145, NOW(), NOW()),
+  (1, 1146, NOW(), NOW()),
+  (1, 1147, NOW(), NOW()),
+  (1, 1148, NOW(), NOW()),
+  (1, 1149, NOW(), NOW()),
+  (1, 1150, NOW(), NOW()),
+  (1, 1151, NOW(), NOW()),
+  (1, 1152, NOW(), NOW()),
+  (1, 1153, NOW(), NOW()),
   (1, 200, NOW(), NOW()),
   (1, 1001, NOW(), NOW()),
   (1, 206, NOW(), NOW()),
@@ -875,10 +1169,16 @@ VALUES
   (1, 1070, NOW(), NOW());
 
 SELECT setval(pg_get_serial_sequence('sys_role', 'id'), COALESCE((SELECT MAX(id) FROM sys_role), 1), true);
+SELECT setval(pg_get_serial_sequence('sys_config', 'id'), COALESCE((SELECT MAX(id) FROM sys_config), 1), true);
 SELECT setval(pg_get_serial_sequence('sys_menu', 'id'), COALESCE((SELECT MAX(id) FROM sys_menu), 1), true);
 SELECT setval(pg_get_serial_sequence('sys_api', 'id'), COALESCE((SELECT MAX(id) FROM sys_api), 1), true);
 SELECT setval(pg_get_serial_sequence('sys_dict_type', 'id'), COALESCE((SELECT MAX(id) FROM sys_dict_type), 1), true);
 SELECT setval(pg_get_serial_sequence('sys_dict_item', 'id'), COALESCE((SELECT MAX(id) FROM sys_dict_item), 1), true);
+SELECT setval(pg_get_serial_sequence('sys_message_template', 'id'), COALESCE((SELECT MAX(id) FROM sys_message_template), 1), true);
+SELECT setval(pg_get_serial_sequence('sys_message_reminder', 'id'), COALESCE((SELECT MAX(id) FROM sys_message_reminder), 1), true);
+SELECT setval(pg_get_serial_sequence('sys_mail_account', 'id'), COALESCE((SELECT MAX(id) FROM sys_mail_account), 1), true);
+SELECT setval(pg_get_serial_sequence('sys_mail_template', 'id'), COALESCE((SELECT MAX(id) FROM sys_mail_template), 1), true);
+SELECT setval(pg_get_serial_sequence('sys_mail_log', 'id'), COALESCE((SELECT MAX(id) FROM sys_mail_log), 1), true);
 
 -- ============================================================================
 -- Migration baseline

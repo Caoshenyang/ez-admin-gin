@@ -6,13 +6,17 @@ defineProps<{
 
 defineSlots<{
   actions?: () => unknown
+  'title-extra'?: () => unknown
 }>()
 </script>
 
 <template>
   <header class="ez-page-header-shell">
     <div>
-      <h1>{{ title }}</h1>
+      <div class="ez-page-header-shell__title-row">
+        <h1>{{ title }}</h1>
+        <slot name="title-extra" />
+      </div>
       <p v-if="description">{{ description }}</p>
     </div>
     <div v-if="$slots.actions" class="ez-page-header-shell__actions">
@@ -36,6 +40,13 @@ defineSlots<{
   font-weight: 700;
   color: var(--ez-text-main);
   line-height: 26px;
+}
+
+.ez-page-header-shell__title-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
 }
 
 .ez-page-header-shell p {

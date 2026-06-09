@@ -52,6 +52,8 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		RegisterSwagger(r)
 	}
 
+	runtimeConfig := platformConfig.NewRuntimeStore(opts.DB, opts.Redis, opts.Config, opts.Log)
+
 	var refreshStore *authnPlatform.RefreshTokenStore
 	if opts.Redis != nil {
 		refreshStore = authnPlatform.NewRefreshTokenStore(opts.Redis, opts.Config.Auth.RefreshTokenDuration())
@@ -59,11 +61,12 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 	}
 
 	authModule.RegisterRoutes(r, authModule.RouteOptions{
-		Config: opts.Config,
-		Log:    opts.Log,
-		DB:     opts.DB,
-		Redis:  opts.Redis,
-		Token:  opts.Token,
+		Config:        opts.Config,
+		RuntimeConfig: runtimeConfig,
+		Log:           opts.Log,
+		DB:            opts.DB,
+		Redis:         opts.Redis,
+		Token:         opts.Token,
 	})
 	setupModule.RegisterRoutes(r, setupModule.RouteOptions{
 		Log: opts.Log,
@@ -77,13 +80,14 @@ func NewRouter(opts RouterOptions) *gin.Engine {
 		Blacklist:  refreshStore,
 	})
 	systemModule.RegisterRoutes(r, systemModule.RouteOptions{
-		Config:     opts.Config,
-		Log:        opts.Log,
-		DB:         opts.DB,
-		Redis:      opts.Redis,
-		Token:      opts.Token,
-		Permission: opts.Permission,
-		Blacklist:  refreshStore,
+		Config:        opts.Config,
+		RuntimeConfig: runtimeConfig,
+		Log:           opts.Log,
+		DB:            opts.DB,
+		Redis:         opts.Redis,
+		Token:         opts.Token,
+		Permission:    opts.Permission,
+		Blacklist:     refreshStore,
 	})
 
 	return r

@@ -4,12 +4,15 @@ import { formatTime } from '@/utils/format'
 import { getSystemHealth } from '../api/health'
 import type { SystemHealthData } from '../types/health'
 import {
-  formatHealthStatusLabel,
+  healthCheckItems,
   healthDependencyCards,
   healthEndpointCards,
   healthErrorMessage,
-  healthStatusTagType,
-  healthStatusText,
+  healthIsReady,
+  healthOverview,
+  healthReadinessScore,
+  healthSignalIcons,
+  healthSummaryCards,
 } from './health-page.utils'
 
 export function useHealthPage() {
@@ -18,15 +21,20 @@ export function useHealthPage() {
   const health = ref<SystemHealthData | null>(null)
   const lastCheckedAt = ref('')
 
-  const dependencyCards = computed(() => healthDependencyCards(health.value))
+  const checkItems = computed(() => healthCheckItems(health.value, loading.value))
+  const dependencyCards = computed(() => healthDependencyCards(health.value, loading.value))
   const endpointCards = healthEndpointCards
-
-  const envTagType = computed(() => {
-    return health.value?.env === 'prod' ? 'success' : 'warning'
-  })
+  const isHealthy = computed(() => healthIsReady(health.value))
+  const overview = computed(() => healthOverview(health.value, loading.value, errorMessage.value))
+  const readinessScore = computed(() => healthReadinessScore(health.value, loading.value))
+  const signalIcons = computed(() => healthSignalIcons(health.value, loading.value))
 
   const lastCheckedLabel = computed(() => {
     return lastCheckedAt.value ? formatTime(lastCheckedAt.value) : '尚未检查'
+  })
+
+  const summaryCards = computed(() => {
+    return healthSummaryCards(health.value, lastCheckedLabel.value, loading.value)
   })
 
   async function loadHealth() {
@@ -43,33 +51,23 @@ export function useHealthPage() {
     }
   }
 
-  function formatStatusLabel(value?: string) {
-    return formatHealthStatusLabel(value)
-  }
-
-  function getStatusTagType(value?: string) {
-    return healthStatusTagType(value)
-  }
-
-  function getStatusText(value?: string) {
-    return healthStatusText(value, loading.value)
-  }
-
   onMounted(() => {
     void loadHealth()
   })
 
   return {
+    checkItems,
     dependencyCards,
     endpointCards,
-    envTagType,
     errorMessage,
-    formatStatusLabel,
-    getStatusTagType,
-    getStatusText,
     health,
+    isHealthy,
     lastCheckedLabel,
     loadHealth,
     loading,
+    overview,
+    readinessScore,
+    signalIcons,
+    summaryCards,
   }
 }

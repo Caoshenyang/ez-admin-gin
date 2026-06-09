@@ -55,6 +55,7 @@ func (h *healthHandler) Readiness(c *gin.Context) {
 
 	httpx.Success(c, gin.H{
 		"status":   "ok",
+		"env":      h.cfg.App.Env,
 		"database": "ok",
 		"redis":    "ok",
 	})

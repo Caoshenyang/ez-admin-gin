@@ -36,7 +36,7 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
       class="dict-type-panel-body grid h-full min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto]"
     >
       <div
-        class="flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4"
+        class="dict-panel-heading flex items-start justify-between gap-4 border-b border-[var(--ez-border-light)] px-5 pt-[18px] pb-[14px] max-[720px]:px-4"
       >
         <div>
           <p
@@ -59,7 +59,7 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
         />
       </div>
 
-      <div class="dict-type-filter-grid px-5 py-4 max-[720px]:px-4">
+      <div class="dict-type-filter-grid px-2 py-4 max-[720px]:px-2">
         <NInput
           v-model:value="query.keyword"
           clearable
@@ -73,18 +73,20 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
         </div>
       </div>
 
-      <NDataTable
-        remote
-        class="dict-table h-full min-h-0"
-        :columns="columns"
-        :data="items"
-        :loading="loading"
-        :pagination="false"
-        :row-key="(row: DictTypeItem) => row.id"
-        :row-props="rowProps"
-        :bordered="false"
-        flex-height
-      />
+      <div class="dict-table-shell h-full min-h-0 px-2 max-[720px]:px-2">
+        <NDataTable
+          remote
+          class="dict-table h-full min-h-0"
+          :columns="columns"
+          :data="items"
+          :loading="loading"
+          :pagination="false"
+          :row-key="(row: DictTypeItem) => row.id"
+          :row-props="rowProps"
+          :bordered="false"
+          flex-height
+        />
+      </div>
 
       <div class="ez-table-footer">
         <span>共 {{ total }} 条</span>
@@ -92,7 +94,9 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
           :page="query.page"
           :page-size="query.page_size"
           :item-count="total"
+          :page-sizes="[10, 20, 50]"
           :page-slot="3"
+          show-size-picker
           @update:page="(page) => $emit('pageChange', page)"
           @update:page-size="(pageSize) => $emit('pageSizeChange', pageSize)"
         />
@@ -115,8 +119,9 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  align-items: center;
   grid-template-columns: minmax(0, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .dict-type-filter-actions {
@@ -131,18 +136,21 @@ const query = defineModel<DictTypeListQuery>('query', { required: true })
   min-width: 64px;
 }
 
-:deep(.n-data-table-th--fixed-right),
-:deep(.n-data-table-td--fixed-right) {
-  box-shadow: -8px 0 12px rgba(15, 23, 42, 0.04);
-}
-
 .dict-type-panel-body {
   container: dict-type-panel / inline-size;
 }
 
+.dict-table-shell {
+  overflow: hidden;
+}
+
+.dict-panel-heading {
+  min-height: 106px;
+}
+
 @container dict-type-panel (min-width: 460px) {
   .dict-type-filter-grid {
-    grid-template-columns: minmax(180px, 1fr) 118px max-content;
+    grid-template-columns: minmax(0, 1fr) 118px max-content;
   }
 
   .dict-type-filter-actions {

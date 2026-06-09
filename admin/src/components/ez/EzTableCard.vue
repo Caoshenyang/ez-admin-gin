@@ -24,8 +24,6 @@ defineSlots<{
 }
 
 .ez-table-card-shell :deep(.n-data-table-th) {
-  background: #f8fafc;
-  color: var(--ez-text-regular);
   font-size: 13px;
   font-weight: 700;
   line-height: 1.35;
@@ -33,13 +31,7 @@ defineSlots<{
 }
 
 .ez-table-card-shell :deep(.n-data-table-td) {
-  color: var(--ez-text-main);
   font-size: 13px;
-}
-
-.ez-table-card-shell :deep(.n-data-table-th--fixed-right),
-.ez-table-card-shell :deep(.n-data-table-td--fixed-right) {
-  box-shadow: -8px 0 14px -14px rgba(15, 23, 42, 0.32);
 }
 
 .ez-table-card-shell :deep(.n-button--tiny) {

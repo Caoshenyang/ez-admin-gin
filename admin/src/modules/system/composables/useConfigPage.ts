@@ -1,6 +1,6 @@
 import type { DataTableColumns, FormRules } from 'naive-ui'
 import { NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
-import { h } from 'vue'
+import { computed, h, ref } from 'vue'
 
 import EzActionButton from '@/components/ez/EzActionButton.vue'
 import { useModalForm } from '@/composables/useModalForm'
@@ -17,6 +17,7 @@ import {
 } from '../api/config'
 import { ConfigStatus, type ConfigItem, type ConfigListQuery } from '../types/config'
 import {
+  BUILTIN_CONFIG_CATEGORIES,
   buildConfigCreatePayload,
   buildConfigUpdatePayload,
   defaultConfigFormModel,
@@ -25,9 +26,17 @@ import {
   type ConfigFormModel,
 } from './config-page.utils'
 
+const defaultConfigCategory = {
+  key: 'all',
+  group_code: '',
+  label: '全部配置',
+  description: '查看所有系统配置项',
+}
+
 export function useConfigPage() {
   const message = useMessage()
   const { canUse } = usePermission()
+  const activeConfigGroup = ref('')
 
   const {
     items: configs,
@@ -35,8 +44,8 @@ export function useConfigPage() {
     loading,
     query,
     load,
-    handleSearch,
-    handleReset,
+    handleSearch: searchConfigs,
+    handleReset: resetConfigs,
     handlePageChange,
     handlePageSizeChange,
   } = useRemotePagination<ConfigItem, ConfigListQuery>(getConfigs, {
@@ -50,7 +59,7 @@ export function useConfigPage() {
     formModel,
     saving,
     rules,
-    openCreate,
+    openCreate: openCreateModal,
     openEdit,
     handleSubmit,
   } = useModalForm<ConfigFormModel>(defaultConfigFormModel, {
@@ -62,11 +71,64 @@ export function useConfigPage() {
     } as FormRules,
   })
 
+  const configCategories = computed(() => {
+    const categoryMap = new Map(BUILTIN_CONFIG_CATEGORIES.map((item) => [item.group_code, item]))
+
+    for (const config of configs.value) {
+      if (!config.group_code || categoryMap.has(config.group_code)) {
+        continue
+      }
+
+      categoryMap.set(config.group_code, {
+        key: config.group_code,
+        group_code: config.group_code,
+        label: `${config.group_code} 分组`,
+        description: '当前已有配置分组',
+      })
+    }
+
+    return Array.from(categoryMap.values())
+  })
+
+  const activeConfigCategory = computed(() => {
+    return (
+      configCategories.value.find((item) => item.group_code === activeConfigGroup.value) ??
+      BUILTIN_CONFIG_CATEGORIES[0] ??
+      defaultConfigCategory
+    )
+  })
+
   const { handleToggleStatus } = useStatusToggle(updateConfigStatus, {
     onSuccess: async () => {
       await load()
     },
   })
+
+  const handleSearch = () => {
+    activeConfigGroup.value = query.group_code?.trim() ?? ''
+    searchConfigs()
+  }
+
+  const handleReset = () => {
+    activeConfigGroup.value = ''
+    resetConfigs()
+  }
+
+  const selectConfigCategory = (groupCode: string) => {
+    activeConfigGroup.value = groupCode
+    query.group_code = groupCode
+    query.page = 1
+    void load()
+  }
+
+  const openCreateForm = (groupCode = activeConfigGroup.value) => {
+    openCreateModal()
+
+    if (groupCode) {
+      formModel.group_code = groupCode
+      formModel.sort = configs.value.length * 10 + 10
+    }
+  }
 
   const openEditForm = (row: ConfigItem) => {
     openEdit(toConfigFormModel(row))
@@ -218,7 +280,10 @@ export function useConfigPage() {
   }
 
   return {
+    activeConfigCategory,
+    activeConfigGroup,
     canUse,
+    configCategories,
     columns,
     configs,
     formMode,
@@ -232,11 +297,12 @@ export function useConfigPage() {
     handleSubmit,
     load,
     loading,
-    openCreate,
+    openCreate: openCreateForm,
     openEdit: openEditForm,
     query,
     rules,
     saving,
+    selectConfigCategory,
     submitForm,
     total,
   }

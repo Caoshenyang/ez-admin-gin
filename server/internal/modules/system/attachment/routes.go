@@ -10,16 +10,18 @@ import (
 )
 
 type RouteOptions struct {
-	DB     *gorm.DB
-	Upload platformConfig.UploadConfig
-	Log    *zap.Logger
+	DB            *gorm.DB
+	Upload        platformConfig.UploadConfig
+	RuntimeConfig *platformConfig.RuntimeStore
+	Log           *zap.Logger
 }
 
 func RegisterRoutes(group *gin.RouterGroup, opts RouteOptions) {
 	service := NewService(ServiceOptions{
-		DB:     opts.DB,
-		Upload: opts.Upload,
-		Log:    opts.Log,
+		DB:            opts.DB,
+		Upload:        opts.Upload,
+		RuntimeConfig: opts.RuntimeConfig,
+		Log:           opts.Log,
 	})
 	attachmentapi.RegisterRoutes(group, attachmentapi.RouteOptions{
 		Service: service,

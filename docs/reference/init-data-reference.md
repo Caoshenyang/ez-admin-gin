@@ -31,8 +31,23 @@ description: "说明内置系统种子与首个管理员初始化的真实边界
 - `super_admin` 对系统接口的角色接口关联（`sys_role_api`）
 - 由接口元数据同步出来的 `super_admin` Casbin 策略
 - 角色菜单关系
-- 字典、附件、部门、岗位、通知等主线模块的结构和内置系统数据
+- 配置、字典、附件、部门、岗位、通知等主线模块的结构和内置系统数据
 - 当前迁移基线，避免导入完整版 SQL 后启动服务时重复执行历史迁移
+
+其中系统配置会内置一组已经接入业务逻辑的运行配置，覆盖 `rate_limit` 和 `upload` 分组。它们分别控制登录 IP 限流、账号失败锁定、文件上传大小和文件扩展名白名单。
+
+| 配置键 | 影响范围 | 有效值 |
+| --- | --- | --- |
+| `rate_limit:login_max_requests` | 登录接口每 IP 在窗口期内允许的最大请求数 | `1` 到 `10000` |
+| `rate_limit:login_window_sec` | 登录 IP 限流窗口秒数 | `1` 到 `86400` |
+| `rate_limit:login_lockout_threshold` | 同一账号连续登录失败多少次后锁定 | `1` 到 `100` |
+| `rate_limit:login_lockout_sec` | 账号失败锁定持续秒数 | `1` 到 `86400` |
+| `upload:max_size_mb` | 文件管理和附件中心的单文件大小上限 | `1` 到 `50` |
+| `upload:allowed_exts` | 文件管理和附件中心允许上传的扩展名 | 用逗号、分号、空格或换行分隔，例如 `.jpg,.png,.pdf` |
+
+::: warning 运行配置边界
+`sys_config` 只接管适合在线调整的业务运行参数。数据库、Redis、JWT secret、上传目录、CORS 等启动或安全根配置仍然来自 `server/configs/config.yaml` 和 `EZ_*` 环境变量；如果 `sys_config` 中的运行配置缺失、禁用或值非法，后端会回退到静态配置。
+:::
 
 当前内置种子还会顺手补齐一件容易被忽略的事：
 

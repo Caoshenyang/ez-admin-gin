@@ -52,3 +52,40 @@ func TestValidateProductionAllowsSafeConfig(t *testing.T) {
 		t.Fatalf("ValidateProduction() error = %v, want nil", err)
 	}
 }
+
+func TestRuntimeStoreNilFallsBackToStaticConfig(t *testing.T) {
+	static := Config{
+		RateLimit: RateLimitConfig{
+			LoginMaxRequests:      20,
+			LoginWindowSec:        120,
+			LoginLockoutThreshold: 6,
+			LoginLockoutSec:       600,
+		},
+		Upload: UploadConfig{
+			Dir:         "uploads",
+			PublicPath:  "/uploads",
+			MaxSizeMB:   12,
+			AllowedExts: []string{".jpg", ".pdf"},
+		},
+	}
+
+	store := NewRuntimeStore(nil, nil, &static, nil)
+
+	rateLimit := store.RateLimitConfig(nil)
+	if rateLimit.LoginMaxRequests != 20 || rateLimit.LoginWindowSec != 120 || rateLimit.LoginLockoutThreshold != 6 || rateLimit.LoginLockoutSec != 600 {
+		t.Fatalf("RateLimitConfig() = %+v, want static fallback", rateLimit)
+	}
+
+	upload := store.UploadConfig(nil)
+	if upload.MaxSizeMB != 12 || strings.Join(upload.AllowedExts, ",") != ".jpg,.pdf" {
+		t.Fatalf("UploadConfig() = %+v, want static fallback", upload)
+	}
+}
+
+func TestSplitConfigListTrimsAndDeduplicates(t *testing.T) {
+	got := splitConfigList(" .jpg, .png\n.jpg; .pdf\t")
+	want := ".jpg,.png,.pdf"
+	if strings.Join(got, ",") != want {
+		t.Fatalf("splitConfigList() = %q, want %q", strings.Join(got, ","), want)
+	}
+}

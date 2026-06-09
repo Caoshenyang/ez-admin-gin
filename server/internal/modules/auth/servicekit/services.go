@@ -25,12 +25,13 @@ type Services struct {
 }
 
 type ServiceOptions struct {
-	Config       *platformConfig.Config
-	Log          *zap.Logger
-	DB           *gorm.DB
-	Redis        *goredis.Client
-	Token        *authnPlatform.Manager
-	RefreshStore *authnPlatform.RefreshTokenStore
+	Config        *platformConfig.Config
+	RuntimeConfig *platformConfig.RuntimeStore
+	Log           *zap.Logger
+	DB            *gorm.DB
+	Redis         *goredis.Client
+	Token         *authnPlatform.Manager
+	RefreshStore  *authnPlatform.RefreshTokenStore
 }
 
 // NewServices 收拢 auth 模块服务构造，统一 repository / transactor / token / redis 依赖装配。
@@ -39,11 +40,7 @@ func NewServices(opts ServiceOptions) Services {
 	transactor := platformDatabase.NewTransactor(opts.DB)
 	var lockChecker authapp.AccountLockChecker
 	if opts.Config != nil && opts.Redis != nil {
-		lockChecker = platformMiddleware.NewAccountLockChecker(
-			opts.Redis,
-			opts.Config.RateLimit.LoginLockoutThreshold,
-			opts.Config.RateLimit.LoginLockoutSec,
-		)
+		lockChecker = platformMiddleware.NewAccountLockChecker(opts.Redis, opts.RuntimeConfig)
 	}
 
 	return Services{

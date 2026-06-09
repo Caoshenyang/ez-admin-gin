@@ -4,6 +4,7 @@ import (
 	authservicekit "ez-admin-gin/server/internal/modules/auth/servicekit"
 	"ez-admin-gin/server/internal/modules/modulekit"
 	authnPlatform "ez-admin-gin/server/internal/platform/authn"
+	platformConfig "ez-admin-gin/server/internal/platform/config"
 	platformMiddleware "ez-admin-gin/server/internal/platform/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -18,8 +19,7 @@ type RouteOptions struct {
 	Redis         *goredis.Client
 	Token         *authnPlatform.Manager
 	Services      authservicekit.Services
-	RateLimitMax  int
-	RateLimitSec  int
+	RuntimeConfig *platformConfig.RuntimeStore
 	Env           string
 	Blacklist     platformMiddleware.TokenBlacklistChecker
 }
@@ -36,7 +36,7 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	api := r.Group("/api/v1")
 	auth := api.Group("/auth")
 	auth.POST("/login",
-		platformMiddleware.LoginRateLimit(opts.Redis, opts.RateLimitMax, opts.RateLimitSec),
+		platformMiddleware.LoginRateLimit(opts.Redis, opts.RuntimeConfig),
 		login.LoginWithRefresh(opts.Env),
 	)
 	auth.POST("/refresh", refresh.Refresh)

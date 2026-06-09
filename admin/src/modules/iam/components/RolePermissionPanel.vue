@@ -371,10 +371,6 @@ function openRelatedUsers() {
 </template>
 
 <style scoped>
-.permission-console-card {
-  background: #fff;
-}
-
 .permission-console {
   display: flex;
   height: 100%;
@@ -388,8 +384,8 @@ function openRelatedUsers() {
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
-  background: #fff;
+  border-bottom: 1px solid var(--ez-border-muted);
+  background: var(--ez-card-bg);
   padding: 15px 18px;
 }
 
@@ -430,7 +426,7 @@ function openRelatedUsers() {
   min-height: 0;
   flex: 1;
   grid-template-columns: minmax(0, 1fr) 220px;
-  background: #f8fafc;
+  background: var(--ez-surface-subtle);
 }
 
 .permission-empty-state {
@@ -439,7 +435,7 @@ function openRelatedUsers() {
   min-height: 320px;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--ez-card-bg);
 }
 
 .permission-empty-state span {
@@ -452,8 +448,8 @@ function openRelatedUsers() {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  border-right: 1px solid rgba(226, 232, 240, 0.86);
-  background: #fff;
+  border-right: 1px solid var(--ez-border-muted);
+  background: var(--ez-card-bg);
   overflow: hidden;
 }
 
@@ -461,8 +457,8 @@ function openRelatedUsers() {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.82);
-  background: #fff;
+  border-bottom: 1px solid var(--ez-border-muted);
+  background: var(--ez-card-bg);
   padding: 10px 16px;
 }
 
@@ -482,7 +478,7 @@ function openRelatedUsers() {
 .permission-editor-tabs {
   display: flex;
   gap: 4px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.82);
+  border-bottom: 1px solid var(--ez-border-muted);
   padding: 12px 16px 0;
 }
 
@@ -528,7 +524,7 @@ function openRelatedUsers() {
   border-radius: 6px;
   background: rgba(245, 158, 11, 0.08);
   padding: 3px 8px;
-  color: #92400e;
+  color: var(--ez-warning-text);
 }
 
 .permission-warning span {
@@ -539,8 +535,8 @@ function openRelatedUsers() {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #f59e0b;
-  color: #fff;
+  background: var(--ez-warning);
+  color: var(--ez-on-brand);
   font-size: 10px;
   font-weight: 800;
   line-height: 1;
@@ -561,9 +557,9 @@ function openRelatedUsers() {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid var(--ez-component-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ez-card-bg);
 }
 
 .tree-workspace__head {
@@ -571,8 +567,8 @@ function openRelatedUsers() {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.74);
-  background: #f8fafc;
+  border-bottom: 1px solid var(--ez-border-soft);
+  background: var(--ez-surface-subtle);
   padding: 10px 13px;
 }
 
@@ -631,14 +627,10 @@ function openRelatedUsers() {
   align-items: center;
 }
 
-:deep(.tree-workspace .n-tree-node-content:hover) {
-  background: rgba(37, 99, 255, 0.055);
-}
-
 .related-user-item {
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid var(--ez-component-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ez-card-bg);
   padding: 14px;
 }
 
@@ -651,9 +643,9 @@ function openRelatedUsers() {
 }
 
 .inspector-block {
-  border: 1px solid rgba(226, 232, 240, 0.9);
+  border: 1px solid var(--ez-component-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ez-card-bg);
   padding: 12px;
   text-align: left;
 }
@@ -752,7 +744,7 @@ function openRelatedUsers() {
   }
 
   .permission-inspector {
-    border-top: 1px solid rgba(226, 232, 240, 0.86);
+    border-top: 1px solid var(--ez-border-muted);
   }
 }
 

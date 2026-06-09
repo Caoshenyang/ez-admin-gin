@@ -44,6 +44,11 @@ description: "当前系统表结构与完整版 SQL 交付物入口。"
 | `sys_file` | 文件上传记录表 |
 | `sys_attachment` | 附件中心表 |
 | `sys_notice` | 公告表 |
+| `sys_message_template` | 消息模板表 |
+| `sys_message_reminder` | 消息提醒规则表 |
+| `sys_mail_account` | 系统邮箱账号表 |
+| `sys_mail_template` | 邮件模板表 |
+| `sys_mail_log` | 邮件发送日志表 |
 | `sys_notification` | 站内通知表 |
 | `sys_operation_log` | 操作日志表 |
 | `sys_login_log` | 登录日志表 |
@@ -54,6 +59,10 @@ description: "当前系统表结构与完整版 SQL 交付物入口。"
 | `sys_dict_type` | 字典类型表 |
 | `sys_dict_item` | 字典项表 |
 | `casbin_rule` | Casbin 权限策略表 |
+
+::: info 关于 `sys_config` 默认数据
+完整版 SQL 会写入少量真实运行配置种子，包括登录限流和上传限制。它们会被后端业务逻辑读取；服务启动所需的数据库、Redis、JWT secret、CORS 等根配置仍以 `config.yaml` 和 `EZ_*` 环境变量为准。
+:::
 
 ## 使用建议
 

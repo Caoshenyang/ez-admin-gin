@@ -7,6 +7,8 @@ import (
 	dictmodule "ez-admin-gin/server/internal/modules/system/dict"
 	filemodule "ez-admin-gin/server/internal/modules/system/file"
 	loginlogmodule "ez-admin-gin/server/internal/modules/system/loginlog"
+	mailmodule "ez-admin-gin/server/internal/modules/system/mail"
+	messagemodule "ez-admin-gin/server/internal/modules/system/message"
 	noticemodule "ez-admin-gin/server/internal/modules/system/notice"
 	notificationmodule "ez-admin-gin/server/internal/modules/system/notification"
 	operationlogmodule "ez-admin-gin/server/internal/modules/system/operationlog"
@@ -22,13 +24,14 @@ import (
 )
 
 type RouteOptions struct {
-	Config     *platformConfig.Config
-	Log        *zap.Logger
-	DB         *gorm.DB
-	Redis      *goredis.Client
-	Token      *authnPlatform.Manager
-	Permission *authzPlatform.Enforcer
-	Blacklist  platformMiddleware.TokenBlacklistChecker
+	Config        *platformConfig.Config
+	RuntimeConfig *platformConfig.RuntimeStore
+	Log           *zap.Logger
+	DB            *gorm.DB
+	Redis         *goredis.Client
+	Token         *authnPlatform.Manager
+	Permission    *authzPlatform.Enforcer
+	Blacklist     platformMiddleware.TokenBlacklistChecker
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
@@ -57,14 +60,16 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Log: opts.Log,
 	})
 	attachmentmodule.RegisterRoutes(system, attachmentmodule.RouteOptions{
-		DB:     opts.DB,
-		Upload: opts.Config.Upload,
-		Log:    opts.Log,
+		DB:            opts.DB,
+		Upload:        opts.Config.Upload,
+		RuntimeConfig: opts.RuntimeConfig,
+		Log:           opts.Log,
 	})
 	filemodule.RegisterRoutes(system, filemodule.RouteOptions{
-		DB:     opts.DB,
-		Upload: opts.Config.Upload,
-		Log:    opts.Log,
+		DB:            opts.DB,
+		Upload:        opts.Config.Upload,
+		RuntimeConfig: opts.RuntimeConfig,
+		Log:           opts.Log,
 	})
 	operationlogmodule.RegisterRoutes(system, operationlogmodule.RouteOptions{
 		DB:  opts.DB,
@@ -75,6 +80,14 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 		Log: opts.Log,
 	})
 	noticemodule.RegisterRoutes(system, noticemodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	messagemodule.RegisterRoutes(system, messagemodule.RouteOptions{
+		DB:  opts.DB,
+		Log: opts.Log,
+	})
+	mailmodule.RegisterRoutes(system, mailmodule.RouteOptions{
 		DB:  opts.DB,
 		Log: opts.Log,
 	})

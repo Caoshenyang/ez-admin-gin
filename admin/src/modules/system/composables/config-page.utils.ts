@@ -6,6 +6,13 @@ import {
   type ConfigListQuery,
 } from '../types/config'
 
+export interface ConfigCategory {
+  key: string
+  group_code: string
+  label: string
+  description: string
+}
+
 export interface ConfigFormModel {
   id: number
   group_code: string
@@ -16,6 +23,22 @@ export interface ConfigFormModel {
   status: ConfigStatus
   remark: string
 }
+
+export const BUILTIN_CONFIG_CATEGORIES: ConfigCategory[] = [
+  { key: 'all', group_code: '', label: '全部配置', description: '查看所有系统配置项' },
+  {
+    key: 'rate_limit',
+    group_code: 'rate_limit',
+    label: '限流配置',
+    description: '登录 IP 限流、账号失败锁定',
+  },
+  {
+    key: 'upload',
+    group_code: 'upload',
+    label: '上传配置',
+    description: '上传大小、文件类型、存储策略',
+  },
+]
 
 export function defaultConfigListQuery(): ConfigListQuery {
   return {

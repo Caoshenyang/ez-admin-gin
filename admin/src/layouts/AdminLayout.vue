@@ -9,10 +9,12 @@ import AppHeader from '@/components/app-shell/AppHeader.vue'
 import AppSidebar from '@/components/app-shell/AppSidebar.vue'
 import WorkTabs from '@/components/app-shell/WorkTabs.vue'
 import {
+  adminSearchItems,
   collectExpandedMenuKeysByPath,
   findMenuCodeByPath,
   findMenuOptionByKey,
   findMenuTitleByPath,
+  type AdminSearchItem,
   sideMenuOptions,
 } from '../router/dynamic-menu'
 import { resetDynamicRoutes } from '../router'
@@ -115,6 +117,10 @@ function handleMenuUpdate(key: string | number) {
   }
 
   navigateTo(option.routePath)
+}
+
+function handleSearchSelect(item: AdminSearchItem) {
+  navigateTo(item.path)
 }
 
 function handleCloseTab(fullPath: string) {
@@ -247,7 +253,9 @@ onBeforeUnmount(() => {
         :breadcrumb-text="breadcrumbText"
         :display-name="displayName"
         :dropdown-options="dropdownOptions"
+        :search-items="adminSearchItems"
         @toggle-sidebar="shellStore.toggleSidebar()"
+        @search-select="handleSearchSelect"
         @user-action="handleUserAction"
       />
 

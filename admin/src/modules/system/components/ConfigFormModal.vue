@@ -59,13 +59,13 @@ const formModel = defineModel<ConfigFormModel>('model', { required: true })
 
           <div class="ez-form-grid ez-form-grid--2">
             <NFormItem label="分组" path="group_code">
-              <NInput v-model:value="formModel.group_code" placeholder="例如 site" />
+              <NInput v-model:value="formModel.group_code" placeholder="例如 rate_limit" />
             </NFormItem>
 
             <NFormItem label="键" path="key">
               <NInput
                 v-model:value="formModel.key"
-                placeholder="例如 site_name"
+                placeholder="例如 rate_limit:login_max_requests"
                 :disabled="formMode === 'edit'"
               />
             </NFormItem>

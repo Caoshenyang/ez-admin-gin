@@ -33,15 +33,17 @@ type Service struct {
 	repo    FileRepository
 	storage FileStorage
 	cfg     platformConfig.UploadConfig
+	runtime *platformConfig.RuntimeStore
 	log     *zap.Logger
 }
 
-func NewService(tx FileTransactor, repo FileRepository, storage FileStorage, cfg platformConfig.UploadConfig, log *zap.Logger) *Service {
+func NewService(tx FileTransactor, repo FileRepository, storage FileStorage, cfg platformConfig.UploadConfig, runtime *platformConfig.RuntimeStore, log *zap.Logger) *Service {
 	return &Service{
 		tx:      tx,
 		repo:    repo,
 		storage: storage,
 		cfg:     normalizeUploadConfig(cfg),
+		runtime: runtime,
 		log:     log,
 	}
 }
@@ -74,7 +76,7 @@ func (s *Service) Upload(ctx context.Context, uploaderID uint, fileHeader *multi
 
 // UploadEntity 上传文件到存储并写入数据库记录，失败时自动清理物理文件。
 func (s *Service) UploadEntity(ctx context.Context, uploaderID uint, fileHeader *multipart.FileHeader) (model.SystemFile, error) {
-	if err := s.validateUploadFile(fileHeader); err != nil {
+	if err := s.validateUploadFile(ctx, fileHeader); err != nil {
 		return model.SystemFile{}, err
 	}
 
@@ -116,7 +118,7 @@ func (s *Service) CleanupUploadedFile(item model.SystemFile) {
 	_ = s.storage.Delete(item.Path)
 }
 
-func (s *Service) validateUploadFile(fileHeader *multipart.FileHeader) error {
+func (s *Service) validateUploadFile(ctx context.Context, fileHeader *multipart.FileHeader) error {
 	if fileHeader == nil {
 		return errorsx.BadRequest("请选择要上传的文件")
 	}
@@ -124,16 +126,27 @@ func (s *Service) validateUploadFile(fileHeader *multipart.FileHeader) error {
 		return errorsx.BadRequest("不能上传空文件")
 	}
 
-	maxBytes := uploadMaxBytes(s.cfg.MaxSizeMB)
+	cfg := normalizeUploadConfig(s.runtimeUploadConfig(ctx))
+	maxBytes := uploadMaxBytes(cfg.MaxSizeMB)
 	if fileHeader.Size > maxBytes {
-		return errorsx.BadRequest("文件大小不能超过 " + strconv.FormatInt(s.cfg.MaxSizeMB, 10) + " MB")
+		return errorsx.BadRequest("文件大小不能超过 " + strconv.FormatInt(cfg.MaxSizeMB, 10) + " MB")
 	}
 
 	ext := filedomain.NormalizeExt(filepath.Ext(fileHeader.Filename))
 	if err := filedomain.ValidateFilename(fileHeader.Filename); err != nil {
 		return err
 	}
-	return filedomain.ValidateAllowedExt(ext, s.cfg.AllowedExts)
+	return filedomain.ValidateAllowedExt(ext, cfg.AllowedExts)
+}
+
+func (s *Service) runtimeUploadConfig(ctx context.Context) platformConfig.UploadConfig {
+	if s.runtime == nil {
+		return s.cfg
+	}
+	cfg := s.runtime.UploadConfig(ctx)
+	cfg.Dir = s.cfg.Dir
+	cfg.PublicPath = s.cfg.PublicPath
+	return cfg
 }
 
 func normalizeUploadConfig(cfg platformConfig.UploadConfig) platformConfig.UploadConfig {

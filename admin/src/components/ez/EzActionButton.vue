@@ -11,6 +11,7 @@ import {
   CopyOutline,
   CreateOutline,
   EyeOutline,
+  HelpCircleOutline,
   PeopleOutline,
   RefreshOutline,
   ReloadOutline,
@@ -35,6 +36,7 @@ type ActionKind =
   | 'edit'
   | 'enable'
   | 'expand'
+  | 'help'
   | 'permission'
   | 'refresh'
   | 'reset'
@@ -95,6 +97,7 @@ const actionIconMap: Record<ActionKind, Component> = {
   edit: CreateOutline,
   enable: CheckmarkCircleOutline,
   expand: ChevronDownOutline,
+  help: HelpCircleOutline,
   permission: ShieldCheckmarkOutline,
   refresh: RefreshOutline,
   reset: ReloadOutline,

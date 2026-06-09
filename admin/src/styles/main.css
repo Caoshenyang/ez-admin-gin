@@ -116,12 +116,33 @@
   --ez-panel-dark-secondary: #1f2937;
   --ez-surface-raised: rgba(255, 255, 255, 0.78);
   --ez-surface-subtle: #fafbfd;
+  --ez-surface-panel: #fbfdff;
+  --ez-surface-hover: #ffffff;
   --ez-text-heading: #111827;
   --ez-text-body: #374151;
   --ez-text-muted: #6b7280;
   --ez-segment-bg: #f3f4f6;
   --ez-link: #2563ff;
   --ez-brand-green: #18a058;
+  --ez-border-muted: rgba(226, 232, 240, 0.86);
+  --ez-border-soft: rgba(226, 232, 240, 0.74);
+  --ez-border-strong: rgba(148, 163, 184, 0.68);
+  --ez-table-control-border: rgba(203, 213, 225, 0.72);
+  --ez-table-control-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92),
+    rgba(248, 250, 252, 0.8)
+  );
+  --ez-table-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 rgba(148, 163, 184, 0.06),
+    0 1px 2px rgba(15, 23, 42, 0.035);
+  --ez-table-control-divider: linear-gradient(
+    180deg,
+    transparent,
+    rgba(148, 163, 184, 0.38),
+    transparent
+  );
 
   /* Radius */
   --ez-radius-2xs: 4px;
@@ -185,11 +206,32 @@
   --ez-panel-dark-secondary: #152238;
   --ez-surface-raised: rgba(17, 24, 39, 0.78);
   --ez-surface-subtle: #0f172a;
+  --ez-surface-panel: #111827;
+  --ez-surface-hover: #172033;
   --ez-text-heading: #e2e8f0;
   --ez-text-body: #cbd5e1;
   --ez-text-muted: #94a3b8;
   --ez-segment-bg: #1e293b;
   --ez-link: #38d0f8;
+  --ez-border-muted: rgba(148, 163, 184, 0.16);
+  --ez-border-soft: rgba(148, 163, 184, 0.1);
+  --ez-border-strong: rgba(148, 163, 184, 0.32);
+  --ez-table-control-border: rgba(148, 163, 184, 0.18);
+  --ez-table-control-bg: linear-gradient(
+    180deg,
+    rgba(30, 41, 59, 0.82),
+    rgba(15, 23, 42, 0.76)
+  );
+  --ez-table-control-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  --ez-table-control-divider: linear-gradient(
+    180deg,
+    transparent,
+    rgba(148, 163, 184, 0.28),
+    transparent
+  );
 }
 
 * {
@@ -423,7 +465,12 @@ button:not(:disabled),
 
 .ez-row-actions:where(.n-button:not(.n-button--disabled)),
 .ez-row-actions :where(.n-button:not(.n-button--disabled)) {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition: transform 0.18s ease;
+}
+
+.ez-row-actions:where(.n-button:not(.n-button--disabled):hover),
+.ez-row-actions :where(.n-button:not(.n-button--disabled):hover) {
+  transform: translateY(-1px);
 }
 
 .ez-table-fill {
@@ -482,25 +529,16 @@ button:not(:disabled),
 }
 
 .ez-table-action-group--business :where(.n-button:not(.n-button--disabled):hover) {
-  background: rgba(37, 99, 255, 0.06);
   transform: translateY(-1px);
-}
-
-.ez-table-action-group--business :where(.n-button--disabled) {
-  color: #cbd5e1;
-  opacity: 1;
 }
 
 .ez-table-action-group--view {
   min-height: 34px;
   gap: 0;
-  border: 1px solid rgba(203, 213, 225, 0.72);
+  border: 1px solid var(--ez-table-control-border);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.8));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    inset 0 -1px 0 rgba(148, 163, 184, 0.06),
-    0 1px 2px rgba(15, 23, 42, 0.035);
+  background: var(--ez-table-control-bg);
+  box-shadow: var(--ez-table-control-shadow);
   overflow: hidden;
   padding: 2px 4px;
 }
@@ -511,17 +549,15 @@ button:not(:disabled),
   width: 1px;
   height: 16px;
   margin: 0 2px;
-  background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.38), transparent);
+  background: var(--ez-table-control-divider);
 }
 
 .ez-table-action-group--view :where(.n-button) {
   --n-border-radius: 0;
-  color: #64748b;
 }
 
 .ez-table-action-group--view :where(.n-button:hover) {
-  background: rgba(37, 99, 255, 0.08);
-  color: var(--ez-primary);
+  transform: translateY(-1px);
 }
 
 .ez-table-view-button {
@@ -549,7 +585,7 @@ button:not(:disabled),
   right: 4px;
   width: 6px;
   height: 6px;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--ez-on-brand);
   border-radius: 999px;
   background: var(--ez-primary);
   content: '';
@@ -694,7 +730,6 @@ button:not(:disabled),
 }
 
 .ez-modal-form :where(.n-form-item-label) {
-  color: var(--ez-text-regular);
   font-size: 12px;
   font-weight: 700;
 }

@@ -428,9 +428,10 @@ export function useDictPage() {
       },
     },
     {
-      title: '排序',
+      title: () => h('span', { class: 'whitespace-nowrap' }, '排序'),
       key: 'sort',
-      width: 56,
+      width: 76,
+      align: 'center',
     },
     {
       title: '状态',

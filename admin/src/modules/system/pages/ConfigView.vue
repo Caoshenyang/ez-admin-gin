@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NCard, NInput, NInputNumber, NSelect, NSwitch } from 'naive-ui'
+import { NCard, NTag } from 'naive-ui'
 
 import EzActionButton from '@/components/ez/EzActionButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -9,7 +9,10 @@ import ConfigTable from '../components/ConfigTable.vue'
 import { useConfigPage } from '../composables/useConfigPage'
 
 const {
+  activeConfigCategory,
+  activeConfigGroup,
   canUse,
+  configCategories,
   columns,
   configs,
   formMode,
@@ -27,17 +30,10 @@ const {
   query,
   rules,
   saving,
+  selectConfigCategory,
   submitForm,
   total,
 } = useConfigPage()
-
-const configCategories = [
-  { key: 'base', label: '基础配置', description: '站点名称、默认语言、显示偏好' },
-  { key: 'security', label: '安全配置', description: 'Token、登录限制、密码规则' },
-  { key: 'file', label: '文件配置', description: '上传大小、文件类型、存储策略' },
-  { key: 'notice', label: '通知配置', description: '公告、消息、WebSocket 推送' },
-  { key: 'system', label: '系统参数', description: '运行参数与扩展配置' },
-]
 </script>
 
 <template>
@@ -48,92 +44,54 @@ const configCategories = [
           <EzActionButton
             v-if="canUse('system:config:create')"
             kind="add"
-            label="新增配置"
+            :label="activeConfigGroup ? '新增本组配置' : '新增配置'"
             type="primary"
-            @click="openCreate"
+            @click="() => openCreate()"
           />
         </template>
       </PageHeader>
 
-      <div class="config-page-layout">
-        <NCard class="config-category-card" :bordered="false">
+      <NCard class="config-group-card" :bordered="false">
+        <div class="config-group-head">
+          <div class="config-group-title">
+            <span>配置分组</span>
+            <strong>{{ activeConfigCategory.label }}</strong>
+          </div>
+          <div class="config-group-meta">
+            <NTag size="small" :bordered="false" type="info">
+              {{ activeConfigGroup || '全部' }}
+            </NTag>
+            <span>共 {{ total }} 条</span>
+          </div>
+        </div>
+
+        <div class="config-category-strip">
           <button
             v-for="item in configCategories"
             :key="item.key"
             type="button"
             class="config-category"
-            :class="{ 'config-category--active': item.key === 'security' }"
+            :class="{ 'config-category--active': item.group_code === activeConfigGroup }"
+            @click="selectConfigCategory(item.group_code)"
           >
             <strong>{{ item.label }}</strong>
             <span>{{ item.description }}</span>
           </button>
-        </NCard>
+        </div>
+      </NCard>
 
-        <section class="config-main-panel">
-          <NCard class="config-setting-card ez-card-elevated" :bordered="false">
-            <template #header>
-              <span class="config-card-title">安全配置</span>
-            </template>
-            <div class="config-form-grid">
-              <label>
-                <span>Token 过期时间</span>
-                <NInputNumber :value="720" :min="1" class="w-full">
-                  <template #suffix>分钟</template>
-                </NInputNumber>
-              </label>
-              <label>
-                <span>登录失败锁定次数</span>
-                <NInputNumber :value="5" :min="1" class="w-full">
-                  <template #suffix>次</template>
-                </NInputNumber>
-              </label>
-              <label>
-                <span>密码最小长度</span>
-                <NInputNumber :value="8" :min="6" class="w-full">
-                  <template #suffix>位</template>
-                </NInputNumber>
-              </label>
-              <label>
-                <span>密码强度规则</span>
-                <NSelect
-                  :value="'medium'"
-                  :options="[
-                    { label: '中等（字母+数字）', value: 'medium' },
-                    { label: '强（大小写+数字+符号）', value: 'strong' },
-                  ]"
-                />
-              </label>
-              <label>
-                <span>是否开启验证码</span>
-                <NSwitch :value="true" />
-              </label>
-              <label>
-                <span>会话超时时间</span>
-                <NInput :value="'30 分钟'" />
-              </label>
-            </div>
-            <template #footer>
-              <div class="config-form-actions">
-                <EzActionButton kind="reset" label="重置" />
-                <EzActionButton kind="save" label="保存配置" type="primary" />
-              </div>
-            </template>
-          </NCard>
+      <ConfigFilterBar v-model:query="query" @search="handleSearch" @reset="handleReset" />
 
-          <ConfigFilterBar v-model:query="query" @search="handleSearch" @reset="handleReset" />
-
-          <ConfigTable
-            :columns="columns"
-            :items="configs"
-            :loading="loading"
-            :query="query"
-            :total="total"
-            @page-change="handlePageChange"
-            @page-size-change="handlePageSizeChange"
-            @refresh="load"
-          />
-        </section>
-      </div>
+      <ConfigTable
+        :columns="columns"
+        :items="configs"
+        :loading="loading"
+        :query="query"
+        :total="total"
+        @page-change="handlePageChange"
+        @page-size-change="handlePageSizeChange"
+        @refresh="load"
+      />
     </section>
 
     <ConfigFormModal
@@ -149,51 +107,97 @@ const configCategories = [
 </template>
 
 <style scoped>
-.config-page-layout {
-  display: grid;
-  min-height: 0;
-  flex: 1;
-  grid-template-columns: 240px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 16px;
-  overflow: hidden;
-}
-
-.config-category-card {
+.config-group-card {
   border: 1px solid var(--ez-border);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: var(--ez-shadow-card);
 }
 
+.config-group-card :deep(.n-card__content) {
+  padding: 14px 16px;
+}
+
+.config-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.config-group-title {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.config-group-title span {
+  color: var(--ez-text-secondary);
+  font-size: 13px;
+}
+
+.config-group-title strong {
+  overflow: hidden;
+  color: var(--ez-text-main);
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-group-meta {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--ez-text-secondary);
+  font-size: 12px;
+}
+
+.config-category-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .config-category {
-  display: block;
+  display: flex;
+  min-width: 0;
+  min-height: 72px;
+  flex-direction: column;
+  justify-content: center;
   width: 100%;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
-  padding: 12px;
+  padding: 10px 12px;
   text-align: left;
   transition:
     border-color 0.2s ease,
     background-color 0.2s ease;
 }
 
-.config-category + .config-category {
-  margin-top: 8px;
-}
-
 .config-category strong {
   display: block;
+  overflow: hidden;
   color: var(--ez-text-main);
   font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .config-category span {
-  display: block;
+  display: -webkit-box;
+  overflow: hidden;
+  min-height: 34px;
   margin-top: 4px;
   color: var(--ez-text-secondary);
   font-size: 12px;
   line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .config-category--active,
@@ -202,101 +206,43 @@ const configCategories = [
   background: var(--ez-primary-light);
 }
 
-.config-main-panel {
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  gap: 14px;
-  overflow: auto;
-  scrollbar-gutter: stable;
-}
-
-.config-card-title {
-  color: var(--ez-text-main);
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.config-form-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(140px, 1fr));
-  gap: 16px 20px;
-}
-
-.config-form-grid label > span {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--ez-text-secondary);
-  font-size: 13px;
-}
-
-.config-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
 @media (max-width: 1024px) {
-  .config-page-layout {
-    grid-template-columns: 1fr;
-    overflow: auto;
+  .config-group-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 
-  .config-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.config-setting-card :deep(.n-card-header) {
-  padding: 16px 18px 8px;
-}
-
-.config-setting-card :deep(.n-card__content) {
-  padding: 0 18px 10px;
-}
-
-.config-setting-card :deep(.n-card__footer) {
-  padding: 8px 18px 12px;
-}
-
-@media (max-height: 760px) and (min-width: 1025px) {
-  .config-main-panel {
-    gap: 10px;
+  .config-category-strip {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-gutter: stable;
   }
 
   .config-category {
-    padding: 9px 12px;
+    width: 176px;
+    flex: 0 0 176px;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 1025px) {
+  .config-group-card :deep(.n-card__content) {
+    padding: 12px 14px;
   }
 
-  .config-category + .config-category {
-    margin-top: 6px;
+  .config-group-head {
+    margin-bottom: 10px;
+  }
+
+  .config-category {
+    min-height: 64px;
+    padding: 8px 10px;
   }
 
   .config-category span {
     margin-top: 2px;
     line-height: 1.35;
-  }
-
-  .config-setting-card :deep(.n-card-header) {
-    padding: 12px 18px 6px;
-  }
-
-  .config-setting-card :deep(.n-card__content) {
-    padding: 0 18px 8px;
-  }
-
-  .config-setting-card :deep(.n-card__footer) {
-    padding: 6px 18px 10px;
-  }
-
-  .config-form-grid {
-    gap: 8px 14px;
-  }
-
-  .config-form-grid label > span {
-    margin-bottom: 5px;
-    font-size: 12px;
   }
 }
 </style>

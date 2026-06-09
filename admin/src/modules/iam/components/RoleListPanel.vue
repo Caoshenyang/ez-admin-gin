@@ -100,10 +100,6 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 </template>
 
 <style scoped>
-.role-rail-card {
-  background: #fff;
-}
-
 .role-rail {
   display: flex;
   height: 100%;
@@ -117,7 +113,7 @@ const query = defineModel<RoleListQuery>('query', { required: true })
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.86);
+  border-bottom: 1px solid var(--ez-border-muted);
   padding: 14px 16px 12px;
 }
 
@@ -158,9 +154,9 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 .role-nav-item {
   position: relative;
   display: block;
-  border: 1px solid rgba(226, 232, 240, 0.92);
+  border: 1px solid var(--ez-component-border);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--ez-surface-panel);
   padding: 11px 12px;
   cursor: pointer;
   outline: none;
@@ -176,9 +172,9 @@ const query = defineModel<RoleListQuery>('query', { required: true })
 }
 
 .role-nav-item:hover {
-  border-color: rgba(148, 163, 184, 0.68);
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  border-color: var(--ez-border-strong);
+  background: var(--ez-surface-hover);
+  box-shadow: var(--ez-shadow-sm);
   transform: translateY(-1px);
 }
 

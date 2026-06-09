@@ -1,7 +1,7 @@
 <!-- AppSidebar 渲染侧栏菜单树，高亮当前路由并支持展开/折叠。 -->
 <script setup lang="ts">
 import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
-import type { MenuNodeProps, MenuOption, MenuProps, ScrollbarProps } from 'naive-ui'
+import type { ButtonProps, MenuNodeProps, MenuOption, MenuProps, ScrollbarProps } from 'naive-ui'
 import { NButton, NIcon, NLayoutSider, NMenu, NScrollbar, NTooltip } from 'naive-ui'
 import { nextTick, ref } from 'vue'
 
@@ -44,6 +44,23 @@ const sidebarMenuThemeOverrides: NonNullable<MenuProps['themeOverrides']> = {
   itemIconColorChildActiveHoverInverted: '#ffffff',
   arrowColorChildActiveInverted: '#bfdbfe',
   arrowColorChildActiveHoverInverted: '#ffffff',
+}
+
+const sidebarCollapseButtonThemeOverrides: NonNullable<ButtonProps['themeOverrides']> = {
+  colorQuaternary:
+    'linear-gradient(180deg, rgba(15, 23, 42, 0.5) 0%, rgba(15, 23, 42, 0.3) 100%)',
+  colorQuaternaryHover:
+    'linear-gradient(180deg, rgba(37, 99, 255, 0.2) 0%, rgba(15, 23, 42, 0.36) 100%)',
+  colorQuaternaryPressed:
+    'linear-gradient(180deg, rgba(37, 99, 255, 0.28) 0%, rgba(15, 23, 42, 0.42) 100%)',
+  border: '1px solid rgba(148, 163, 184, 0.16)',
+  borderHover: '1px solid rgba(56, 208, 248, 0.34)',
+  borderPressed: '1px solid rgba(56, 208, 248, 0.42)',
+  borderFocus: '1px solid rgba(125, 211, 252, 0.44)',
+  textColor: 'rgba(255, 255, 255, 0.7)',
+  textColorHover: '#ffffff',
+  textColorPressed: '#ffffff',
+  textColorFocus: '#ffffff',
 }
 
 const menuContentRef = ref<HTMLElement | null>(null)
@@ -126,7 +143,7 @@ function handleExpandedKeysUpdate(keys: Array<string | number>) {
 
     <p
       v-if="!collapsed"
-      class="px-4 text-[11px] font-semibold tracking-[0.08em] text-[#64748B] uppercase"
+      class="px-4 text-[11px] font-semibold tracking-[0.08em] text-[var(--ez-sidebar-text)] uppercase"
     >
       工作台
     </p>
@@ -165,6 +182,7 @@ function handleExpandedKeysUpdate(keys: Array<string | number>) {
             quaternary
             aria-label="展开菜单"
             class="sidebar-collapse-button sidebar-collapse-button--icon"
+            :theme-overrides="sidebarCollapseButtonThemeOverrides"
             @click="emit('toggle')"
           >
             <span class="sidebar-collapse-button__icon">
@@ -179,6 +197,7 @@ function handleExpandedKeysUpdate(keys: Array<string | number>) {
         quaternary
         aria-label="收起菜单"
         class="sidebar-collapse-button sidebar-collapse-button--full"
+        :theme-overrides="sidebarCollapseButtonThemeOverrides"
         @click="emit('toggle')"
       >
         <span class="sidebar-collapse-button__icon">
@@ -191,17 +210,6 @@ function handleExpandedKeysUpdate(keys: Array<string | number>) {
 </template>
 
 <style scoped>
-.sidebar-menu-content :deep(.n-menu .n-menu-item-content.n-menu-item-content--child-active::before),
-.sidebar-menu-content
-  :deep(.n-menu .n-menu-item-content.n-menu-item-content--child-active:hover::before) {
-  background-color: rgba(37, 99, 255, 0.22);
-}
-
-.sidebar-menu-content
-  :deep(.n-menu .n-menu-item-content.n-menu-item-content--child-active:hover::before) {
-  background-color: rgba(37, 99, 255, 0.32);
-}
-
 .sidebar-collapse-zone {
   position: relative;
   display: flex;
@@ -233,32 +241,14 @@ function handleExpandedKeysUpdate(keys: Array<string | number>) {
 
 .sidebar-collapse-button {
   height: 40px;
-  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: var(--ez-radius-control);
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.5) 0%,
-    rgba(15, 23, 42, 0.3) 100%
-  ) !important;
-  color: rgba(255, 255, 255, 0.7) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     0 8px 18px rgba(0, 0, 0, 0.1);
-  transition:
-    border-color 0.18s ease,
-    background 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.18s ease;
+  transition: box-shadow 0.18s ease;
 }
 
 .sidebar-collapse-button:hover {
-  border-color: rgba(56, 208, 248, 0.34);
-  background: linear-gradient(
-    180deg,
-    rgba(37, 99, 255, 0.2) 0%,
-    rgba(15, 23, 42, 0.36) 100%
-  ) !important;
-  color: #ffffff !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     0 10px 22px rgba(2, 6, 23, 0.18);

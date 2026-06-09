@@ -13,11 +13,12 @@ import (
 )
 
 type RouteOptions struct {
-	Config *platformConfig.Config
-	Log    *zap.Logger
-	DB     *gorm.DB
-	Redis  *goredis.Client
-	Token  *authnPlatform.Manager
+	Config        *platformConfig.Config
+	RuntimeConfig *platformConfig.RuntimeStore
+	Log           *zap.Logger
+	DB            *gorm.DB
+	Redis         *goredis.Client
+	Token         *authnPlatform.Manager
 }
 
 func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
@@ -27,22 +28,22 @@ func RegisterRoutes(r *gin.Engine, opts RouteOptions) {
 	}
 
 	services := authservicekit.NewServices(authservicekit.ServiceOptions{
-		Config:       opts.Config,
-		Log:          opts.Log,
-		DB:           opts.DB,
-		Redis:        opts.Redis,
-		Token:        opts.Token,
-		RefreshStore: refreshStore,
+		Config:        opts.Config,
+		RuntimeConfig: opts.RuntimeConfig,
+		Log:           opts.Log,
+		DB:            opts.DB,
+		Redis:         opts.Redis,
+		Token:         opts.Token,
+		RefreshStore:  refreshStore,
 	})
 	authapi.RegisterRoutes(r, authapi.RouteOptions{
-		Log:          opts.Log,
-		DB:           opts.DB,
-		Redis:        opts.Redis,
-		Token:        opts.Token,
-		Services:     services,
-		RateLimitMax: opts.Config.RateLimit.LoginMaxRequests,
-		RateLimitSec: opts.Config.RateLimit.LoginWindowSec,
-		Env:          opts.Config.App.Env,
-		Blacklist:    refreshStore,
+		Log:           opts.Log,
+		DB:            opts.DB,
+		Redis:         opts.Redis,
+		Token:         opts.Token,
+		Services:      services,
+		RuntimeConfig: opts.RuntimeConfig,
+		Env:           opts.Config.App.Env,
+		Blacklist:     refreshStore,
 	})
 }
